@@ -11,6 +11,7 @@ Last updated: 2026-06-08
 - `domains/business-process/feature/src/lib/build-and-test` already contains the CI execution view and partial Build/Test sections.
 - Build/Test step no longer has the Technical Reseed placeholder; it now renders the ported rxResource Technical Reseed section.
 - Test section now renders the legacy Select TPK / Run TPK row before Config Audit and TPK results.
+- Select/Run TPK no longer wraps `@mxflow/test-management`; the Build & Test component now calls domain-owned `ScenarioRunService` methods for `can-push` and `execute`, while preserving the legacy request flags.
 - Build section now renders commits and the Figma scenario/TPK details icon. Open Config Editor is a first-class environment-panel action behind an opt-in flag.
 - `features/environment/src/lib/technical-reseed` is available as the legacy Technical Reseed reference.
 - `domains/environment/data-access` already has `SystematicConfigAuditService` and unit tests, but no pact interaction was found.
@@ -31,10 +32,18 @@ Last updated: 2026-06-08
 - [x] Implement VAL-26642 Merge stage shell, final product details widget, v2 backport summary, and v1 legacy backport states.
 - [x] Add/adjust focused unit tests for the new data-access, Build/Test panels, Technical Reseed, Prepare Setup, Merge, Send for Review, Final Product Details, and Backports.
 - [x] Attempt available test command and document the workspace blocker.
+- [x] Remove the Build/Test migration dependency on `features/test-management` without changing the legacy feature library.
+- [x] Remove the stale `@mxflow/features/streams` provider from the `domains/test/data-access` pact setup used by the migrated scenario-definition path.
+- [x] Retire the legacy `ci-process-mfe` project metadata by renaming `project.json` to `project.legacy.json` and adding a retirement note.
+- [x] Rename the active Build/Test route constant from `CI_PROCESS_MFE_PATH` to `BUILD_AND_TEST_PROCESS_PATH`.
 
 ## Verification
 - Attempted `npx nx test domains-business-process-feature --runInBand` from `/Users/khaledbaghdadi/Desktop/Active/web evolve/test-web`.
+- Attempted `npx nx test domains-test-data-access --runInBand` from `/Users/khaledbaghdadi/Desktop/Active/web evolve/test-web`.
 - Blocked before project discovery because this folder is not an Nx workspace: no `package.json`, `nx.json`, or `angular.json` exists under the scanned parent tree.
+- Static scan: no `@mxflow/test-management` or `@mxflow/features/**` imports remain under the active Build/Test migration paths.
+- Static scan: no `@mxflow/test-management` or `@mxflow/features/**` imports remain under `domains/test/data-access/src`.
+- Static scan: no `CI_PROCESS_MFE_PATH` references remain outside the retired `ci-process-mfe` source.
 
 ## Open Questions / Risks
 - The docs still mark the exact systematic config-audit backend path as open. Current domains service uses `GET /projects/{projectId}/environments/{environmentId}/systematic-config-audit`, which matches the design assumption.
@@ -47,3 +56,5 @@ Last updated: 2026-06-08
 - Current CI execution contract and legacy MFE use `integrateChangesStage.latestMergeJobId`; docs sometimes say `latestMergeRequestId`. The new Merge stage keeps the backend/legacy field name and passes it to `mxevolve-merge-request-stepper` as its merge request id.
 - VAL-26642 says the Merge step has no local feature flags/authorization of its own; behavior is preserved by keeping gating state-based and leaving route/host authorization untouched.
 - This workspace is a sliced repo without a root `package.json`; test execution depends on the parent/full monorepo tooling being available outside this folder.
+- Wider domain tech debt remains outside the active Build/Test migration paths: older upgrade listing/test widgets still import some `@mxflow/features/**` APIs and UI helpers. Those were pre-existing and were not changed for the CI Build/Test execution migration.
+- Full Story D shell cleanup cannot be completed in this sliced checkout because the documented shell/local-dev files are not present (`web/apps/shell/**`, `web/tools/local-dev/project.json`, environment variants). The local MFE app is retired here by removing its active `project.json`.

@@ -99,7 +99,7 @@ In-progress tooltip: "Config audit is running…"; INVALID tooltip: "Config audi
 | `mxevolve-merge-request-commits` / `mxevolve-branch-details` | `@mxevolve/domains/scm/widget` or `@mxevolve/domains/business-process/composite-widget` | For the Commits table — read the actual inputs before wiring |
 | `mxevolve-commit-id-display` | `@mxevolve/shared/ui/primitive` | Formats short commit IDs |
 | `mxevolve-scenario-runs` | `@mxevolve/domains/test/widget` | `projectId` (req), `subContextId`, `scenarioRunIds`, `showEnvironmentDetails`, `showHistory`, `warningMessageMap` |
-| `RunScenarioDropdownComponent` | `@mxflow/test-management` (verify barrel) | Select + Run TPK |
+| `mxevolve-build-and-test-run-tpk` | `domains/business-process/feature` backed by `@mxevolve/domains/test/data-access` | Select + Run TPK; do not depend on legacy `@mxflow/test-management` |
 | `mxevolve-illustration` | `@mxevolve/shared/ui/primitive` | `variant` — for empty states |
 | **Source to PORT (Open Config Editor):** `features/environment/.../environment-workspace-configuration-editor-button/` | — | Port to signals; gate by `workspace-configuration-editor-ui` flag; hide in automerge |
 | **Source to PORT (Config Audit):** `features/environment/.../environment-config-audit/button/` | — | Port to split-button widget; color by `resultStatus`; dropdown CSV/HTML |

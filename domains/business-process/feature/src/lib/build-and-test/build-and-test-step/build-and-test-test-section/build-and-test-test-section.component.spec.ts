@@ -9,7 +9,7 @@ import {
 } from "@mxevolve/domains/environment/widget";
 import { SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE } from "../scenario-execution-group-permission-warning-message";
 import { BuildAndTestRunTpkComponent } from "./build-and-test-run-tpk.component";
-import { ToastMessageService } from "@mxflow/ui/alert";
+import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 
 const MOCK_IMPORTS = [
   MockComponent(ScenarioRunsComponent),
@@ -125,11 +125,10 @@ describe("BuildAndTestTestSectionComponent", () => {
       );
 
       const runTpk = ngMocks.find(fixture, BuildAndTestRunTpkComponent);
-      expect(runTpk.componentInstance.branchName).toBe("feature/temp-branch");
-      expect(runTpk.componentInstance.executionGroupId).toBe(
-        "scenario-group-001"
-      );
-      expect(runTpk.componentInstance.machineGroupId).toBe("infra-group-001");
+      expect(ngMocks.input(runTpk, "projectId")).toBe("proj-001");
+      expect(ngMocks.input(runTpk, "branchName")).toBe("feature/temp-branch");
+      expect(ngMocks.input(runTpk, "executionGroupId")).toBe("scenario-group-001");
+      expect(ngMocks.input(runTpk, "machineGroupId")).toBe("infra-group-001");
     });
 
     it("hides the run TPK row until both branch name and execution group are available", async () => {

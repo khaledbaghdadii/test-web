@@ -7,7 +7,6 @@ import { catchError, lastValueFrom, of } from "rxjs";
 import { Matchers, Pact } from "@pact-foundation/pact";
 import { eachLike } from "@pact-foundation/pact/src/dsl/matchers";
 import { TestDefinitionService } from "./test-definition.service";
-import { StreamsService } from "@mxflow/features/streams";
 import { APP_CONFIG, AppConfig } from "@mxflow/config";
 import { expect } from "@jest/globals";
 import { PreconfiguredTestSelection } from "@mxevolve/domains/test/model";
@@ -29,18 +28,12 @@ describe("test definition service", () => {
   });
   let appConfig: AppConfig;
   let testDefinitionService: TestDefinitionService;
-  let streamsService: StreamsService;
 
   beforeEach(async () => {
-    streamsService = {
-      getListOfBpcsByProjectId: jest.fn(() => of([])),
-    } as unknown as StreamsService;
-
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptorsFromDi()),
         { provide: APP_CONFIG, useValue: appConfig },
-        { provide: StreamsService, useValue: streamsService },
         TestDefinitionService,
       ],
     });

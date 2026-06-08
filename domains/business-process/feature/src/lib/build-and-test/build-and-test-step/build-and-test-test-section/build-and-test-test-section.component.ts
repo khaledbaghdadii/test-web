@@ -6,7 +6,7 @@ import {
   ConfigAuditButtonComponent,
   EnvironmentStatusPanelComponent,
 } from "@mxevolve/domains/environment/widget";
-import { ToastMessageService } from "@mxflow/ui/alert";
+import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 import { SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE } from "../scenario-execution-group-permission-warning-message";
 import { BuildAndTestRunTpkComponent } from "./build-and-test-run-tpk.component";
 

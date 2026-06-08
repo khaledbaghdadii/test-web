@@ -1,6 +1,6 @@
 import { Router } from "@angular/router";
 import { fakeAsync, TestBed, tick } from "@angular/core/testing";
-import { CI_PROCESS_MFE_PATH } from "@mxevolve/shared/core/config";
+import { BUILD_AND_TEST_PROCESS_PATH } from "@mxevolve/shared/core/config";
 import { BuildAndTestProcessStateUpdaterService } from "./build-and-test-process-state-updater.service";
 
 describe("when reloading the state of the ci process", () => {
@@ -28,7 +28,7 @@ describe("when reloading the state of the ci process", () => {
     service.reloadProcessDetails("processId", "projectId", 1000);
     tick(1000);
     expect(router.navigateByUrl).toHaveBeenCalledWith(
-      `/app/projectId/business-process/${CI_PROCESS_MFE_PATH}/execution/processId`
+      `/app/projectId/business-process/${BUILD_AND_TEST_PROCESS_PATH}/execution/processId`
     );
   }));
 

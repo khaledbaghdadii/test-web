@@ -12,7 +12,7 @@ import {
 import { ExecutionStatusTagComponent } from "@mxevolve/domains/business-process/ui";
 import {
   BINARY_UPGRADE_MFE_PATH,
-  CI_PROCESS_MFE_PATH,
+  BUILD_AND_TEST_PROCESS_PATH,
 } from "@mxevolve/shared/core/config";
 import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
 import { AgGridAngular, ICellRendererAngularComp } from "ag-grid-angular";
@@ -278,7 +278,7 @@ export class BuildAndTestBackportExecutionsSummaryComponent {
       return `/${BINARY_UPGRADE_MFE_PATH}/execution/${id}`;
     }
     if (businessProcessType === ExecutionFamily.USER_STORY_BUILD_AND_TEST) {
-      return `/${CI_PROCESS_MFE_PATH}/execution/${id}`;
+      return `/${BUILD_AND_TEST_PROCESS_PATH}/execution/${id}`;
     }
     if (businessProcessType === ExecutionFamily.VALIDATION_PROCESS) {
       return `/${MASTER_VALIDATION_MFE_PATH}/execution/${id}`;

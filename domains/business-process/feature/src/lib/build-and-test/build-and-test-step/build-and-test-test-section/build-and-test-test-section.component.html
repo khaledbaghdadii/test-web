@@ -16,6 +16,7 @@
   @if (canRunTpk()) {
   <div class="col-span-12">
     <mxevolve-build-and-test-run-tpk
+      [projectId]="projectId()"
       [branchName]="branchName()!"
       [executionGroupId]="executionGroupId()!"
       [machineGroupId]="machineGroupId()"

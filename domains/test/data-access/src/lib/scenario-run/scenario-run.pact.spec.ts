@@ -158,6 +158,123 @@ describe("scenario run service contract tests", () => {
     expect(result.testExecutionId).toBeTruthy();
   });
 
+  test("validate contract for fetching a scenario run by id", async () => {
+    await provider.addInteraction({
+      state: "scenario execution exists by id",
+      uponReceiving: "a request to fetch a scenario run by id",
+      withRequest: {
+        method: "GET",
+        path: `/projects/${PROJECT_ID}/test-execution-manager/scenario-executions/${SCENARIO_RUN_ID}`,
+      },
+      willRespondWith: {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: {
+          id: Matchers.string(SCENARIO_RUN_ID),
+          mxVersion: Matchers.string("3.1.65"),
+        },
+      },
+    });
+
+    const result = await lastValueFrom(
+      scenarioRunService.fetchById(PROJECT_ID, SCENARIO_RUN_ID)
+    );
+
+    expect(result.mxVersion).toBeTruthy();
+  });
+
+  test("validate contract for running a scenario", async () => {
+    const executionGroupId = "executionGroupId";
+
+    await provider.addInteraction({
+      state: "a user is running a scenario execution",
+      uponReceiving: "a request to run a scenario execution",
+      withRequest: {
+        method: "POST",
+        path: `/projects/${PROJECT_ID}/test-execution-manager/scenario-executions/execute`,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: {
+          scenarioDefinitionId: Matchers.string("scenario-definition-1"),
+          subContextId: Matchers.string("BUILD_AND_TEST"),
+          branchName: Matchers.string("feature/temp-branch"),
+          fullMaintenance: Matchers.boolean(false),
+          executionGroupId: Matchers.string(executionGroupId),
+          machineGroupId: Matchers.string("infra-group-1"),
+          disableKeepExecution: Matchers.boolean(true),
+          disableConfigurationEditor: Matchers.boolean(false),
+          supportReconActivities: Matchers.boolean(false),
+          stopServices: Matchers.boolean(true),
+          validationScopeEnabled: Matchers.boolean(false),
+          incidentEnabled: Matchers.boolean(false),
+        },
+      },
+      willRespondWith: {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: {
+          testExecutionId: Matchers.string("test-execution-1"),
+        },
+      },
+    });
+
+    const result = await lastValueFrom(
+      scenarioRunService.runScenario(PROJECT_ID, {
+        scenarioDefinitionId: "scenario-definition-1",
+        subContextId: "BUILD_AND_TEST",
+        branchName: "feature/temp-branch",
+        commitId: null,
+        executionGroupId,
+        machineGroupId: "infra-group-1",
+        disableKeepExecution: true,
+        disableConfigurationEditor: false,
+        supportReconActivities: false,
+        stopServices: true,
+        validationScopeEnabled: false,
+        incidentEnabled: false,
+      })
+    );
+
+    expect(result.testExecutionId).toBeTruthy();
+  });
+
+  test("validate contract for checking if scenario execution is allowed", async () => {
+    const executionGroupId = "executionGroupId";
+
+    await provider.addInteraction({
+      state: "scenario executions are allowed",
+      uponReceiving: "a request to check if scenario execution is allowed",
+      withRequest: {
+        method: "GET",
+        path: `/projects/${PROJECT_ID}/test-execution-manager/execution-group/${executionGroupId}/scenario-execution/can-push`,
+      },
+      willRespondWith: {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: {
+          actionAllowed: Matchers.boolean(true),
+          rejectionReasons: [],
+          warnings: [],
+        },
+      },
+    });
+
+    const result = await lastValueFrom(
+      scenarioRunService.isExecutionAllowed(PROJECT_ID, executionGroupId)
+    );
+
+    expect(result.actionAllowed).toBeDefined();
+    expect(result.rejectionReasons).toBeDefined();
+    expect(result.warnings).toBeDefined();
+  });
+
   test("validate contract for updating scenario execution assignee", async () => {
     await provider.addInteraction({
       state: "A scenario aggregation that can be assigned to a user exists",

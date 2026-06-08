@@ -11,6 +11,11 @@ import {
 } from "@mxevolve/domains/test/model";
 import { BulkRerunRequest } from "./bulk-rerun-request.model";
 import { BulkRerunResponse } from "./bulk-rerun-response.model";
+import {
+  RunScenarioRequest,
+  RunScenarioResponse,
+  ScenarioRunPermission,
+} from "./run-scenario-request.model";
 
 @Injectable()
 export class ScenarioRunService {
@@ -34,6 +39,17 @@ export class ScenarioRunService {
       .get<ScenarioRunApiResponse[]>(`${this.getBaseUrl(projectId)}`, {
         params,
       })
+      .pipe(catchError((error) => throwError(() => new Error(error.error))));
+  }
+
+  fetchById(
+    projectId: string,
+    scenarioRunId: string
+  ): Observable<ScenarioRunApiResponse> {
+    return this.http
+      .get<ScenarioRunApiResponse>(
+        `${this.getBaseUrl(projectId)}/${scenarioRunId}`
+      )
       .pipe(catchError((error) => throwError(() => new Error(error.error))));
   }
 
@@ -65,6 +81,31 @@ export class ScenarioRunService {
       .pipe(catchError((error) => throwError(() => new Error(error.error))));
   }
 
+  runScenario(
+    projectId: string,
+    request: RunScenarioRequest
+  ): Observable<RunScenarioResponse> {
+    const body = {
+      scenarioDefinitionId: request.scenarioDefinitionId,
+      subContextId: request.subContextId,
+      branchName: request.branchName,
+      fullMaintenance: false,
+      executionGroupId: request.executionGroupId,
+      machineGroupId: request.machineGroupId,
+      disableKeepExecution: request.disableKeepExecution,
+      disableConfigurationEditor: request.disableConfigurationEditor,
+      supportReconActivities: request.supportReconActivities,
+      stopServices: request.stopServices,
+      validationScopeEnabled: request.validationScopeEnabled,
+      incidentEnabled: request.incidentEnabled,
+      qualityLevel: request.qualityLevel,
+    };
+
+    return this.http
+      .post<RunScenarioResponse>(`${this.getBaseUrl(projectId)}/execute`, body)
+      .pipe(catchError((error) => throwError(() => new Error(error.message))));
+  }
+
   updateAssignee(
     projectId: string,
     request: UpdateAssigneeRequest
@@ -93,6 +134,23 @@ export class ScenarioRunService {
         `${this.config.gatewayUrl}projects/${projectId}/test-execution-manager/execution-group/${executionGroupId}/scenario-execution/${scenarioRunId}/can-repush`
       )
       .pipe(catchError((error) => throwError(() => new Error(error.error))));
+  }
+
+  isExecutionAllowed(
+    projectId: string,
+    executionGroupId: string
+  ): Observable<ScenarioRunPermission> {
+    return this.http
+      .get<ScenarioRunPermission>(
+        `${this.config.gatewayUrl}projects/${projectId}/test-execution-manager/execution-group/${executionGroupId}/scenario-execution/can-push`
+      )
+      .pipe(
+        catchError(() =>
+          throwError(
+            () => new Error("Failed to fetch scenario executions allowed")
+          )
+        )
+      );
   }
 
   bulkRerun(

@@ -132,7 +132,7 @@ graph LR
   helper "The card will be displaying the most recent run of each TPK…"; empty state = illustration
   "There are no run Results"; populated = `scenario-runs` TPK cards with **Show Previous Runs ▾** expander.
 - **Reuse:** `environment-status-panel` (slot); `mxevolve-scenario-runs` (TPK Results + history);
-  `RunScenarioDropdownComponent` (`@mxflow/test-management`) for Select/Run TPK; the existing
+  domain-owned `mxevolve-build-and-test-run-tpk` for Select/Run TPK; the existing
   `environment-config-audit` button + models as the **source to port**.
 - **Build (data-access, OQ2/OQ4):** new `SystematicConfigAuditService` + models under
   `domains/environment/data-access/.../systematic-config-audit/`; **unit test + `*.spec.pact.ts`** (verify

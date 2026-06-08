@@ -1,6 +1,6 @@
 import { inject, Injectable } from "@angular/core";
 import { Router } from "@angular/router";
-import { CI_PROCESS_MFE_PATH } from "@mxevolve/shared/core/config";
+import { BUILD_AND_TEST_PROCESS_PATH } from "@mxevolve/shared/core/config";
 
 @Injectable()
 export class BuildAndTestProcessStateUpdaterService {
@@ -10,7 +10,7 @@ export class BuildAndTestProcessStateUpdaterService {
     setTimeout(() => {
       this.router
         .navigateByUrl(
-          `/app/${projectId}/business-process/${CI_PROCESS_MFE_PATH}/execution/${processId}`
+          `/app/${projectId}/business-process/${BUILD_AND_TEST_PROCESS_PATH}/execution/${processId}`
         )
         .then(() => window.location.reload());
     }, delay);

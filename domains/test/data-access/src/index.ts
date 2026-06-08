@@ -7,6 +7,11 @@ export { TestSequenceService } from "./lib/test-sequence/test-sequence.service";
 export type { BulkRerunRequest } from "./lib/scenario-run/bulk-rerun-request.model";
 export type { BulkRerunResponse } from "./lib/scenario-run/bulk-rerun-response.model";
 export type {
+  RunScenarioRequest,
+  RunScenarioResponse,
+  ScenarioRunPermission,
+} from "./lib/scenario-run/run-scenario-request.model";
+export type {
   ScenarioDefinitionApiResponse,
   TestDefinitionApiResponse,
 } from "./lib/api-models/scenario-definition-api-response";

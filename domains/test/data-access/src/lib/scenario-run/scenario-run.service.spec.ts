@@ -12,9 +12,12 @@ import type { ScenarioRunApiResponse } from "../api-models/scenario-run-api-resp
 const GATEWAY_URL = "https://api.test.com/";
 const PROJECT_ID = "project-1";
 const SCENARIO_RUN_ID = "scenario-run-1";
+const EXECUTION_GROUP_ID = "execution-group-1";
 const BASE_URL = `${GATEWAY_URL}projects/${PROJECT_ID}/test-execution-manager/scenario-executions`;
 const REPUSH_URL = `${BASE_URL}/${SCENARIO_RUN_ID}/repush`;
 const BULK_REPUSH_URL = `${BASE_URL}/repush/bulk`;
+const EXECUTE_URL = `${BASE_URL}/execute`;
+const CAN_PUSH_URL = `${GATEWAY_URL}projects/${PROJECT_ID}/test-execution-manager/execution-group/${EXECUTION_GROUP_ID}/scenario-execution/can-push`;
 
 const MOCK_API_RESPONSE: ScenarioRunApiResponse = {
   id: "run-1",
@@ -233,6 +236,87 @@ describe("ScenarioRunService", () => {
         });
 
       await expect(resultPromise).rejects.toThrow("Internal server error");
+    });
+  });
+
+  describe("fetchById", () => {
+    it("fetches a scenario run by id", async () => {
+      const resultPromise = firstValueFrom(
+        service.fetchById(PROJECT_ID, SCENARIO_RUN_ID)
+      );
+
+      httpController
+        .expectOne(`${BASE_URL}/${SCENARIO_RUN_ID}`)
+        .flush(MOCK_API_RESPONSE);
+
+      expect(await resultPromise).toEqual(MOCK_API_RESPONSE);
+    });
+  });
+
+  describe("runScenario", () => {
+    it("posts the legacy scenario execution request body", async () => {
+      const resultPromise = firstValueFrom(
+        service.runScenario(PROJECT_ID, {
+          scenarioDefinitionId: "scenario-definition-1",
+          subContextId: "BUILD_AND_TEST",
+          branchName: "feature/temp-branch",
+          commitId: null,
+          executionGroupId: EXECUTION_GROUP_ID,
+          machineGroupId: "infra-group-1",
+          disableKeepExecution: true,
+          stopServices: true,
+          disableConfigurationEditor: false,
+          supportReconActivities: false,
+          validationScopeEnabled: false,
+          incidentEnabled: false,
+          qualityLevel: "MQG",
+        })
+      );
+
+      const request = httpController.expectOne(EXECUTE_URL);
+      expect(request.request.method).toBe("POST");
+      expect(request.request.body).toEqual({
+        scenarioDefinitionId: "scenario-definition-1",
+        subContextId: "BUILD_AND_TEST",
+        branchName: "feature/temp-branch",
+        fullMaintenance: false,
+        executionGroupId: EXECUTION_GROUP_ID,
+        machineGroupId: "infra-group-1",
+        disableKeepExecution: true,
+        disableConfigurationEditor: false,
+        supportReconActivities: false,
+        stopServices: true,
+        validationScopeEnabled: false,
+        incidentEnabled: false,
+        qualityLevel: "MQG",
+      });
+      request.flush({ testExecutionId: "test-execution-1" });
+
+      expect(await resultPromise).toEqual({
+        testExecutionId: "test-execution-1",
+      });
+    });
+  });
+
+  describe("isExecutionAllowed", () => {
+    it("checks whether the execution group can push a scenario run", async () => {
+      const resultPromise = firstValueFrom(
+        service.isExecutionAllowed(PROJECT_ID, EXECUTION_GROUP_ID)
+      );
+
+      const request = httpController.expectOne(CAN_PUSH_URL);
+      expect(request.request.method).toBe("GET");
+      request.flush({
+        actionAllowed: true,
+        rejectionReasons: [],
+        warnings: [],
+      });
+
+      expect(await resultPromise).toEqual({
+        actionAllowed: true,
+        rejectionReasons: [],
+        warnings: [],
+      });
     });
   });
 
