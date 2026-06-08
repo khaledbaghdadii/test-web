@@ -1,0 +1,100 @@
+// ─── Monaco conflict editor: decorations & inline widgets ───────────────────
+
+.conflict-marker {
+  opacity: 1 !important;
+
+  &--head {
+    background: color-mix(in srgb, var(--p-green-500, #28a745) 25%, transparent);
+    color: var(--p-text-muted-color, #6a737d);
+    font-style: italic;
+  }
+
+  &--separator {
+    background: color-mix(in srgb, var(--p-surface-500, #6c757d) 20%, transparent);
+    color: var(--p-text-muted-color, #6a737d);
+    font-style: italic;
+  }
+
+  &--end {
+    background: color-mix(in srgb, var(--p-blue-500, #007bff) 25%, transparent);
+    color: var(--p-text-muted-color, #6a737d);
+    font-style: italic;
+  }
+}
+
+.conflict-range {
+  &--current {
+    background: color-mix(in srgb, var(--p-green-500, #28a745) 10%, transparent);
+  }
+
+  &--incoming {
+    background: color-mix(in srgb, var(--p-blue-500, #007bff) 10%, transparent);
+  }
+}
+
+.conflict-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  line-height: 1;
+  border-radius: 6px;
+  background: var(--p-surface-0, #ffffff);
+  position: relative;
+  z-index: 5;
+
+  &__action {
+    all: unset;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+
+    &:hover {
+      text-decoration: none;
+    }
+
+    &--current {
+      color: var(--p-green-500, #28a745);
+
+      &:hover {
+        background: color-mix(in srgb, var(--p-green-500, #28a745) 12%, transparent);
+        border-color: color-mix(in srgb, var(--p-green-500, #28a745) 30%, transparent);
+      }
+    }
+
+    &--incoming {
+      color: var(--p-blue-500, #007bff);
+
+      &:hover {
+        background: color-mix(in srgb, var(--p-blue-500, #007bff) 12%, transparent);
+        border-color: color-mix(in srgb, var(--p-blue-500, #007bff) 30%, transparent);
+      }
+    }
+
+    &--both {
+      color: var(--p-amber-600, #d68a00);
+
+      &:hover {
+        background: color-mix(in srgb, var(--p-amber-600, #d68a00) 12%, transparent);
+        border-color: color-mix(in srgb, var(--p-amber-600, #d68a00) 30%, transparent);
+      }
+    }
+  }
+
+  &__separator {
+    color: var(--p-text-muted-color, #6a737d);
+    font-weight: bold;
+    user-select: none;
+  }
+}
+
+.conflict-widget-zone {
+  pointer-events: none;
+}

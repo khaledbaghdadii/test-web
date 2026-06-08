@@ -1,0 +1,80 @@
+<p-confirmDialog [key]="confirmKey" class="dialog-cols-4" />
+
+@if (iconOnly()) {
+<p-button
+  [rounded]="true"
+  [text]="true"
+  [loading]="loading()"
+  ariaLabel="Services"
+  pTooltip="Services"
+  tooltipPosition="top"
+  (onClick)="menu.toggle($event)"
+  data-testid="services-button-trigger"
+>
+  <ng-template #icon let-class="class">
+    <mxevolve-icon name="play_circle" size="md" [class]="class" />
+  </ng-template>
+</p-button>
+} @else {
+<p-button
+  [text]="true"
+  severity="primary"
+  [loading]="loading()"
+  (onClick)="menu.toggle($event)"
+  data-testid="services-button-trigger"
+>
+  <span pButtonLabel>Services</span>
+  <mxevolve-icon pButtonIcon name="keyboard_arrow_down" size="sm" />
+</p-button>
+}
+
+<p-tieredmenu
+  #menu
+  [model]="menuItems()"
+  [popup]="true"
+  appendTo="body"
+  data-testid="services-button-menu"
+>
+  <ng-template #item let-item>
+    <ng-container
+      [ngTemplateOutlet]="servicesItemTemplate"
+      [ngTemplateOutletContext]="{ $implicit: item, menu: menu }"
+    />
+  </ng-template>
+</p-tieredmenu>
+
+<ng-template #servicesItemTemplate let-item>
+  @if (item['type'] === 'toggle') {
+  <div class="flex items-center gap-2 px-3 py-2">
+    <p-toggleswitch
+      [ngModel]="!excludeFromShutdown()"
+      [ariaLabel]="item.label"
+      (onChange)="handleToggle($event.checked)"
+      [disabled]="toggleDisabled()"
+      data-testid="shutdown-toggle"
+    />
+    <span class="text-sm">{{ item.label }}</span>
+  </div>
+  } @else {
+  <a
+    class="flex items-center gap-2 px-3 py-2"
+    [class.opacity-50]="item.disabled || !item.command"
+    [class.cursor-pointer]="!item.disabled && item.command"
+    [pTooltip]="item.tooltip"
+    [tooltipDisabled]="!item.tooltip"
+    tooltipPosition="left"
+    [attr.data-testid]="'menu-item-' + item.id"
+  >
+    @if (item['iconName']) {
+    <mxevolve-icon [name]="item['iconName']" size="sm" />
+    }
+    <span>{{ item.label }}</span>
+  </a>
+  }
+</ng-template>
+
+<mxevolve-view-environment-services-dialog
+  [projectId]="projectId()"
+  [environmentId]="environmentId()"
+  [(visible)]="viewServicesDialogVisible"
+/>

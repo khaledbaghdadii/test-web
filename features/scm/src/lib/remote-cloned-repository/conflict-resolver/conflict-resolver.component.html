@@ -1,0 +1,24 @@
+<a
+  data-testid="open-conflict-resolver-link"
+  class="font-semibold underline cursor-pointer text-primary"
+  (click)="openDialog()"
+>
+  Open MxTest Conflict Resolver
+</a>
+
+<p-dialog
+  header="Conflict Resolver"
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [style]="{ width: '85vw', height: '100vh' }"
+  [dismissableMask]="true"
+>
+  @if (dialogVisible) {
+  <mxtest-conflict-resolver
+    [conflictsResultString]="conflictResultsString"
+    (conflictsResultUpdated)="onConflictsResultUpdated($event)"
+    (applyAllChanges)="onApplyAllChanges()"
+  >
+  </mxtest-conflict-resolver>
+  }
+</p-dialog>

@@ -1,0 +1,51 @@
+@if (loading()) {
+<div class="flex flex-col gap-2" data-testid="changed-files-skeleton">
+  <p-skeleton width="6rem" height="1rem" />
+  <div class="border border-surface-d rounded">
+    @for (_ of [1, 2, 3]; track $index) {
+    <div class="flex items-center gap-2 px-3 py-1.5">
+      <p-skeleton width="1rem" height="1rem" />
+      <p-skeleton width="60%" height="1rem" />
+      <p-skeleton styleClass="ml-auto" width="30%" height="0.75rem" />
+    </div>
+    }
+  </div>
+</div>
+} @else if (files().length > 0) {
+<div class="flex flex-col gap-2" data-testid="changed-files-section">
+  <span class="text-sm font-medium text-color-secondary">
+    Changes ({{ files().length }})
+  </span>
+  <div
+    class="border border-surface-d rounded overflow-auto"
+    style="max-height: 200px"
+    data-testid="changed-files-list"
+  >
+    @for (file of files(); track file.filePath) {
+    <div
+      class="flex items-center gap-2 px-3 py-1.5 hover:bg-surface-hover text-sm"
+      data-testid="changed-file-entry"
+    >
+      <span
+        class="font-mono font-bold w-4 text-center shrink-0"
+        [class]="file.colorClass"
+        data-testid="changed-file-status"
+      >
+        {{ file.label }}
+      </span>
+      <span class="truncate shrink-0 max-w-[60%]" [title]="file.filePath">
+        {{ file.fileName }}
+      </span>
+      @if (file.directory) {
+      <span
+        class="text-gray-400 text-xs truncate ml-auto min-w-0"
+        [title]="file.directory"
+      >
+        {{ file.directory }}
+      </span>
+      }
+    </div>
+    }
+  </div>
+</div>
+}

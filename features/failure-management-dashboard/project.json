@@ -1,0 +1,16 @@
+{
+  "name": "features-failure-management-dashboard",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/failure-management-dashboard/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/features/failure-management-dashboard/jest.config.ts"
+      }
+    }
+  }
+}

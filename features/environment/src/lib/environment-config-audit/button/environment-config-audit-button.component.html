@@ -1,0 +1,18 @@
+@if (showDropdown) {
+<p-splitbutton
+  label="Config Audit"
+  [model]="dropdownItems"
+  [severity]="buttonSeverity"
+  [disabled]="loading"
+  [pTooltip]="tooltipMessage"
+  [tooltipDisabled]="!tooltipMessage"
+></p-splitbutton>
+} @else {
+<p-button
+  label="Config Audit"
+  [severity]="buttonSeverity"
+  [loading]="loading"
+  [pTooltip]="tooltipMessage"
+  [tooltipDisabled]="!tooltipMessage"
+></p-button>
+}

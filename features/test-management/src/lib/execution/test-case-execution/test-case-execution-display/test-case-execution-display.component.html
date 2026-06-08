@@ -1,0 +1,16 @@
+@if (testCaseExecutions && testCaseExecutions.length > 0) {
+<span
+  data-testid="test-case-executions"
+  [pTooltip]="testCaseExecutions | testCaseExecutionDisplay"
+>
+  @for (execution of testCaseExecutions; track execution.id; let last = $last) {
+  {{ execution.title }} (<a
+    class="p-button-link"
+    [href]="functionalTestCaseBaseUrl + execution.functionalTestCaseId"
+    target="_blank"
+    rel="noopener noreferrer"
+    >{{ execution.functionalTestCaseId }}</a
+  >){{ last ? "" : "," }}
+  }
+</span>
+} @else { - }

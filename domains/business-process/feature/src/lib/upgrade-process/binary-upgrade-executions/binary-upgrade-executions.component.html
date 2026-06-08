@@ -1,0 +1,10 @@
+<p-card>
+  <mxevolve-binary-upgrade-executions-table
+    [executions]="executions"
+    [projectId]="projectId"
+    [isLoading]="isLoading"
+    [totalRecords]="totalRecords"
+    [businessProcessDefinitions]="businessProcessDefinitions"
+    (paginationParamsChangeEmitter)="filtersChanged($event)"
+  ></mxevolve-binary-upgrade-executions-table>
+</p-card>

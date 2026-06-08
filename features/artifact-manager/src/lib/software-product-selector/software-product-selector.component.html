@@ -1,0 +1,143 @@
+<div class="flex flex-col gap-2">
+  <label [class.required]="required" for="mxVersion">MX Version</label>
+  <p-select
+    #mxVersion
+    id="mxVersion"
+    [options]="mxVersionDropdown"
+    optionLabel="label"
+    appendTo="body"
+    optionValue="value"
+    [(ngModel)]="selectedMxVersion"
+    (ngModelChange)="onSelectMxVersion($event)"
+    [virtualScroll]="true"
+    [virtualScrollItemSize]="itemHeight"
+    [virtualScrollOptions]="{
+                      lazy: true,
+                      step: itemsStep,
+                      onLazyLoad: handleMxVersionScroll,
+                      scrollHeight: mxVersionDropdownHeight(),
+                    }"
+    [filter]="true"
+    [showClear]="true"
+    (onClear)="clearMxVersionSearchKey($event)"
+    (onShow)="onPanelShow(mxVersion)"
+    styleClass="w-full my-2"
+    placeholder="Select MX Version"
+    [loading]="isSearchingForMxVersion"
+  >
+    <ng-template #selectedItem>
+      <span
+        class="flex items-center gap-2 p-dropdown-label"
+        *ngIf="this.selectedMxVersion"
+        >{{ this.selectedMxVersion }}</span
+      >
+    </ng-template>
+
+    <ng-template pTemplate="filter" let-options="options">
+      <p-iconfield class="p-fluid w-full">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          type="text"
+          [(ngModel)]="mxVersionSearchKey"
+          pInputText
+          placeholder="Search"
+          (ngModelChange)="onMxVersionSearchKeyChange($event)"
+          class="w-full"
+        />
+        <p-inputicon
+          *ngIf="mxVersionSearchKey"
+          styleClass="pi pi-times cursor-pointer"
+          (click)="clearMxVersionSearchKey($event)"
+          (keydown)="clearMxVersionSearchKey($event)"
+        ></p-inputicon>
+      </p-iconfield>
+    </ng-template>
+    <ng-template #footer>
+      <div
+        *ngIf="isSearchingForMxVersion"
+        style="
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 10px;
+        "
+      >
+        <i class="pi pi-spinner pi-spin"></i>
+      </div>
+    </ng-template>
+  </p-select>
+
+  <div
+    *ngIf="selectedMxVersion"
+    style="padding-left: 15px"
+    class="flex flex-col gap-2"
+  >
+    <label [class.required]="required" for="mxBuildId">MX Build ID</label>
+    <p-select
+      #mxBuildId
+      id="mxBuildId"
+      [options]="mxBuildIdDropdown"
+      optionLabel="label"
+      appendTo="body"
+      optionValue="value"
+      [(ngModel)]="selectedMxBuildId"
+      (ngModelChange)="onSelectMxBuildId($event)"
+      [virtualScroll]="true"
+      [virtualScrollItemSize]="itemHeight"
+      [virtualScrollOptions]="{
+        lazy: true,
+        step: itemsStep,
+        onLazyLoad: handleMxBuildScroll,
+        scrollHeight: mxBuildIdDropdownHeight()
+      }"
+      [filter]="true"
+      [showClear]="true"
+      (onClear)="clearMxBuildSearchKey($event)"
+      (onShow)="onPanelShow(mxBuildId)"
+      [loading]="isSearchingForMxBuild"
+      styleClass="w-full my-2"
+      placeholder="Select MX Build ID"
+    >
+      <ng-template #selectedItem>
+        <span
+          [attr.data-testid]="'selectedMxVersion'"
+          class="flex items-center gap-2 p-dropdown-label"
+          *ngIf="this.selectedMxBuildId"
+          >{{ getMxBuildIdLabel(this.selectedMxBuildId) }}</span
+        >
+      </ng-template>
+      <ng-template pTemplate="filter" let-options="options">
+        <p-iconfield class="p-fluid w-full">
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            type="text"
+            [(ngModel)]="mxBuildSearchKey"
+            pInputText
+            placeholder="Search"
+            (ngModelChange)="onMxBuildSearchKeyChange($event)"
+            class="w-full"
+          />
+          <p-inputicon
+            *ngIf="mxBuildSearchKey"
+            styleClass="pi pi-times cursor-pointer"
+            (click)="clearMxBuildSearchKey($event)"
+            (keydown)="clearMxBuildSearchKey($event)"
+          ></p-inputicon>
+        </p-iconfield>
+      </ng-template>
+      <ng-template #footer>
+        <div
+          *ngIf="isSearchingForMxBuild"
+          style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+          "
+        >
+          <i class="pi pi-spinner pi-spin"></i>
+        </div>
+      </ng-template>
+    </p-select>
+  </div>
+</div>

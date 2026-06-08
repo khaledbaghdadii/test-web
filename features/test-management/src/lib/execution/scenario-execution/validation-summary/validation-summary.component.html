@@ -1,0 +1,103 @@
+<mxflow-header-title>Validation Summary</mxflow-header-title>
+<div class="grid grid-cols-12 gap-4">
+  <div class="col-span-6 pb-6 pr-6">
+    <div class="text-color font-medium mb-2 text-lg">
+      Scenario Status Summary
+    </div>
+    <mxevolve-horizontal-stacked-bar
+      [stackedBarItems]="scenarioStatusSummaryStackedBarItems"
+      [isLoading]="loading"
+    ></mxevolve-horizontal-stacked-bar>
+  </div>
+
+  <div
+    class="col-span-6 pb-6 pl-6"
+    id="aggregated-detections"
+    *showElementIfAuthorized="{
+      action: 'view',
+      attributes: {},
+      package: 'web',
+      resource: 'analysis_object'
+    }"
+  >
+    <div class="text-color font-medium mb-2 text-lg">Aggregated Detections</div>
+    <div class="flex justify-between flex-wrap">
+      <div>
+        <p class="text-surface-500 dark:text-surface-300 text-sm italic mb-2">
+          This is the aggregation of all the detections linked in this
+          validation
+        </p>
+        <mxevolve-validation-detections-summary
+          [scenarioDetections]="scenarioDetections"
+          [isLoading]="loading"
+        ></mxevolve-validation-detections-summary>
+      </div>
+      <a
+        class="p-button-link"
+        [routerLink]="'/global-operations/detections'"
+        [queryParams]="{ businessProcessExecutionNamePhrase: bpExecutionName }"
+        target="_blank"
+      >
+        View Details >
+      </a>
+    </div>
+  </div>
+
+  <div
+    id="analysis-status-summary"
+    class="col-span-6 pr-6"
+    *showElementIfAuthorized="{
+      action: 'read_analysis_status',
+      attributes: {},
+      package: 'test',
+      resource: 'scenario_execution'
+    }"
+  >
+    <div class="text-color font-medium mb-2 text-lg">
+      Scenario Analysis Status Summary
+    </div>
+    <mxevolve-horizontal-stacked-bar
+      [stackedBarItems]="analysisStatusSummaryStackedBarItems"
+      [isLoading]="loading"
+    ></mxevolve-horizontal-stacked-bar>
+  </div>
+
+  <div
+    id="aggregated-incidents"
+    *showElementIfAuthorized="{
+      action: 'view',
+      attributes: {},
+      package: 'web',
+      resource: 'analysis_object'
+    }"
+    class="col-span-6 pl-6"
+  >
+    <div>
+      <div class="text-color font-medium mb-2 text-lg">
+        Aggregated Incidents
+      </div>
+      <div class="flex justify-between flex-wrap">
+        <div>
+          <p class="text-surface-500 dark:text-surface-300 text-sm italic mb-2">
+            This is the aggregation of all the incidents linked in this
+            validation
+          </p>
+          <mxevolve-incidents-summary
+            [incidentSummary]="incidentSummary"
+            [isLoading]="loading"
+          ></mxevolve-incidents-summary>
+        </div>
+        <a
+          class="p-button-link"
+          [routerLink]="'/global-operations/incidents'"
+          [queryParams]="{
+            businessProcessExecutionNamePhrase: bpExecutionName
+          }"
+          target="_blank"
+        >
+          View Details >
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

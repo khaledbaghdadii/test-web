@@ -1,0 +1,240 @@
+<p-dialog
+  [modal]="true"
+  [(visible)]="isSyncFinalProductModalOpen"
+  [style]="{ width: '40vw' }"
+  [closeOnEscape]="true"
+  (onHide)="closeSyncFinalProductForm()"
+>
+  <ng-template #header>
+    <strong class="text-2xl"> Enter Final Product Details </strong>
+  </ng-template>
+  <form [formGroup]="syncFinalProductForm">
+    <div class="grid grid-cols-12 gap-4">
+      <div class="col-span-10 col-start-2 flex flex-col gap-6">
+        <div class="flex flex-col gap-1">
+          <mxflow-mandatory-field></mxflow-mandatory-field>
+          <label
+            for="infraGroup"
+            data-testid="infraGroupLabel"
+            mxevolveMandatory
+          >
+            Infra Group
+          </label>
+          <mxevolve-group-dropdown-selection
+            id="infraGroup"
+            formControlName="infraGroup"
+            [projectId]="projectId()"
+          ></mxevolve-group-dropdown-selection>
+          <small
+            >The Infra group whose machine will be used to package the final
+            product.</small
+          >
+          @if (isFieldInvalid('infraGroup')) {
+          <div class="input-error mt-2">
+            <div class="flex gap-1">
+              <small class="p-error block text-red-500"
+                >Infra group is required</small
+              >
+            </div>
+          </div>
+          }
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label
+            for="environmentDefinitionId"
+            data-testid="environmentDefinitionLabel"
+            mxevolveMandatory
+          >
+            Environment Definitions
+          </label>
+
+          <mxevolve-environment-multi-select-input
+            id="environmentDefinitionId"
+            [projectId]="projectId()"
+            formControlName="environmentDefinitions"
+            (selectedEnvironmentsChange)="
+              onEnvironmentDefinitionSelected($event)
+            "
+          ></mxevolve-environment-multi-select-input>
+          <small id="environmentDefinitionId-help"
+            >The profile to be packaged within the final product package.</small
+          >
+          @if (isFieldInvalid('environmentDefinitions')) {
+          <div class="input-error mt-2">
+            <div class="flex gap-1">
+              <small class="p-error block text-red-500"
+                >Profile or Environment definition is required</small
+              >
+            </div>
+          </div>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2">
+            <label for="lightPackage" data-testid="lightPackageLabel"
+              >Light Package</label
+            >
+            <i
+              class="pi pi-info-circle text-sm text-secondary"
+              [pTooltip]="lightPackageInfoMessage"
+              data-testid="lightPackageInfoIcon"
+            ></i>
+          </div>
+          <div class="mt-2">
+            <p-toggleSwitch
+              inputId="lightPackage"
+              formControlName="lightPackage"
+              data-testid="lightPackageToggle"
+            ></p-toggleSwitch>
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="storageType" mxevolveMandatory>Storage</label>
+          <p-select
+            id="storageType"
+            class="p-fluid"
+            formControlName="storageType"
+            [options]="supportedStorageTypes"
+          >
+          </p-select>
+        </div>
+
+        @if (syncFinalProductForm.get('storageType')?.value === 'nfs') {
+        <div class="flex flex-col gap-1">
+          <label
+            for="directoryName"
+            data-testid="directoryNameLabel"
+            class="mb-0"
+          >
+            Directory Name
+          </label>
+          <input
+            pInputText
+            id="directoryName"
+            formControlName="directoryName"
+            placeholder="Enter Directory Name"
+          />
+          <small
+            >The location to store the final product package under the
+            storage.</small
+          >
+          @if (isFieldInvalid('directoryName')) {
+          <div class="input-error mt-2">
+            <div class="flex gap-1">
+              @if (syncFinalProductForm.get('directoryName')
+              ?.hasError('noSpaces')) {
+              <small
+                data-testid="directoryNameError"
+                class="p-error block text-red-500"
+              >
+                Directory Name must not contain spaces.
+              </small>
+              }
+            </div>
+          </div>
+          }
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="packageName" data-testid="packageNameLabel"
+            >Package Name</label
+          >
+          <input
+            pInputText
+            id="packageName"
+            formControlName="packageName"
+            placeholder="Enter Package Name"
+          />
+          <small
+            >A name to be given to this final product package. By default, the
+            package name will be <i>profile-version.zip</i>.</small
+          >
+          @if (isFieldInvalid('packageName')) {
+          <div class="input-error mt-2">
+            <div class="flex gap-1">
+              @if
+              (syncFinalProductForm.get('packageName')?.hasError('noSpaces')) {
+              <small
+                data-testid="packageNameError"
+                class="p-error block text-red-500"
+              >
+                Package Name must not contain spaces.
+              </small>
+              }
+            </div>
+          </div>
+          }
+        </div>
+        } @if (syncFinalProductForm.get('storageType')?.value === 'nexus3') {
+        <div class="flex flex-col gap-1">
+          <label for="groupId" data-testid="groupIdLabel" mxevolveMandatory
+            >Group Id</label
+          >
+          <input
+            id="groupId"
+            pInputText
+            formControlName="groupId"
+            [readonly]="true"
+          />
+          <small
+            >The Maven group identifier for this Final Product. This value is
+            set automatically and cannot be changed.</small
+          >
+        </div>
+        <div class="flex flex-col gap-1">
+          <label
+            for="artifactId"
+            data-testid="artifactIdLabel"
+            mxevolveMandatory
+            >Artifact Id</label
+          >
+          <input
+            id="artifactId"
+            pInputText
+            formControlName="artifactId"
+            [readonly]="true"
+          />
+          <small
+            >The Maven artifact name for this Final Product. This value is set
+            automatically and cannot be changed.</small
+          >
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="version" data-testid="versionLabel" mxevolveMandatory
+            >Version</label
+          >
+          <input
+            pInputText
+            id="version"
+            formControlName="version"
+            placeholder="Enter Version"
+          />
+          <small>The version number for this Final Product.</small>
+          @if (isFieldInvalid('version')) {
+          <div class="input-error mt-2">
+            <div class="flex gap-1">
+              <small
+                class="p-error block text-red-500"
+                data-testid="versionError"
+                >Version is required</small
+              >
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+    <div class="flex justify-center mt-4">
+      <p-button
+        type="submit"
+        label="Publish"
+        styleClass="px-4"
+        data-testid="syncButton"
+        [disabled]="syncFinalProductForm.invalid || !syncFinalProductForm.dirty"
+        (onClick)="syncFinalProduct()"
+        [loading]="isLoading()"
+      />
+    </div>
+  </form>
+</p-dialog>

@@ -1,0 +1,36 @@
+<div class="surface-card p-4 border-round shadow-1">
+  <div class="text-xl font-bold text-surface-900 dark:text-surface-0 mb-4">
+    {{ displayTitle() }}
+  </div>
+  @if (isMergedWithPr()) {
+  <ag-grid-angular
+    class="w-full"
+    [rowData]="prCommits()"
+    [columnDefs]="colDefs"
+    [defaultColDef]="defaultColDef"
+    [noRowsOverlayComponent]="noRowsOverlayComponent"
+    [noRowsOverlayComponentParams]="noRowsOverlayComponentParams"
+    [loadingOverlayComponent]="loadingOverlayComponent"
+    [loading]="prCommitsResource.isLoading()"
+    domLayout="autoHeight"
+  />
+  } @else if (isDeleted()) {
+  <ag-grid-angular
+    class="w-full"
+    [rowData]="[]"
+    [columnDefs]="colDefs"
+    [defaultColDef]="defaultColDef"
+    [noRowsOverlayComponent]="noRowsOverlayComponent"
+    [noRowsOverlayComponentParams]="noRowsOverlayComponentParams"
+    domLayout="autoHeight"
+  />
+  } @else {
+  <mxevolve-paginated-commits-difference
+    [projectId]="development().projectId"
+    [repositoryId]="development().repository.id"
+    [source]="development().name"
+    [destination]="development().source ?? ''"
+    [noRowsMessage]="'No commits on this branch'"
+  />
+  }
+</div>

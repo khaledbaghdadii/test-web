@@ -1,0 +1,15 @@
+@if (iconNotFound) { } @else if (iconUrl) {
+<img
+  class="mxevolve-icon__custom-svg"
+  [src]="iconUrl"
+  [alt]="ariaLabel() ?? ''"
+  [attr.aria-hidden]="ariaLabel() ? null : true"
+/>
+} @else {
+<span
+  class="mxevolve-icon__material material-symbols-rounded"
+  [attr.aria-label]="ariaLabel()"
+  [attr.aria-hidden]="ariaLabel() ? null : true"
+  >{{ materialName }}</span
+>
+}

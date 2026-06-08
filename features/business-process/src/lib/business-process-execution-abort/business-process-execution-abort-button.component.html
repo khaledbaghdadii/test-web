@@ -1,0 +1,74 @@
+@if (iconButton) {
+<p-button
+  icon="pi pi-power-off"
+  [rounded]="true"
+  [text]="true"
+  severity="danger"
+  size="large"
+  [disabled]="executionNotAbortable || disabled"
+  (onClick)="openAbortDialog($event)"
+  pTooltip="Abort"
+  tooltipPosition="top"
+  [loading]="isLoading"
+></p-button>
+} @else {
+<p-button
+  severity="danger"
+  size="large"
+  [disabled]="executionNotAbortable || disabled"
+  (onClick)="openAbortDialog($event)"
+  label="Abort"
+  [loading]="isLoading"
+></p-button>
+}
+
+<p-confirmDialog [key]="`${processId}-abort-dialog`">
+  <ng-template #message>
+    <div class="flex flex-col gap-4">
+      <div
+        class="flex items-center w-full border-b border-surface-100 dark:border-surface-700 pb-4"
+      >
+        <i
+          class="pi pi-power-off text-5xl mx-6 text-red-500 dark:text-red-400"
+        ></i>
+        <div class="max-w-md">
+          <p>Are you sure you want to abort the process?</p>
+          <p>
+            This action will end the business process, prevent further actions,
+            and clean all its resources, including environments and test
+            executions.
+          </p>
+        </div>
+      </div>
+
+      @if (developmentId) {
+      <div
+        class="border border-red-500 rounded-md px-4 py-3 col-span-10 col-start-2 flex flex-col gap-2"
+      >
+        <div class="flex items-center">
+          <i class="pi pi-exclamation-triangle text-red-500 mr-2 text-2xl"></i>
+
+          <p-checkbox
+            inputId="deleteDevelopment"
+            binary="true"
+            [formControl]="deleteDevelopmentFormControl"
+          ></p-checkbox>
+
+          <label for="deleteDevelopment" class="ml-2">
+            Delete branch
+            <b>{{
+              projectId | branchNameByDevelopment : developmentId | async
+            }}</b>
+            when process is aborted
+          </label>
+        </div>
+
+        <small class="mt-1 block text-xs">
+          Note: If the branch is used by another process, it will not be
+          deleted.
+        </small>
+      </div>
+      }
+    </div>
+  </ng-template>
+</p-confirmDialog>

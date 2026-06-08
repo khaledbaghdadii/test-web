@@ -1,0 +1,31 @@
+<form [formGroup]="form" class="field">
+  @if(showLabel) {
+  <label for="maintenanceConfiguration" mxevolveMandatory
+    >Maintenance Level</label
+  >
+  }
+
+  <p-select
+    class="p-fluid w-full"
+    id="maintenanceConfiguration"
+    formControlName="maintenanceConfiguration"
+    [options]="maintenanceLevels"
+    optionLabel="key"
+    optionValue="value"
+    placeholder="Select Maintenance Level"
+    appendTo="body"
+    [showClear]="true"
+  >
+    <ng-template let-item pTemplate="item">
+      <div class="flex items-center gap-2">
+        <span class="font-medium">{{ item.key }}</span>
+      </div>
+    </ng-template>
+
+    <ng-template let-selected pTemplate="selectedItem">
+      <div class="flex items-center">
+        <span>{{ selected?.key }}</span>
+      </div>
+    </ng-template>
+  </p-select>
+</form>

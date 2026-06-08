@@ -1,0 +1,29 @@
+<div class="flex w-full items-center">
+  @switch (status) { @case(UpdateReferenceStatus.PASSED) {
+  <div id="update-reference-passed-status" class="flex items-center">
+    <i class="text-green-500 pi pi-check-circle"></i>
+    <h4 class="pl-2 m-0">Passed</h4>
+  </div>
+  } @case(UpdateReferenceStatus.FAILED) {
+  <div id="update-reference-failed-status" class="flex items-center">
+    <i class="text-red-500 pi pi-times-circle"></i>
+    <h4 class="pl-2 m-0">Failed</h4>
+  </div>
+  } @case(UpdateReferenceStatus.UNDERWAY) {
+  <div id="update-reference-underway-status" class="flex items-center">
+    <i class="text-orange-400 pi pi-clock"></i>
+    <h4 class="pl-2 m-0">Underway</h4>
+  </div>
+
+  } @case(UpdateReferenceStatus.QUEUED) {
+  <div id="update-reference-queued-status" class="flex items-center">
+    <i class="-500 pi pi-list"></i>
+    <h4 class="pl-2 m-0">Queued</h4>
+  </div>
+
+  } @default {
+  <div id="update-reference-unknown-status">
+    <h4 class="pl-2 m-0">{{ status }}</h4>
+  </div>
+  } }
+</div>

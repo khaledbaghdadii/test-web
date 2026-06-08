@@ -1,0 +1,112 @@
+@if(loading()) {
+<div>LOADING SCREEN COMING SOON</div>
+} @else {
+<div class="flex-1 flex flex-col min-h-0">
+  <div class="flex-1 flex flex-col gap-y-[16px] w-full">
+    <mxevolve-execution-run-header [execution]="executionDetails.value()!" />
+
+    <mxevolve-execution-alert-display
+      [expiryDate]="executionDetails.value()!.expiryDate"
+      [endDate]="executionDetails.value()!.endDate"
+      [errorMessage]="executionDetails.value()!.errorMessage"
+      [aborted]="executionDetails.value()!.status === ExecutionStatus.ABORTED"
+    />
+
+    @if(executionReadyForDisplay() || failedInBranchCreation()) {
+    <div class="flex-1 flex flex-col w-full">
+      <mxevolve-stepper [steps]="steps()" [(displayedStepId)]="selectedStepId">
+        <mxevolve-step stepId="convert-binary">
+          <ng-template>
+            <mxevolve-convert-binary-stage
+              [projectId]="projectId()"
+              [processId]="executionId()"
+              [stageStatus]="
+                executionDetails.value()!.binaryConversionStage.status
+              "
+            />
+          </ng-template>
+        </mxevolve-step>
+        <mxevolve-step stepId="run-quality-gate">
+          <ng-template>
+            <mxevolve-run-quality-gate-stage
+              [projectId]="projectId()"
+              [processId]="executionId()"
+              [processName]="executionDetails.value()!.name"
+              [supportsResourceManagement]="
+                executionDetails.value()!.supportsResourceManagement
+              "
+              [parentBranchName]="
+                executionDetails.value()!.input.configurationParentBranch
+              "
+              [validationResult]="
+                executionDetails.value()!.executeQualityGateStage
+                  .validationResult
+              "
+              [developmentId]="
+                executionDetails.value()!.createBranchStage.developmentId!
+              "
+              [stageStatus]="
+                executionDetails.value()!.executeQualityGateStage.status
+              "
+              [referenceScenarioExecutionId]="
+                executionDetails.value()!.binaryConversionStage
+                  .referenceExecutionId!
+              "
+              [keptResourcesDecisionMade]="
+                executionDetails.value()!.executeQualityGateStage
+                  .keptResourcesDecisionMade ?? false
+              "
+            />
+          </ng-template>
+        </mxevolve-step>
+        <mxevolve-step stepId="merge">
+          <ng-template>
+            <mxevolve-integrate-changes-stage
+              [projectId]="projectId()"
+              [processId]="executionId()"
+              [supportsResourceManagement]="
+                executionDetails.value()!.supportsResourceManagement
+              "
+              [parentBranchName]="
+                executionDetails.value()!.input.configurationParentBranch
+              "
+              [developmentId]="
+                executionDetails.value()!.createBranchStage.developmentId!
+              "
+              [stageStatus]="
+                executionDetails.value()!.integrateChangesStage.status
+              "
+              [latestMergeRequestId]="
+                executionDetails.value()!.integrateChangesStage
+                  .latestMergeJobId!
+              "
+            />
+          </ng-template>
+        </mxevolve-step>
+        <mxevolve-step stepId="tag">
+          <ng-template>
+            <mxevolve-tag-stage
+              [tagName]="
+                executionDetails.value()!.tagUpgradeBranchStage.tagName!
+              "
+              [taggedCommitId]="
+                executionDetails.value()!.tagUpgradeBranchStage.taggedCommitId!
+              "
+            />
+          </ng-template>
+        </mxevolve-step>
+      </mxevolve-stepper>
+    </div>
+    } @else {
+    <div class="flex-1 w-full flex flex-col items-center gap-[8px]">
+      <mxevolve-illustration
+        name="designing_architecture_in_metaverse"
+        size="xxl"
+      />
+      <span class="text-3xl font-bold">Your branch is being created</span>
+      <span class="text-xl font-medium">Refresh your page in a bit!</span>
+    </div>
+    }
+  </div>
+</div>
+}

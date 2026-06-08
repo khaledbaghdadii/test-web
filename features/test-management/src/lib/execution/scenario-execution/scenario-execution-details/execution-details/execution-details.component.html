@@ -1,0 +1,488 @@
+<mxflow-header-title>
+  Test Scenario Execution
+
+  <div class="flex" right-content>
+    <div>
+      @if (validationScopeEnabled) {
+      <p-menu
+        appendTo="body"
+        #viewValidationScopeMenu
+        [model]="viewValidationScopeOptions"
+        [popup]="true"
+        styleClass="min-w-max"
+      ></p-menu>
+      <p-button
+        data-testId="viewValidationScopeButton"
+        id="viewValidationScopeButton"
+        appendTo="body"
+        class="mr-2"
+        (click)="onValidationScopeClick($event, viewValidationScopeMenu)"
+        (keydown)="onValidationScopeClick($event, viewValidationScopeMenu)"
+        label="View Validation Scope"
+        icon="pi pi-angle-down"
+        iconPos="right"
+        [disabled]="isLoading"
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'validation_scope'
+        }"
+      ></p-button>
+      }
+
+      <p-button
+        class="mr-2"
+        (onClick)="showIncidentsLinkingModal()"
+        label="Link to Incident"
+        data-testid="link-to-incident"
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'analysis_object'
+        }"
+        [disabled]="isLoading || !incidentEnabled"
+      ></p-button>
+
+      <p-menu
+        appendTo="body"
+        #linkToRegressionMenu
+        [model]="linkToRegressionOptions"
+        [popup]="true"
+        styleClass="min-w-max"
+      ></p-menu>
+      <p-button
+        appendTo="body"
+        class="mr-2"
+        (click)="linkToRegressionMenu.toggle($event)"
+        label="Link to Regression"
+        icon="pi pi-angle-down"
+        iconPos="right"
+        id="link-to-regression"
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'analysis_object'
+        }"
+        [disabled]="isLoading"
+      ></p-button>
+
+      <p-menu
+        appendTo="body"
+        #linkToImpactMenu
+        styleClass="min-w-max"
+        [model]="linkToImpactOptions"
+        [popup]="true"
+      ></p-menu>
+      <p-button
+        class="mr-2"
+        (click)="linkToImpactMenu.toggle($event)"
+        icon="pi pi-angle-down"
+        iconPos="right"
+        label="Link to Impact"
+        id="link-to-impact"
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'analysis_object'
+        }"
+        [disabled]="isLoading"
+      ></p-button>
+    </div>
+    <p-menu
+      appendTo="body"
+      #setAnalysisStatusMenu
+      [model]="analysisStatuMenuItems"
+      [popup]="true"
+    >
+      <ng-template pTemplate="item" let-item>
+        <span
+          class="p-menuitem-link pointer-events-auto"
+          (click)="(item.command)"
+          pTooltip="{{ item.tooltip }}"
+          tooltipPosition="left"
+        >
+          {{ item.label }}
+        </span>
+      </ng-template>
+    </p-menu>
+    <p-button
+      id="set-analysis-status-button"
+      *showElementIfAuthorized="{
+        action: 'update_analysis_status',
+        attributes: {},
+        package: 'test',
+        resource: 'scenario_execution'
+      }"
+      class="mr-2 pointer-events-auto"
+      (click)="openAnalysisStatusMenu(setAnalysisStatusMenu, $event)"
+      label="Set Analysis Status"
+      pTooltip="{{
+        !isAnalysisStatusUpdateEligible
+          ? getIneligibilityReasonMessage(
+              analysisStatusUpdateIneligibilityReason
+            )
+          : ''
+      }}"
+      tooltipPosition="bottom"
+      icon="pi pi-angle-down"
+      iconPos="right"
+      [disabled]="isLoading || !isAnalysisStatusUpdateEligible"
+    ></p-button>
+    <p-button
+      [attr.data-testid]="'abort-button'"
+      [disabled]="selectedScenarioExecution().status | disableAbort"
+      severity="danger"
+      label="Abort"
+      icon="pi pi-power-off"
+      (onClick)="
+        confirmAbortScenarioExecution($event, selectedScenarioExecution().id)
+      "
+    ></p-button>
+    <p-confirmpopup></p-confirmpopup>
+  </div>
+</mxflow-header-title>
+
+<div>
+  <div
+    class="grid grid-cols-12 gap-4 grid-nogutter border-t border-surface pt-2"
+  >
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Name
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ selectedScenarioExecution().name }}
+      </div>
+      }
+    </div>
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Execution Time
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        <div>
+          <strong>Start Date: </strong>
+          <span
+            >{{ selectedScenarioExecution().startDate | date : "medium" }}
+          </span>
+        </div>
+        <div>
+          <strong>End Date: </strong>
+          <span>
+            {{
+              selectedScenarioExecution().endDate
+                ? (selectedScenarioExecution().endDate | date : "medium")
+                : ""
+            }}</span
+          >
+        </div>
+        <div>
+          <strong>Duration: </strong>
+          <span>
+            <mxevolve-scenario-execution-duration
+              [startTime]="selectedScenarioExecution().startDate"
+              [endTime]="selectedScenarioExecution().endDate"
+            ></mxevolve-scenario-execution-duration>
+          </span>
+        </div>
+      </div>
+      }
+    </div>
+
+    @if (!testUnit()?.disableKeepExecution) {
+    <div class="col-span-4 p-4">
+      <div
+        id="kept-execution-section"
+        class="text-surface-500 dark:text-surface-300 font-medium mb-2"
+      >
+        Kept Execution
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @else {
+      <div class="text-surface-400 dark:text-surface-400 italic mt-2">
+        <div class="mb-2">
+          <mxevolve-kept-execution-toggle
+            id="keep-execution-section"
+            [keptExecution]="selectedScenarioExecution().keptExecution"
+            [cleaningStatus]="selectedScenarioExecution().cleaningStatus"
+            [isFailed]="selectedScenarioExecution().isFailed"
+            [disableKeepExecution]="testUnit()?.disableKeepExecution || false"
+            [showTooltip]="true"
+            (keptExecutionToggled)="toggleKeptExecutionFlag()"
+          ></mxevolve-kept-execution-toggle>
+        </div>
+        <div class="mb-2">
+          {{
+            selectedScenarioExecution().keptExecution
+              ? "This execution will be kept until the process is closed."
+              : "This execution will be housekept."
+          }}
+        </div>
+        <div class="mb-2">
+          <i class="pi pi-info-circle"></i> Note: environment can be cleaned
+          manually even if executions are kept
+        </div>
+      </div>
+      }
+    </div>
+    }
+  </div>
+  <div class="grid grid-cols-12 gap-4 grid-nogutter">
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        MX Version
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        <mxevolve-scenario-execution-mx-version
+          [mxVersion]="selectedScenarioExecution().mxVersion"
+        ></mxevolve-scenario-execution-mx-version>
+      </div>
+      }
+    </div>
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        MX Build ID
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        <mxevolve-scenario-execution-mx-build-id
+          [mxBuildId]="selectedScenarioExecution().mxBuildId"
+        ></mxevolve-scenario-execution-mx-build-id>
+      </div>
+      }
+    </div>
+  </div>
+  <div class="grid grid-cols-12 gap-4 grid-nogutter">
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Branch Name
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ selectedScenarioExecution().branch || "-" }}
+      </div>
+      }
+    </div>
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Config Commit ID
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        <mxevolve-scenario-execution-commit-id
+          [commitId]="selectedScenarioExecution().commitId"
+        ></mxevolve-scenario-execution-commit-id>
+      </div>
+      }
+    </div>
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        RTP Commit ID
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        <mxevolve-scenario-execution-commit-id
+          [commitId]="selectedScenarioExecution().rtpCommitId"
+        ></mxevolve-scenario-execution-commit-id>
+      </div>
+      }
+    </div>
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Status
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        <mxevolve-scenario-execution-status
+          [status]="selectedScenarioExecution().status || ''"
+          size="small"
+        >
+        </mxevolve-scenario-execution-status>
+      </div>
+      }
+    </div>
+    <div
+      id="analysis-status"
+      class="col-span-4 p-4"
+      *showElementIfAuthorized="{
+        action: 'read_analysis_status',
+        attributes: {},
+        package: 'test',
+        resource: 'scenario_execution'
+      }"
+    >
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Analysis Status
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        <mxevolve-scenario-analysis-status
+          [status]="selectedScenarioExecution().analysisStatus"
+        ></mxevolve-scenario-analysis-status>
+      </div>
+      }
+    </div>
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Assignee
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        <mxevolve-assignee-input
+          [selectedAssigneeId]="assignee?.id ?? null"
+          [scenarioDefinitionId]="
+            selectedScenarioExecution().scenarioDefinitionId
+          "
+          [contextId]="selectedScenarioExecution().contextId"
+          [subContextId]="selectedScenarioExecution().subContextId"
+          [projectId]="projectId()"
+          (errorMessageEmitter)="errorEventEmitter.emit($event)"
+          (setAssigneeEventEmitter)="
+            setAssigneeEventEmitter.emit($event !== null ? $event : undefined)
+          "
+        ></mxevolve-assignee-input>
+      </div>
+      }
+    </div>
+    <div class="col-span-12 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Environment
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        @if (selectedScenarioExecution().environmentId) {
+        <a
+          class="p-button-link"
+          routerLink="/app/{{ projectId() }}/environments/{{
+            selectedScenarioExecution().environmentId
+          }}"
+          data-testid="view-environment-details"
+          >View Environment Details</a
+        >
+        } @else {
+        <span data-testid="empty-content"> - </span>
+        }
+      </div>
+      }
+    </div>
+    @if ( selectedScenarioExecution() && (selectedScenarioExecution() |
+    showComment) ) {
+    <div class="col-span-12 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Comment
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        <mxevolve-comment-input
+          class="margin-bottom"
+          [projectId]="projectId()"
+          [scenarioExecutionId]="selectedScenarioExecution().id"
+          (updateCommentEventEmitter)="updateComment($event)"
+          [comment]="comment"
+          (focusin)="displayCommentButtons()"
+        ></mxevolve-comment-input>
+        @if (showCommentButtons) {
+        <div class="flex justify-end gap-2">
+          <button
+            pButton
+            label="Cancel"
+            class="p-button-outlined"
+            (click)="cancelComment()"
+          ></button>
+          <button pButton label="Save" (click)="saveComment()"></button>
+        </div>
+        }
+      </div>
+      }
+    </div>
+    } @if (selectedScenarioExecution() | showTerminationMessage) {
+    <div
+      class="col-span-12 md:col-span-8 p-4"
+      data-testid="termination-message"
+    >
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Termination Message
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @if (!isLoading) {
+      <div class="text-surface-900 dark:text-surface-0">
+        @if (selectedScenarioExecution()?.terminationMessage) {
+        <mxflow-collapsible-message
+          [message]="selectedScenarioExecution().terminationMessage"
+        >
+          @if (selectedScenarioExecution()?.logFileUrl) {
+          <a
+            class="p-button-link"
+            href="{{ selectedScenarioExecution().logFileUrl }}"
+            target="_blank"
+            rel="noopener"
+          >
+            View log file
+          </a>
+          }
+        </mxflow-collapsible-message>
+        }
+      </div>
+      }
+    </div>
+    }
+  </div>
+</div>
+
+<mxevolve-analysis-object-linking
+  [analysisObjectType]="analysisObjectType"
+  (isModalVisibleChange)="isModalVisibleChange($event)"
+  [(isModalVisible)]="isAnalysisObjectsLinkingModalVisible"
+  (analysisObjectLinksChanged)="onAnalysisObjectLinksChanged()"
+>
+</mxevolve-analysis-object-linking>
+
+<mxevolve-defect-selection-modal
+  [validationScope]="validationScope()"
+  [initialValidationScope]="validationScope()"
+  [warningMessage]="validationScopeWarningMessage()"
+  [(isVisible)]="isDefectsModalVisible"
+  (errorMessage)="handleError($event)"
+  [hideSelection]="true"
+></mxevolve-defect-selection-modal>
+
+<mxevolve-upgrade-impact-selection-modal
+  [(isVisible)]="isUpradeImpactsModalVisible"
+  [validationScope]="validationScope()"
+  [initialValidationScope]="validationScope()"
+  [warningMessage]="validationScopeWarningMessage()"
+  [hideSelection]="true"
+></mxevolve-upgrade-impact-selection-modal>

@@ -1,0 +1,89 @@
+<mxevolve-definition-input
+  style="display: contents"
+  label="Parent Branch Name"
+  description="Enter the Parent Branch from where you want to create your branch"
+  [inputFormControl]="parentBranchFormControl"
+  inputFormControlName="parentBranch"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowParentBranch"
+  [showValidationErrors]="false"
+>
+  <mxevolve-branch-input
+    [branchShouldExist]="true"
+    [projectId]="projectId"
+    [repoId]="repositoryIdFormControl.value"
+    [branchNameFormControl]="parentBranchFormControl"
+    [initialValue]="parentBranchNameInitialValue"
+    (initialInvalid)="showParentBranchError()"
+  >
+  </mxevolve-branch-input>
+</mxevolve-definition-input>
+<mxevolve-definition-input
+  id="mqgArchivalBranchName"
+  style="display: contents"
+  label="Archival Branch Name"
+  description="Enter the name of the archival branch that you wish to use or create"
+  [inputFormControl]="archivalBranchNameFormControl"
+  inputFormControlName="archivalBranchName"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowArchivalBranch"
+  [showValidationErrors]="false"
+>
+  <mxevolve-branch-input
+    [branchShouldExist]="false"
+    [projectId]="projectId"
+    [repoId]="repositoryIdFormControl.value"
+    [branchNameFormControl]="archivalBranchNameFormControl"
+    [initialValue]="archivalBranchNameInitialValue"
+    (initialInvalid)="showArchivalBranchError()"
+  >
+  </mxevolve-branch-input>
+</mxevolve-definition-input>
+@if (finalProductIdFromControl.enabled) {
+<mxevolve-definition-input
+  style="display: contents"
+  label="Final Product (represented by a Commit ID)"
+  description="Select the final product that you wish to use in your validation"
+  [inputFormControl]="finalProductIdFromControl"
+  inputFormControlName="finalProductId"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowFinalProductId"
+  tooltip="A final product is the client config and the tooling used to validate it. It will be packaged and shipped to the client when it reaches the right quality level."
+>
+  <mxevolve-business-process-final-product-selector
+    [projectId]="projectId"
+    [originBranchName]="parentBranchFormControl.value"
+    businessProcessQualityLevel="CQG"
+    [finalProductSelectionFormControl]="finalProductSelectionControl"
+    finalProductSelectionFormControlName="finalProductId"
+    [repositoryId]="repositoryIdFormControl.value"
+  >
+  </mxevolve-business-process-final-product-selector>
+</mxevolve-definition-input>
+<mxevolve-definition-input
+  id="mqgRtpCommitId"
+  style="display: contents"
+  label="RTP Commit ID"
+  description="Select the RTP commit from which you want to take your branch"
+  [inputFormControl]="rtpCommitIdFromControl"
+  inputFormControlName="rtpCommitId"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowRtpCommitId"
+>
+  <input
+    pInputText
+    class="w-full"
+    id="rtpCommitId"
+    [formControl]="rtpCommitIdFromControl"
+    [readonly]="true"
+    [attr.aria-describedby]="'rtpCommitId-help'"
+    [style.background-color]="'#f0f0f0'"
+    [style.color]="'#888'"
+    [style.cursor]="'not-allowed'"
+  />
+</mxevolve-definition-input>
+}

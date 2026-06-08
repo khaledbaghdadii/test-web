@@ -1,0 +1,58 @@
+$icon-sizes: (
+  xs: 14px,
+  sm: 16px,
+  md: 20px,
+  lg: 28px,
+  xl: 36px,
+  xxl: 48px,
+);
+
+$default-size: 24px;
+
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.mxevolve-icon__material {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  font-size: var(--mxevolve-icon-size, $default-size);
+  width: var(--mxevolve-icon-size, $default-size);
+  height: var(--mxevolve-icon-size, $default-size);
+  color: inherit;
+  user-select: none;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.mxevolve-icon__custom-svg {
+  display: block;
+  width: var(--mxevolve-icon-size, $default-size);
+  height: var(--mxevolve-icon-size, $default-size);
+  object-fit: contain;
+}
+
+@each $name, $value in $icon-sizes {
+  :host(.mxevolve-icon-#{$name}) {
+    --mxevolve-icon-size: #{$value};
+  }
+}
+
+:host(.mxevolve-icon-filled) .mxevolve-icon__material {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+:host(.mxevolve-icon-spin) {
+  .mxevolve-icon__material,
+  .mxevolve-icon__custom-svg {
+    animation: mxevolve-icon-spin 1.5s linear infinite;
+  }
+}
+
+@keyframes mxevolve-icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

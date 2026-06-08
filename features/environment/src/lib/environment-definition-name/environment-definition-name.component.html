@@ -1,0 +1,8 @@
+@if (environmentDefinition.status === EnvironmentDefinitionStatus.ACTIVE) {
+<span>{{ environmentDefinition.name }}</span>
+} @else {
+<span
+  >{{ environmentDefinition.name }}
+  <i class="p-text-secondary"> (Inactive)</i></span
+>
+}

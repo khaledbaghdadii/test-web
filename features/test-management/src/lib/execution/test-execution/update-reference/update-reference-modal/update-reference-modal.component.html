@@ -1,0 +1,163 @@
+<p-dialog
+  header="Update Reference"
+  [modal]="true"
+  [(visible)]="isVisible"
+  (onHide)="onModalClose()"
+  [style]="{ width: '70rem' }"
+>
+  <p-stepper [(value)]="stepperValue">
+    <p-step-panels>
+      <p-step-panel [value]="1">
+        <ng-template #content let-activateCallback="activateCallback">
+          <div>
+            <span class="text-surface-500 dark:text-surface-400 block mb-8">
+              Select one or multiple binary or configuration impacts to be able
+              to proceed.
+            </span>
+
+            <p-tabs [(value)]="tabIndex">
+              <p-tablist>
+                <p-tab value="0">Binary Impacts</p-tab>
+                <p-tab value="1">Configuration Impacts</p-tab>
+              </p-tablist>
+
+              <p-tabpanels>
+                <p-tabpanel value="0">
+                  <div class="flex flex-col gap-3 w-full mt-4 mb-2">
+                    <div class="grid grid-cols-12">
+                      <div class="col-span-9">
+                        <mxevolve-validation-scope-setter
+                          [(validationScope)]="validationScope"
+                          [initialValidationScope]="initialValidationScope()"
+                        ></mxevolve-validation-scope-setter>
+                      </div>
+                      <div class="col-span-3 flex flex-col">
+                        <mxevolve-show-detection-with-no-defects-toggle
+                          [detectionType]="DetectionType.Binary"
+                          [detectionCategory]="DetectionCategory.Impact"
+                          [warningMessage]="warningMessage"
+                          [(showDetectionsWithoutDefects)]="
+                            showImpactsWithoutDefects
+                          "
+                          [(validationScope)]="validationScope"
+                        ></mxevolve-show-detection-with-no-defects-toggle>
+                      </div>
+                    </div>
+                    @if (warningMessage) {
+                    <p-message
+                      data-testid="warning-message"
+                      severity="warn"
+                      styleClass="mt-1 mb-4 mx-0.5"
+                      [closable]="false"
+                      [showTransitionOptions]="'0ms'"
+                      [hideTransitionOptions]="'0ms'"
+                    >
+                      {{ warningMessage }}
+                    </p-message>
+                    }
+                  </div>
+                  <mxevolve-binary-impacts-selection-table
+                    [projectId]="projectId"
+                    [refresh]="refresh$"
+                    (selectedBinaryImpactsChange)="
+                      selectedBinaryImpactsSignal.set($event)
+                    "
+                    [initiallySelectedImpacts]="
+                      initiallyLinkedBinaryImpactsState()
+                    "
+                    [validationScope]="validationScope()"
+                    [showImpactsWithoutDefects]="showImpactsWithoutDefects()"
+                    (warningMessageChange)="handleWarningMessage($event)"
+                  ></mxevolve-binary-impacts-selection-table>
+                </p-tabpanel>
+
+                <p-tabpanel value="1">
+                  <mxevolve-configuration-impacts-selection-table
+                    [projectId]="projectId"
+                    [refresh]="refresh$"
+                    (selectedConfigurationImpactsChange)="
+                      selectedConfigurationImpactsSignal.set($event)
+                    "
+                    [initiallySelectedConfigurationImpacts]="
+                      initiallyLinkedConfigurationImpactsState()
+                    "
+                  ></mxevolve-configuration-impacts-selection-table>
+                </p-tabpanel>
+              </p-tabpanels>
+            </p-tabs>
+
+            <div class="flex pt-6 justify-end">
+              <p-button
+                [disabled]="!canProceedToCommitStepSignal()"
+                label="Next"
+                icon="pi pi-arrow-right"
+                iconPos="right"
+                (onClick)="onNextClicked()"
+              />
+            </div>
+          </div>
+        </ng-template>
+      </p-step-panel>
+
+      <p-step-panel [value]="2">
+        <ng-template #content let-activateCallback="activateCallback">
+          <div class="flex flex-col h-60">
+            <span class="mb-5">
+              <p-message
+                severity="warn"
+                [closable]="false"
+                [hideTransitionOptions]="'0ms'"
+              >
+                References are being updated in the main 'Common' folder
+              </p-message>
+            </span>
+
+            <span class="text-surface-500 dark:text-surface-400 block mb-5">
+              {{ userName }} ({{ userEmail }})
+            </span>
+            <span class="text-surface-500 dark:text-surface-400 block mb-5">
+              Add a commit message
+            </span>
+
+            <p-floatlabel variant="on">
+              <textarea
+                required="true"
+                pTextarea
+                id="over_label"
+                [(ngModel)]="commitMessageSignal"
+                [ngClass]="{
+                  'ng-invalid': !canSubmitSignal(),
+                  'ng-dirty': !canSubmitSignal()
+                }"
+                style="resize: none"
+                class="h-full w-full"
+              ></textarea>
+              <label for="on_label">Commit message</label>
+            </p-floatlabel>
+          </div>
+
+          <span
+            class="text-surface-500 dark:text-surface-400 block mb-1 italic break-all"
+          >
+            Message preview: {{ computedCommitMessageSignal() }}
+          </span>
+          <div class="flex pt-6 justify-between">
+            <p-button
+              label="Back"
+              severity="secondary"
+              icon="pi pi-arrow-left"
+              (onClick)="onBackClicked()"
+            />
+            <p-button
+              label="Submit"
+              icon="pi pi-arrow-right"
+              iconPos="right"
+              [disabled]="!canSubmitSignal()"
+              (onClick)="submit()"
+            />
+          </div>
+        </ng-template>
+      </p-step-panel>
+    </p-step-panels>
+  </p-stepper>
+</p-dialog>

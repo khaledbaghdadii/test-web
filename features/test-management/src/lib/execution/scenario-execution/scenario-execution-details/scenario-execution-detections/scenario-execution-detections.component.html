@@ -1,0 +1,62 @@
+<div>
+  <mxflow-header-title>Impacts</mxflow-header-title>
+  <div class="pt-2">
+    <h3>Configuration Impacts</h3>
+    <mxevolve-linked-configuration-impact-details-table
+      [configurationImpacts]="configurationImpacts()"
+      [isLoading]="isConfigurationImpactTableLoading()"
+      (unlinkImpactRequestEvent)="
+        openUnlinkModal($event, AnalysisObjectType.CONFIGURATION_IMPACT)
+      "
+    ></mxevolve-linked-configuration-impact-details-table>
+  </div>
+  <div class="pt-12">
+    <h3>Binary Impacts</h3>
+    <mxevolve-linked-binary-impact-details-table
+      [binaryImpacts]="binaryImpacts()"
+      [isLoading]="isBinaryImpactTableLoading()"
+      (unlinkImpactRequestEvent)="
+        openUnlinkModal($event, AnalysisObjectType.BINARY_IMPACT)
+      "
+    ></mxevolve-linked-binary-impact-details-table>
+  </div>
+</div>
+
+<div class="my-4 pt-20">
+  <mxflow-header-title>Regressions</mxflow-header-title>
+  <div class="pt-2">
+    <h3>Configuration Regressions</h3>
+    <mxevolve-linked-configuration-regression-details-table
+      [regressions]="configurationRegressions()"
+      (unlinkRegressionRequestEvent)="
+        openUnlinkModal($event, AnalysisObjectType.CONFIGURATION_REGRESSION)
+      "
+      [isLoading]="isConfigurationRegressionTableLoading()"
+    ></mxevolve-linked-configuration-regression-details-table>
+  </div>
+  <div class="pt-12">
+    <h3>Binary Regressions</h3>
+    <mxevolve-linked-binary-regression-details-table
+      [regressions]="binaryRegressions()"
+      (unlinkRegressionRequestEvent)="
+        openUnlinkModal($event, AnalysisObjectType.BINARY_REGRESSION)
+      "
+      [isLoading]="isBinaryRegressionTableLoading()"
+    ></mxevolve-linked-binary-regression-details-table>
+  </div>
+</div>
+<div class="my-4 pt-20">
+  <mxflow-header-title>Failure Reasons</mxflow-header-title>
+  <mxevolve-failure-reason-details-table
+    [reasons]="failureReasons()"
+    (unlinkFailureReasonRequestEvent)="
+      openUnlinkModal($event, AnalysisObjectType.FAILURE_REASON)
+    "
+    [isLoading]="isFailureReasonsTableLoading()"
+  ></mxevolve-failure-reason-details-table>
+</div>
+<mxevolve-analysis-object-unlink-modal
+  [(isVisible)]="isUnlinkModalVisible"
+  [analysisObjectId]="selectedAnalysisObjectId"
+  [analysisObjectType]="selectedAnalysisObjectType"
+></mxevolve-analysis-object-unlink-modal>

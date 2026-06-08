@@ -1,0 +1,70 @@
+<p-dialog
+  class="p-fluid"
+  header="Services"
+  [(visible)]="isOpen"
+  [modal]="true"
+  (onHide)="closeEnvironmentServicesView()"
+  [style]="{ width: '80vw' }"
+  [contentStyle]="{ overflow: 'visible' }"
+  appendTo="body"
+>
+  <p-table
+    [value]="services"
+    [paginator]="true"
+    [rows]="pageSize"
+    [loading]="isLoading"
+    [scrollable]="true"
+    [showLoader]="false"
+    [scrollHeight]="tableSize"
+    [rowsPerPageOptions]="[5, 10, 20, 30, 40, 50]"
+    paginatorStyleClass="justify-end"
+    [showCurrentPageReport]="true"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th scope="col">Code</th>
+        <th scope="col">NickName</th>
+        <th scope="col">Installation Code</th>
+        <th scope="col">Description</th>
+        <th scope="col">Status</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-service>
+      <tr>
+        <td>{{ service.name ? service.name : "N/A" }}</td>
+        <td>{{ service.nickname ? service.nickname : "N/A" }}</td>
+        <td>
+          {{ service.installationCode ? service.installationCode : "N/A" }}
+        </td>
+        <td>{{ service.description ? service.description : "N/A" }}</td>
+        <td>
+          <mxevolve-environment-service-status
+            [serviceStatus]="service.status ? service.status : 'N/A'"
+          >
+          </mxevolve-environment-service-status>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="loadingbody">
+      @for (row of getArray(pageSize); track row) {
+      <tr>
+        @for (col of getArray(5); track col) {
+        <td>
+          <p-skeleton></p-skeleton>
+        </td>
+        }
+      </tr>
+      }
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="9" class="py-4">
+          <mxflow-table-empty-message></mxflow-table-empty-message>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</p-dialog>

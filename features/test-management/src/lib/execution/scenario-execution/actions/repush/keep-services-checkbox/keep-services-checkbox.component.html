@@ -1,0 +1,16 @@
+<div class="flex items-start">
+  <p-checkbox
+    [(ngModel)]="keepServices"
+    [binary]="true"
+    (onChange)="onKeepServicesChange()"
+    inputId="keepServicesCheckbox"
+    data-testid="keep-services-checkbox"
+  >
+  </p-checkbox>
+  <div class="ml-3 flex flex-col">
+    <label for="keepServicesCheckbox">Keep services running</label>
+    <p class="text-surface-500 dark:text-surface-300 text-sm italic mb-2">
+      Keep environment services running after the test ends
+    </p>
+  </div>
+</div>

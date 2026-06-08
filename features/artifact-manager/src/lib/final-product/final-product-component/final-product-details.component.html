@@ -1,0 +1,137 @@
+<div>
+  <div
+    class="grid grid-cols-12 gap-4 grid-nogutter bg-surface-0 dark:bg-surface-900"
+  >
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-gray-500 font-medium mb-2">Final Product Id</div>
+      @if (finalProduct$ | async; as finalProduct) {
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ finalProduct.id }}
+      </div>
+      } @else {
+      <p-skeleton styleClass="mb-1" height="2rem"></p-skeleton>
+      }
+    </div>
+
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-gray-500 font-medium mb-2">Branch</div>
+      @if (finalProduct$ | async; as finalProduct) {
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ finalProduct.branch }}
+      </div>
+      } @else {
+      <p-skeleton styleClass="mb-1" height="2rem"></p-skeleton>
+      }
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-gray-500 font-medium mb-2">Commit</div>
+      @if (finalProduct$ | async; as finalProduct) {
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ finalProduct.configurationCommitId }}
+      </div>
+      } @else {
+      <p-skeleton styleClass="mb-1" height="2rem"></p-skeleton>
+      }
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-gray-500 font-medium mb-2">Validation Level</div>
+      @if (finalProduct$ | async; as finalProduct) {
+      <p-tag
+        value="{{
+          finalProduct.validationLevel ? finalProduct.validationLevel : 'N/A'
+        }}"
+      ></p-tag>
+      } @else {
+      <p-skeleton styleClass="mb-1" height="2rem"></p-skeleton>
+      }
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-gray-500 font-medium mb-2">Status</div>
+      @if (finalProduct$ | async; as finalProduct) {
+      <p-tag [severity]="status.severity">
+        <div class="flex gap-1 text-sm">
+          <i
+            class="flex items-center"
+            [ngClass]="status.icon"
+            style="display: flex"
+          ></i>
+          <span>{{ status.label }}</span>
+        </div>
+      </p-tag>
+      } @else {
+      <p-skeleton styleClass="mb-1" height="2rem"></p-skeleton>
+      }
+    </div>
+
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-gray-500 font-medium mb-2">FactoryProduct</div>
+      @if (finalProduct$ | async; as finalProduct) {
+      <div class="ml-8">
+        <div class="text-gray-500 font-normal mt-2">ID</div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{
+            finalProduct.factoryProduct ? finalProduct.factoryProduct.id : "N/A"
+          }}
+        </div>
+        <div class="text-gray-500 font-normal mt-2">Type</div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{
+            finalProduct.factoryProduct
+              ? finalProduct.factoryProduct.type
+              : "N/A"
+          }}
+        </div>
+      </div>
+      } @else {
+      <p-skeleton styleClass="mb-1" height="2rem"></p-skeleton>
+      }
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-gray-500 font-medium mb-2">Software Product</div>
+      @if (finalProduct$ | async; as finalProduct) {
+      <div class="ml-8">
+        <div class="text-gray-500 font-normal mt-2">ID</div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{
+            finalProduct.factoryProduct
+              ? finalProduct.factoryProduct.softwareProduct.id
+              : "N/A"
+          }}
+        </div>
+        <div class="text-gray-500 font-normal mt-2">Version</div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{
+            finalProduct.factoryProduct
+              ? finalProduct.factoryProduct.softwareProduct.version
+              : "N/A"
+          }}
+        </div>
+        <div class="text-gray-500 font-normal mt-2">Change List</div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{
+            finalProduct.factoryProduct
+              ? finalProduct.factoryProduct.softwareProduct.revision
+              : "N/A"
+          }}
+        </div>
+      </div>
+      } @else {
+      <p-skeleton styleClass="mb-1" height="2rem"></p-skeleton>
+      }
+    </div>
+    @if (finalProduct$ | async; as finalProduct) { @if
+    (finalProduct.failureMessage) {
+    <div
+      data-testid="final-product-details-failure-message"
+      class="col-span-12 md:col-span-6 p-4"
+    >
+      <div class="text-gray-500 font-medium mb-2">Failure Message</div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ finalProduct.failureMessage }}
+      </div>
+    </div>
+    } } @else {
+    <p-skeleton styleClass="mb-1" height="2rem"></p-skeleton>
+    }
+  </div>
+</div>

@@ -1,0 +1,87 @@
+<div *ngIf="showDropdown()" class="flex flex-col gap-2">
+  <label [class.required]="required" for="BipVersion">BIP Version</label>
+  <p-select
+    #bipVersion
+    appendTo="body"
+    id="BipVersion"
+    [options]="bipVersionDropdown()"
+    optionLabel="label"
+    optionValue="value"
+    [(ngModel)]="selectedBipVersion"
+    (ngModelChange)="onSelectedBipVersion($event)"
+    [virtualScroll]="true"
+    [virtualScrollOptions]="{
+                    lazy: true,
+                    step: itemStep,
+                    itemSize: itemHeight,
+                    scrollHeight: dropdownHeight(),
+                    onLazyLoad: handleBipVersionScroll,
+                  }"
+    [filter]="true"
+    [showClear]="true"
+    (onClear)="clearBipVersionSearchKey($event)"
+    (onShow)="onPanelShow(bipVersion)"
+    styleClass="w-full my-2"
+    placeholder="Select BIP Version"
+  >
+    <ng-template pTemplate="filter">
+      <p-iconfield class="p-fluid w-full">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          type="text"
+          [(ngModel)]="bipVersionSearchKey"
+          pInputText
+          placeholder="Search"
+          (ngModelChange)="onBipVersionSearchKeyChange($event)"
+          class="w-full"
+        />
+        <p-inputicon
+          *ngIf="bipVersionSearchKey"
+          styleClass="pi pi-times cursor-pointer"
+          (click)="clearBipVersionSearchKey($event)"
+          (keydown)="clearBipVersionSearchKey($event)"
+        ></p-inputicon>
+      </p-iconfield>
+    </ng-template>
+    <ng-template #selectedItem>
+      <span
+        [attr.data-testid]="'selectedBipVersion'"
+        class="flex items-center gap-2 p-dropdown-label"
+        *ngIf="this.selectedBipVersion"
+        >{{ this.selectedBipVersion }}</span
+      >
+    </ng-template>
+  </p-select>
+  <div
+    *ngIf="selectedBipVersion"
+    style="padding-left: 15px"
+    class="flex flex-col gap-2"
+  >
+    <label [class.required]="required" for="bipBuildId">BIP Build ID</label>
+    <p-select
+      #bipBuildId
+      id="bipBuildId"
+      (onShow)="onPanelShow(bipBuildId)"
+      [options]="bipBuildIdDropdown"
+      (ngModelChange)="onSelectedBipBuildId($event)"
+      optionLabel="label"
+      optionValue="value"
+      [(ngModel)]="selectedBipBuildId"
+      [showClear]="true"
+      [filter]="true"
+      fluid
+      appendTo="body"
+      styleClass="my-2"
+      placeholder="Select Bip Build ID"
+    >
+      <ng-template #selectedItem>
+        <span
+          [attr.data-testid]="'selectedBipBuildId'"
+          class="flex items-center gap-2 p-dropdown-label"
+          *ngIf="this.selectedBipBuildId"
+          >{{ this.selectedBipBuildId }}</span
+        >
+      </ng-template>
+    </p-select>
+  </div>
+</div>

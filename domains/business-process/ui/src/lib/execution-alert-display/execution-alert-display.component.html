@@ -1,0 +1,11 @@
+@if (showExpiryBanner() || errorMessage()) {
+<div class="flex flex-col gap-2">
+  @if (showExpiryBanner()) {
+  <p-message severity="info"> Process has reached its expiry date. </p-message>
+  } @if (errorMessage()) { @if (!aborted()) {
+  <p-message severity="error">{{ errorMessage() }}</p-message>
+  } @else {
+  <p-message severity="info">{{ errorMessage() }}</p-message>
+  } }
+</div>
+}

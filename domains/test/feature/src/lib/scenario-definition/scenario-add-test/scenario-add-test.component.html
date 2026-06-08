@@ -1,0 +1,90 @@
+<p-dialog
+  header="Enter the Test Details"
+  [(visible)]="isOpen"
+  (onHide)="onCloseAddTestModal()"
+  (onShow)="onOpenAddTestModal()"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  [contentStyle]="{ overflow: 'visible' }"
+>
+  <div class="grid grid-cols-12 gap-4">
+    <div class="col-span-10 col-start-2 flex flex-col gap-4">
+      <mxflow-mandatory-field></mxflow-mandatory-field>
+      <form [formGroup]="form">
+        <div class="grid grid-cols-12 gap-4 formgrid p-fluid">
+          <div class="field mb-6 col-span-12">
+            <label for="testPackageDefinition" mxevolveMandatory
+              >Test Package Definition</label
+            >
+            <p-select
+              formControlName="testPackageDefinition"
+              id="testPackageDefinition"
+              placeholder="Select a Test Package Definition"
+              [options]="(testDefinitions$ | async) || []"
+              [filter]="true"
+              filterBy="name"
+              [showClear]="true"
+              fluid
+              optionLabel="name"
+              (onChange)="onTestDefinitionSelect($event)"
+            >
+            </p-select>
+            @if ( form.controls.testPackageDefinition.invalid &&
+            form.controls.testPackageDefinition.dirty ) {
+            <div class="flex gap-1 mt-1">
+              <small class="p-error block">Field is required</small>
+            </div>
+            }
+          </div>
+          <div
+            class="field mb-6 col-span-12"
+            *mxevolveShowIfFeatureToggled="{projectId, featureId: 'test-tags'}"
+          >
+            <label for="tags">Test Package Tags</label>
+            <p-multiSelect
+              id="tags"
+              formControlName="tags"
+              [options]="tagOptions"
+              placeholder="Select tags"
+              [showClear]="false"
+              display="chip"
+              [maxSelectedLabels]="6"
+              (onChange)="onTagSelect($event)"
+              fluid
+            ></p-multiSelect>
+          </div>
+          <div class="field mb-6 col-span-12">
+            <label for="testPackageSelections">Test Package Selections</label>
+            <p-multiSelect
+              formControlName="testPackageSelections"
+              id="testPackageSelections"
+              [options]="testSelectionOptions"
+              optionLabel="name"
+              placeholder="Select Test Package Selection"
+              display="chip"
+              [maxSelectedLabels]="6"
+              fluid
+            ></p-multiSelect>
+            <small class="italic text-gray-500 text-sm">
+              If not specified, the full Test Package will execute
+            </small>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      label="Submit"
+      [disabled]="form.invalid"
+      (click)="onSubmit()"
+    ></button>
+    <button
+      pButton
+      label="Cancel"
+      class="p-button-outlined"
+      (click)="onCloseAddTestModal()"
+    ></button>
+  </ng-template>
+</p-dialog>

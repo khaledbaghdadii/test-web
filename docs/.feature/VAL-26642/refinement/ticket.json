@@ -1,0 +1,24 @@
+{
+  "key": "VAL-26642",
+  "summary": "[UI/UX][CI] Merge Step",
+  "type": "Epic",
+  "status": "Backlog",
+  "priority": "",
+  "assignee": "MOUZAYA Myriam",
+  "reporter": "MOUZAYA Myriam",
+  "labels": [],
+  "description": "<p>Same as the upgrade <img class=\"emoticon\" src=\"https://mxjira.murex.com/images/icons/emoticons/biggrin.png\" height=\"16\" width=\"16\" align=\"absmiddle\" alt=\"\" border=\"0\"/></p>\n\n<p>Add to it the Final product generation component</p>",
+  "acceptance_criteria": null,
+  "components": [
+    "ATLANTIS"
+  ],
+  "fix_versions": [],
+  "parent_chain": [
+    {
+      "key": "VAL-26642",
+      "summary": "[UI/UX][CI] Merge Step",
+      "type": "Epic",
+      "status": "Backlog"
+    }
+  ]
+}

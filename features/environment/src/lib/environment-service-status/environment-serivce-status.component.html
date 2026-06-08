@@ -1,0 +1,19 @@
+<div style="width: fit-content">
+  @if (isServiceRunning()) {
+  <p-tag severity="success">
+    <div class="flex gap-1 text-sm">
+      <span>{{ serviceStatus }}</span>
+    </div>
+  </p-tag>
+  } @if (isNotValidStatus()) {
+  <p-tag styleClass="bg-gray-400  /90">
+    <div class="flex gap-1 text-sm">
+      <span>{{ serviceStatus }}</span>
+    </div>
+  </p-tag>
+  } @if (!isServiceRunning() && !isNotValidStatus()) {
+  <div class="flex gap-1 text-sm">
+    <span>{{ serviceStatus }}</span>
+  </div>
+  }
+</div>

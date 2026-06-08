@@ -1,0 +1,25 @@
+<p-dialog
+  header="Test Selection Browser"
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  styleClass="mxevolve-dialog-6"
+  [contentStyle]="{ height: '60vh', width: '50vw', overflow: 'auto' }"
+>
+  @if (visible()) {
+  <mxevolve-test-selection-browser
+    [projectId]="projectId()"
+    [testSequenceName]="testSequenceName()"
+    [repositoryId]="repositoryId()"
+    (testSelectionPathEmitter)="setSelectedPath($event)"
+  />
+  }
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Submit"
+      [disabled]="!currentPath()"
+      data-testid="submit-button"
+      (onClick)="submit()"
+    />
+  </ng-template>
+</p-dialog>

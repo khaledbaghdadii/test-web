@@ -1,0 +1,21 @@
+<p-button
+  data-testid="create-binary-impact-button"
+  type="submit"
+  [label]="buttonLabel"
+  severity="secondary"
+  (click)="onBinaryImpactCreationStarted()"
+  (keydown)="onBinaryImpactCreationStarted()"
+></p-button>
+<mxevolve-create-binary-impact-modal
+  mxevolveAppendToBody
+  [projectId]="projectId"
+  [isVisible]="isCreateModalVisible"
+  [correlationId]="correlationId"
+  [mxVersionInitialValue]="mxVersionInitialValue"
+  [validationScope]="validationScope"
+  [initialValidationScope]="initialValidationScope"
+  [warningMessage]="upgradeImpactWarningMessage"
+  [submitCreationButtonLabel]="submitCreationButtonLabel"
+  (binaryImpactCreated)="onBinaryImpactCreated($event)"
+  (createBinaryImpactCancelled)="onBinaryImpactCreationCancelled()"
+></mxevolve-create-binary-impact-modal>

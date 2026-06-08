@@ -1,0 +1,55 @@
+<div
+  class="flex"
+  style="
+    min-height: calc(100vh - 50px);
+    max-height: calc(100vh);
+    position: relative;
+  "
+>
+  @if (!isLoading) {
+  <mxtest-report
+    [rtpId]="projectId"
+    [runId]="testExecutionId"
+    [packageId]="packageId"
+    [primaryUrl]="primaryUrl"
+    [secondaryUrl]="secondaryUrl"
+    [runDetails]="archivedReport"
+    [detailsActionItems]="updateReferenceMenuItems"
+    [onSelectTreeNodes]="onSelectTreeNodeChange()"
+    [treeItems]="tableBasedAssertionMenuItems"
+    class="w-full"
+  >
+  </mxtest-report>
+  } @if (isLoading) {
+  <div class="grow" data-testid="loading-skeleton">
+    <p-skeleton styleClass="h-full"></p-skeleton>
+  </div>
+  }
+  <mxevolve-update-reference-modal
+    data-testid="update-reference-modal"
+    *showElementIfAuthorized="{
+      action: 'trigger',
+      attributes: {},
+      package: 'test',
+      resource: 'update_reference'
+    }"
+    [projectId]="projectId"
+    [scenarioExecutionId]="scenarioExecutionId"
+    [testExecutionId]="testExecutionId"
+    [updatedReferenceFilePath]="updatedReferenceFilePath"
+    [referenceFilePathOnRepo]="updateReferenceFilePathOnRepo"
+    [repositoryId]="repoId"
+    [(isVisible)]="isUpdateReferenceModalVisible"
+    [commitId]="commitId"
+    [testCaseExecutionId]="testCaseExecution?.id"
+    [validationScope]="validationScope()"
+    [initialValidationScope]="validationScope()"
+    [warningMessage]="validationScopeWarningMessage()"
+  ></mxevolve-update-reference-modal>
+  <mxevolve-transfer-to-recon-modal
+    [projectId]="projectId"
+    [pathsToTransfer]="pathsToBeTransferredToRecon"
+    [(isVisible)]="isTransferToReconModalVisible"
+    (transfer)="transferToRecon($event)"
+  ></mxevolve-transfer-to-recon-modal>
+</div>

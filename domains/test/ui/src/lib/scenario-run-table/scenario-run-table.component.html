@@ -1,0 +1,16 @@
+<ag-grid-angular
+  class="ag-theme-quartz"
+  style="width: 100%"
+  [rowData]="$any(scenarioRuns())"
+  [columnDefs]="columnDefinitions()"
+  [defaultColDef]="defaultColumnDefinition()"
+  [context]="gridContext()"
+  [loading]="loading()"
+  [loadingOverlayComponent]="loadingOverlayComponent"
+  [noRowsOverlayComponent]="noRowsOverlayComponent"
+  [noRowsOverlayComponentParams]="noRowsOverlayComponentParams"
+  [pagination]="scenarioRuns().length > 5"
+  [paginationPageSize]="5"
+  [paginationPageSizeSelector]="[5, 10, 25]"
+  domLayout="autoHeight"
+></ag-grid-angular>

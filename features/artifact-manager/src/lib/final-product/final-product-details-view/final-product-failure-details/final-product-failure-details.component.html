@@ -1,0 +1,30 @@
+<div
+  data-testid="failure-message-div-container"
+  *showElementIfAuthorized="{
+    action: 'read',
+    attributes: {},
+    package: 'artifact_management',
+    resource: 'final_product',
+    projectId: finalProduct.projectId
+  }"
+>
+  @if (finalProduct.failureMessage) {
+  <div
+    data-testid="failure-message-div"
+    class="grid grid-cols-12 justify-between"
+  >
+    <div class="grid grid-cols-1 col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Failure Message
+      </div>
+      <div class="text-surface-900 dark:text-surface-0 break-words">
+        {{ finalProduct.failureMessage }}
+      </div>
+    </div>
+  </div>
+  } @else {
+  <p data-testid="no-failure-details" class="p-3 text-center">
+    No failure details available
+  </p>
+  }
+</div>

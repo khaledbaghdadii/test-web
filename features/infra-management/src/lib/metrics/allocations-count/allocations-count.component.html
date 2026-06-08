@@ -1,0 +1,20 @@
+<div class="flex flex-col gap-2 mt-3">
+  <h2 class="text-xl font-semibold mb-0">Type of Allocations</h2>
+
+  @if (dataExists()) {
+  <div
+    style="display: grid; width: 100%; height: 250px"
+    data-testid="chart-container"
+  >
+    <ag-charts [options]="chartOptions()"></ag-charts>
+  </div>
+  } @else {
+  <div
+    class="flex flex-col items-center justify-center py-8 text-gray-500"
+    data-testid="no-data"
+  >
+    <i class="pi pi-info-circle text-3xl mb-2"></i>
+    <span class="text-lg">No allocation data available.</span>
+  </div>
+  }
+</div>

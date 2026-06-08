@@ -1,0 +1,20 @@
+<mxevolve-stage-container>
+  <mxevolve-business-process-content-container header="Tag">
+    <div class="col-span-12">
+      <div class="flex flex-wrap items-stretch gap-6">
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Tag Name</span>
+          <span class="font-semibold">{{ tagName() }}</span>
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Tagged Commit</span>
+          <span class="font-semibold">{{ taggedCommitId() }}</span>
+        </div>
+      </div>
+      <div class="w-full flex flex-col items-center">
+        <mxevolve-illustration name="order_delivered" size="lg" />
+      </div>
+    </div>
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>

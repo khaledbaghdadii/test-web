@@ -1,0 +1,22 @@
+@if (loading) {
+<p-skeleton class="mb-2 h-12"></p-skeleton>
+} @else {
+<p-multiSelect
+  fluid
+  appendTo="body"
+  panelStyleClass="max-w-md"
+  [placeholder]="placeholder"
+  [options]="options"
+  optionLabel="name"
+  optionValue="id"
+  [ngModel]="selectedDropdownValues"
+  (ngModelChange)="onValueChange($event)"
+  (onBlur)="onTouched()"
+  display="chip"
+  [invalid]="invalid"
+>
+  <ng-template #item let-option>
+    <span class="whitespace-normal break-words w-full">{{ option.name }}</span>
+  </ng-template>
+</p-multiSelect>
+}

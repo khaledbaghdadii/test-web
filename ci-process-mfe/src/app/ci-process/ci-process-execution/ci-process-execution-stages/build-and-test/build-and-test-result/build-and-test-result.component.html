@@ -1,0 +1,17 @@
+<mxflow-step-result>
+  <div result class="flex content-center gap-2">
+    @if (stageResult === ciProcessStageStatus.PASSED) {
+    <i
+      class="pi pi-check-circle text-green-400 items-center"
+      style="display: flex"
+    ></i>
+    <span>Passed</span>
+    } @if (stageResult === ciProcessStageStatus.STOPPED) {
+    <i class="pi pi-ban items-center" style="display: flex"></i>
+    <h4 class="m-0">Stopped</h4>
+    }
+  </div>
+  <div additional-info>
+    <mxflow-input-provider [requester]="requester"></mxflow-input-provider>
+  </div>
+</mxflow-step-result>

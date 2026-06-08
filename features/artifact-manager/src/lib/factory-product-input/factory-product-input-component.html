@@ -1,0 +1,29 @@
+<div class="flex flex-col gap-2">
+  <mxevolve-software-product-selector
+    [projectId]="projectId"
+    [required]="requiredInput"
+    [mxVersion]="mxVersion"
+    [mxBuildId]="mxBuildId"
+    [parentFactoryProductId]="parentId"
+    (mxVersionChange)="onMxVersionChange($event)"
+    (mxBuildIdChange)="onMxBuildIdChange($event)"
+    (errorOutput)="onError($event)"
+  >
+  </mxevolve-software-product-selector>
+
+  @if (mxVersion && mxBuildId) {
+  <mxevolve-configuration-component-selector
+    [projectId]="projectId"
+    [required]="requiredInput"
+    [mxVersion]="mxVersion"
+    [mxBuildId]="mxBuildId"
+    [bipVersion]="bipVersion"
+    [bipBuildId]="bipBuildId"
+    [parentFactoryProductId]="parentId"
+    (bipVersionChange)="onBipVersionChange($event)"
+    (bipBuildIdChange)="onBipBuildIdChange($event)"
+    (factoryProductIdChange)="onFactoryProductIdChange($event)"
+  >
+  </mxevolve-configuration-component-selector>
+  }
+</div>

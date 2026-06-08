@@ -1,0 +1,51 @@
+<div class="grid-6">
+  <div class="grid-6 gap-y-[8px]">
+    <p style="font-size: 16px" class="col-span-6" for="qg-decision">
+      Mark the quality gate as <span class="text-red-500">*</span>
+    </p>
+    <div class="col-span-3">
+      <p-radioButton
+        [formControl]="form.controls.validationDecision"
+        [value]="QualityGateValidationDecision.VALIDATION_PASSED"
+        inputId="qg-passed"
+        (onBlur)="onTouched()"
+      />
+      <label for="qg-passed">Passed and Proceed</label>
+    </div>
+    <div class="col-span-3">
+      <p-radioButton
+        [formControl]="form.controls.validationDecision"
+        [value]="QualityGateValidationDecision.FAILED_AND_STOP_THE_PROCESS"
+        inputId="qg-failed"
+        (onBlur)="onTouched()"
+      />
+      <label for="qg-failed">Failed and stop the process</label>
+    </div>
+  </div>
+
+  <div class="col-span-6">
+    <label for="comments">Comments</label>
+    <textarea
+      pTextarea
+      class="w-full"
+      [formControl]="form.controls.comment"
+      rows="4"
+      placeholder="Enter your comments"
+      inputId="comments"
+      (onBlur)="onTouched()"
+    ></textarea>
+  </div>
+
+  @if (form.controls.validationDecision.value ===
+  QualityGateValidationDecision.FAILED_AND_STOP_THE_PROCESS &&
+  supportsResourceManagement()) {
+  <mxevolve-delete-development-checkbox
+    class="col-span-6"
+    [projectId]="projectId()"
+    [processId]="processId()"
+    [familyId]="ExecutionFamily.UPGRADE_PROCESS"
+    [formControl]="form.controls.deleteBranch"
+    actionLabel="after stopping the process"
+  />
+  }
+</div>

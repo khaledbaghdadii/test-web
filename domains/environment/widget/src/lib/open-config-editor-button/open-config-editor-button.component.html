@@ -1,0 +1,10 @@
+@if (featureEnabled()) {
+<p-button
+  label="Open Config Editor"
+  [text]="true"
+  [disabled]="disabled()"
+  [pTooltip]="tooltip()"
+  [tooltipDisabled]="!tooltip()"
+  (onClick)="openConfigurationEditor()"
+></p-button>
+}

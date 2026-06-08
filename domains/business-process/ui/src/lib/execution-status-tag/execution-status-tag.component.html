@@ -1,0 +1,10 @@
+<p-tag [severity]="configuration().severity">
+  <div class="flex items-center gap-1 text-sm">
+    <mxevolve-icon
+      [name]="configuration().icon"
+      size="sm"
+      [spin]="configuration().spin ?? false"
+    />
+    <span>{{ configuration().label }}</span>
+  </div>
+</p-tag>

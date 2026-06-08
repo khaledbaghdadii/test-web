@@ -1,0 +1,17 @@
+{
+  "name": "shared-core-config",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/shared/core/config/src",
+  "prefix": "mxevolve",
+  "tags": ["scope:shared", "type:core"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/shared/core/config/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+<div [formGroup]="form" class="field">
+  <label htmlFor="bpc" mxevolveMandatory>BPC</label>
+  @if (isFormLoading) {
+  <p-skeleton styleClass="h-12"></p-skeleton>
+  } @if (!isFormLoading) {
+  <p-multiSelect
+    #multiSelect
+    id="bpc"
+    [options]="(listOfBpcs$ | async) || []"
+    formControlName="bpcs"
+    optionLabel="name"
+    placeholder="Select BPCs"
+    (onChange)="onBpcSelect($event)"
+    display="chip"
+    [showClear]="true"
+    (onClear)="onClear()"
+    [maxSelectedLabels]="6"
+    fluid
+    [showToggleAll]="false"
+  >
+    <ng-template let-value pTemplate="selectedItems">
+      @for (option of value; track option) {
+      <div class="inline-flex items-center gap-2 px-1">
+        <p-chip
+          [label]="option.name"
+          [removable]="true"
+          (onRemove)="onBpcRemove(multiSelect, option, $event)"
+        ></p-chip>
+      </div>
+      } @if (!value || value.length === 0) {
+      <div>
+        {{ multiSelect.placeholder() }}
+      </div>
+      }
+    </ng-template>
+  </p-multiSelect>
+  }
+
+  <ng-template
+    [ngTemplateOutlet]="errorTipTemplate"
+    [ngTemplateOutletContext]="{ $implicit: form.get('bpcs') }"
+  ></ng-template>
+</div>

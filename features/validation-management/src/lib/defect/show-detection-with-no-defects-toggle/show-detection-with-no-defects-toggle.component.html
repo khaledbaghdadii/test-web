@@ -1,0 +1,37 @@
+<div class="flex justify-between items-center">
+  <div
+    data-testid="show-detections-with-no-defects-toggle"
+    class="flex items-center"
+  >
+    <div class="mr-2">{{ toggleLabel() }}</div>
+    <div
+      data-testid="show-detections-with-no-defects-toggle-tooltip"
+      tooltipPosition="top"
+      [pTooltip]="
+        !!(
+          warningMessage() ||
+          !(
+            validationScope()?.referenceVersion &&
+            validationScope()?.currentVersion
+          )
+        )
+          ? tooltipMessage()
+          : ''
+      "
+    >
+      <p-toggle-switch
+        data-testid="show-detections-without-defects-toggle"
+        [(ngModel)]="showDetectionsWithoutDefects"
+        [disabled]="
+          !!(
+            warningMessage() ||
+            !(
+              validationScope()?.referenceVersion &&
+              validationScope()?.currentVersion
+            )
+          )
+        "
+      ></p-toggle-switch>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,43 @@
+<mxevolve-card-container>
+  @if (status) {
+  <mxflow-header-title>
+    <div class="flex items-center gap-2">
+      Business Process Execution:
+      {{ businessProcessExecutionName ?? "-" }}
+
+      <app-business-process-execution-status
+        [status]="status"
+      ></app-business-process-execution-status>
+      @if (isActive && expiryDate) {
+      <mxevolve-expiry-date-tag
+        [expiryDate]="expiryDate"
+      ></mxevolve-expiry-date-tag>
+      }
+    </div>
+    <div right-content>
+      <mxevolve-business-process-execution-abort-button
+        [projectId]="projectId"
+        [processId]="processId"
+        [status]="status"
+        [familyId]="familyId"
+        (businessProcessAborted)="businessProcessAborted.emit()"
+      ></mxevolve-business-process-execution-abort-button>
+    </div>
+  </mxflow-header-title>
+  }
+
+  <mxevolve-business-process-alert-display
+    [expiryDate]="expiryDate"
+    [endDate]="endDate"
+    [errorMessage]="errorMessage"
+    [aborted]="isAborted"
+    [notStarted]="notStarted"
+  ></mxevolve-business-process-alert-display>
+
+  <mxflow-status-bar
+    [numberOfStages]="executionStages.length"
+    [stages]="executionStages"
+    [selectedStage]="selectedStage"
+    (onStageSelected)="selectStage.emit($event)"
+  ></mxflow-status-bar>
+</mxevolve-card-container>

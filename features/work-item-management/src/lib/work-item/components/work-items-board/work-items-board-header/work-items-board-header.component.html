@@ -1,0 +1,21 @@
+<div>
+  <div class="pb-4 overflow-y-scroll title-controls-section">
+    <mxevolve-work-items-board-title-controls></mxevolve-work-items-board-title-controls>
+  </div>
+
+  <div class="pb-4 overflow-y-scroll filters-section">
+    <mxevolve-work-items-board-filters></mxevolve-work-items-board-filters>
+  </div>
+
+  <div class="pb-2 overflow-y-scroll column-headers-section">
+    <div class="flex gap-8 w-full">
+      @for (column of columns(); track trackByColumnId($index, column)) {
+      <div class="flex-1" [attr.data-column-header-id]="column.id">
+        <mxevolve-work-items-column-header
+          [columnId]="column.id"
+        ></mxevolve-work-items-column-header>
+      </div>
+      }
+    </div>
+  </div>
+</div>

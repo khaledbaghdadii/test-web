@@ -1,0 +1,44 @@
+<p-multiSelect
+  [options]="sortedOptions()"
+  optionLabel="id"
+  [(ngModel)]="selectedObjectIds"
+  [virtualScroll]="true"
+  [virtualScrollItemSize]="virtualScrollItemSize"
+  [virtualScrollOptions]="{
+    lazy: true,
+    step: itemsStep,
+    onLazyLoad: handleScroll
+  }"
+  [filter]="false"
+  [showClear]="true"
+  [emptyMessage]="isLoadingDataSignal() ? 'Loading...' : 'No Results Found'"
+  [showToggleAll]="false"
+  class="w-full"
+  appendTo="body"
+  placeholder="Select Work Item IDs"
+  (onChange)="handleSelectionChange($event.value)"
+  (onClear)="handleClearSelection()"
+>
+  <ng-template pTemplate="filter">
+    <p-iconfield class="flex items-center w-full">
+      <input
+        pInputText
+        type="text"
+        placeholder="Search"
+        class="w-full"
+        [ngModel]="searchKeySignal()"
+        [pAutoFocus]="true"
+        (ngModelChange)="handleSearchKeyChange($event)"
+      />
+      @if (!searchKeySignal()) {
+      <p-inputicon class="pi pi-search"></p-inputicon>
+      } @if (searchKeySignal()) {
+      <p-inputicon
+        class="pi pi-times cursor-pointer"
+        (click)="handleClearSearchKey($event)"
+        onKeyUp="handleClearSearchKey($event); $event.preventDefault()"
+      ></p-inputicon>
+      }
+    </p-iconfield>
+  </ng-template>
+</p-multiSelect>

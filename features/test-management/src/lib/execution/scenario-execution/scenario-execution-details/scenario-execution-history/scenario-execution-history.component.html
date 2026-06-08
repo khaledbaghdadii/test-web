@@ -1,0 +1,143 @@
+<mxflow-header-title> Scenario Executions History</mxflow-header-title>
+<p-table
+  [value]="testUnitScenarioExecutions()"
+  [paginator]="true"
+  paginatorStyleClass="justify-end"
+  [totalRecords]="testUnitScenarioExecutions().length"
+  [rows]="10"
+  [loading]="!testUnitScenarioExecutions()"
+  [rowsPerPageOptions]="[10, 20, 30, 40, 50]"
+  [showCurrentPageReport]="true"
+  [showLoader]="false"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th
+        scope="col"
+        id="selected-execution-indicator-header"
+        class="w-auto"
+      ></th>
+      <th scope="col" id="execution-header" class="w-2/12">Execution</th>
+      @if (!testUnit()?.disableKeepExecution) {
+      <th scope="col" class="w-1/12" id="keep-execution-header">
+        Kept Execution
+      </th>
+      }
+      <th scope="col" id="status-header" class="w-1/12">Status</th>
+      <th
+        scope="col"
+        id="analysis-status-header"
+        class="w-1/12"
+        *showElementIfAuthorized="{
+          action: 'read_analysis_status',
+          attributes: {},
+          package: 'test',
+          resource: 'scenario_execution'
+        }"
+      >
+        Analysis Status
+      </th>
+      <th scope="col" id="commit-id-header" class="w-1/12">Commit ID</th>
+      <th scope="col" id="mx-version-header" class="w-2/12">MX Version</th>
+      <th scope="col" id="mx-build-id-header" class="w-2/12">MX Build ID</th>
+      <th scope="col" id="assignee-header" class="w-1/12">Assignee</th>
+      <th scope="col" id="view-header" class="w-1/12"></th>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="loadingbody">
+    <tr>
+      @for (col of Array(8); track col) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="body" let-scenarioExecution>
+    <tr
+      [ngClass]="{
+        'bg-primary-50 dark:bg-surface-800':
+          isTargetExecution(scenarioExecution)
+      }"
+    >
+      <td class="justify-center text-center">
+        @if (isTargetExecution(scenarioExecution)) {
+        <span class="pi pi-arrow-right"></span>
+        }
+      </td>
+      <td>
+        Start Date: {{ scenarioExecution.startDate | date : "medium" }} <br />
+        Duration:
+        <mxevolve-scenario-execution-duration
+          [startTime]="scenarioExecution.startDate"
+          [endTime]="scenarioExecution.endDate"
+        ></mxevolve-scenario-execution-duration>
+      </td>
+      @if (!testUnit()?.disableKeepExecution) {
+      <td id="keep-execution-row">
+        <mxevolve-kept-execution-toggle
+          id="keep-execution-section"
+          [keptExecution]="scenarioExecution.keptExecution"
+          [cleaningStatus]="scenarioExecution.cleaningStatus"
+          [isFailed]="scenarioExecution.isFailed"
+          [disableKeepExecution]="testUnit()?.disableKeepExecution || false"
+          [showTooltip]="false"
+          (keptExecutionToggled)="toggleKeptExecutionFlag(scenarioExecution.id)"
+        ></mxevolve-kept-execution-toggle>
+      </td>
+      }
+      <td>
+        <mxevolve-scenario-execution-status
+          [status]="scenarioExecution.status"
+        ></mxevolve-scenario-execution-status>
+      </td>
+      <td
+        id="analysis-status-row"
+        *showElementIfAuthorized="{
+          action: 'read_analysis_status',
+          attributes: {},
+          package: 'test',
+          resource: 'scenario_execution'
+        }"
+      >
+        <mxevolve-scenario-analysis-status
+          [status]="scenarioExecution.analysisStatus"
+        ></mxevolve-scenario-analysis-status>
+      </td>
+      <td>
+        <mxevolve-scenario-execution-commit-id
+          [commitId]="scenarioExecution.commitId"
+        ></mxevolve-scenario-execution-commit-id>
+      </td>
+      <td>
+        <mxevolve-scenario-execution-mx-version
+          [mxVersion]="scenarioExecution.mxVersion"
+        ></mxevolve-scenario-execution-mx-version>
+      </td>
+      <td>
+        <mxevolve-scenario-execution-mx-build-id
+          [mxBuildId]="scenarioExecution.mxBuildId"
+        ></mxevolve-scenario-execution-mx-build-id>
+      </td>
+      <td>{{ assignee ? assignee : "-" }}</td>
+      <td>
+        @if (!isTargetExecution(scenarioExecution)) {
+        <a
+          class="p-button-link"
+          routerLink="../{{ scenarioExecution.id }}"
+          [queryParams]="{ tab: 'details' }"
+          >View</a
+        >
+        }
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="9">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

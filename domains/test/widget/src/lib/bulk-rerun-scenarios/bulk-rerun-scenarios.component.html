@@ -1,0 +1,49 @@
+<div class="flex justify-end">
+  <p-button
+    label="Bulk Rerun"
+    [outlined]="true"
+    [disabled]="isBulkRerunDisabled()"
+    (onClick)="openSelectionDialog()"
+  />
+</div>
+
+<p-dialog
+  [(visible)]="showSelectionDialog"
+  [modal]="true"
+  [draggable]="false"
+  class="dialog-cols-6"
+>
+  <ng-template pTemplate="header">
+    <span class="p-dialog-title">Selected Scenarios</span>
+  </ng-template>
+  <p class="text-sm text-muted-color mb-2">
+    Select one or more Scenarios that you wish to re-run.
+  </p>
+  <div class="grid-6">
+    <div class="col-span-6">
+      @if (showSelectionDialog()) {
+      <mxevolve-multi-select-scenario-run-table
+        [projectId]="projectId()"
+        [scenarioRunIds]="repushableHeadIds()"
+        (selectedScenarioRunIds)="selectedScenarioRunIds.set($event)"
+      />
+      }
+    </div>
+    <div class="col-start-3 col-span-2">
+      <p-button
+        label="Re-run"
+        styleClass="w-full"
+        [disabled]="selectedScenarioRunIds().length === 0"
+        (onClick)="onSelectionRerunClicked()"
+      />
+    </div>
+  </div>
+</p-dialog>
+
+<mxevolve-rerun-dialog
+  [(visible)]="showRerunDialog"
+  [projectId]="projectId()"
+  [factoryProductId]="preFilledFactoryProductId()"
+  [loading]="bulkRerunLoading()"
+  (rerunRequested)="onBulkRerunRequested($event)"
+/>

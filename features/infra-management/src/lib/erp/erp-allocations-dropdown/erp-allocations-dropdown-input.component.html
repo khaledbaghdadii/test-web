@@ -1,0 +1,32 @@
+<p-select
+  [options]="erpAllocationsDropdownOptions()"
+  optionLabel="label"
+  optionValue="value"
+  [ngModel]="selectedOption()?.value"
+  (onChange)="handleErpAllocationSelected($event)"
+  placeholder="Select an ERP Allocation"
+  appendTo="body"
+  styleClass="w-full"
+  [showClear]="true"
+  (onClear)="clearSelectedOption()"
+  [filter]="true"
+  filterBy="label"
+  [ngClass]="{
+    'ng-invalid ng-dirty': !selectedOptionValidity()
+  }"
+>
+  <ng-template #footer>
+    @if (isLoadingData()) {
+    <div
+      style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+      "
+    >
+      <i class="pi pi-spinner pi-spin"></i>
+    </div>
+    }
+  </ng-template>
+</p-select>

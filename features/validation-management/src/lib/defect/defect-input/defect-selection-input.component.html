@@ -1,0 +1,31 @@
+<div class="grid grid-cols-12 gap-4">
+  <div class="col-span-11">
+    <input
+      class="w-full"
+      type="text"
+      pInputText
+      placeholder="Select a Defect"
+      [value]="selectedDefectId"
+      readonly
+    />
+  </div>
+  <div class="col-span-1">
+    <p-button
+      (click)="showDefectModal()"
+      (keydown)="showDefectModal()"
+      pTooltip="Browse defects"
+      tooltipPosition="top"
+      icon="pi pi-search"
+      styleClass="w-full h-full"
+      data-testId="browse-defects-button"
+    ></p-button>
+  </div>
+</div>
+<mxevolve-defect-selection-modal
+  [(isVisible)]="isDefectModalVisible"
+  [validationScope]="validationScope"
+  [initialValidationScope]="initialValidationScope"
+  [warningMessage]="warningMessage"
+  (errorMessage)="handleErrorMessage($event)"
+  (defectSelectedChange)="handleSelectedDefectChange($event)"
+></mxevolve-defect-selection-modal>

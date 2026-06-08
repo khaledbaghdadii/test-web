@@ -1,0 +1,24 @@
+/* Make scrollbars invisible but keep their space for alignment */
+.title-controls-section,
+.filters-section,
+.column-headers-section {
+  scrollbar-color: transparent transparent;
+}
+
+.title-controls-section::-webkit-scrollbar,
+.filters-section::-webkit-scrollbar,
+.column-headers-section::-webkit-scrollbar {
+  background: transparent; 
+}
+
+.title-controls-section::-webkit-scrollbar-thumb,
+.filters-section::-webkit-scrollbar-thumb,
+.column-headers-section::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+.title-controls-section::-webkit-scrollbar-track,
+.filters-section::-webkit-scrollbar-track,
+.column-headers-section::-webkit-scrollbar-track {
+  background: transparent;
+}

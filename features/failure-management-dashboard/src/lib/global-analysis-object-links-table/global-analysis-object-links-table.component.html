@@ -1,0 +1,66 @@
+<p-table
+  [value]="linkedScenarioExecutions"
+  [loading]="isLoading"
+  [showLoader]="false"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th id="scenarioExecutionTableHeader">Scenario Execution</th>
+      <th id="testCaseExecutionsTableHeader">Test Case Executions</th>
+      <th id="businessProcessExecutionTableHeader">
+        Business Process Executions
+      </th>
+      <th id="projectHeader">Project</th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-execution>
+    <tr>
+      <td>
+        <a
+          class="p-button-link"
+          routerLink="/app/{{ execution.project.id }}/test/execution/details/{{
+            execution.scenarioExecutionId
+          }}"
+          target="_blank"
+        >
+          {{ execution.scenarioDefinitionName }}
+        </a>
+      </td>
+      <td class="max-w-96 truncate" data-testid="testCaseExecutionNames">
+        <mxevolve-test-case-execution-display
+          [testCaseExecutions]="execution.testCaseExecutions"
+        ></mxevolve-test-case-execution-display>
+      </td>
+      <td>
+        <mxevolve-business-process-execution-list
+          [projectId]="execution.project.id"
+          [businessProcessExecutions]="execution.businessProcesses"
+        ></mxevolve-business-process-execution-list>
+      </td>
+      <td>
+        {{ execution.project.name }}
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="loadingbody">
+    @for (row of Array(4); track row) {
+    <tr>
+      @for (col of Array(4); track col) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="9" class="py-4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

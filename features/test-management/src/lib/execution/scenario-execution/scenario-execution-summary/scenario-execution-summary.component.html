@@ -1,0 +1,25 @@
+<div class="flex">
+  <p-badge
+    [attr.data-testid]="'failed-executions-badge'"
+    [value]="numberOfFailedExecutions()"
+    severity="danger"
+    class="mr-1"
+    tooltipPosition="top"
+    [pTooltip]="failedExecutionsTooltip()"
+  ></p-badge>
+  <p-badge
+    [attr.data-testid]="'underway-executions-badge'"
+    [value]="numberOfUnderwayExecutions()"
+    severity="warn"
+    class="mr-1"
+    tooltipPosition="top"
+    [pTooltip]="underwayExecutionsTooltip()"
+  ></p-badge>
+  <p-badge
+    [attr.data-testid]="'passed-executions-badge'"
+    [value]="numberOfPassedExecutions()"
+    severity="success"
+    tooltipPosition="top"
+    [pTooltip]="passedExecutionsTooltip()"
+  ></p-badge>
+</div>

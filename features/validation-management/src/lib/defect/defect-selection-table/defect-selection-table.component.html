@@ -1,0 +1,176 @@
+<p-table
+  data-testid="defects-selection-table"
+  [value]="defects()"
+  [showLoader]="false"
+  [loading]="isLoading()"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  [rows]="10"
+  [first]="firstRowIndex()"
+  [totalRecords]="totalRecords()"
+  [paginator]="true"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  paginatorStyleClass="justify-end"
+  paginatorDropdownAppendTo="body"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
+  [scrollable]="true"
+  [lazy]="true"
+  dataKey="id"
+  (onLazyLoad)="handleTableQueryParamsChange($event)"
+  [(selection)]="selectedDefect"
+  (selectionChange)="handleDefectSelection($event)"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th
+        [hidden]="hideSelection"
+        scope="col"
+        data-testId="selection-column-header"
+      >
+        <!-- radio buttons -->
+      </th>
+      <th pResizableColumn scope="col" class="w-2/12">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Defect ID</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="idPhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Title</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="titlePhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Description</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="descriptionPhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col" class="w-2/12">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Developer</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="developerPhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col" class="w-2/12">Submission Date</th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-defect>
+    @if (!isLoading()) {
+    <tr data-testid="tableBody">
+      <td [hidden]="hideSelection" data-testId="selection-column">
+        <p-tableRadioButton [value]="defect"></p-tableRadioButton>
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="defect.link"
+        tooltipPosition="top"
+        [showDelay]="500"
+      >
+        <a
+          class="p-button-link"
+          href="{{ defect.link }}"
+          target="_blank"
+          rel="noopener"
+          >{{ defect.id }}</a
+        >
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="defect.title"
+        tooltipPosition="top"
+        [showDelay]="500"
+      >
+        {{ defect.title }}
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="defect.description"
+        tooltipPosition="top"
+        [showDelay]="500"
+      >
+        {{ defect.description }}
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="defect.developer"
+        tooltipPosition="top"
+        [showDelay]="500"
+      >
+        {{ defect.developer }}
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="defect.submissionDate"
+        tooltipPosition="top"
+        [showDelay]="500"
+      >
+        {{ defect.submissionDate | date : "medium" }}
+      </td>
+    </tr>
+    }
+  </ng-template>
+
+  <ng-template pTemplate="loadingbody">
+    @for (row of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track row) {
+    <tr>
+      @if (!hideSelection) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      } @for (col of [1, 2, 3, 4, 5]; track col) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="12" class="py-4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

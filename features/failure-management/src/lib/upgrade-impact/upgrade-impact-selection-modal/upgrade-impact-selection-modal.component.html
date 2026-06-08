@@ -1,0 +1,80 @@
+<p-dialog
+  header="Upgrade Impacts in Validation Scope"
+  [(visible)]="isVisible"
+  [draggable]="false"
+  [modal]="true"
+  [style]="{ width: '85vw' }"
+  (onHide)="handleCancel()"
+  [maximizable]="true"
+>
+  <div>
+    <div class="flex flex-col gap-3 w-full mt-4">
+      <div class="flex items-center justify-between">
+        <div class="flex-grow">
+          <mxevolve-validation-scope-setter
+            [(validationScope)]="validationScope"
+            [initialValidationScope]="initialValidationScope()"
+          ></mxevolve-validation-scope-setter>
+        </div>
+        <div class="flex items-center gap-2 ml-4 mb-2">
+          <mxevolve-show-detection-with-no-defects-toggle
+            [detectionType]="DetectionType.Upgrade"
+            [detectionCategory]="DetectionCategory.Impact"
+            [warningMessage]="warningMessage"
+            [(showDetectionsWithoutDefects)]="showUpgradeImpactsWithoutDefects"
+            [(validationScope)]="validationScope"
+          ></mxevolve-show-detection-with-no-defects-toggle>
+          <p-button
+            (click)="handleRefresh()"
+            (keydown)="handleRefresh()"
+            icon="pi pi-refresh"
+            pTooltip="Refresh"
+            [outlined]="true"
+            data-testId="refresh-button"
+          ></p-button>
+        </div>
+      </div>
+
+      @if (warningMessage) {
+      <p-message
+        styleClass="mt-1 mb-4"
+        severity="warn"
+        [closable]="false"
+        [showTransitionOptions]="'0ms'"
+        [hideTransitionOptions]="'0ms'"
+      >
+        {{ warningMessage }}
+      </p-message>
+      }
+    </div>
+    <mxevolve-upgrade-impact-selection-table
+      [isVisible]="isVisible"
+      [showUpgradeImpactsWithoutDefects]="showUpgradeImpactsWithoutDefects()"
+      [validationScope]="validationScope()"
+      [hideSelection]="hideSelection"
+      [selectedUpgradeImpactId]="selectedUpgradeImpactId"
+      (selectedUpgradeImpactIdChange)="selectUpgradeImpactId($event)"
+      (errorMessage)="handleErrorOccurred($event)"
+      (warningMessage)="handleWarningMessage($event)"
+    ></mxevolve-upgrade-impact-selection-table>
+  </div>
+  @if (!hideSelection) {
+  <div class="flex justify-end">
+    <p-button
+      (click)="submit()"
+      (keydown)="submit()"
+      label="Submit"
+      class="pl-4"
+      data-testId="submit-button"
+    ></p-button>
+    <p-button
+      label="Cancel"
+      (click)="handleCancel()"
+      (keydown)="handleCancel()"
+      [outlined]="true"
+      class="pl-4"
+      data-testId="cancel-button"
+    ></p-button>
+  </div>
+  }
+</p-dialog>

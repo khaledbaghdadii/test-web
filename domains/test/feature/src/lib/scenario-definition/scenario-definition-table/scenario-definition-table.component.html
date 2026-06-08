@@ -1,0 +1,163 @@
+<mxevolve-card-container>
+  <mxflow-header-title>
+    Scenario Definitions
+    <div class="flex justify-end gap-4 items-center" right-content>
+      <p-select-button
+        [options]="viewActivityStatusOptions"
+        [(ngModel)]="selectedActivityStatus"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="onScenarioDefinitionsActivityStatusChange()"
+      ></p-select-button>
+      <div>
+        <p-iconfield>
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            pInputText
+            type="text"
+            placeholder="Search"
+            [(ngModel)]="searchInput"
+          />
+        </p-iconfield>
+      </div>
+      <button
+        *showElementIfAuthorized="{
+          action: 'create',
+          attributes: {},
+          package: 'test',
+          resource: 'scenario_definition'
+        }"
+        pButton
+        label="Create new"
+        routerLink="create"
+        id="create-scenario-definition"
+      ></button>
+    </div>
+  </mxflow-header-title>
+
+  <p-table
+    [value]="scenarioDefinitions | scenarioFilter : searchInput"
+    [loading]="isLoading"
+    [paginator]="true"
+    paginatorStyleClass="justify-end"
+    [rows]="10"
+    [totalRecords]="scenarioDefinitions.length"
+    [rowsPerPageOptions]="[10, 20, 30, 40, 50]"
+    [showCurrentPageReport]="true"
+    [showLoader]="false"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        @for (column of listOfColumn; track column) {
+        <th
+          [style.width]="column.width"
+          [pSortableColumn]="column.field"
+          id="col-{{ column.field }}"
+        >
+          {{ column.header }}
+          <p-sortIcon [field]="column.field"></p-sortIcon>
+        </th>
+        } @if (selectedActivityStatus ===
+        ScenarioDefinitionActivityStatus.ACTIVE) {
+        <th id="col-actions"></th>
+        <th id="col-archive"></th>
+        }
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="loadingbody">
+      @for (row of Array(10); track row) {
+      <tr>
+        @for (col of Array(4); track col) {
+        <td>
+          <p-skeleton></p-skeleton>
+        </td>
+        } @if (selectedActivityStatus ===
+        ScenarioDefinitionActivityStatus.ACTIVE) {
+        <td
+          id="loadingEdit"
+          *showElementIfAuthorized="{
+            action: 'edit',
+            attributes: {},
+            package: 'test',
+            resource: 'scenario_definition'
+          }"
+        >
+          <p-skeleton></p-skeleton>
+        </td>
+        <td
+          id="loadingArchive"
+          *showElementIfAuthorized="{
+            action: 'archive',
+            attributes: {},
+            package: 'test',
+            resource: 'scenario_definition'
+          }"
+        >
+          <p-skeleton></p-skeleton>
+        </td>
+        }
+      </tr>
+      }
+    </ng-template>
+    <ng-template pTemplate="body" let-data>
+      <tr>
+        <td>
+          <a class="p-button-link" routerLink="details/{{ data.id }}">{{
+            data.name
+          }}</a>
+        </td>
+        <td>{{ data.qualityLevel || "-" }}</td>
+        <td>
+          <mxevolve-show-more-less
+            [listOfItems]="testsToDisplay[data.id]"
+          ></mxevolve-show-more-less>
+        </td>
+        <td>
+          @if (data.environmentDefinition) {
+          <mxevolve-environment-definition-name
+            [environmentDefinition]="data.environmentDefinition"
+          ></mxevolve-environment-definition-name>
+          } @else { - }
+        </td>
+        @if (selectedActivityStatus === ScenarioDefinitionActivityStatus.ACTIVE)
+        {
+        <td>
+          <button
+            *showElementIfAuthorized="{
+              action: 'edit',
+              attributes: {},
+              package: 'test',
+              resource: 'scenario_definition'
+            }"
+            pButton
+            pRipple
+            type="button"
+            [routerLink]="'edit/' + data.id"
+            pTooltip="Edit"
+            icon="pi pi-pencil"
+            class="p-button-rounded p-button-text"
+            id="edit-scenario-definition"
+            data-testid="edit-scenario-definition"
+          ></button>
+        </td>
+        <td>
+          <mxevolve-archive-scenario-definition-button
+            data-testid="archive-scenario-definition-button"
+            *showElementIfAuthorized="{
+              action: 'archive',
+              attributes: {},
+              package: 'test',
+              resource: 'scenario_definition'
+            }"
+            [projectId]="projectId"
+            [scenarioDefinitionId]="data.id"
+            [scenarioDefinitionName]="data.name"
+            (archived)="onScenarioDefinitionArchived(data.id)"
+          ></mxevolve-archive-scenario-definition-button>
+        </td>
+        }
+      </tr>
+    </ng-template>
+  </p-table>
+</mxevolve-card-container>

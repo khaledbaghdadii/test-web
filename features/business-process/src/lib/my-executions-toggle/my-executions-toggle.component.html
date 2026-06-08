@@ -1,0 +1,12 @@
+<div class="flex items-center gap-3">
+  <p-toggleSwitch
+    id="myExecutionsToggle"
+    [(ngModel)]="showMyExecutionsOnly"
+    (onChange)="onMyExecutionsToggle()"
+  ></p-toggleSwitch>
+  <label
+    for="myExecutionsToggle"
+    class="text-base font-semibold cursor-pointer select-none"
+    >My Executions
+  </label>
+</div>

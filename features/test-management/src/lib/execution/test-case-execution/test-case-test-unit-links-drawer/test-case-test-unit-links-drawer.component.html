@@ -1,0 +1,62 @@
+<p-drawer
+  [(visible)]="visible"
+  [header]="drawerHeader()"
+  position="bottom"
+  [style]="{ height: 'auto', maxHeight: '40vh' }"
+  styleClass="p-4"
+>
+  <div>
+    <p class="mb-4">
+      This table displays all detections and incidents associated with the
+      selected test case within the current test unit.
+    </p>
+    <p-table
+      [value]="testCaseTestUnitLinksTableData()"
+      [showLoader]="false"
+      [loading]="testUnitAnalysisObjectLinksLoading()"
+    >
+      <ng-template #header>
+        <tr>
+          <th pResizableColumn id="table-title-header">Title</th>
+          <th pResizableColumn id="table-title-header">Type</th>
+          <th pResizableColumn id="table-title-header"></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-testUnitLink>
+        <tr>
+          <td class="truncate">
+            <a
+              [pTooltip]="testUnitLink.analysisObjectTitle"
+              tooltipPosition="top"
+              [showDelay]="1000"
+              class="p-button-link"
+              [href]="testUnitLink.analysisObjectLink"
+              target="_blank"
+            >
+              {{ testUnitLink.analysisObjectTitle }}
+            </a>
+          </td>
+          <td class="truncate">
+            {{ testUnitLink.analysisObjectType | analysisObjectTypeDisplay }}
+          </td>
+          <td class="truncate">
+            <mxevolve-scenario-execution-name
+              [scenarioExecutionId]="testUnitLink.scenarioExecutionId"
+              scenarioExecutionName="View Scenario Execution"
+              [projectId]="testUnitLink.projectId"
+            ></mxevolve-scenario-execution-name>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #loadingbody>
+        @for(i of Array(5); track i) {
+        <tr>
+          <td><p-skeleton /></td>
+          <td><p-skeleton /></td>
+          <td><p-skeleton /></td>
+        </tr>
+        }
+      </ng-template>
+    </p-table>
+  </div>
+</p-drawer>

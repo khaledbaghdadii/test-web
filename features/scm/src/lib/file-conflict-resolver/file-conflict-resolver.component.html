@@ -1,0 +1,107 @@
+<div class="flex flex-col h-full gap-3">
+  @switch (viewState()) { @case ("loading") {
+  <div class="flex flex-col flex-1 min-h-0 gap-3">
+    <div class="flex flex-1 min-h-0 gap-3">
+      @for (_ of [1, 2]; track $index) {
+      <div
+        class="flex flex-col flex-1 min-h-0 border border-surface-300 dark:border-surface-700 rounded-md overflow-hidden"
+      >
+        <div
+          class="px-3 py-2 border-b border-surface-300 dark:border-surface-700"
+        >
+          <p-skeleton width="8rem" height="1rem" />
+        </div>
+        <div class="flex flex-col flex-1 gap-2 p-3">
+          <p-skeleton width="100%" height="0.75rem" />
+          <p-skeleton width="80%" height="0.75rem" />
+          <p-skeleton width="90%" height="0.75rem" />
+          <p-skeleton width="60%" height="0.75rem" />
+          <p-skeleton width="85%" height="0.75rem" />
+          <p-skeleton width="70%" height="0.75rem" />
+          <p-skeleton width="95%" height="0.75rem" />
+          <p-skeleton width="55%" height="0.75rem" />
+        </div>
+      </div>
+      }
+    </div>
+
+    <div
+      class="flex flex-col flex-1 min-h-0 border border-surface-300 dark:border-surface-700 rounded-md overflow-hidden"
+    >
+      <div
+        class="px-3 py-2 border-b border-surface-300 dark:border-surface-700"
+      >
+        <p-skeleton width="12rem" height="1rem" />
+      </div>
+      <div class="flex flex-col flex-1 gap-2 p-3">
+        <p-skeleton width="100%" height="0.75rem" />
+        <p-skeleton width="75%" height="0.75rem" />
+        <p-skeleton width="88%" height="0.75rem" />
+        <p-skeleton width="50%" height="0.75rem" />
+      </div>
+    </div>
+  </div>
+  } @case ("error") {
+  <p-message severity="error" [closable]="false">
+    <div class="flex items-center gap-2">
+      <i class="pi pi-times-circle" aria-hidden="true"></i>
+      <span>Failed to load conflict resolver: {{ errorMessage() }}</span>
+    </div>
+  </p-message>
+  } @case ("ready") { @if (isSingleEditorMode()) {
+  <mxevolve-conflict-resolution-container
+    class="block w-full h-full overflow-hidden"
+    [projectId]="projectId()"
+    [remoteClonedRepositoryId]="remoteClonedRepositoryId()"
+    [filePath]="filePath()"
+    [language]="language()"
+    [rawConflictContent]="workingTreeContent()"
+    [gitFileStatusCode]="gitFileStatusCode()"
+    [resolvedContentByDecision]="resolvedContentByDecision()"
+    (decisionTaken)="onResolved()"
+    (resolvedContent)="onResolved()"
+  />
+  } @else if (isContentUnavailable()) {
+  <p-message severity="info" [closable]="false">
+    <div class="flex items-center gap-2">
+      <i class="pi pi-info-circle" aria-hidden="true"></i>
+      <span>{{ contentUnavailableMessage() }}</span>
+    </div>
+  </p-message>
+  } @else {
+  <p-splitter
+    layout="vertical"
+    [panelSizes]="splitterPanelSizes()"
+    [minSizes]="[15, 15]"
+    [style]="{ flex: '1 1 0', minHeight: '0', border: 'none' }"
+    class="merge-resolution-splitter"
+  >
+    <ng-template pTemplate="panel">
+      <mxevolve-base-comparison-diffs
+        class="block w-full h-full overflow-hidden"
+        [baseContent]="baseContent()"
+        [localContent]="localContent()"
+        [remoteContent]="remoteContent()"
+        [language]="language()"
+      />
+    </ng-template>
+
+    <ng-template pTemplate="panel">
+      <div class="h-full" [class.pt-3]="isButtonsMode()">
+        <mxevolve-conflict-resolution-container
+          class="block w-full h-full overflow-hidden"
+          [projectId]="projectId()"
+          [remoteClonedRepositoryId]="remoteClonedRepositoryId()"
+          [filePath]="filePath()"
+          [language]="language()"
+          [rawConflictContent]="workingTreeContent()"
+          [gitFileStatusCode]="gitFileStatusCode()"
+          [resolvedContentByDecision]="resolvedContentByDecision()"
+          (decisionTaken)="onResolved()"
+          (resolvedContent)="onResolved()"
+        />
+      </div>
+    </ng-template>
+  </p-splitter>
+  } } }
+</div>

@@ -1,0 +1,23 @@
+@if (loading) {
+<p-skeleton class="mb-2 h-12"></p-skeleton>
+} @else {
+<p-select
+  fluid
+  appendTo="body"
+  panelStyleClass="max-w-md"
+  [placeholder]="placeholder"
+  [options]="options"
+  optionLabel="name"
+  optionValue="id"
+  filter="true"
+  [ngModel]="selectedValue"
+  (ngModelChange)="onValueChange($event)"
+  (onBlur)="onTouched()"
+  [showClear]="true"
+  [invalid]="invalid"
+>
+  <ng-template #item let-option>
+    <span class="whitespace-normal break-words w-full">{{ option.name }}</span>
+  </ng-template>
+</p-select>
+}

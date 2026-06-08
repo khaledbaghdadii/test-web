@@ -1,0 +1,105 @@
+<mxevolve-stage-container>
+  @if (errorMessage()) {
+  <p-message severity="error">{{ errorMessage() }}</p-message>
+  } @else if (!readyForBuildAndTest()) {
+  <div class="flex-1 w-full flex flex-col items-center gap-[8px]">
+    <mxevolve-illustration
+      name="designing_architecture_in_metaverse"
+      size="xxl"
+    />
+    <span class="text-xl font-medium">
+      The step is currently loading. Please refresh the page for the latest
+      updates.
+    </span>
+  </div>
+  } @else {
+  <!-- Cherry-pick alert (text matches legacy build-and-test-cherry-pick) -->
+  @if (cherryPickRunning()) {
+  <p-message severity="info">
+    Automatic cherry picking is in progress. Please refresh the page for the
+    latest update.
+  </p-message>
+  } @else if (cherryPickFailed()) {
+  <p-message severity="warn">{{ cherryPickFailedMessage() }}</p-message>
+  }
+
+  <!-- Build panel (env bar shown once a build environment id is threaded) -->
+  <mxevolve-build-and-test-build-section
+    [projectId]="projectId()"
+    [storyIds]="storyIds()"
+    [environmentId]="environmentId()"
+    [automerge]="automerge()"
+    [development]="development()"
+    [latestScenarioExecutionId]="environmentScenarioId()"
+    [showEnvironmentWaitingMessage]="showEnvironmentWaitingMessage()"
+    [scenarioDetailsDisabled]="isUserInterventionDisabled()"
+  />
+
+  <!-- Technical Reseed panel -->
+  @if (showTechnicalReseed()) {
+  <mxevolve-build-and-test-technical-reseed-section
+    [projectId]="projectId()"
+    [executionGroupId]="technicalReseedExecutionGroupId()!"
+    [infraGroup]="machineGroupId()"
+    [targetBranch]="temporaryBranchName()"
+    (operationLaunched)="reloadExecution()"
+  />
+  }
+
+  <!-- Test panel -->
+  <mxevolve-build-and-test-test-section
+    [projectId]="projectId()"
+    [processId]="processId()"
+    [environmentId]="environmentId()"
+    [branchName]="branchName()"
+    [executionGroupId]="scenarioExecutionGroup()"
+    [machineGroupId]="machineGroupId()"
+  />
+
+  <mxevolve-business-process-content-container footer [clearBackground]="true">
+    @if (latestMergeJobId() && mergeRequestResource.isLoading()) {
+    <p-skeleton class="col-start-5 col-span-4 lg:col-span-2" height="2.5rem" />
+    } @else if (canReopenMergeRequest()) {
+    <p-button
+      class="col-start-5 col-span-4 lg:col-span-2"
+      styleClass="w-full"
+      label="Reopen Merge Request"
+      [disabled]="sendForReviewDisabled()"
+      [loading]="actionLoading()"
+      (onClick)="reopenMergeRequest()"
+    />
+    } @else {
+    <p-button
+      class="col-start-5 col-span-4 lg:col-span-2"
+      styleClass="w-full"
+      label="Create New Merge Request"
+      [disabled]="sendForReviewDisabled()"
+      (onClick)="openSendForReview()"
+    />
+    }
+
+    @if (showDecisionResult()) {
+    <p-message
+      class="col-span-12"
+      [severity]="decisionMessageSeverity()"
+    >
+      {{ decisionResultLabel() }} by {{ decisionRequester() }}
+    </p-message>
+    }
+  </mxevolve-business-process-content-container>
+
+  }
+</mxevolve-stage-container>
+
+<mxevolve-build-and-test-send-for-review
+  [(visible)]="sendForReviewVisible"
+  [projectId]="projectId()"
+  [processId]="processId()"
+  [repositoryId]="execution().input.repositoryId"
+  [developmentId]="developmentId()!"
+  [parentBranchName]="execution().input.configurationParentBranch"
+  [supportsResourceManagement]="execution().supportsResourceManagement"
+  [hasPredefinedMergeRequestInputs]="execution().hasPredefinedMergeRequestInputs"
+  [ciVersion]="execution().ciVersion"
+  (mergeRequestCreated)="reloadExecution()"
+/>

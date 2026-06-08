@@ -1,0 +1,274 @@
+<mxevolve-business-process-content-container
+  header="Technical Reseed"
+  [collapsable]="true"
+>
+  @if (executionGroupResource.status() === "error") {
+  <p-message class="col-span-12" severity="error">
+    {{ executionGroupResource.error()?.message }}
+  </p-message>
+  } @else {
+  <div class="col-span-12 flex items-center justify-between gap-4">
+    <h3 class="font-medium text-base m-0">
+      List of Technical Reseed Executions
+    </h3>
+    <p-button
+      label="Technical Reseed"
+      [disabled]="launchDisabled()"
+      [loading]="launchInProgress()"
+      [pTooltip]="launchTooltip()"
+      [tooltipDisabled]="!launchTooltip()"
+      (onClick)="openLaunchDialog()"
+    />
+  </div>
+
+  @if (executionGroupResource.isLoading()) {
+  <div class="col-span-12 text-sm text-surface-500 dark:text-surface-300">
+    Loading technical reseed executions...
+  </div>
+  } @else if (hasOperations()) {
+  <div class="col-span-12 flex flex-col gap-4">
+    @for (operation of operations(); track operation.id) {
+    <div
+      class="border border-surface-200 dark:border-surface-700 rounded-md bg-surface-0 dark:bg-surface-900 overflow-hidden"
+    >
+      <button
+        type="button"
+        class="w-full border-0 bg-transparent cursor-pointer px-4 py-4 text-left"
+        (click)="toggleOperation(operation.id)"
+        [attr.aria-expanded]="isOperationExpanded(operation.id)"
+      >
+        <div class="grid grid-cols-12 gap-4 items-center">
+          <div class="col-span-12 md:col-span-2 flex items-center gap-3">
+            <mxevolve-icon
+              [name]="
+                isOperationExpanded(operation.id)
+                  ? 'expand_less'
+                  : 'expand_more'
+              "
+              size="md"
+              color="var(--p-primary-color)"
+            />
+            <div class="flex flex-col gap-1">
+              <span class="text-sm text-surface-500 dark:text-surface-300">
+                TR Name
+              </span>
+              <span class="font-semibold text-surface-900 dark:text-surface-0">
+                {{ operation.displayName }}
+              </span>
+            </div>
+          </div>
+
+          <div class="col-span-12 md:col-span-2 flex flex-col gap-1">
+            <span class="text-sm text-surface-500 dark:text-surface-300">
+              TR Status
+            </span>
+            <div class="flex items-center gap-2">
+              <p-tag
+                [severity]="statusSeverity(operation.status)"
+                [icon]="statusIcon(operation.status)"
+                [value]="statusLabel(operation.status)"
+              />
+              @if (statusTooltip(operation); as tooltip) {
+              <mxevolve-icon
+                name="info"
+                size="sm"
+                color="var(--p-primary-color)"
+                [pTooltip]="tooltip"
+                tooltipPosition="top"
+              />
+              }
+            </div>
+          </div>
+
+          <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
+            <span class="text-sm text-surface-500 dark:text-surface-300">
+              Created On
+            </span>
+            <span class="font-semibold text-surface-900 dark:text-surface-0">
+              <mxevolve-date-display [date]="operation.createdOn" />
+            </span>
+          </div>
+        </div>
+      </button>
+
+      @if (isOperationExpanded(operation.id)) {
+      <div
+        class="grid grid-cols-12 gap-4 px-4 pb-4 border-t border-surface-200 dark:border-surface-700"
+      >
+        <div class="col-span-12 md:col-span-4 pt-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Commit Id
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            <mxevolve-commit-id-display [commitId]="operation.sourceCommit" />
+          </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-4 pt-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Branch Name
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            {{ operation.branch }}
+          </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-4 pt-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Validation Level
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            {{ operation.validationLevel || "N/A" }}
+          </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Environment Definition
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            {{ operation.environmentDefinitionName }}
+          </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Environment Id
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            @if (operation.environmentId) {
+            <a
+              class="p-button-link"
+              [routerLink]="
+                '/app/' + projectId() + '/environments/' + operation.environmentId
+              "
+              target="_blank"
+              (click)="$event.stopPropagation()"
+            >
+              {{ operation.environmentId }}
+            </a>
+            } @else { N/A }
+          </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Dump Ids
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            @if ((operation.dumpIds?.length ?? 0) > 0) {
+            <ul class="list-disc pl-5 m-0">
+              @for (id of visibleDumpIds(operation); track id) {
+              <li>{{ id }}</li>
+              }
+            </ul>
+            @if ((operation.dumpIds?.length ?? 0) > 1) {
+            <button
+              type="button"
+              class="text-primary border-none bg-transparent cursor-pointer text-sm font-semibold p-0 mt-2"
+              (click)="toggleDumpIds(operation.id)"
+            >
+              {{ isDumpExpanded(operation.id) ? "see less" : "see more" }}
+            </button>
+            } } @else { N/A }
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+    }
+  </div>
+  } @else {
+  <div class="col-span-12 flex flex-col items-center gap-3 py-8">
+    <mxevolve-illustration name="search_not_found" size="lg" />
+    <span class="text-sm text-surface-500 dark:text-surface-300">
+      There are no technical reseeds launched
+    </span>
+  </div>
+  } }
+</mxevolve-business-process-content-container>
+
+<p-dialog
+  header="Technical Reseed"
+  [modal]="true"
+  [visible]="launchDialogVisible()"
+  (visibleChange)="launchDialogVisible.set($event)"
+  (onHide)="closeLaunchDialog()"
+  [style]="{ width: '28rem' }"
+  [contentStyle]="{ overflow: 'visible' }"
+  appendTo="body"
+>
+  <div class="flex flex-col gap-6">
+    <span class="text-surface-500 dark:text-surface-300">
+      Launch a new Technical Reseed operations
+    </span>
+
+    <form
+      [formGroup]="launchForm"
+      class="flex flex-col gap-5"
+      (ngSubmit)="launchTechnicalReseed()"
+    >
+      <div class="flex flex-col gap-2">
+        <label for="technical-reseed-final-product">Final Product Tag</label>
+        <p-select
+          inputId="technical-reseed-final-product"
+          formControlName="finalProduct"
+          [options]="finalProductOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select a final product"
+          appendTo="body"
+          [loading]="finalProductsResource.isLoading()"
+          [showClear]="true"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="technical-reseed-environment-definition">
+          Environment Definition
+        </label>
+        <p-select
+          inputId="technical-reseed-environment-definition"
+          formControlName="environmentDefinitionId"
+          [options]="environmentDefinitionOptions()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select environment definition"
+          appendTo="body"
+          [loading]="environmentDefinitionsResource.isLoading()"
+          [showClear]="true"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="technical-reseed-maintenance-level">
+          Maintenance Level
+        </label>
+        <p-select
+          inputId="technical-reseed-maintenance-level"
+          formControlName="maintenanceConfiguration"
+          [options]="maintenanceOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select maintenance level"
+          appendTo="body"
+          [showClear]="true"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="flex justify-center pt-4">
+        <p-button
+          type="submit"
+          label="Launch"
+          class="w-2/3"
+          styleClass="w-full"
+          [disabled]="launchForm.invalid"
+          [loading]="launchInProgress()"
+        />
+      </div>
+    </form>
+  </div>
+</p-dialog>

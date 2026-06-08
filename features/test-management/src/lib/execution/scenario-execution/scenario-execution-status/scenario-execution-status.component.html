@@ -1,0 +1,66 @@
+<div>
+  @switch (status) { @case (ScenarioExecutionStatus.PASSED) {
+  <p-tag severity="success">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-check-circle"></i>
+      <span class="text-sm">{{ status }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionStatus.FAILED) {
+  <p-tag severity="danger">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-times-circle"></i>
+      <span class="text-sm">{{ status }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionStatus.ABORTING) {
+  <p-tag severity="warn">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span class="text-sm">{{ status }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionStatus.ABORTED) {
+  <p-tag severity="danger">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-times-circle"></i>
+      <span class="text-sm">{{ status }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionStatus.FAILED_TO_ABORT) {
+  <p-tag severity="danger">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-times-circle"></i>
+      <span class="text-sm">{{ status }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionStatus.UNDERWAY) {
+  <p-tag severity="warn">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span class="text-sm">{{ status }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionStatus.READY) {
+  <p-tag severity="info">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-info-circle"></i>
+      <span class="text-sm">{{ status }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionStatus.NA) {
+  <p-tag severity="secondary">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-minus-circle"></i>
+      <span class="text-sm">{{ status }}</span>
+    </div>
+  </p-tag>
+  } @default {
+  <p-tag severity="secondary">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-minus-circle"></i>
+      <span class="text-sm">NA</span>
+    </div>
+  </p-tag>
+  } }
+</div>

@@ -1,0 +1,38 @@
+@switch (status) { @case (BinaryImpactIntegrationStatus.COMPLETED) {
+<p-tag data-testid="completed" severity="success">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-check-circle"></i>
+    <span class="text-sm">{{
+      BinaryImpactIntegrationStatusDisplayValue[status]
+    }}</span>
+  </div>
+</p-tag>
+} @case (BinaryImpactIntegrationStatus.TRIGGERED) {
+<p-tag data-testid="triggered" severity="info">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-bolt"></i>
+    <span class="text-sm">{{
+      BinaryImpactIntegrationStatusDisplayValue[status]
+    }}</span>
+  </div>
+</p-tag>
+
+} @case (BinaryImpactIntegrationStatus.TO_BE_INTEGRATED) {
+<p-tag data-testid="to-be-integrated" severity="secondary">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-minus-circle"></i>
+    <span class="text-sm">{{
+      BinaryImpactIntegrationStatusDisplayValue[status]
+    }}</span>
+  </div>
+</p-tag>
+} @case (BinaryImpactIntegrationStatus.NOT_TO_BE_INTEGRATED) {
+<p-tag data-testid="not-to-be-integrated" severity="danger">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-times-circle"></i>
+    <span class="text-sm">{{
+      BinaryImpactIntegrationStatusDisplayValue[status]
+    }}</span>
+  </div>
+</p-tag>
+} }

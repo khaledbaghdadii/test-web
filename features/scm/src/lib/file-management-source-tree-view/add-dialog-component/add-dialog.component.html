@@ -1,0 +1,62 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [style]="{ width: '34rem', maxWidth: '95vw' }"
+  [closable]="true"
+>
+  <ng-template #header>
+    <span class="block whitespace-normal break-words">{{
+      dialogHeader()
+    }}</span>
+  </ng-template>
+
+  <div class="flex flex-col gap-4 pt-2">
+    <div class="flex gap-6">
+      <div class="flex items-center gap-2">
+        <p-radioButton
+          name="type"
+          value="file"
+          [ngModel]="selectedType()"
+          (ngModelChange)="selectedType.set($event)"
+          inputId="type-file"
+        />
+        <label for="type-file">File</label>
+      </div>
+      <div class="flex items-center gap-2">
+        <p-radioButton
+          name="type"
+          value="directory"
+          [ngModel]="selectedType()"
+          (ngModelChange)="selectedType.set($event)"
+          inputId="type-directory"
+        />
+        <label for="type-directory">Directory</label>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="add-name" class="text-sm font-medium">Name</label>
+      <input
+        pInputText
+        id="add-name"
+        [ngModel]="name()"
+        (ngModelChange)="name.set($event)"
+        placeholder="Enter name"
+        class="w-full"
+        (keydown.enter)="onCreate()"
+      />
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="flex justify-end gap-2">
+      <p-button label="Cancel" severity="secondary" (onClick)="onCancel()" />
+      <p-button
+        label="Create"
+        [disabled]="!name().trim()"
+        (onClick)="onCreate()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,41 @@
+<ng-container [ngTemplateOutlet]="outlet()"></ng-container>
+
+<ng-template #clearBackground>
+  <div
+    class="px-[16px] w-full grid grid-cols-12 gap-x-[16px] gap-y-[16px] w-full"
+  >
+    <ng-container *ngTemplateOutlet="content"></ng-container>
+  </div>
+</ng-template>
+
+<ng-template #card>
+  <p-card class="w-full">
+    @if (header()) {
+    <span class="text-xl font-bold px-[16px] py-[8px]">{{ header() }}</span>
+    <p-divider />
+    }
+    <div class="p-[16px] grid grid-cols-12 gap-x-[16px] gap-y-[16px] w-full">
+      <ng-container *ngTemplateOutlet="content"></ng-container>
+    </div>
+  </p-card>
+</ng-template>
+
+<ng-template #panel>
+  <p-panel class="w-full" [toggleable]="true" [collapsed]="collapsed()">
+    <ng-template #header>
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-xl">{{ panelTitle() }}</span>
+        <ng-content select="[headerExtra]"></ng-content>
+      </div>
+    </ng-template>
+    <ng-template #headericons let-collapsed>
+      <mxevolve-icon [name]="collapsed ? 'expand_more' : 'expand_less'" />
+    </ng-template>
+    <p-divider />
+    <div class="p-[16px] grid grid-cols-12 gap-x-[16px] gap-y-[16px] w-full">
+      <ng-container *ngTemplateOutlet="content"></ng-container>
+    </div>
+  </p-panel>
+</ng-template>
+
+<ng-template #content><ng-content></ng-content></ng-template>

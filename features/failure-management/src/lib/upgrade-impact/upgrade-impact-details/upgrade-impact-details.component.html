@@ -1,0 +1,210 @@
+@if ( upgradeImpact$ | async; as upgradeImpactDetails) {
+<div class="grid grid-cols-12 gap-4 bg-surface-0 dark:bg-surface-900">
+  <div class="col-span-6">
+    <div class="my-6">
+      <div
+        class="text-surface-500 dark:text-surface-300 font-medium mb-2"
+        data-testid="introduced-in-archival"
+      >
+        Introduced In Archival
+      </div>
+      @if ( upgradeImpactDetails.introducedInArchival &&
+      upgradeImpactDetails.introducedInArchival.length > 0) {
+      <span class="text-surface-900 dark:text-surface-0">{{
+        upgradeImpactDetails.introducedInArchival.join(", ")
+      }}</span>
+      } @else {
+      <span class="text-surface-900 dark:text-surface-0">-</span>
+      }
+    </div>
+    <div class="my-6">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Impacted Outputs
+      </div>
+      <div
+        class="text-surface-900 dark:text-surface-0"
+        data-testid="impacted-outputs"
+      >
+        {{ upgradeImpactDetails.impactedOutputs || "-" }}
+      </div>
+    </div>
+    <div class="my-6">
+      <div
+        class="text-surface-500 dark:text-surface-300 font-medium mb-2"
+        data-testid="bpc-ff-topic"
+      >
+        BPC, FF, Topic
+      </div>
+      @if ( upgradeImpactDetails.bpcFFTopic &&
+      upgradeImpactDetails.bpcFFTopic.length > 0) {
+      <span class="text-surface-900 dark:text-surface-0">{{
+        upgradeImpactDetails.bpcFFTopic.join(", ")
+      }}</span>
+      } @else {
+      <span class="text-surface-900 dark:text-surface-0">-</span>
+      }
+    </div>
+    <div class="my-6">
+      <div
+        class="text-surface-500 dark:text-surface-300 font-medium mb-2"
+        data-testid="affected-versions"
+      >
+        Affected Versions
+      </div>
+      @if ( upgradeImpactDetails.introducedInReleaseVersion &&
+      upgradeImpactDetails.introducedInReleaseVersion.length > 0) {
+      <span class="text-surface-900 dark:text-surface-0">{{
+        upgradeImpactDetails.introducedInReleaseVersion.join(", ")
+      }}</span>
+      } @else {
+      <span class="text-surface-900 dark:text-surface-0">-</span>
+      }
+    </div>
+  </div>
+  <div class="col-span-6">
+    <div class="my-6">
+      <div
+        class="text-surface-500 dark:text-surface-300 font-medium mb-2"
+        data-testid="introduced-in-release-version"
+      >
+        Introduced In Release Version
+      </div>
+      @if ( upgradeImpactDetails.introducedInReleaseVersion &&
+      upgradeImpactDetails.introducedInReleaseVersion.length > 0) {
+      <span class="text-surface-900 dark:text-surface-0">{{
+        upgradeImpactDetails.introducedInReleaseVersion.join(", ")
+      }}</span>
+      } @else {
+      <span class="text-surface-900 dark:text-surface-0">-</span>
+      }
+    </div>
+    <div class="my-6">
+      <div
+        class="text-surface-500 dark:text-surface-300 font-medium mb-2"
+        data-testid="impacted-instruments-scope"
+      >
+        Impacted Instruments Scope
+      </div>
+      @if ( upgradeImpactDetails.impactedInstrumentsScope &&
+      upgradeImpactDetails.impactedInstrumentsScope.length > 0) {
+      <span class="text-surface-900 dark:text-surface-0">{{
+        upgradeImpactDetails.impactedInstrumentsScope.join(", ")
+      }}</span>
+      } @else {
+      <span class="text-surface-900 dark:text-surface-0">-</span>
+      }
+    </div>
+    <div class="my-6">
+      <div
+        class="text-surface-500 dark:text-surface-300 font-medium mb-2"
+        data-testid="defect-ids"
+      >
+        Defect IDs
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        @if ( upgradeImpactDetails.defects &&
+        upgradeImpactDetails.defects.length > 0) { @for ( defect of
+        upgradeImpactDetails.defects; track defect; let isLast = $last) {
+        <ng-container class="whitespace-normal">
+          <span>
+            <a
+              class="p-button-link"
+              [href]="defect.defectLink"
+              target="_blank"
+              >{{ defect.defectId }}</a
+            >
+            {{ isLast ? "" : ", " }}
+          </span>
+        </ng-container>
+        } } @else {
+        <span class="text-surface-900 dark:text-surface-0">-</span>
+        }
+      </div>
+    </div>
+  </div>
+  <div class="col-span-12">
+    <div class="my-6">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Description
+      </div>
+      <mxevolve-quill-editor
+        [readOnly]="true"
+        [ngModel]="upgradeImpactDetails.fullDescription"
+        [isScrollable]="true"
+      ></mxevolve-quill-editor>
+    </div>
+  </div>
+  <div class="col-span-12">
+    <div class="my-6">
+      @if (upgradeImpactDetails.attachments) {
+      <mxevolve-attachments
+        [attachments]="
+          upgradeImpactDetails.attachments
+            | upgradeImpactAttachmentTransformationPipe
+        "
+        [isLoading]="false"
+      ></mxevolve-attachments>
+      }
+    </div>
+  </div>
+</div>
+} @else {
+<div class="grid grid-cols-12 gap-4 bg-surface-0 dark:bg-surface-900">
+  <div class="col-span-6">
+    <div class="my-6">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Introduced In Archival
+      </div>
+      <p-skeleton></p-skeleton>
+    </div>
+    <div class="my-6">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Impacted Outputs
+      </div>
+      <p-skeleton></p-skeleton>
+    </div>
+    <div class="my-6">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        BPC, FF, Topic
+      </div>
+      <p-skeleton></p-skeleton>
+    </div>
+  </div>
+  <div class="col-span-6">
+    <div class="my-6">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Introduced In Release Version
+      </div>
+      <p-skeleton></p-skeleton>
+    </div>
+    <div class="my-6">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Impacted Instruments Scope
+      </div>
+      <p-skeleton></p-skeleton>
+    </div>
+    <div class="my-6 max-w-">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Defect IDs
+      </div>
+      <p-skeleton></p-skeleton>
+    </div>
+  </div>
+  <div class="col-span-12">
+    <div class="my-6">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Description
+      </div>
+      <p-skeleton class="h-80"></p-skeleton>
+    </div>
+  </div>
+  <div class="col-span-12">
+    <div class="my-6">
+      <mxevolve-attachments
+        [attachments]="[]"
+        [isLoading]="true"
+      ></mxevolve-attachments>
+    </div>
+  </div>
+</div>
+}

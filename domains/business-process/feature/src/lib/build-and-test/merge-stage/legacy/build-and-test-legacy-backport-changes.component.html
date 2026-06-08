@@ -1,0 +1,47 @@
+<div class="flex flex-col gap-6">
+  <p-panel header="Branch Details" [collapsed]="true" [toggleable]="true">
+    @if (developmentResource.hasValue()) {
+    <mxevolve-development-details-widget
+      [development]="developmentResource.value()"
+    />
+    } @else {
+    <p-message severity="info">
+      <ng-template #icon>
+        <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+      </ng-template>
+      Branch details are not available yet.
+    </p-message>
+    }
+  </p-panel>
+
+  <p-panel header="Merge Request" [toggleable]="true">
+    <mxevolve-build-and-test-backport-cherry-pick-and-merge-request
+      [projectId]="projectId()"
+      [processId]="processId()"
+      [repositoryId]="repositoryId()"
+      [backport]="backport()"
+    />
+  </p-panel>
+
+  @if (shouldShowPublishing()) {
+  <p-panel header="Final Product Details" [toggleable]="true">
+    <mxevolve-final-product-details
+      [projectId]="projectId()"
+      [finalProductId]="backport().finalProductPublishing?.id"
+      [publishingStartDate]="
+        backport().finalProductPublishing?.publishingStartDate
+      "
+      [finalProductFailure]="backport().finalProductPublishing?.finalProductFailure"
+      (errorOccurred)="handleFinalProductError($event)"
+    />
+  </p-panel>
+  }
+
+  <mxevolve-build-and-test-backport-actions
+    [projectId]="projectId()"
+    [processId]="processId()"
+    [processStatus]="processStatus()"
+    [mergeConfigurationId]="backport().mergeConfigurationId ?? ''"
+    [canRepushBackport]="backport().mergeDevelopmentState.canRepush ?? false"
+  />
+</div>

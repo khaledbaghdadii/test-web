@@ -1,0 +1,24 @@
+{
+  "key": "VAL-26634",
+  "summary": "[UI/UX][CI] Build & Test Run Page Header & Run Stepper",
+  "type": "Epic",
+  "status": "Backlog",
+  "priority": "",
+  "assignee": "MOUZAYA Myriam",
+  "reporter": "MOUZAYA Myriam",
+  "labels": [],
+  "description": "<h2><a name=\"InScope\"></a>In Scope</h2>\n<hr />\n<p>In this feature, we are covering the following:</p>\n<ul>\n\t<li>Process Run page header:\n\t<ul>\n\t\t<li>Run Name</li>\n\t\t<li>Process Status</li>\n\t\t<li>Expiry tag</li>\n\t\t<li>Run Details\n\t\t<ul>\n\t\t\t<li>The fields that are needed are the following:\n\t\t\t<ul>\n\t\t\t\t<li><font color=\"#172b4d\">General:</font>\n\t\t\t\t<ul>\n\t\t\t\t\t<li><font color=\"#172b4d\">Template Name: the BP definition name</font></li>\n\t\t\t\t\t<li><font color=\"#172b4d\">Activity Type: Process Type ex: Build &amp; Test Process/Configuration Build &amp; Test</font></li>\n\t\t\t\t\t<li><font color=\"#172b4d\">Description: BP definition description (optional)</font></li>\n\t\t\t\t</ul>\n\t\t\t\t</li>\n\t\t\t\t<li>Config Parameters:\n\t\t\t\t<ul>\n\t\t\t\t\t<li><span class=\"image-wrap\" style=\"\"><img src=\"https://mxjira.murex.com/secure/attachment/1753153/1753153_image-2026-05-25-11-43-57-146.png\" style=\"border: 0px solid black\" /></span></li>\n\t\t\t\t</ul>\n\t\t\t\t</li>\n\t\t\t\t<li>Build Scenario Definition</li>\n\t\t\t\t<li>Infrastructure Parameters\n\t\t\t\t<ul>\n\t\t\t\t\t<li>Build Environment Infra Group</li>\n\t\t\t\t\t<li>Test Environment Infra Group</li>\n\t\t\t\t</ul>\n\t\t\t\t</li>\n\t\t\t</ul>\n\t\t\t</li>\n\t\t</ul>\n\t\t</li>\n\t\t<li>Branch Details\n\t\t<ul>\n\t\t\t<li>Fields: same as the upgrade</li>\n\t\t</ul>\n\t\t</li>\n\t\t<li>Abort</li>\n\t</ul>\n\t</li>\n\t<li>Stepper migration\n\t<ul>\n\t\t<li>New New! We have the skip step option in the CI process: in the BP definition, the users have the option to skip the build env deployment, in this case, we have to show </li>\n\t\t<li><span class=\"image-wrap\" style=\"\"><img src=\"https://mxjira.murex.com/secure/attachment/1753155/1753155_image-2026-05-25-11-54-40-078.png\" style=\"border: 0px solid black\" /></span></li>\n\t\t<li>The rest is similar to what was done in the upgrade process</li>\n\t</ul>\n\t</li>\n</ul>\n",
+  "acceptance_criteria": null,
+  "components": [
+    "ATLANTIS"
+  ],
+  "fix_versions": [],
+  "parent_chain": [
+    {
+      "key": "VAL-26634",
+      "summary": "[UI/UX][CI] Build & Test Run Page Header & Run Stepper",
+      "type": "Epic",
+      "status": "Backlog"
+    }
+  ]
+}

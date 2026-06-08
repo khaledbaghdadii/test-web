@@ -1,0 +1,76 @@
+<p-card class="bp-header-card">
+  <div class="flex items-center justify-between gap-4 flex-wrap">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl font-bold text-color">
+        {{ execution().name }}
+      </span>
+      <mxevolve-execution-status-tag [status]="execution().status" />
+      @if (execution().expiryDate && !execution().endDate) {
+      <mxevolve-expiry-chip [expiryDate]="execution().expiryDate!" />
+      }
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-4">
+        @for (tab of tabOptions(); track tab.value) {
+        <span
+          [class]="
+            selectedTab() === tab.value
+              ? 'px-3 py-2 rounded text-muted-color bg-surface-100 cursor-pointer'
+              : 'px-3 py-2 rounded text-muted-color cursor-pointer'
+          "
+          (click)="selectTab(tab)"
+          (keyup)="selectTab(tab)"
+        >
+          {{ tab.label }}
+          @if (tab.value === 'branch-details' && commitsBehindCount() > 0) {
+          <mxevolve-icon
+            name="warning"
+            size="sm"
+            class="text-yellow-500 ml-2"
+            [pTooltip]="commitsBehindTooltip()"
+            tooltipPosition="top"
+          />
+          }
+        </span>
+        }
+      </div>
+      <mxevolve-execution-abort-button
+        [projectId]="execution().projectId"
+        [processId]="execution().id"
+        [status]="execution().status"
+        [familyId]="familyId"
+        (aborted)="reloadProcess()"
+      />
+    </div>
+  </div>
+
+  @if (selectedTab()) {
+  <p-divider />
+  } @switch (selectedTab()) { @case ('reference-environment') {
+  <mxevolve-upgrade-process-reference-environments
+    [projectId]="execution().projectId"
+    [processId]="execution().id"
+    [enabledInCurrentlyActiveStage]="
+      execution().referenceEnvironmentDeployment.enabledInCurrentlyActiveStage
+    "
+    [limitReached]="execution().referenceEnvironmentDeployment.limitReached"
+    [canCleanAndDeploy]="
+      execution().referenceEnvironmentDeployment.canCleanAndDeploy
+    "
+    [environmentIds]="
+      execution().referenceEnvironmentDeployment.referenceEnvironments
+    "
+    [requestIds]="execution().referenceEnvironmentDeployment.requestIds"
+  />
+  } @case ('activity-run-details') {
+  <mxevolve-upgrade-process-activity-run-details [execution]="execution()" />
+  } @case ('branch-details') {
+  <mxevolve-branch-details
+    [projectId]="execution().projectId"
+    [processId]="execution().id"
+    [branchCreation]="branchCreationDetails()!"
+    [development]="development()!"
+    [commitsBehindCount]="commitsBehindCount()"
+  />
+  } }
+</p-card>

@@ -1,0 +1,50 @@
+<div class="flex flex-row gap-[8px]">
+  <div class="flex flex-col gap-[8px]">
+    <span class="text-surface-500 dark:text-surface-300"
+      >Quality Gate Validation Status</span
+    >
+    <div class="flex">
+      <p-tag [severity]="decisionConfig().severity">
+        <div class="flex items-center gap-[8px]">
+          <mxevolve-icon [name]="decisionConfig().icon" size="sm" />
+          <span>{{ decisionConfig().label }}</span>
+        </div>
+      </p-tag>
+    </div>
+  </div>
+  <p-divider layout="vertical"></p-divider>
+  <div class="flex flex-col gap-[8px]">
+    <span class="text-surface-500 dark:text-surface-300">Comment</span>
+    <span class="font-semibold text-surface-900 dark:text-surface-0">
+      @if (comment() && comment()!.length > 0) { @if (isCommentTruncated() &&
+      !commentExpanded()) {
+      {{ truncatedComment() }}
+      <button
+        class="text-primary border-none bg-transparent cursor-pointer font-semibold p-0 ml-1"
+        (click)="toggleCommentExpanded()"
+        aria-label="See full comment"
+      >
+        see more
+      </button>
+      } @else if (isCommentTruncated() && commentExpanded()) {
+      {{ comment() }}
+      <button
+        class="text-primary border-none bg-transparent cursor-pointer font-semibold p-0 ml-1"
+        (click)="toggleCommentExpanded()"
+        aria-label="Collapse comment"
+      >
+        see less
+      </button>
+      } @else {
+      {{ comment() }}
+      } } @else { - }
+    </span>
+  </div>
+  <p-divider layout="vertical"></p-divider>
+  <div class="flex flex-col gap-[8px]">
+    <span class="text-surface-500 dark:text-surface-300">Validated by</span>
+    <span class="font-semibold text-surface-900 dark:text-surface-0">
+      {{ requester() || "-" }}
+    </span>
+  </div>
+</div>

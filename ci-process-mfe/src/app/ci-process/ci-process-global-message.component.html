@@ -1,0 +1,8 @@
+<div class="mb-2">
+  @if (errorMessage$ | async; as errorMessage) {
+  <mxflow-error-alert
+    [errorMessage]="errorMessage"
+    (closeErrorAlert)="closeErrorAlert()"
+  ></mxflow-error-alert>
+  }
+</div>

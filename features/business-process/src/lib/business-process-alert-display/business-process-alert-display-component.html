@@ -1,0 +1,28 @@
+<div>
+  @if (notStarted) {
+  <mxflow-warning-alert
+    warningMessage="The business process execution is currently loading. Please refresh the page for the latest updates."
+    [closeable]="false"
+  >
+  </mxflow-warning-alert>
+  } @if ( showExpiryBanner) {
+  <div>
+    <div class="mb-4">
+      <mxflow-info-alert
+        infoMessage="Process has reached its expiry date"
+        [closeable]="false"
+      ></mxflow-info-alert>
+    </div>
+  </div>
+  } @if (errorMessage) {
+  <div class="mb-4">
+    @if (!aborted) {
+    <mxflow-error-alert [errorMessage]="errorMessage!" [closeable]="false">
+    </mxflow-error-alert>
+    } @else {
+    <mxflow-info-alert [infoMessage]="errorMessage!" [closeable]="false">
+    </mxflow-info-alert>
+    }
+  </div>
+  }
+</div>

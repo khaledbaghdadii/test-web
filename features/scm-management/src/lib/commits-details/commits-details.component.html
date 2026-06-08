@@ -1,0 +1,63 @@
+@if (errorMessage()) {
+<mxflow-warning-alert
+  warningMessage="{{ errorMessage() }}"
+  [closeable]="false"
+></mxflow-warning-alert>
+} @else {
+<h3 class="text-lg font-semibold m-1">Commits on this Branch</h3>
+<p-table
+  (onLazyLoad)="onPageIndexOrSizeChange($event)"
+  [first]="pageIndex() * pageSize()"
+  [lazy]="true"
+  [loading]="fetchCommitsLoading()"
+  [paginator]="true"
+  [rows]="pageSize()"
+  [scrollable]="true"
+  [showLoader]="false"
+  [totalRecords]="totalElements()!"
+  [value]="commitsData()"
+  paginatorStyleClass="justify-end"
+  [showCurrentPageReport]="true"
+  [rowsPerPageOptions]="[5, 10, 20]"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th scope="col" style="width: 20%">Commit ID</th>
+      <th scope="col" style="width: 40%">Description</th>
+      <th scope="col" style="width: 20%">User</th>
+      <th scope="col" style="width: 20%">Commit Date</th>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="body" let-commit>
+    <tr>
+      <td>
+        <a class="no-underline text-blue-400 font-normal" [href]="commit.url">{{
+          commit.id | commitIdShortner
+        }}</a>
+      </td>
+      <td>{{ commit.message }}</td>
+      <td>{{ commit.committerDisplayName }}</td>
+      <td>{{ commit.timeStamp | date : "medium" }}</td>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td class="py-4" colspan="4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="loadingbody">
+    @for (row of [1]; track row) {
+    <tr class="skeleton-row">
+      @for (col of [1, 2, 3, 4]; track col) {
+      <td>
+        <p-skeleton [ngStyle]="{ width: '95%' }"></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+</p-table>
+}

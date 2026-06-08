@@ -1,0 +1,78 @@
+<p-card class="compact-card">
+  <div class="flex justify-between items-center w-full">
+    <div class="flex items-center gap-3">
+      <h2 class="text-3xl font-bold m-0">Work Items</h2>
+      @if (!isProjectSpecific()) {
+      <div
+        class="min-w-80"
+        [ngClass]="isProjectsActive() ? 'filter-active' : ''"
+        data-testid="filter-wrapper-projects"
+      >
+        <mxevolve-project-view-multiselect
+          [initialSelectedIds]="selectedProjects()"
+          (selectedProjectsChange)="onProjectsChange($event)"
+        ></mxevolve-project-view-multiselect>
+      </div>
+      }
+    </div>
+
+    <div class="flex items-center gap-8">
+      <div class="flex items-center gap-3">
+        <p-toggleSwitch
+          inputId="myTasksToggle"
+          [ngModel]="showMyTasksOnly()"
+          (onChange)="onMyTasksToggle()"
+          data-testid="my-tasks-toggle"
+          class="flex items-center"
+        ></p-toggleSwitch>
+        <label
+          for="myTasksToggle"
+          class="text-base font-semibold cursor-pointer select-none"
+          >My tasks</label
+        >
+      </div>
+
+      <div
+        class="flex items-center relative"
+        [ngClass]="isSearchActive() ? 'filter-active' : ''"
+        data-testid="filter-wrapper-search"
+      >
+        <p-iconField iconPosition="left" class="ml-auto min-w-24">
+          @if (!searchKey()) {
+          <p-inputIcon>
+            <i class="pi pi-search"></i>
+          </p-inputIcon>
+          }
+          <input
+            pInputText
+            type="text"
+            [ngModel]="searchKey()"
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Search"
+            data-testid="searchBox"
+          />
+          @if (searchKey()) {
+          <p-inputIcon
+            data-testid="clearSearch"
+            class="pi pi-times clear-icon cursor-pointer -ml-8"
+            (click)="clearSearch()"
+            (keydown.enter)="clearSearch(); $event.preventDefault()"
+            tabindex="0"
+          ></p-inputIcon>
+          }
+        </p-iconField>
+      </div>
+
+      <i
+        class="pi pi-refresh text-xl cursor-pointer hover:text-blue-600 transition-colors duration-200"
+        data-testid="refresh-board-btn"
+        pTooltip="Refresh Board"
+        tooltipPosition="top"
+        (click)="onRefreshClick()"
+        aria-label="Refresh Board"
+        (keydown.enter)="onRefreshClick(); $event.preventDefault()"
+        (keydown.space)="onRefreshClick(); $event.preventDefault()"
+      ></i>
+    </div>
+  </div>
+</p-card>

@@ -1,0 +1,18 @@
+<mxevolve-stage-container>
+  <mxevolve-business-process-content-container header="Prepare Setup">
+    <mxevolve-scenario-runs
+      class="col-span-12"
+      [projectId]="projectId()"
+      [contextId]="processId()"
+      [subContextId]="subContextId"
+      [showEnvironmentLink]="false"
+      [showHistory]="true"
+      [showHistorySummary]="true"
+      [showTopBarActions]="false"
+      [detailsExpandedByDefault]="false"
+      (scenarioChanged)="reloadExecution()"
+    >
+      <ng-template #topBar>Latest Scenario Run</ng-template>
+    </mxevolve-scenario-runs>
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>

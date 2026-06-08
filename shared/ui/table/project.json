@@ -1,0 +1,17 @@
+{
+  "name": "shared-ui-table",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/shared/ui/table/src",
+  "prefix": "mxevolve",
+  "tags": ["scope:shared", "type:ui"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/shared/ui/table/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

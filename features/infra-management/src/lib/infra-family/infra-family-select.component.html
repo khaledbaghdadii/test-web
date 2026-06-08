@@ -1,0 +1,9 @@
+<mxevolve-single-select-dropdown
+  [stateProvider]="stateProvider"
+  [dataParams]="{ projectId: projectId() }"
+  [config]="{
+    placeholder: 'Select Infra Family'
+  }"
+  (errorEvent)="onError($event)"
+  (selectionChange)="onSelectionChange($event)"
+/>

@@ -1,0 +1,13 @@
+@import 'libs/ui/utils/src/mixins';
+
+p-table {
+  @include table;
+}
+
+.header-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.25rem;
+}
+

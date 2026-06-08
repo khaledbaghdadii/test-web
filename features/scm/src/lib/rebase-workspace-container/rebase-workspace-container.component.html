@@ -1,0 +1,112 @@
+<div class="flex flex-col gap-3 mt-3">
+  @if (!stateService.isLoading()) { @if (stateService.rebaseState(); as
+  rebaseState) {
+  <div class="flex items-center gap-1 text-sm text-color-secondary px-4">
+    <i
+      class="pi pi-info-circle"
+      pTooltip="{{ stateService.displaySourceBranch() }} will be rebased from {{
+        stateService.displayTargetBranch()
+      }}"
+      tooltipPosition="right"
+    ></i>
+    <i class="pi pi-code-branch"></i>
+    <span>{{ stateService.displaySourceBranch() }}</span>
+    <i class="pi pi-arrow-right text-xs"></i>
+    <span>{{ stateService.displayTargetBranch() }}</span>
+  </div>
+
+  @if (stateService.isInMxtestConflict()) {
+  <p-message severity="warn" [closable]="false" styleClass="mx-4">
+    <div class="flex items-center gap-2">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>MxTest functional conflict detected.</span>
+      <mxevolve-conflict-resolver
+        [projectId]="projectId()"
+        [remoteClonedRepositoryId]="clonedRepositoryId()"
+        [conflictResultsString]="stateService.bundleContent()"
+      />
+    </div>
+  </p-message>
+  } @if (stateService.isInTechnicalConflict()) {
+  <p-message severity="warn" [closable]="false" styleClass="mx-4">
+    <div class="flex items-center gap-2">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>Technical rebase conflict detected.</span>
+      <mxevolve-technical-conflict-resolver
+        [projectId]="projectId()"
+        [remoteClonedRepositoryId]="clonedRepositoryId()"
+        (closed)="refreshState()"
+      />
+    </div>
+  </p-message>
+  } @if (!stateService.isRebaseInProgress() && stateService.lastOperation() &&
+  !stateService.isLastOperationSuccess()) {
+  <p-message severity="error" [closable]="false" styleClass="mx-4">
+    <div class="flex items-center gap-2">
+      <i class="pi pi-times-circle"></i>
+      <span
+        [pTooltip]="stateService.lastOperation()?.failureReason ?? ''"
+        tooltipPosition="top"
+        >Rebase failed. Please make sure all your changes are committed. If
+        everything is committed and you still see this message, contact OPs for
+        support.</span
+      >
+    </div>
+  </p-message>
+  } } @if (stateService.errorMessage(); as error) {
+  <p-message severity="error" [closable]="false" styleClass="mx-4">
+    <div class="flex items-center gap-2">
+      <i class="pi pi-exclamation-triangle"></i>
+      <span>{{ error }}</span>
+    </div>
+  </p-message>
+  }
+
+  <div class="flex items-center pt-1 pb-2">
+    <div class="flex-1"></div>
+    <div class="flex items-center gap-3">
+      @if (stateService.isRebaseInProgress()) {
+      <p-button
+        data-testid="refresh-button"
+        label="Refresh"
+        icon="pi pi-sync"
+        styleClass="w-12rem"
+        [outlined]="true"
+        severity="secondary"
+        [loading]="stateService.isRefreshing()"
+        [disabled]="stateService.isRefreshing()"
+        (onClick)="refreshState()"
+      />
+      }
+      <span
+        [pTooltip]="
+          stateService.isRebaseInProgress()
+            ? 'A rebase operation is currently in progress'
+            : ''
+        "
+        tooltipPosition="top"
+      >
+        <p-button
+          data-testid="rebase-button"
+          label="Rebase Workspace"
+          styleClass="w-12rem"
+          [disabled]="disabled() || stateService.isButtonDisabled()"
+          [loading]="stateService.isRebaseStarting()"
+          (onClick)="startRebase()"
+          icon="pi pi-refresh"
+        />
+      </span>
+    </div>
+    <div class="flex-1 pl-3">
+      @if (stateService.lastOperation(); as lastOp) {
+      <span class="white-space-nowrap text-sm italic text-color-secondary">
+        Last rebase
+        {{ stateService.isLastOperationSuccess() ? "succeeded" : "failed" }} @if
+        (lastOp.endedOn) { on {{ lastOp.endedOn | date : "medium" }}
+        }
+      </span>
+      }
+    </div>
+  </div>
+  }
+</div>

@@ -1,0 +1,42 @@
+<div class="">
+  <p-inputgroup>
+    <input
+      class="w-full"
+      type="text"
+      pInputText
+      placeholder="Select an incident"
+      [value]="displayValue()"
+      [disabled]="disabled()"
+      readonly
+    />
+    <p-inputgroup-addon>
+      <p-button
+        data-testid="browse-incidents-button"
+        [disabled]="disabled()"
+        (onClick)="showIncidentModal()"
+        pTooltip="Browse incidents"
+        tooltipPosition="top"
+        icon="pi pi-search"
+        severity="secondary"
+      ></p-button>
+    </p-inputgroup-addon>
+    <p-inputgroup-addon>
+      <p-button
+        data-testid="clear-incident-button"
+        [disabled]="disabled()"
+        (onClick)="clearSelectedIncident()"
+        pTooltip="Clear incident"
+        tooltipPosition="top"
+        icon="pi pi-times"
+        severity="secondary"
+      ></p-button>
+    </p-inputgroup-addon>
+  </p-inputgroup>
+</div>
+
+<mxevolve-incident-input-selector-modal
+  [(isVisible)]="incidentModalVisibility"
+  [initialSelection]="initialSelection()"
+  (selectedIncidentChange)="handleSelectedIncidentChange($event)"
+>
+</mxevolve-incident-input-selector-modal>

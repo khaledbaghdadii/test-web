@@ -1,0 +1,50 @@
+<div
+  data-testid="sync-details-view-container"
+  *showElementIfAuthorized="{
+    action: 'read',
+    attributes: {},
+    package: 'artifact_management',
+    resource: 'final_product',
+    projectId: finalProduct().projectId
+  }"
+>
+  @if (latestFinalProductSyncDetails()) {
+  <div>
+    <mxevolve-final-product-sync-details
+      [finalProductSyncDetails]="latestFinalProductSyncDetails()!"
+      [environmentDefinitions]="environmentDefinitions()"
+      [fetchEnvironmentsLoading]="fetchEnvironmentsLoading()"
+      [showEnvironmentDefinitionNames]="showEnvironmentDefinitionNames()"
+    ></mxevolve-final-product-sync-details>
+    @if (finalProduct().syncRequests.length > 1) {
+    <div class="p-3">
+      <mxevolve-toggle-history-button
+        [(showHistory)]="showHistory"
+      ></mxevolve-toggle-history-button>
+      @if (showHistory()) {
+      <div class="p-3">
+        @for (syncDetail of
+        finalProductWithSortedSyncRequests().syncRequests.slice(1); track
+        syncDetail) {
+        <mxevolve-final-product-sync-details
+          [finalProductSyncDetails]="
+            getFinalProductSyncDetails(
+              finalProductWithSortedSyncRequests(),
+              syncDetail
+            )
+          "
+          [environmentDefinitions]="environmentDefinitions()"
+          [fetchEnvironmentsLoading]="fetchEnvironmentsLoading()"
+          [showEnvironmentDefinitionNames]="showEnvironmentDefinitionNames()"
+        ></mxevolve-final-product-sync-details>
+        <hr />
+        }
+      </div>
+      }
+    </div>
+    }
+  </div>
+  } @else {
+  <p class="p-3 text-center">No sync details available</p>
+  }
+</div>

@@ -1,0 +1,32 @@
+<div>
+  <div class="flex justify-between flex-wrap mb-2">
+    <div class="text-md text-gray-500 italic">
+      <p>Select one or more impacts causing your test(s) to fail</p>
+    </div>
+    <div>
+      <mxevolve-create-configuration-impact-button
+        [projectId]="projectId"
+        [buttonLabel]="'Create New'"
+        [submitCreationButtonLabel]="'Create and Link'"
+        (configurationImpactCreated)="onConfigurationImpactCreated($event)"
+        (configurationImpactCreationModalClosed)="
+          onCreateConfigurationImpactCancelled()
+        "
+        (configurationImpactCreationModalOpened)="
+          showCreateConfigurationImpactModal()
+        "
+      ></mxevolve-create-configuration-impact-button>
+    </div>
+  </div>
+  <mxevolve-configuration-impacts-selection-table
+    [projectId]="projectId"
+    [initiallySelectedConfigurationImpacts]="
+      initiallySelectedConfigurationImpacts
+    "
+    [selectedImpactIdsLoading]="selectedImpactIdsLoading"
+    [refresh]="refresh$"
+    (selectedConfigurationImpactsChange)="
+      onConfigurationImpactSelectionChange($event)
+    "
+  ></mxevolve-configuration-impacts-selection-table>
+</div>

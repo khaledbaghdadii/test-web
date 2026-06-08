@@ -1,0 +1,37 @@
+<p-button
+  label="Next Step"
+  [disabled]="buttonDisabled()"
+  (onClick)="openDialog()"
+  styleClass="w-full"
+/>
+
+<p-dialog
+  header="Select Run"
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  class="dialog-cols-8"
+>
+  <div class="grid-8">
+    <p class="col-span-8">
+      Select a successful scenario run from which the Factory Product and Commit
+      ID values will be utilized to initiate the Quality Gate in the subsequent
+      step of the process.
+    </p>
+    <mxevolve-single-select-scenario-run-table
+      class="col-span-8"
+      [projectId]="projectId()"
+      [contextId]="processId()"
+      subContextId="TECHNICAL_UPGRADE"
+      status="Passed"
+      (selectedScenarioRunId)="onScenarioRunSelected($event)"
+    />
+    <p-button
+      styleClass="w-full"
+      label="Confirm"
+      class="col-start-4 col-span-2 self-end"
+      (onClick)="submit()"
+      [loading]="loading()"
+      [disabled]="confirmDisabled()"
+    />
+  </div>
+</p-dialog>

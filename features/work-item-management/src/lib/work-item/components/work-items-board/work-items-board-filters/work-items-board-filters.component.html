@@ -1,0 +1,90 @@
+<div class="flex items-center gap-8">
+  <div
+    class="flex-1 min-w-0"
+    [ngClass]="filterHighlight().sortBy"
+    data-testid="filter-wrapper-sortBy"
+  >
+    <mxevolve-work-item-swimlane-select></mxevolve-work-item-swimlane-select>
+  </div>
+
+  <div
+    class="flex-1 min-w-0"
+    [ngClass]="filterHighlight().priority"
+    data-testid="filter-wrapper-priority"
+  >
+    <mxevolve-work-item-priority-filter
+      [workItemPriority]="selectedPriority()"
+      (workItemPriorityChange)="onPriorityChange($event)"
+    ></mxevolve-work-item-priority-filter>
+  </div>
+
+  <div
+    class="flex-1 min-w-0"
+    [ngClass]="filterHighlight().objectIds"
+    data-testid="filter-wrapper-objectIds"
+  >
+    <mxevolve-work-items-object-id-multi-select
+      [projectIds]="selectedProjects()"
+      [workItemStatuses]="workItemStatuses()"
+      [selectedObjectIds]="selectedObjectIds()"
+      (selectedObjectIdsChange)="onObjectIdsChange($event)"
+    ></mxevolve-work-items-object-id-multi-select>
+  </div>
+
+  <div
+    class="flex-1 min-w-0"
+    [ngClass]="filterHighlight().assignees"
+    data-testid="filter-wrapper-assignees"
+  >
+    <mxevolve-multi-tags-input
+      [tags]="selectedAssignees()"
+      (tagsChange)="onAssigneesChange($event)"
+      placeholder="Use 'Enter' To Add Multiple Assignees"
+    ></mxevolve-multi-tags-input>
+  </div>
+
+  <div
+    class="flex-1 min-w-0"
+    [ngClass]="filterHighlight().categories"
+    data-testid="filter-wrapper-categories"
+  >
+    <p-multiSelect
+      class="w-full"
+      appendTo="body"
+      [showClear]="true"
+      [ngModel]="selectedCategories()"
+      [options]="availableCategories()"
+      (onChange)="onCategoriesChange($event.value)"
+      (onClear)="clearCategoryFilter()"
+      placeholder="Select Categories"
+      filterPlaceHolder="Search"
+      data-testid="category-filter"
+    ></p-multiSelect>
+  </div>
+
+  <div
+    class="flex-1 min-w-0"
+    [ngClass]="filterHighlight().dateRange"
+    data-testid="filter-wrapper-dateRange"
+  >
+    <p-datepicker
+      [ngModel]="
+        selectedDateRange()?.startDate || selectedDateRange()?.endDate
+          ? [
+              selectedDateRange()?.startDate ?? null,
+              selectedDateRange()?.endDate ?? null
+            ]
+          : null
+      "
+      (ngModelChange)="onDateRangeChange($event)"
+      selectionMode="range"
+      placeholder="Select Due Date"
+      class="w-full"
+      inputStyleClass="w-full"
+      [showIcon]="true"
+      [showButtonBar]="true"
+      appendTo="body"
+      data-testid="due-date-filter"
+    ></p-datepicker>
+  </div>
+</div>

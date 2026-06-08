@@ -1,0 +1,106 @@
+{
+  "name": "ci-process-mfe",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/ci-process-mfe/src",
+  "prefix": "mxevolve",
+  "tags": ["type:app"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:webpack-browser",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/ci-process-mfe",
+        "index": "apps/ci-process-mfe/src/index.html",
+        "main": "apps/ci-process-mfe/src/main.ts",
+        "polyfills": "apps/ci-process-mfe/src/polyfills.ts",
+        "tsConfig": "apps/ci-process-mfe/tsconfig.app.json",
+        "assets": [
+          "apps/ci-process-mfe/src/favicon.ico",
+          "apps/ci-process-mfe/src/assets"
+        ],
+        "styles": ["apps/ci-process-mfe/src/styles.css"],
+        "stylePreprocessorOptions": {
+          "includePaths": ["../../libs/ui/utils/src/_mixins.scss"]
+        },
+        "scripts": [],
+        "customWebpackConfig": {
+          "path": "apps/ci-process-mfe/webpack.config.js"
+        },
+        "baseHref": "/ci/",
+        "buildLibsFromSource": false
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "2kb",
+              "maximumError": "4kb"
+            }
+          ],
+          "outputHashing": "all",
+          "customWebpackConfig": {
+            "path": "apps/ci-process-mfe/webpack.prod.config.js"
+          }
+        },
+        "development": {
+          "buildOptimizer": false,
+          "optimization": false,
+          "vendorChunk": true,
+          "extractLicenses": false,
+          "sourceMap": true,
+          "namedChunks": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "executor": "@nx/angular:dev-server",
+      "configurations": {
+        "production": {
+          "browserTarget": "ci-process-mfe:build:production"
+        },
+        "development": {
+          "buildTarget": "ci-process-mfe:build:development"
+        },
+        "local": {
+          "buildTarget": "ci-process-mfe:build:development",
+          "publicHost": "https://local.dev.murex.com"
+        }
+      },
+      "defaultConfiguration": "development",
+      "options": {
+        "port": 4206,
+        "publicHost": "http://localhost:4206"
+      },
+      "continuous": true
+    },
+    "extract-i18n": {
+      "executor": "@angular-devkit/build-angular:extract-i18n",
+      "options": {
+        "buildTarget": "ci-process-mfe:build"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "apps/ci-process-mfe/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "contract-test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/apps/ci-process-mfe"],
+      "options": {
+        "jestConfig": "apps/ci-process-mfe/jest.pact.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

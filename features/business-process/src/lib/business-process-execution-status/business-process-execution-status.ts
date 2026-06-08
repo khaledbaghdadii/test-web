@@ -1,0 +1,12 @@
+export enum BusinessProcessExecutionStatus {
+  NOT_STARTED = "NOT_STARTED",
+  RUNNING = "RUNNING",
+  PASSED = "PASSED",
+  FAILED = "FAILED",
+  FAILED_TO_START = "FAILED_TO_START",
+  PENDING_INPUT = "PENDING_INPUT",
+  STOPPED = "STOPPED",
+  ABORTING = "ABORTING",
+  ABORTED = "ABORTED",
+  NA = "NA",
+}

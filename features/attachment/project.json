@@ -1,0 +1,16 @@
+{
+  "name": "features-attachment",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/attachment/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/features/attachment/jest.config.ts"
+      }
+    }
+  }
+}

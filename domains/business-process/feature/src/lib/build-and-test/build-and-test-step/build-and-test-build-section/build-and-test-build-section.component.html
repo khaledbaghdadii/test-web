@@ -1,0 +1,59 @@
+<mxevolve-business-process-content-container header="Build" [collapsable]="true">
+  @if (environmentId(); as envId) {
+  <mxevolve-environment-status-panel
+    class="col-span-12"
+    [projectId]="projectId()"
+    [environmentId]="envId"
+    [showOpenConfigEditorAction]="showConfigEditor()"
+  >
+    @if (scenarioDetailsLink(); as detailsLink) {
+    <a
+      extraActions
+      [attr.href]="scenarioDetailsDisabled() ? null : detailsLink"
+      [attr.aria-disabled]="scenarioDetailsDisabled()"
+      [attr.tabindex]="scenarioDetailsDisabled() ? -1 : null"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="inline-flex no-underline"
+      [class.pointer-events-none]="scenarioDetailsDisabled()"
+      pTooltip="Scenario details"
+      aria-label="Open scenario details"
+    >
+      <p-button
+        [text]="true"
+        severity="primary"
+        ariaLabel="Open scenario details"
+        [disabled]="scenarioDetailsDisabled()"
+      >
+        <mxevolve-icon name="visibility" size="md" />
+      </p-button>
+    </a>
+    }
+  </mxevolve-environment-status-panel>
+  } @else if (showEnvironmentWaitingMessage()) {
+  <p-message severity="info" class="col-span-12">
+    Please wait, we will show you the environment buttons once the deployment
+    starts!
+  </p-message>
+  }
+
+  @if (hasStories()) {
+  <div class="col-span-12 flex flex-col gap-2">
+    <span class="text-sm text-surface-500 dark:text-surface-300">
+      You are working on the following story
+    </span>
+    <div class="flex flex-wrap items-center gap-2">
+      @for (storyId of storyIds(); track storyId) {
+      <p-chip [label]="storyId" />
+      }
+    </div>
+  </div>
+  }
+
+  @if (development(); as dev) {
+  <mxevolve-merge-request-commits
+    class="col-span-12"
+    [development]="dev"
+  />
+  }
+</mxevolve-business-process-content-container>

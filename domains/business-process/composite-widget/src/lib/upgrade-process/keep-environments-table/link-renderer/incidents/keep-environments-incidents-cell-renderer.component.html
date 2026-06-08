@@ -1,0 +1,14 @@
+<div class="overflow-hidden text-ellipsis whitespace-nowrap w-full block">
+  @if (incidents.length > 0) { @for (incident of incidents; track incident.id;
+  let i = $index) { @if (i > 0) {
+  <span>, </span>
+  } @let link = getIncidentLink(incident); @if (link) {
+  <a class="p-button-link" [href]="link" target="_blank">{{
+    incident.externalIssueId
+  }}</a>
+  } @else {
+  <span>{{ incident.externalIssueId }}</span>
+  } } } @else {
+  <span>-</span>
+  }
+</div>

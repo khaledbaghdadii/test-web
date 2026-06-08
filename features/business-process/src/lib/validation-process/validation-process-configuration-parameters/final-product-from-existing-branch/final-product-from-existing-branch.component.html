@@ -1,0 +1,165 @@
+<mxevolve-definition-input
+  id="archivalBranchName"
+  style="display: contents"
+  label="Archival Branch Name"
+  description="Enter the name of the archival branch that you wish to use or create"
+  [inputFormControl]="archivalBranchNameFormControl"
+  inputFormControlName="archivalBranchName"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowArchivalBranch"
+  [showValidationErrors]="false"
+>
+  <mxevolve-branch-input
+    [branchShouldExist]="true"
+    [projectId]="projectId"
+    [repoId]="repositoryIdFormControl.value"
+    [branchNameFormControl]="archivalBranchNameFormControl"
+    [initialValue]="archivalBranchNameInitialValue"
+    (initialInvalid)="showArchivalBranchError()"
+  >
+  </mxevolve-branch-input>
+</mxevolve-definition-input>
+
+@if (finalProductIdFromControl.enabled && !finalProductIdFromControl.value) {
+<ng-container *ngTemplateOutlet="loading"></ng-container>
+} @else if (finalProductIdFromControl.enabled) {
+<ng-container *ngTemplateOutlet="latestFinalProduct"></ng-container>
+} @else {
+<ng-container *ngTemplateOutlet="warnings"></ng-container>
+}
+
+<ng-template #latestFinalProduct>
+  <mxevolve-definition-input
+    id="finalProductInput"
+    style="display: contents"
+    label="Final Product (represented by a Commit ID)"
+    description="Select the final product that you wish to use in your validation"
+    [inputFormControl]="finalProductIdFromControl"
+    inputFormControlName="finalProductId"
+    [inputAccessMode]="inputAccessMode"
+    [displayMode]="displayMode"
+    [forceShow]="forceShowFinalProductId"
+    tooltip="A final product is the client config and the tooling used to validate it. It will be packaged and shipped to the client when it reaches the right quality level."
+  >
+    <input
+      pInputText
+      class="w-full"
+      id="finalProductId"
+      [formControl]="configCommitIdFromControl"
+      [readonly]="true"
+      [attr.aria-describedby]="'finalProductId-help'"
+      [style.background-color]="'#f0f0f0'"
+      [style.color]="'#888'"
+      [style.cursor]="'not-allowed'"
+    />
+  </mxevolve-definition-input>
+  <mxevolve-definition-input
+    style="display: contents"
+    label="RTP Commit ID"
+    description="Select the RTP commit from which you want to take your branch"
+    [inputFormControl]="rtpCommitIdFromControl"
+    inputFormControlName="rtpCommitId"
+    [inputAccessMode]="inputAccessMode"
+    [displayMode]="displayMode"
+    [forceShow]="forceShowRtpCommitId"
+  >
+    <input
+      pInputText
+      class="w-full"
+      id="rtpCommitId"
+      [formControl]="rtpCommitIdFromControl"
+      [readonly]="true"
+      [attr.aria-describedby]="'rtpCommitId-help'"
+      [style.background-color]="'#f0f0f0'"
+      [style.color]="'#888'"
+      [style.cursor]="'not-allowed'"
+    />
+  </mxevolve-definition-input>
+</ng-template>
+
+<ng-template #loading>
+  <mxevolve-definition-input
+    id="finalProductInput"
+    style="display: contents"
+    label="Final Product (represented by a Commit ID)"
+    description="Select the final product that you wish to use in your validation"
+    [inputFormControl]="finalProductIdFromControl"
+    inputFormControlName="finalProductId"
+    [inputAccessMode]="inputAccessMode"
+    [displayMode]="displayMode"
+    [forceShow]="forceShowFinalProductId"
+    tooltip="A final product is the client config and the tooling used to validate it. It will be packaged and shipped to the client when it reaches the right quality level."
+  >
+    <p-iconfield>
+      <input
+        pInputText
+        class="w-full"
+        id="finalProductId"
+        [readonly]="true"
+        [attr.aria-describedby]="'finalProductId-help'"
+        [style.background-color]="'#f0f0f0'"
+        [style.color]="'#888'"
+        [style.cursor]="'not-allowed'"
+      />
+      <p-inputicon class="pi pi-spinner pi-spin" />
+    </p-iconfield>
+  </mxevolve-definition-input>
+  <mxevolve-definition-input
+    style="display: contents"
+    label="RTP Commit ID"
+    description="Select the RTP commit from which you want to take your branch"
+    [inputFormControl]="rtpCommitIdFromControl"
+    inputFormControlName="rtpCommitId"
+    [inputAccessMode]="inputAccessMode"
+    [displayMode]="displayMode"
+    [forceShow]="forceShowRtpCommitId"
+  >
+    <p-iconfield>
+      <input
+        pInputText
+        class="w-full"
+        id="rtpCommitId"
+        [readonly]="true"
+        [attr.aria-describedby]="'rtpCommitId-help'"
+        [style.background-color]="'#f0f0f0'"
+        [style.color]="'#888'"
+        [style.cursor]="'not-allowed'"
+      />
+      <p-inputicon class="pi pi-spinner pi-spin" />
+    </p-iconfield>
+  </mxevolve-definition-input>
+</ng-template>
+
+<ng-template #warnings>
+  @if ((warning$ | async) === MQGFromExistingBranchWarnings.INVALID_BRANCH_NAME)
+  {
+  <mxflow-warning-alert
+    class="col-span-12"
+    warningMessage="Could not validate the selected archival branch. Please ensure the branch is valid and exists."
+    [closeable]="false"
+  ></mxflow-warning-alert>
+  } @if ((warning$ | async) ===
+  MQGFromExistingBranchWarnings.NO_FINAL_PRODUCT_FOUND) {
+  <mxflow-warning-alert
+    class="col-span-12"
+    warningMessage="Could not find a final product on the selected archival branch."
+    [closeable]="false"
+  ></mxflow-warning-alert>
+  } @if ((warning$ | async) ===
+  MQGFromExistingBranchWarnings.UNEXPECTED_FAILURE) {
+  <mxflow-warning-alert
+    class="col-span-12"
+    warningMessage="Something went wrong while fetching the latest final product on the archival branch."
+    [closeable]="false"
+  ></mxflow-warning-alert>
+  } @if ((warning$ | async) ===
+  MQGFromExistingBranchWarnings.PRESELECTED_FINAL_PRODUCT_DIFFERENT_FROM_LATEST)
+  {
+  <mxflow-warning-alert
+    class="col-span-12"
+    warningMessage="Please ensure that you have validated all tests on the latest final product on the branch and the head commit ID. Once you validate the quality gate and proceed, the process will tag and promote the latest final product on the branch associating it with the head commit ID as the  RTP commit."
+    [closeable]="false"
+  ></mxflow-warning-alert>
+  }
+</ng-template>

@@ -1,0 +1,17 @@
+{
+  "name": "features-artifact-manager",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/features/artifact-manager/src",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/features/artifact-manager/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

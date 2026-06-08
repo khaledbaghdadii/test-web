@@ -1,0 +1,157 @@
+<p-dialog
+  header="Create Merge Request"
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  class="dialog-cols-6"
+  (onHide)="cancel()"
+>
+  @if (visible()) {
+  @if (predefinedMode()) {
+  <form [formGroup]="form" class="grid-6">
+    <div class="col-span-6">
+      <p-message severity="info">
+        <ng-template #icon>
+          <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+        </ng-template>
+        Continue to create a merge request with the inputs provided on process
+        launch.
+      </p-message>
+    </div>
+
+    @if (supportsResourceManagement()) {
+    <mxevolve-delete-development-checkbox
+      class="col-span-6"
+      [projectId]="projectId()"
+      [processId]="processId()"
+      [familyId]="ExecutionFamily.USER_STORY_BUILD_AND_TEST"
+      [formControl]="form.controls.deleteBranch"
+      actionLabel="after changes are merged"
+    />
+    }
+  </form>
+  } @else {
+  <form [formGroup]="form" class="grid-6">
+    <div class="col-span-3">
+      <p>Suggested Merge Request Name <span class="text-red-500">*</span></p>
+      <input
+        pInputText
+        type="text"
+        aria-label="Suggested Merge Request Name"
+        placeholder="Enter a title for your merge request"
+        class="w-full"
+        formControlName="mergeRequestTitle"
+      />
+      @if (form.controls.mergeRequestTitle.invalid &&
+      form.controls.mergeRequestTitle.touched) {
+      <small class="text-red-500">Field is required</small>
+      }
+    </div>
+
+    <div class="col-span-3">
+      <p>Destination Branch <span class="text-red-500">*</span></p>
+      <mxevolve-merge-configuration-dropdown
+        [projectId]="projectId()"
+        [repositoryId]="repositoryId()"
+        [formControl]="form.controls.destinationBranch"
+      />
+    </div>
+
+    <div class="col-span-6">
+      <p>Suggested Reviewers Names</p>
+      <mxevolve-autocomplete-reviewers
+        [projectId]="projectId()"
+        [sourceDevelopmentId]="developmentId()"
+        [reviewersFormControl]="form.controls.reviewers"
+        [destinationBranchFormControl]="form.controls.destinationBranch"
+      />
+    </div>
+
+    <div class="col-span-6">
+      <p>
+        Do you want to Backport your Changes?
+        <span class="text-red-500">*</span>
+      </p>
+      <div class="flex gap-6">
+        <div class="flex items-center gap-2">
+          <p-radioButton
+            name="backport"
+            [value]="true"
+            inputId="backport-yes"
+            formControlName="backport"
+          />
+          <label for="backport-yes">Yes</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-radioButton
+            name="backport"
+            [value]="false"
+            inputId="backport-no"
+            formControlName="backport"
+          />
+          <label for="backport-no">No</label>
+        </div>
+      </div>
+    </div>
+
+    @if (form.controls.backport.value && ciVersion() === 1) {
+    <div class="col-span-6">
+      <p>
+        Select the destination branch that you wish to backport your changes
+        into <span class="text-red-500">*</span>
+      </p>
+      <p-multiSelect
+        [options]="backportMergeConfigurations()"
+        [formControl]="form.controls.backportMergeConfigurations"
+        [filter]="true"
+        [loading]="backportMergeConfigurationsLoading()"
+        placeholder="Select destination branches"
+        optionLabel="branchName"
+        display="chip"
+        appendTo="body"
+        styleClass="w-full"
+      />
+    </div>
+    } @else if (form.controls.backport.value) {
+    <div class="col-span-6">
+      <p>
+        Select the Run definition for on-demand backport
+        <span class="text-red-500">*</span>
+      </p>
+      <p-multiSelect
+        [options]="backportDefinitions()"
+        [formControl]="form.controls.backportDefinitions"
+        [filter]="true"
+        [loading]="backportDefinitionsLoading()"
+        placeholder="Select the Run definition for on-demand backport"
+        optionLabel="name"
+        display="chip"
+        appendTo="body"
+        styleClass="w-full"
+      />
+    </div>
+    }
+
+    @if (supportsResourceManagement()) {
+    <mxevolve-delete-development-checkbox
+      class="col-span-6"
+      [projectId]="projectId()"
+      [processId]="processId()"
+      [familyId]="ExecutionFamily.USER_STORY_BUILD_AND_TEST"
+      [formControl]="form.controls.deleteBranch"
+      actionLabel="after changes are merged"
+    />
+    }
+  </form>
+  } }
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Send"
+      (onClick)="submit()"
+      [loading]="submitLoading()"
+      [disabled]="!predefinedMode() && form.invalid"
+    />
+    <p-button label="Cancel" [outlined]="true" (onClick)="cancel()" />
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,35 @@
+@switch (backport.applyBackportDevelopmentState.cherryPickStatus) { @case
+(CherryPickStatus.AUTOMATIC_CHERRY_PICK_IN_PROGRESS) {
+<ng-container *ngTemplateOutlet="automaticCherryPickInProgress"></ng-container>
+} @case (CherryPickStatus.AUTOMATIC_CHERRY_PICK_FAILED) {
+<ng-container *ngTemplateOutlet="automaticCherryPickFailed"></ng-container>
+} @case (CherryPickStatus.COMMITS_CHERRY_PICKED) {
+<ng-container *ngTemplateOutlet="mergeJob"></ng-container>
+} }
+
+<ng-template #automaticCherryPickInProgress>
+  <mxflow-info-alert
+    infoMessage="Automatic cherry picking is in progress. Please refresh the page for the latest update."
+    [closeable]="false"
+  >
+  </mxflow-info-alert>
+</ng-template>
+
+<ng-template #automaticCherryPickFailed>
+  <mxevolve-backport-manual-cherry-pick
+    [projectId]="projectId"
+    [ciProcessExecutionId]="ciProcessExecutionId"
+    [repositoryId]="repositoryId"
+    [backport]="backport"
+  ></mxevolve-backport-manual-cherry-pick>
+</ng-template>
+
+<ng-template #mergeJob>
+  @if (backport.mergeDevelopmentState.latestMergeJobId) {
+  <mxflow-backport-merge-request-view
+    [mergeRequestId]="backport.mergeDevelopmentState.latestMergeJobId"
+  ></mxflow-backport-merge-request-view>
+  }
+</ng-template>
+
+<p-confirmpopup></p-confirmpopup>

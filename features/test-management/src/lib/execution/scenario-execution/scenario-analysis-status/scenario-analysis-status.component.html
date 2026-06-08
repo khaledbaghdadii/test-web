@@ -1,0 +1,52 @@
+<div>
+  @switch (status) { @case (ScenarioAnalysisStatus.PASSED) {
+  <p-tag severity="success">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-check-circle"></i>
+      <span class="text-sm">Passed</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioAnalysisStatus.FAILED) {
+  <p-tag severity="danger">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-times-circle"></i>
+      <span class="text-sm">Failed</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioAnalysisStatus.CANCELLED) {
+  <p-tag severity="warn">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-exclamation-circle"></i>
+      <span class="text-sm">Cancelled</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioAnalysisStatus.ASSIGNED) {
+  <p-tag severity="info">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-user"></i>
+      <span class="text-sm">Assigned</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioAnalysisStatus.UNDER_ANALYSIS) {
+  <p-tag severity="info">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-search"></i>
+      <span class="text-sm">Under Analysis</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioAnalysisStatus.INCIDENT_SENT) {
+  <p-tag severity="info">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-send"></i>
+      <span class="text-sm">Incident Sent</span>
+    </div>
+  </p-tag>
+  } @default {
+  <p-tag severity="secondary">
+    <div class="flex gap-2 items-center">
+      <i class="pi pi-minus-circle"></i>
+      <span class="text-sm">NA</span>
+    </div>
+  </p-tag>
+  } }
+</div>

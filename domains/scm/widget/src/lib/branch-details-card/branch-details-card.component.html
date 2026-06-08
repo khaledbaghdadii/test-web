@@ -1,0 +1,87 @@
+<div class="surface-card p-4 border-round shadow-1">
+  <div class="text-xl font-bold text-surface-900 dark:text-surface-0 mb-4">
+    Branch Details
+  </div>
+
+  @let dev = development();
+  <div class="flex flex-wrap items-start gap-6">
+    <div class="flex flex-col gap-2">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Configuration Branch Name
+      </span>
+      @if (dev.repository.url) {
+      <a
+        class="text-sm font-semibold text-primary no-underline hover:underline"
+        [href]="buildBranchUrl(dev.repository.url, dev.name)"
+        target="_blank"
+        >{{ dev.name }}</a
+      >
+      } @else {
+      <span class="text-sm font-semibold text-primary">
+        {{ dev.name }}
+      </span>
+      }
+    </div>
+
+    <div class="flex items-center justify-center px-3">
+      <div class="w-px h-14 bg-surface-200 dark:bg-surface-700"></div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Parent Branch
+      </span>
+      @if (dev.repository.url) {
+      <a
+        class="text-sm font-semibold text-primary no-underline hover:underline"
+        [href]="buildBranchUrl(dev.repository.url, dev.source)"
+        target="_blank"
+        >{{ dev.source }}</a
+      >
+      } @else {
+      <span class="text-sm font-semibold text-primary">
+        {{ dev.source }}
+      </span>
+      }
+    </div>
+
+    <div class="flex items-center justify-center px-3">
+      <div class="w-px h-14 bg-surface-200 dark:bg-surface-700"></div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Parent Commit ID
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        <mxevolve-commit-id-display [commitId]="dev.parentCommitId" />
+      </span>
+    </div>
+
+    <div class="flex items-center justify-center px-3">
+      <div class="w-px h-14 bg-surface-200 dark:bg-surface-700"></div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Head Commit ID
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        <mxevolve-commit-id-display [commitId]="dev.latestCommitId" />
+      </span>
+    </div>
+
+    <div class="flex items-center justify-center px-3">
+      <div class="w-px h-14 bg-surface-200 dark:bg-surface-700"></div>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Branch Creation Date
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        {{ dev.createdOn | dateFormat }}
+      </span>
+    </div>
+  </div>
+</div>

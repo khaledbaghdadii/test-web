@@ -1,0 +1,71 @@
+<div>
+  <mxflow-mandatory-field></mxflow-mandatory-field>
+  <mxflow-spinner [isLoading]="isLoading">
+    <div class="flex items-end gap-6" [formGroup]="runScenarioForm">
+      <div>
+        <label for="run-scenario">
+          {{ definitionLabel }}
+          <span class="text-red-500">*</span>
+        </label>
+        <div class="mt-2">
+          <mxevolve-scenario-definition-single-selector
+            [projectId]="projectId"
+            [disabled]="!isExecutionAllowed"
+            [placeholder]="selectorPlaceholder"
+            formControlName="scenarioDefinitionId"
+          >
+          </mxevolve-scenario-definition-single-selector>
+        </div>
+      </div>
+      <div>
+        <p-button
+          id="submit-create-test-package-definition"
+          [label]="runButtonLabel"
+          (onClick)="runScenarioExecution()"
+          [disabled]="!runScenarioForm.valid || !isExecutionAllowed"
+          [pTooltip]="isExecutionAllowed ? '' : rejectionReasonMessage!"
+        ></p-button>
+      </div>
+    </div>
+  </mxflow-spinner>
+</div>
+
+<p-dialog
+  [header]="dialogHeader"
+  [(visible)]="showModal"
+  [modal]="true"
+  [style]="{ width: '40rem' }"
+  [appendTo]="'body'"
+  data-testid="run-scenario-modal"
+>
+  <ng-template pTemplate="content">
+    @if (warningMessage) {
+    <div class="my-4">
+      <p-message severity="warn" icon="pi pi-exclamation-triangle">{{
+        warningMessage
+      }}</p-message>
+    </div>
+    }
+
+    <mxevolve-keep-services-checkbox
+      data-testid="keep-services-checkbox"
+      [keepServices]="keepServices"
+      (keepServicesChange)="onCheckKeepServicesChanged($event)"
+    ></mxevolve-keep-services-checkbox>
+  </ng-template>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-between items-center w-full">
+      <p-button
+        data-testid="run-scenario-modal-cancel-button"
+        [outlined]="true"
+        (onClick)="closeModal()"
+        label="Cancel"
+      ></p-button>
+      <p-button
+        data-testid="run-scenario-modal-button"
+        [label]="runButtonLabel"
+        (onClick)="runScenario()"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>

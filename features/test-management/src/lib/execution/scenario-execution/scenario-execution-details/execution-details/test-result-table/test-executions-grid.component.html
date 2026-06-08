@@ -1,0 +1,211 @@
+<mxevolve-card-container>
+  <mxflow-header-title>Test Result</mxflow-header-title>
+  <p-divider></p-divider>
+  @if (isLoading()) {
+  <ng-container *ngTemplateOutlet="loadingTemplateBody"></ng-container>
+  } @else if (scenarioExecution().testExecutions &&
+  scenarioExecution().testExecutions.length > 0) {
+  <ng-container *ngTemplateOutlet="testExecutionsCards"></ng-container>
+  } @else {
+  <mxflow-table-empty-message></mxflow-table-empty-message>
+  }
+</mxevolve-card-container>
+
+<ng-template #testExecutionsCards>
+  <div
+    class="gap-4 grid grid-cols-1 xs:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+    id="testExecutionsCards"
+  >
+    @for(execution of scenarioExecution().testExecutions; track execution) {
+    <ng-container>
+      <div
+        class="border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded overflow-hidden"
+      >
+        <div
+          class="flex items-center gap-4 px-4 py-2 border-b border-surface-200 dark:border-surface-700"
+        >
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <div
+              class="truncate font-bold"
+              pTooltip="{{ execution.testSelectionNames.join(', ') }}"
+              tooltipPosition="top"
+            >
+              {{ execution.testPackageDefinitionName }}
+              @if (execution.testSelectionNames.length > 0) {
+              <span class="font-medium" id="testSelectionNames">
+                (
+                {{ execution.testSelectionNames.join(", ") }}
+                )
+              </span>
+              }
+            </div>
+            <div>
+              <mxevolve-test-execution-status
+                [status]="execution.status"
+              ></mxevolve-test-execution-status>
+            </div>
+          </div>
+          <a
+            class="pi pi-download text-primary"
+            href="{{ execution.testPackageRunLocation }}"
+            target="_blank"
+            rel="noopener"
+            [ngClass]="{
+              'p-disabled':
+                !execution.testPackageRunLocation ||
+                execution.status === 'Underway',
+              'opacity-30':
+                !execution.testPackageRunLocation ||
+                execution.status === 'Underway'
+            }"
+            (click)="
+              !execution.testPackageRunLocation
+                ? $event.preventDefault()
+                : trackDownloadRun()
+            "
+            [pTooltip]="
+              execution.executionMode === TestExecutionMode.WEB_TEST_ENGINE
+                ? tooltipContentWebEngine
+                : tooltipContentLegacy
+            "
+            tooltipPosition="top"
+          >
+          </a>
+        </div>
+        <div class="px-5 py-3">
+          <div
+            class="grid grid-cols-[auto_max-content_1fr] items-center gap-x-2 gap-y-1"
+          >
+            <span class="pi pi-calendar text-primary"></span>
+            <span class="opacity-80">Start Date</span>
+            <span class="font-bold truncate" id="startDate">
+              @if (execution.startDate) {
+              {{ execution.startDate | date : "medium" }}
+              } @else { - }
+            </span>
+            <span class="pi pi-calendar text-primary"></span>
+            <span class="opacity-80">End Date</span>
+            <span class="font-bold truncate" id="endDate">
+              @if (execution.endDate) {
+              {{ execution.endDate | date : "medium" }}
+              } @else { - }
+            </span>
+            <span class="pi pi-clock text-primary"></span>
+            <span class="opacity-80">Duration</span>
+            <span class="font-bold truncate" id="duration">
+              <mxevolve-scenario-execution-duration
+                [startTime]="execution.startDate"
+                [endTime]="execution.endDate"
+              ></mxevolve-scenario-execution-duration>
+            </span>
+          </div>
+        </div>
+
+        <div class="px-5">
+          <div class="pb-5">
+            @if (execution | testExecutionHasReportMenuItems:
+            isHardwareMonitoringFeatureEnabled) {
+            <p-splitbutton
+              #splitButton
+              id="view-test-result-split-button-{{ execution.id }}"
+              style="width: 100%"
+              label="Test Result"
+              icon="pi pi-eye"
+              (onClick)="navigateToReport(execution)"
+              (onDropdownClick)="showReportOptions(execution)"
+              [model]="reportMenuItems"
+              size="small"
+              [disabled]="!execution.report.url"
+              appendTo="body"
+              [menuStyle]="{
+                width: splitButton.el.nativeElement.offsetWidth + 'px'
+              }"
+            />
+            } @else {
+            <p-button
+              [attr.data-testid]="`view-test-result-button-${execution.id}`"
+              label="Test Result"
+              icon="pi pi-eye"
+              (click)="navigateToReport(execution)"
+              (keydown)="navigateToReport(execution)"
+              size="small"
+              [disabled]="!execution.report.url"
+              styleClass="w-full"
+            />
+            }
+          </div>
+
+          @if (execution.executionMode === TestExecutionMode.WEB_TEST_ENGINE) {
+          <div class="pb-5">
+            <p-button
+              [attr.data-testid]="`view-test-case-executions-button-${execution.id}`"
+              label="Test Case Executions"
+              icon="pi pi-eye"
+              badgeSeverity="contrast"
+              [outlined]="true"
+              (click)="navigateToSummaryReport(execution)"
+              (keydown)="navigateToSummaryReport(execution)"
+              size="small"
+              styleClass="w-full"
+            />
+          </div>
+          }
+        </div>
+      </div>
+    </ng-container>
+    }
+  </div>
+</ng-template>
+
+<ng-template #loadingTemplateBody>
+  <div
+    class="gap-4 grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+    id="loadingTemplateBody"
+  >
+    @for(i of Array(2); track i) {
+    <ng-container>
+      <div
+        class="border border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 rounded overflow-hidden"
+      >
+        <div
+          class="flex items-center gap-4 px-4 py-2 border-b border-surface-200 dark:border-surface-700"
+        >
+          <div class="flex items-center gap-4 flex-1 min-w-0">
+            <p-skeleton width="5rem" height="2rem"></p-skeleton>
+            <p-skeleton width="4rem" height="2rem"></p-skeleton>
+          </div>
+          <p-skeleton width="2rem" height="2rem"></p-skeleton>
+        </div>
+        <div class="px-5 py-3">
+          <div
+            class="grid grid-cols-[auto_max-content_1fr] items-center gap-x-2 gap-y-1"
+          >
+            <p-skeleton width="2rem" height="1rem"></p-skeleton>
+            <span><p-skeleton width="5rem" height="1rem"></p-skeleton></span>
+            <span><p-skeleton width="10rem" height="1rem"></p-skeleton></span>
+            <p-skeleton width="2rem" height="1rem"></p-skeleton>
+            <span><p-skeleton width="5rem" height="1rem"></p-skeleton></span>
+            <span><p-skeleton width="10rem" height="1rem"></p-skeleton></span>
+            <p-skeleton width="2rem" height="1rem"></p-skeleton>
+            <span><p-skeleton width="5rem" height="1rem"></p-skeleton></span>
+            <p-skeleton width="4rem" height="1rem"></p-skeleton>
+          </div>
+        </div>
+        <div class="px-5 pb-5">
+          <p-skeleton width="22rem" height="2rem"></p-skeleton>
+        </div>
+      </div>
+    </ng-container>
+    }
+  </div>
+</ng-template>
+
+<ng-template #tooltipContentLegacy>
+  <div class="flex items-center" id="tooltipContentLegacy">Download Run</div>
+</ng-template>
+
+<ng-template #tooltipContentWebEngine>
+  <div class="flex items-center w-max text-sm" id="tooltipContentWebEngine">
+    Download Test Configuration
+  </div>
+</ng-template>

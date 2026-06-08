@@ -1,0 +1,26 @@
+<p-dialog
+  header="Environment Services"
+  [modal]="true"
+  [(visible)]="visible"
+  [closeOnEscape]="true"
+  [closable]="true"
+  [dismissableMask]="true"
+  class="dialog-cols-8"
+  [closeButtonProps]="{ outlined: false, text: true, severity: 'secondary' }"
+  data-testid="view-services-dialog"
+>
+  <div class="min-w-0">
+    <ag-grid-angular
+      class="block h-full w-full"
+      [rowData]="services()"
+      [columnDefs]="columnDefinitions"
+      [defaultColDef]="defaultColumnDefinition"
+      [loading]="servicesResource.isLoading()"
+      [noRowsOverlayComponent]="noRowsOverlayComponent"
+      [noRowsOverlayComponentParams]="noRowsOverlayComponentParams"
+      [loadingOverlayComponent]="loadingOverlayComponent"
+      domLayout="autoHeight"
+      data-testid="services-table"
+    ></ag-grid-angular>
+  </div>
+</p-dialog>

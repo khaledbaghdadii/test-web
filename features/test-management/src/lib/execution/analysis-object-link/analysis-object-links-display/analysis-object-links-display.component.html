@@ -1,0 +1,20 @@
+@for ( data of linkedDetectionsData; track data.id; let isLast=$last) {
+<a
+  class="p-button-link"
+  data-testid="linked-detection"
+  target="_blank"
+  routerLink="{{
+                  {
+                    id: data.id,
+                    projectId: data.projectId,
+                    category: detectionCategory,
+                    type: data.analysisObjectType,
+                  } | detectionUriBuilder
+                }}"
+>
+  {{ data.title }}
+</a>
+{{ isLast ? "" : ", " }}
+} @empty {
+<span> - </span>
+}

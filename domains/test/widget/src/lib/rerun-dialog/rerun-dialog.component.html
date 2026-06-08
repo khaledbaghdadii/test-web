@@ -1,0 +1,54 @@
+<p-dialog
+  header="Scenario Rerun"
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  class="dialog-cols-6"
+  [appendTo]="'body'"
+>
+  <div class="grid-6">
+    @if (warningMessage()) {
+    <div class="col-span-6">
+      <p-message severity="warn">
+        <mxevolve-icon name="warning" class="mr-2" />
+        {{ warningMessage() }}
+      </p-message>
+    </div>
+    } @if (visible()) {
+    <div class="col-span-6">
+      <mxevolve-factory-product-input
+        [projectId]="projectId()"
+        [factoryProductId]="factoryProductId()"
+        (factoryProductIdChange)="selectedFactoryProductId.set($event)"
+      />
+    </div>
+    }
+    <div class="flex flex-col gap-1 col-span-3">
+      <label for="commit-id">Commit ID</label>
+      <input
+        pInputText
+        type="text"
+        id="commit-id"
+        placeholder="Enter a commit ID"
+        [formControl]="commitIdControl"
+      />
+      @if (commitIdControl.hasError('maxlength')) {
+      <small class="p-error block">Maximum length is 255</small>
+      } @if (commitIdControl.hasError('containsWhitespace')) {
+      <small class="p-error block">Field cannot contain whitespaces</small>
+      }
+      <span class="text-sm text-surface-400 italic"
+        >Defaults to the HEAD commit if left empty.</span
+      >
+    </div>
+    <div class="col-start-3 col-span-2">
+      <p-button
+        label="Rerun"
+        styleClass="w-full"
+        [disabled]="isRerunDisabled()"
+        [loading]="loading()"
+        (onClick)="submitRerun()"
+      />
+    </div>
+  </div>
+</p-dialog>

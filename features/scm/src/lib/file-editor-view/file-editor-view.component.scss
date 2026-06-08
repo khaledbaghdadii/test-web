@@ -1,0 +1,20 @@
+.delete-confirm-dialog {
+  width: 55rem;
+
+  .p-dialog-header {
+    padding: 24px;
+
+    .p-dialog-title {
+      font-size: 24px;
+    }
+  }
+
+  .p-dialog-content {
+    padding: 0 24px 24px;
+    word-break: break-all;
+  }
+
+  .p-dialog-footer {
+    padding: 0 24px 24px;
+  }
+}

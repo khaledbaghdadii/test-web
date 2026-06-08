@@ -1,0 +1,44 @@
+<p-select
+  [options]="mxDeployPackageDropdownOptions()"
+  optionLabel="label"
+  optionValue="value"
+  [ngModel]="selectedOption()?.value"
+  (onChange)="handleMxDeployPackageSelected($event)"
+  placeholder="Select an MXdeploy Package"
+  appendTo="body"
+  styleClass="w-full"
+  [showClear]="true"
+  (onClear)="clearSelectedOption()"
+  [virtualScroll]="true"
+  [virtualScrollItemSize]="itemHeight"
+  [virtualScrollOptions]="{
+    lazy: true,
+    step: this.itemsStep,
+    onLazyLoad: handleScroll
+  }"
+  [filter]="true"
+  [ngClass]="{
+    'ng-invalid ng-dirty': !selectedOptionValidity()
+  }"
+>
+  <ng-template pTemplate="filter">
+    <p-iconfield class="p-fluid w-full">
+      <p-inputicon styleClass="pi pi-search" />
+      <input
+        type="text"
+        [ngModel]="mxDeployPackageSearchKey()"
+        pInputText
+        placeholder="Search"
+        (ngModelChange)="handleSearchKeyInputChange($event)"
+        class="w-full"
+      />
+      @if (mxDeployPackageSearchKey()) {
+      <p-inputicon
+        styleClass="pi pi-times cursor-pointer"
+        (click)="clearSearchKey($event)"
+        (keydown)="clearSearchKey($event)"
+      ></p-inputicon>
+      }
+    </p-iconfield>
+  </ng-template>
+</p-select>

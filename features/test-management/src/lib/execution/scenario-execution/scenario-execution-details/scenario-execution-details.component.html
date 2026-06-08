@@ -1,0 +1,88 @@
+<div class="flex m-2">
+  <a (click)="back()" class="flex items-center cursor-pointer p-button-link">
+    <span class="pi pi-angle-left text-xl"></span>
+    <span>Back</span>
+  </a>
+</div>
+<mxevolve-card-container>
+  <p-tabs [value]="tabIndex" (valueChange)="updateTabIndex(+($event ?? 0))">
+    <p-tablist>
+      <p-tab [value]="0">Scenario Execution Details</p-tab>
+      <p-tab
+        [value]="1"
+        data-testid="detections"
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'analysis_object'
+        }"
+        >Detections</p-tab
+      >
+      <p-tab
+        [value]="2"
+        data-testid="incidents"
+        [disabled]="!incidentEnabled()"
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'analysis_object'
+        }"
+        >Incidents</p-tab
+      >
+      <p-tab [value]="3">Scenario Execution History</p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+      <p-tabpanel [value]="0">
+        <mxevolve-execution-details
+          [assignee]="assignee"
+          [isScenarioExecutionFinished]="isScenarioExecutionFinished"
+          (updateAnalysisStatusEvent)="updateAnalysisStatus($event)"
+          (setAssigneeEventEmitter)="setAssignee($event)"
+          (updateCommentEventEmitter)="updateComment($event)"
+          (saveCommentEventEmitter)="saveComment($event)"
+          (cancelCommentEventEmitter)="cancelComment()"
+          (errorEventEmitter)="handleError($event)"
+          (abortScenarioRequested)="handleAbortScenarioRequested($event)"
+          [comment]="selectedScenarioExecution().comment"
+          [isLoading]="isLoading()"
+          [analysisStatusEligibility]="analysisStatusEligibility"
+          [validationScopeEnabled]="validationScopeEnabled()"
+          [incidentEnabled]="incidentEnabled()"
+          (refreshAnalysisStatusEvent)="handleRefreshAnalysisStatusEvent()"
+          (keptExecutionToggled)="handleKeptExecutionToggled($event)"
+        ></mxevolve-execution-details>
+
+        <p-divider></p-divider>
+        <router-outlet></router-outlet>
+      </p-tabpanel>
+
+      <p-tabpanel [value]="1">
+        @if (selectedScenarioExecutionId()) {
+        <mxevolve-scenario-execution-detections
+          [isSelected]="tabIndex === 1"
+        ></mxevolve-scenario-execution-detections>
+        }
+      </p-tabpanel>
+
+      <p-tabpanel [value]="2">
+        @if (selectedScenarioExecutionId()) {
+        <mxevolve-scenario-execution-incidents
+          [isSelected]="tabIndex === 2"
+        ></mxevolve-scenario-execution-incidents>
+        }
+      </p-tabpanel>
+
+      <p-tabpanel [value]="3">
+        @if (selectedScenarioExecution()) {
+        <mxevolve-scenario-execution-history
+          [assignee]="assignee?.displayName ?? '-'"
+          (keptExecutionToggled)="handleKeptExecutionToggled($event)"
+        ></mxevolve-scenario-execution-history>
+        }
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</mxevolve-card-container>

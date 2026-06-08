@@ -1,0 +1,134 @@
+@if (selectedIncidentDisplay()) {
+<div class="mb-4 p-3 border rounded bg-gray-50">
+  <div class="flex items-center justify-between">
+    <div>
+      <span class="font-semibold">Selected Incident: </span>
+      <span>{{ selectedIncidentDisplay()!.title }}</span>
+      <span class="ml-3 text-gray-600">
+        (Ticket: {{ selectedIncidentDisplay()!.linkedTicketId }})
+      </span>
+    </div>
+    <p-button
+      data-testid="clear-selection-button"
+      label="Clear"
+      [text]="true"
+      severity="danger"
+      size="small"
+      (onClick)="removeSelectedIncident()"
+    />
+  </div>
+</div>
+}
+
+<p-table
+  #table
+  data-testid="single-select-incidents-table"
+  [value]="isTableLoading ? [] : incidents()"
+  [lazyLoadOnInit]="false"
+  [showLoader]="false"
+  [loading]="isTableLoading"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  [rows]="incidentsQuery.size"
+  [totalRecords]="total"
+  scrollHeight="60vh"
+  [paginator]="true"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  paginatorStyleClass="justify-end"
+  [scrollable]="true"
+  [lazy]="true"
+  dataKey="id"
+  [(first)]="incidentsQuery.page"
+  (onLazyLoad)="handleTableQueryParamsChange($event)"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th scope="col" style="width: 50px"></th>
+      <th scope="col" style="width: 40%">
+        <div class="header-item">
+          <span class="whitespace-normal">Title</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="titlePhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th scope="col" style="width: 20%">
+        <div class="header-item">
+          <span class="whitespace-normal">Linked Ticket ID</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="externalIssueIdPhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th scope="col" style="width: 15%">
+        <div class="header-item">
+          <span class="whitespace-normal">Status</span>
+        </div>
+      </th>
+      <th scope="col" style="width: 15%">
+        <div class="header-item">
+          <span class="whitespace-normal">Reporter</span>
+        </div>
+      </th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-incident>
+    <tr>
+      <td>
+        <p-radioButton
+          [ngModel]="selectedIncident()?.id"
+          [value]="incident.id"
+          name="incidentSelection"
+          (onClick)="selectIncident(incident)"
+          [attr.data-testid]="incident.id"
+        />
+      </td>
+      <td>{{ incident.title }}</td>
+      <td>
+        <a
+          class="p-button-link"
+          [href]="incident.externalIssue.link"
+          target="_blank"
+          >{{ incident.externalIssue.id }}</a
+        >
+      </td>
+      <td>{{ incident.status }}</td>
+      <td>{{ incident.reporter }}</td>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="loadingbody">
+    @for (_ of Array(incidentsQuery.size); track $index) {
+    <tr>
+      <td><p-skeleton /></td>
+      <td><p-skeleton /></td>
+      <td><p-skeleton /></td>
+      <td><p-skeleton /></td>
+      <td><p-skeleton /></td>
+    </tr>
+    }
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="5">
+        <div class="text-center py-4 text-gray-500">No incidents found</div>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

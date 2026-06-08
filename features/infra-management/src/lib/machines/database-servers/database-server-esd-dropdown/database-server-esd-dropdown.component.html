@@ -1,0 +1,17 @@
+<form [formGroup]="form">
+  <p-select
+    [options]="databaseServerESDs()"
+    placeholder="Select Version"
+    appendTo="body"
+    styleClass="w-full"
+    [showClear]="
+      form &&
+      form.controls &&
+      form.controls['engineSpecificDetail'] &&
+      form.controls['engineSpecificDetail'].value !== ''
+    "
+    [filter]="true"
+    formControlName="engineSpecificDetail"
+  >
+  </p-select>
+</form>

@@ -1,0 +1,134 @@
+{
+  "consumer": {
+    "name": "web-bp"
+  },
+  "interactions": [
+    {
+      "description": "a request to abort a business process execution from web-bp",
+      "providerState": "abort a business process execution",
+      "request": {
+        "body": {
+          "developmentId": "iloveorange",
+          "shouldCleanDevelopment": true
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.developmentId": {
+            "match": "type"
+          },
+          "$.body.shouldCleanDevelopment": {
+            "match": "type"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/projectId/business-process/executions/executionId/abort"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to abort a business process execution that fails from web-bp",
+      "providerState": "failed to abort a business process execution",
+      "request": {
+        "body": {
+          "developmentId": "iloveorange",
+          "shouldCleanDevelopment": true
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.developmentId": {
+            "match": "type"
+          },
+          "$.body.shouldCleanDevelopment": {
+            "match": "type"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/projectId/business-process/executions/executionId/abort"
+      },
+      "response": {
+        "body": {
+          "message": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.message": {
+            "match": "type"
+          }
+        },
+        "status": 500
+      }
+    },
+    {
+      "description": "a request to fetch business process resources from web-bp",
+      "providerState": "fetch business process resources",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/business-process/executions/resources",
+        "query": "processId=executionId"
+      },
+      "response": {
+        "body": [
+          {
+            "projectId": "iloveorange",
+            "resourceId": "iloveorange",
+            "resourceType": "DEVELOPMENT",
+            "usageTags": [
+              "BACKPORT"
+            ]
+          }
+        ],
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].projectId": {
+            "match": "type"
+          },
+          "$.body[*].resourceId": {
+            "match": "type"
+          },
+          "$.body[*].resourceType": {
+            "match": "regex",
+            "regex": "SCENARIO|ENVIRONMENT|MERGE_JOB|DEVELOPMENT"
+          },
+          "$.body[*].usageTags": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].usageTags[*]": {
+            "match": "regex",
+            "regex": "BACKPORT|REFERENCE_ENVIRONMENT"
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "12.5.2"
+    },
+    "pactRust": {
+      "ffi": "0.4.20",
+      "models": "1.2.0"
+    },
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  },
+  "provider": {
+    "name": "business-process-execution-service"
+  }
+}

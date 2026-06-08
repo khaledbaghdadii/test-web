@@ -1,0 +1,20 @@
+<mxevolve-card-container>
+  @if (stage$ | async; as stage) {
+  <mxflow-header-title class="title">
+    {{ stage?.createBranch ? "Created" : "Existing" }} Branch
+  </mxflow-header-title>
+
+  @if (stage.errorMessage) {
+  <mxflow-error-alert
+    [errorMessage]="stage.errorMessage!"
+    [closeable]="false"
+  ></mxflow-error-alert>
+  } @else {
+  <mxflow-create-branch-stage-details
+    [developmentId]="stage.developmentId"
+    [createBranch]="stage.createBranch"
+  ></mxflow-create-branch-stage-details>
+  } } @else {
+  <mxflow-spinner></mxflow-spinner>
+  }
+</mxevolve-card-container>

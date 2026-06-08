@@ -1,0 +1,11 @@
+<ag-grid-angular
+  class="w-full"
+  [rowData]="environments()"
+  [columnDefs]="columnDefinitions()"
+  [defaultColDef]="defaultColumnDefinition"
+  [loading]="environmentsResource.isLoading()"
+  [noRowsOverlayComponent]="noRowsOverlayComponent"
+  [noRowsOverlayComponentParams]="noRowsOverlayComponentParams"
+  [loadingOverlayComponent]="loadingOverlayComponent"
+  domLayout="autoHeight"
+></ag-grid-angular>

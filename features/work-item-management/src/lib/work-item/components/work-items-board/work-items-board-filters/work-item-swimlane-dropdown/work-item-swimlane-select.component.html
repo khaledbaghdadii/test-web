@@ -1,0 +1,10 @@
+<p-select
+  [options]="options"
+  [ngModel]="selected"
+  (ngModelChange)="onSortByChange($event)"
+  placeholder="Sort By"
+  class="w-full"
+  appendTo="body"
+  [showClear]="true"
+  data-testid="swimlane-select"
+></p-select>

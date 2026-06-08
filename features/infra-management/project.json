@@ -1,0 +1,16 @@
+{
+  "name": "features-infra-management",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/infra-management/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/features/infra-management/jest.config.ts"
+      }
+    }
+  }
+}

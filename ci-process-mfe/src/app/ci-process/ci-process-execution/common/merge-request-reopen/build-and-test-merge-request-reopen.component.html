@@ -1,0 +1,96 @@
+<p-toast key="error"></p-toast>
+<p-button
+  label="Reopen Merge Request"
+  [disabled]="actionsDisabled || loading"
+  [loading]="loading && !areMergeRequestDetailsEditable"
+  (onClick)="onReopenButtonClick()"
+></p-button>
+
+<p-dialog
+  header="Reopen Merge Request"
+  [visible]="isModalVisible"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  (onHide)="onDialogCancel()"
+>
+  @if (isModalVisible) {
+  <div class="col-start-2 col-span-10 m-2">
+    <mxflow-mandatory-field></mxflow-mandatory-field>
+  </div>
+
+  <form [formGroup]="form">
+    <div class="grid grid-cols-12 gap-4">
+      <div class="col-span-10 col-start-2 flex flex-col gap-2">
+        <label for="title">
+          Enter the title of your merge request
+          <span class="text-red-500">*</span>
+        </label>
+        <input
+          pInputText
+          type="text"
+          id="title"
+          placeholder="Enter a title for your merge request"
+          formControlName="mergeRequestTitle"
+        />
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: form.get('mergeRequestTitle')
+          }"
+        ></ng-template>
+      </div>
+
+      <div class="col-span-10 col-start-2 flex flex-col gap-2">
+        <label for="destinationBranch">Destination branch</label>
+        <input
+          pInputText
+          type="text"
+          id="destinationBranch"
+          [value]="mergeConfigurationId | getDestinationBranchName | async"
+          disabled
+        />
+      </div>
+
+      <div class="col-span-10 col-start-2 flex flex-col gap-2">
+        <label for="reviewers">
+          Enter the names of the reviewers that you wish to review your changes
+        </label>
+        <mxevolve-autocomplete-reviewers
+          [projectId]="projectId"
+          [reviewersFormControl]="reviewerFormControl"
+        ></mxevolve-autocomplete-reviewers>
+      </div>
+    </div>
+  </form>
+  }
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Reopen Merge Request"
+      (onClick)="onDialogReopen()"
+      [disabled]="!form?.valid || loading"
+      [loading]="dialogLoading"
+      id="reopenButton"
+    ></p-button>
+    <p-button
+      (click)="onDialogCancel()"
+      (keydown)="onDialogCancel()"
+      [outlined]="true"
+      >Cancel</p-button
+    >
+  </ng-template>
+</p-dialog>
+
+<ng-template #errorTipTemplate let-control>
+  @if (control.invalid && control.dirty) {
+  <div class="h-4">
+    <div class="flex gap-1">
+      @if (control.hasError('required')) {
+      <small class="p-error block">Field is required</small>
+      } @if (control.hasError('whitespace')) {
+      <small class="p-error block">Field cannot be whitespaces</small>
+      }
+    </div>
+  </div>
+  }
+</ng-template>

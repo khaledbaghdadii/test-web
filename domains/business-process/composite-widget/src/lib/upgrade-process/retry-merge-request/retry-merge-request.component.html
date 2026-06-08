@@ -1,0 +1,29 @@
+@if(buttonDisplayed()){
+<p-button label="Merge" (onClick)="openDialog()" styleClass="w-full" />
+}
+<p-dialog
+  header="Merge Request"
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  class="dialog-cols-6"
+>
+  <div class="grid-6 grid-rows-[auto_1fr]">
+    <mxevolve-merge-request-details-form
+      [formControl]="mergeRequestControl"
+      [projectId]="projectId()"
+      [processId]="processId()"
+      [developmentId]="developmentId()"
+      [supportsResourceManagement]="supportsResourceManagement()"
+      [parentBranchName]="parentBranchName()"
+    />
+
+    <p-button
+      styleClass="w-full"
+      label="Send"
+      class="col-start-3 col-span-2 self-end"
+      (onClick)="submit()"
+      [loading]="loading()"
+      [disabled]="mergeRequestControl.invalid"
+    />
+  </div>
+</p-dialog>

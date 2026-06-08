@@ -1,0 +1,48 @@
+<p-multiSelect
+  [formControl]="selectedMergeConfigurations"
+  [options]="mergeConfigurationsSignal()"
+  [filter]="true"
+  [emptyMessage]="isLoadingDataSignal() ? 'Loading...' : 'No Results Found'"
+  [showClear]="true"
+  [virtualScroll]="true"
+  [virtualScrollItemSize]="virtualScrollItemSize"
+  [virtualScrollOptions]="{
+    lazy: true,
+    step: itemsStep,
+    onLazyLoad: handleScroll
+  }"
+  [showToggleAll]="false"
+  optionLabel="branchName"
+  placeholder="Select a Branch"
+  styleClass="w-full"
+  appendTo="body"
+  display="chip"
+>
+  <ng-template pTemplate="filter" let-options="options">
+    <p-iconfield class="p-fluid w-full">
+      <input
+        class="w-full"
+        type="text"
+        pInputText
+        [pAutoFocus]="true"
+        [ngModel]="searchKeySignal()"
+        (ngModelChange)="handleSearchKeyChange($event)"
+        placeholder="Search"
+      />
+      @if (!searchKeySignal()) {
+      <p-inputicon styleClass="pi pi-search"></p-inputicon>
+      } @if (searchKeySignal()) {
+      <p-inputicon
+        styleClass="pi pi-times cursor-pointer"
+        (click)="handleClearSearchKey($event)"
+      ></p-inputicon>
+      }
+    </p-iconfield>
+  </ng-template>
+</p-multiSelect>
+
+<div class="mt-1">
+  @if (errorMessageSignal()) {
+  <small class="p-error block">{{ errorMessageSignal() }}</small>
+  }
+</div>

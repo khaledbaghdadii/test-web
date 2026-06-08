@@ -1,0 +1,35 @@
+@if (!isLoading) {
+<p-fileUpload
+  [customUpload]="true"
+  chooseLabel="Browse"
+  (onSelect)="upload($event)"
+  multiple="true"
+  [auto]="true"
+>
+  <ng-template pTemplate="content">
+    <div class="flex items-center justify-center flex-col">
+      <ng-container>
+        @if (attachments.length === 0) {
+        <i
+          class="pi pi-cloud-upload border-2 rounded-full p-8 text-8xl text-surface-400 dark:text-surface-400 border-surface-400 dark:border-surface-400"
+        ></i>
+        }
+        <p class="mt-6 mb-6">Drag and drop files here to upload.</p>
+      </ng-container>
+    </div>
+    @if (attachments.length > 0) {
+    <mxevolve-attachments
+      [attachments]="attachments"
+      [showDelete]="true"
+      (attachmentsChange)="attachmentsChange.emit($event)"
+    ></mxevolve-attachments>
+    } @if (isUploadingAttachment) {
+    <p-skeleton styleClass="mb-2 mt-2 h-12"></p-skeleton>
+    }
+  </ng-template>
+  <ng-template pTemplate="file"></ng-template>
+  <ng-template pTemplate="empty"></ng-template>
+</p-fileUpload>
+} @else {
+<p-skeleton styleClass="mb-2 mt-2 h-24"></p-skeleton>
+}

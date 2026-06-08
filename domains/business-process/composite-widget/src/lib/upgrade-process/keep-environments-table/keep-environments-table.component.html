@@ -1,0 +1,21 @@
+@if (!isLoading() && isEmpty()) {
+<p-message severity="info" class="col-span-6">
+  @if (mode() === "edit") { There are no valid test executions or environments
+  to keep after this business process is closed.} @else { No test scenarios or
+  environments were selected to be kept. All scenarios and environments will be
+  cleaned up when the business process ends.}
+</p-message>
+} @else {
+<ag-grid-angular
+  class="ag-theme-alpine col-span-6"
+  [rowData]="rowData()"
+  [columnDefs]="columnDefinitions()"
+  [defaultColDef]="defaultColumnDefinition"
+  [rowSelection]="mode() === 'edit' ? rowSelectionConfig : undefined"
+  [domLayout]="'autoHeight'"
+  [loading]="isLoading()"
+  [loadingOverlayComponent]="loadingOverlayComponent"
+  (firstDataRendered)="onFirstDataRendered($event)"
+  (selectionChanged)="onSelectionChanged($event)"
+/>
+}

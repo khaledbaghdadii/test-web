@@ -1,0 +1,43 @@
+<div class="flex flex-col gap-4">
+  <div class="flex justify-between items-center flex-wrap">
+    <span class="text-xl font-semibold">Reference Environment</span>
+    <span
+      [tooltipDisabled]="!deploymentDisabled()"
+      [pTooltip]="tooltipMessage()"
+      tooltipPosition="top"
+    >
+      <p-button
+        [loading]="deploymentRequestLoading()"
+        [disabled]="deploymentDisabled()"
+        (onClick)="onDeployClick()"
+        label="Deploy"
+        outlined
+      >
+      </p-button>
+    </span>
+  </div>
+
+  @if (deploymentStatus.value().latestRequestInProgress) {
+  <p-message severity="info">
+    <ng-template #icon>
+      <mxevolve-icon name="info" size="sm" />
+    </ng-template>
+    Environment provisioning is underway. Please refresh the page to check for
+    updates.
+  </p-message>
+  } @if (deploymentStatus.value().latestRequestFailed) {
+  <p-message severity="error">
+    <ng-template #icon>
+      <mxevolve-icon name="error" size="sm" />
+    </ng-template>
+    An error occurred during environment provisioning. Please try again or
+    contact support if the issue persists.
+  </p-message>
+  }
+  <mxevolve-environments-table
+    [environmentIds]="deploymentStatus.value().environmentIds"
+    [projectId]="projectId()"
+  ></mxevolve-environments-table>
+</div>
+
+<p-confirmDialog appendTo="self" class="dialog-cols-4"></p-confirmDialog>

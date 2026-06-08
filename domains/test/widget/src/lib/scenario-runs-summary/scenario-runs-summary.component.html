@@ -1,0 +1,188 @@
+<div class="flex flex-col gap-4">
+  <div class="grid grid-cols-12 gap-4">
+    <!-- Panel 1: Scenario Analysis Status Summary -->
+    <ng-container
+      *showElementIfAuthorized="{
+        action: 'read_analysis_status',
+        resource: 'scenario_execution',
+        package: 'test',
+        attributes: {}
+      }"
+    >
+      <div
+        class="col-span-4 bg-surface-50 dark:bg-surface-800 rounded-md border border-surface p-4"
+        data-testid="analysis-status-panel"
+      >
+        <div class="text-color font-medium mb-3">
+          Scenario Analysis Status Summary
+        </div>
+        @if (isLoading()) {
+        <div class="grid grid-cols-2 gap-4">
+          <p-skeleton width="100%" height="2rem" />
+          <p-skeleton width="100%" height="2rem" />
+          <p-skeleton width="100%" height="2rem" />
+          <p-skeleton width="100%" height="2rem" />
+        </div>
+        } @else {
+        <div class="grid grid-cols-2 gap-4">
+          <mxevolve-summary-dropdown
+            [count]="analysisStatus().notStarted"
+            label="Not Started"
+            [parentActive]="isDropdownParentActive('notStarted')"
+            [open]="openDropdown() === 'notStarted'"
+            [items]="notStartedDropdownItems()"
+            emptyMessage="No not started items"
+            (toggled)="toggleDropdown('notStarted')"
+            (itemClicked)="onDropdownItemClick('analysisStatus', $event)"
+            data-testid="not-started-dropdown"
+          />
+          <mxevolve-summary-item
+            [count]="analysisStatus().underAnalysis"
+            label="Under Analysis"
+            [active]="isActive('analysisStatus', 'Under Analysis')"
+            (clicked)="onFilterClick('analysisStatus', 'Under Analysis')"
+          />
+          <mxevolve-summary-item
+            [count]="analysisStatus().incidentSent"
+            label="Incident Sent"
+            [active]="isActive('analysisStatus', 'Incident Sent')"
+            (clicked)="onFilterClick('analysisStatus', 'Incident Sent')"
+          />
+          <mxevolve-summary-dropdown
+            [count]="analysisStatus().done"
+            label="Done"
+            [parentActive]="isDropdownParentActive('done')"
+            [open]="openDropdown() === 'done'"
+            [items]="doneDropdownItems()"
+            emptyMessage="No done items"
+            (toggled)="toggleDropdown('done')"
+            (itemClicked)="onDropdownItemClick('analysisStatus', $event)"
+            data-testid="done-dropdown"
+          />
+        </div>
+        }
+      </div>
+    </ng-container>
+
+    <!-- Panel 2: Aggregated Detections -->
+    <ng-container
+      *showElementIfAuthorized="{
+        action: 'view',
+        resource: 'analysis_object',
+        package: 'web',
+        attributes: {}
+      }"
+    >
+      <div
+        class="col-span-4 bg-surface-50 dark:bg-surface-800 rounded-md border border-surface p-4"
+        data-testid="detections-panel"
+      >
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-color font-medium">Aggregated Detections</span>
+          <a
+            [routerLink]="'/global-operations/detections'"
+            [queryParams]="{
+              businessProcessExecutionNamePhrase: bpExecutionName()
+            }"
+            target="_blank"
+            class="text-primary"
+            data-testid="detections-redirect"
+          >
+            <mxevolve-icon name="open_in_new" size="sm" />
+          </a>
+        </div>
+        @if (isLoading()) {
+        <div class="grid grid-cols-2 gap-4">
+          <p-skeleton width="100%" height="2rem" />
+          <p-skeleton width="100%" height="2rem" />
+          <p-skeleton width="100%" height="2rem" />
+        </div>
+        } @else {
+        <div class="grid grid-cols-2 gap-4">
+          <mxevolve-summary-item
+            [count]="detections().wasteReasonCount"
+            label="Waste Reasons"
+            [active]="isActive('detection', 'wasteReasons')"
+            (clicked)="onFilterClick('detection', 'wasteReasons')"
+          />
+          <mxevolve-summary-item
+            [count]="detections().regressionCount"
+            label="Regressions"
+            [active]="isActive('detection', 'regressions')"
+            (clicked)="onFilterClick('detection', 'regressions')"
+          />
+          <mxevolve-summary-item
+            [count]="detections().impactCount"
+            label="Impacts"
+            [active]="isActive('detection', 'impacts')"
+            (clicked)="onFilterClick('detection', 'impacts')"
+          />
+        </div>
+        }
+      </div>
+    </ng-container>
+
+    <!-- Panel 3: Aggregated Incidents -->
+    <ng-container
+      *showElementIfAuthorized="{
+        action: 'view',
+        resource: 'analysis_object',
+        package: 'web',
+        attributes: {}
+      }"
+    >
+      <div
+        class="col-span-4 bg-surface-50 dark:bg-surface-800 rounded-md border border-surface p-4"
+        data-testid="incidents-panel"
+      >
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-color font-medium">Aggregated Incidents</span>
+          <a
+            [routerLink]="'/global-operations/incidents'"
+            [queryParams]="{
+              businessProcessExecutionNamePhrase: bpExecutionName()
+            }"
+            target="_blank"
+            class="text-primary"
+            data-testid="incidents-redirect"
+          >
+            <mxevolve-icon name="open_in_new" size="sm" />
+          </a>
+        </div>
+        @if (isLoading()) {
+        <div class="grid grid-cols-2 gap-4">
+          <p-skeleton width="100%" height="2rem" />
+          <p-skeleton width="100%" height="2rem" />
+          <p-skeleton width="100%" height="2rem" />
+        </div>
+        } @else {
+        <div class="grid grid-cols-2 gap-4">
+          <mxevolve-summary-dropdown
+            [count]="incidents().openCount"
+            label="Open Incidents"
+            [parentActive]="isDropdownParentActive('openIncidents')"
+            [open]="openDropdown() === 'openIncidents'"
+            [items]="openIncidentsDropdownItems()"
+            emptyMessage="No open incidents"
+            (toggled)="toggleDropdown('openIncidents')"
+            (itemClicked)="onDropdownItemClick('incident', $event)"
+            data-testid="open-incidents-dropdown"
+          />
+          <mxevolve-summary-item
+            [count]="incidents().closedCount"
+            label="Closed Incidents"
+            [active]="isActive('incident', 'closed')"
+            (clicked)="onFilterClick('incident', 'closed')"
+          />
+          <mxevolve-summary-item
+            [count]="incidents().totalCount"
+            label="Total number of incidents"
+            [active]="isActive('incident', 'total')"
+            (clicked)="onFilterClick('incident', 'total')"
+          />
+        </div>
+        }
+      </div>
+    </ng-container>
+  </div>
+</div>

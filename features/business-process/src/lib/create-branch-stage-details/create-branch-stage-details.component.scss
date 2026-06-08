@@ -1,0 +1,33 @@
+@import 'libs/ui/utils/src/mixins';
+
+.grid-container {
+  display: grid;
+  max-width: 100%;
+  grid-template-columns: 70% 30%;
+  grid-gap: 10px;
+}
+
+img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  opacity: 0.9;
+}
+
+.branch-model {
+  padding: 0 30px;
+}
+
+tr td {
+  padding: 16px 24px;
+}
+
+.header {
+  width: 25%;
+  color: var(--p-datatable-header-cell-color);
+  font-weight: var(--p-datatable-column-title-font-weight);
+}
+
+tr:nth-child(2) {
+  width: 75%;
+}

@@ -1,0 +1,30 @@
+@if (columnsInLoadingState()) {
+<div class="flex gap-8 w-full">
+  @for (column of columns(); track trackByColumnId($index, column)) {
+  <div
+    class="flex-1"
+    [attr.data-column-id]="column.id"
+    [attr.aria-label]="column.title + ' column'"
+  >
+    <div class="grid grid-cols-1 gap-4 w-full">
+      @for (skel of [1, 2, 3, 4, 5]; track skel) {
+      <mxevolve-work-item-card-skeleton></mxevolve-work-item-card-skeleton>
+      }
+    </div>
+  </div>
+  }
+</div>
+}
+<div class="flex flex-row gap-8 w-full">
+  @for (column of columns(); track trackByColumnId($index, column)) {
+  <div
+    class="flex-1"
+    [attr.data-column-id]="column.id"
+    [attr.aria-label]="column.title + ' column'"
+  >
+    <mxevolve-work-items-column
+      [columnId]="column.id"
+    ></mxevolve-work-items-column>
+  </div>
+  }
+</div>

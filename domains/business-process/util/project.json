@@ -1,0 +1,9 @@
+{
+  "name": "domains-business-process-util",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domains/business-process/util/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["scope:domain:business-process", "type:util"],
+  "targets": {}
+}

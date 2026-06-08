@@ -1,0 +1,103 @@
+<p-dialog
+  header="Create a Configuration Impact"
+  [(visible)]="isVisible"
+  [modal]="true"
+  [style]="{ width: '50vw' }"
+  (onHide)="onCancel()"
+>
+  <form
+    [formGroup]="createConfigurationImpactForm"
+    (ngSubmit)="onFormSubmission()"
+  >
+    <div class="grid grid-cols-12 gap-4">
+      <div class="gap-2 col-span-10 col-start-2 pt-2">
+        <mxflow-mandatory-field></mxflow-mandatory-field>
+      </div>
+      <div class="col-span-10 col-start-2 flex flex-col gap-2">
+        <label for="title" class="block"
+          >Title <span class="text-red-500">*</span></label
+        >
+        <input
+          id="title"
+          type="text"
+          pInputText
+          placeholder="Enter a Title"
+          formControlName="title"
+        />
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: createConfigurationImpactForm.controls.title
+          }"
+        ></ng-template>
+      </div>
+      <div class="col-span-10 col-start-2 flex flex-col gap-2">
+        <label for="guiltyChange" class="block"
+          >Guilty Change <span class="text-red-500">*</span></label
+        >
+        <input
+          id="guiltyChange"
+          type="text"
+          pInputText
+          placeholder="Enter a Guilty Change"
+          formControlName="guiltyChange"
+        />
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: createConfigurationImpactForm.controls.guiltyChange
+          }"
+        ></ng-template>
+      </div>
+      <div class="col-span-10 col-start-2 flex flex-col gap-2">
+        <label for="description" class="block"
+          >Description <span class="text-red-500">*</span></label
+        >
+        <mxevolve-quill-editor
+          id="description"
+          formControlName="description"
+        ></mxevolve-quill-editor>
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: createConfigurationImpactForm.controls.description
+          }"
+        ></ng-template>
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <p-button
+        type="submit"
+        label="{{ submitCreationButtonLabel }}"
+        class="pl-4"
+        [disabled]="!this.createConfigurationImpactForm.valid"
+        [loading]="isLoading"
+      ></p-button>
+      <p-button
+        label="Cancel"
+        [outlined]="true"
+        (click)="onCancel()"
+        class="pl-4"
+      ></p-button>
+    </div>
+  </form>
+</p-dialog>
+
+<ng-template #errorTipTemplate let-control>
+  <div class="input-error h-4">
+    @if (control.invalid && control.dirty) {
+    <div class="flex gap-1 pt-1">
+      @if (control.hasError('maxlength')) {
+      <small class="p-error block"
+        >Maximum length is {{ control.errors?.maxlength.requiredLength }}</small
+      >
+      } @if (control.hasError('required')) {
+      <small class="p-error block">Field is required</small>
+      } @if (control.hasError('whitespace')) {
+      <small class="p-error block">Field cannot be whitespaces</small>
+      }
+    </div>
+    }
+  </div>
+</ng-template>

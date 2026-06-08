@@ -1,0 +1,338 @@
+<div class="flex flex-col gap-4">
+  <div class="flex justify-between items-center w-full">
+    <mxflow-header-title>
+      Build & Test Processes Executions
+    </mxflow-header-title>
+    <mxevolve-my-executions-toggle
+      field="ownerPhrase"
+      class="mb-4"
+      [table]="table"
+      [(showMyExecutionsOnly)]="isMyExecutionsOnly"
+    ></mxevolve-my-executions-toggle>
+  </div>
+  <p-table
+    #table
+    sortField="sortByStartDate"
+    [sortOrder]="-1"
+    [value]="executions"
+    [scrollable]="true"
+    [loading]="isLoading"
+    [showLoader]="false"
+    [rows]="10"
+    [totalRecords]="total"
+    (onLazyLoad)="handleTableQueryParamsChange($event)"
+    [lazy]="true"
+    [paginator]="true"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    [globalFilterFields]="globalFilterFields"
+    [resizableColumns]="true"
+    columnResizeMode="expand"
+    paginatorStyleClass="justify-end"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th pResizableColumn scope="col">
+          <div class="header-item">
+            <span class="whitespace-normal">Execution Name</span>
+            <p-columnFilter
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showMatchModes]="false"
+              [hideOnClear]="true"
+              type="text"
+              field="namePhrase"
+              display="menu"
+            >
+            </p-columnFilter>
+          </div>
+        </th>
+        <th pResizableColumn scope="col">
+          <div class="header-item">
+            <span class="whitespace-normal">Status</span>
+            <p-columnFilter
+              field="statuses"
+              display="menu"
+              [showMatchModes]="false"
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showApplyButton]="false"
+              [showClearButton]="false"
+            >
+              <ng-template pTemplate="filter" let-filter="filterCallback">
+                <mxevolve-table-checkbox-filter
+                  [filter]="filter"
+                  [options]="businessProcessExecutionStatusFilters"
+                  [(selected)]="selectedStatuses"
+                ></mxevolve-table-checkbox-filter>
+              </ng-template>
+            </p-columnFilter>
+          </div>
+        </th>
+        <th pResizableColumn scope="col">
+          <div class="header-item">
+            <span class="whitespace-normal">User Stories IDs</span>
+            <p-columnFilter
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showMatchModes]="false"
+              type="text"
+              field="userStoryIds"
+              display="menu"
+            ></p-columnFilter>
+          </div>
+        </th>
+        <th pResizableColumn scope="col">
+          <div class="header-item">
+            <span class="whitespace-normal">Configuration Branch Name</span>
+            <p-columnFilter
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showMatchModes]="false"
+              type="text"
+              field="configurationBranchNamePhrase"
+              display="menu"
+            ></p-columnFilter>
+          </div>
+        </th>
+        <th pResizableColumn scope="col">
+          <div class="header-item">
+            <span class="whitespace-normal">Owner</span>
+            @if (!isMyExecutionsOnly) {
+            <p-columnFilter
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showMatchModes]="false"
+              type="text"
+              field="ownerPhrase"
+              display="menu"
+            ></p-columnFilter>
+            }
+          </div>
+        </th>
+        <th pResizableColumn pSortableColumn="sortByStartDate" scope="col">
+          <div class="header-item">
+            <div>
+              Start Date
+              <p-sortIcon class="ml-1" field="sortByStartDate"></p-sortIcon>
+            </div>
+            <p-columnFilter
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showMatchModes]="false"
+              [hideOnClear]="true"
+              [showApplyButton]="false"
+              [showClearButton]="false"
+              matchMode="in"
+              field="startDateRange"
+              display="menu"
+            >
+              <ng-template pTemplate="filter" let-filter="filterCallback">
+                <mxflow-table-date-filter
+                  [filter]="filter"
+                  [(selectedRange)]="startDateRange"
+                ></mxflow-table-date-filter>
+              </ng-template>
+            </p-columnFilter>
+          </div>
+        </th>
+        <th pResizableColumn scope="col">
+          <div class="header-item">
+            <span class="whitespace-normal">End Date</span>
+            <p-columnFilter
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showMatchModes]="false"
+              [hideOnClear]="true"
+              [showApplyButton]="false"
+              [showClearButton]="false"
+              matchMode="in"
+              field="endDateRange"
+              display="menu"
+            >
+              <ng-template pTemplate="filter" let-filter="filterCallback">
+                <mxflow-table-date-filter
+                  [filter]="filter"
+                  [(selectedRange)]="endDateRange"
+                ></mxflow-table-date-filter>
+              </ng-template>
+            </p-columnFilter>
+          </div>
+        </th>
+        <th pSortableColumn="sortByExpiryDate" pResizableColumn scope="col">
+          <div class="header-item">
+            <div>
+              Expiry Date
+              <p-sortIcon class="ml-1" field="sortByExpiryDate"></p-sortIcon>
+            </div>
+
+            <p-columnFilter
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showMatchModes]="false"
+              [hideOnClear]="true"
+              [showApplyButton]="false"
+              [showClearButton]="false"
+              matchMode="in"
+              field="expiryDateRange"
+              display="menu"
+            >
+              <ng-template pTemplate="filter" let-filter="filterCallback">
+                <mxflow-table-date-filter
+                  [filter]="filter"
+                  [(selectedRange)]="expiryDateRange"
+                ></mxflow-table-date-filter>
+              </ng-template>
+            </p-columnFilter>
+          </div>
+        </th>
+        <th pSortableColumn="sortByDaysExtended" pResizableColumn scope="col">
+          <div class="flex justify-between items-center gap-2">
+            <span class="whitespace-normal">Days Extended</span>
+            <p-sortIcon class="ml-1" field="sortByDaysExtended"></p-sortIcon>
+          </div>
+        </th>
+
+        <th pResizableColumn scope="col">Duration</th>
+        <th pResizableColumn scope="col">
+          <div class="header-item">
+            <span class="whitespace-normal">Business Process Definition</span>
+            <p-columnFilter
+              field="definitionIds"
+              display="menu"
+              [showMatchModes]="false"
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showApplyButton]="false"
+              [showClearButton]="false"
+            >
+              <ng-template pTemplate="filter" let-filter="filterCallback">
+                <mxevolve-table-checkbox-filter
+                  [filter]="filter"
+                  [options]="
+                    businessProcessDefinitions
+                      | businessProcessDefinitionToFilterList
+                        : businessProcessType
+                  "
+                  [(selected)]="selectedBpDefinition"
+                ></mxevolve-table-checkbox-filter>
+              </ng-template>
+            </p-columnFilter>
+          </div>
+        </th>
+        <th pResizableColumn scope="col">
+          <div class="header-item">
+            <span class="whitespace-normal">Process Name</span>
+            <p-columnFilter
+              field="processNames"
+              display="menu"
+              [showMatchModes]="false"
+              [showOperator]="false"
+              [showAddButton]="false"
+              [showApplyButton]="false"
+              [showClearButton]="false"
+            >
+              <ng-template pTemplate="filter" let-filter="filterCallback">
+                <mxevolve-table-checkbox-filter
+                  [filter]="filter"
+                  [options]="
+                    businessProcessDefinitions
+                      | businessProcessNameToFilterList : businessProcessType
+                  "
+                  [(selected)]="selectedProcessName"
+                ></mxevolve-table-checkbox-filter>
+              </ng-template>
+            </p-columnFilter>
+          </div>
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-execution>
+      <tr>
+        <td
+          [pTooltip]="execution.name"
+          tooltipPosition="top"
+          [showDelay]="1000"
+        >
+          <a
+            class="p-button-link"
+            [routerLink]="
+              '/app/' +
+              projectId +
+              '/business-process/' +
+              (execution.id | businessProcessUriFactory)
+            "
+          >
+            {{ execution.name }}
+          </a>
+        </td>
+        <td>
+          <app-business-process-execution-status
+            [status]="execution.status"
+          ></app-business-process-execution-status>
+        </td>
+        <td>
+          <mxevolve-jira-user-stories
+            [jiraBaseUrl]="(jiraBaseUrl$ | async)?.jiraBaseUrl"
+            [userStoryIds]="execution.userStoryIds"
+          >
+          </mxevolve-jira-user-stories>
+        </td>
+        <td
+          [pTooltip]="execution.configurationBranchName"
+          tooltipPosition="top"
+          [showDelay]="1000"
+        >
+          {{ execution.configurationBranchName }}
+        </td>
+        <td
+          [pTooltip]="execution.owner"
+          tooltipPosition="top"
+          [showDelay]="1000"
+        >
+          {{ execution.owner }}
+        </td>
+        <td>{{ execution.startDate | date : "medium" }}</td>
+        <td>{{ execution.endDate | date : "medium" }}</td>
+        <td>{{ execution.expiryDate | date : "medium" }}</td>
+        <td>
+          {{ execution.daysExtended | daysCount }}
+        </td>
+        <td>{{ execution.startDate | duration : execution.endDate }}</td>
+        <td
+          [pTooltip]="execution.businessProcessDefinitionName"
+          tooltipPosition="top"
+          [showDelay]="1000"
+        >
+          {{ execution.businessProcessDefinitionName }}
+        </td>
+        <td
+          [pTooltip]="execution.processName"
+          tooltipPosition="top"
+          [showDelay]="1000"
+        >
+          {{ execution.processName }}
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="loadingbody">
+      @for (row of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track row) {
+      <tr>
+        @for (col of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; track col) {
+        <td>
+          <p-skeleton></p-skeleton>
+        </td>
+        }
+      </tr>
+      }
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="9" class="py-4">
+          <mxflow-table-empty-message></mxflow-table-empty-message>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

@@ -1,0 +1,35 @@
+<p-button
+  data-testid="archive-scenario-definition-button"
+  [rounded]="true"
+  [text]="true"
+  severity="danger"
+  ariaLabel="Archive scenario definition"
+  pTooltip="Archive"
+  tooltipPosition="top"
+  [loading]="loading()"
+  (onClick)="handleArchiveClicked()"
+>
+  <ng-template #icon>
+    <mxevolve-icon name="archive" size="sm" />
+  </ng-template>
+</p-button>
+
+<p-confirmDialog
+  appendTo="self"
+  [closable]="false"
+  [style]="{ 'border-radius': '4px', 'max-width': '24rem' }"
+>
+  <ng-template #footer>
+    <p-button
+      data-testid="confirm-archive-button"
+      label="Confirm"
+      (onClick)="confirmArchive()"
+    />
+    <p-button
+      data-testid="cancel-archive-button"
+      label="Cancel"
+      severity="secondary"
+      (onClick)="rejectArchive()"
+    />
+  </ng-template>
+</p-confirmDialog>

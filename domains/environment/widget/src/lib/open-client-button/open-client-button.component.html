@@ -1,0 +1,39 @@
+<span
+  [pTooltip]="iconOnly() ? tooltip() || label() : tooltip()"
+  [tooltipDisabled]="iconOnly() ? false : !tooltip()"
+  tooltipPosition="top"
+>
+  @if (iconOnly()) {
+  <p-button
+    [text]="true"
+    [rounded]="true"
+    severity="primary"
+    ariaLabel="Open Client"
+    [disabled]="disabled()"
+    (onClick)="menu.toggle($event)"
+    data-testid="open-client-button"
+  >
+    <ng-template #icon let-class="class">
+      <mxevolve-icon name="murex_logo" size="md" [class]="class" />
+    </ng-template>
+  </p-button>
+  } @else {
+  <p-button
+    [text]="true"
+    severity="primary"
+    [disabled]="disabled()"
+    (onClick)="menu.toggle($event)"
+    data-testid="open-client-button"
+  >
+    <span pButtonLabel>{{ label() }}</span>
+    <mxevolve-icon pButtonIcon name="keyboard_arrow_down" size="sm" />
+  </p-button>
+  }
+</span>
+<p-tieredmenu
+  #menu
+  [model]="allMenuItems()"
+  [popup]="true"
+  appendTo="body"
+  data-testid="open-client-button-menu"
+/>

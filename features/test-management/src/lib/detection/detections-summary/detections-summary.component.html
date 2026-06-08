@@ -1,0 +1,17 @@
+<div class="min-w-max">
+  <span pTooltip="Regressions" tooltipPosition="top">
+    <fa-icon class="text-red-500 pl-2 pr-1" [icon]="bugIcon"></fa-icon>
+    {{ (scenarioDetections | detectionsSummary).regressionCount }}
+  </span>
+  <span pTooltip="Impacts" tooltipPosition="top">
+    <fa-icon class="text-teal-500 pl-2 pr-1" [icon]="bullseyeIcon"></fa-icon>
+    {{ (scenarioDetections | detectionsSummary).impactCount }}
+  </span>
+  <span pTooltip="Failure Reasons" tooltipPosition="top">
+    <fa-icon
+      class="text-gray-500 pl-2 pr-1"
+      [icon]="dumpsterFireIcon"
+    ></fa-icon>
+    {{ (scenarioDetections | detectionsSummary).failureReasonCount }}
+  </span>
+</div>

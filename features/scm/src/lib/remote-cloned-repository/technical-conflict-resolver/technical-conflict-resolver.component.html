@@ -1,0 +1,26 @@
+<a
+  data-testid="open-technical-conflict-resolver-link"
+  class="font-semibold underline cursor-pointer text-primary"
+  (click)="openDialog()"
+>
+  Open Technical Conflict Resolver
+</a>
+
+<p-dialog
+  header="Technical Conflict Resolver"
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: '95vw', height: '95vh' }"
+  [contentStyle]="{ height: '100%' }"
+  [dismissableMask]="false"
+  [closeOnEscape]="false"
+>
+  @if (dialogVisible()) {
+  <mxevolve-conflict-resolution-workspace
+    [projectId]="projectId()"
+    [remoteClonedRepositoryId]="remoteClonedRepositoryId()"
+    (closed)="closeDialog()"
+  />
+  }
+</p-dialog>

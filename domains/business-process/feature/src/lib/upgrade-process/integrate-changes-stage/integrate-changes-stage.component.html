@@ -1,0 +1,29 @@
+<mxevolve-stage-container>
+  <mxevolve-business-process-content-container header="Merge">
+    <mxevolve-merge-request-stepper
+      class="col-span-12 flex flex-col"
+      [mergeRequestId]="latestMergeRequestId()"
+      [projectId]="projectId()"
+    />
+  </mxevolve-business-process-content-container>
+
+  <mxevolve-business-process-content-container footer [clearBackground]="true">
+    <mxevolve-retry-merge-request
+      class="col-start-5 col-span-2"
+      [projectId]="projectId()"
+      [processId]="processId()"
+      [developmentId]="developmentId()"
+      [supportsResourceManagement]="supportsResourceManagement()"
+      [parentBranchName]="parentBranchName()"
+      [stageStatus]="stageStatus()"
+    >
+    </mxevolve-retry-merge-request>
+    <mxevolve-fix-issues
+      class="col-start-7 col-span-2"
+      [projectId]="projectId()"
+      [processId]="processId()"
+      [stageStatus]="stageStatus()"
+    >
+    </mxevolve-fix-issues>
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>

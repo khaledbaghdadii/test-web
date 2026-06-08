@@ -1,0 +1,30 @@
+$illustration-sizes: (
+  xs: 80px,
+  sm: 120px,
+  md: 200px,
+  lg: 300px,
+  xl: 400px,
+  xxl: 512px,
+);
+
+$default-size: 200px;
+
+:host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.mxevolve-illustration__svg {
+  display: block;
+  width: var(--mxevolve-illustration-size, $default-size);
+  height: var(--mxevolve-illustration-size, $default-size);
+  object-fit: contain;
+}
+
+@each $name, $value in $illustration-sizes {
+  :host(.mxevolve-illustration-#{$name}) {
+    --mxevolve-illustration-size: #{$value};
+  }
+}

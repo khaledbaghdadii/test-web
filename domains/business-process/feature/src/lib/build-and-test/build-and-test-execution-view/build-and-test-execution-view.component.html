@@ -1,0 +1,69 @@
+@if(loading()) {
+<div>LOADING SCREEN COMING SOON</div>
+} @else {
+<div class="flex-1 flex flex-col min-h-0">
+  <div class="flex-1 flex flex-col gap-y-[16px] w-full">
+    <mxevolve-build-and-test-run-header
+      [execution]="executionDetails.value()!"
+    />
+
+    <mxevolve-execution-alert-display
+      [expiryDate]="executionDetails.value()!.expiryDate"
+      [endDate]="executionDetails.value()!.endDate"
+      [errorMessage]="executionDetails.value()!.errorMessage"
+      [aborted]="executionDetails.value()!.status === ExecutionStatus.ABORTED"
+    />
+
+    @if(executionReadyForDisplay() || failedInBranchCreation()) {
+    <div class="flex-1 flex flex-col w-full">
+      <mxevolve-stepper [steps]="steps()" [(displayedStepId)]="selectedStepId">
+        <mxevolve-step stepId="create-branch">
+          <ng-template></ng-template>
+        </mxevolve-step>
+        <mxevolve-step stepId="prepare-build">
+          <ng-template>
+            <mxevolve-prepare-build-stage
+              [projectId]="projectId()"
+              [processId]="executionDetails.value()!.id"
+              [stageStatus]="
+                mapStageStatusToStepStatus(
+                  executionDetails.value()!.prepareBuildStage.status
+                )
+              "
+            />
+          </ng-template>
+        </mxevolve-step>
+        <mxevolve-step stepId="build-and-test">
+          <ng-template>
+            <mxevolve-build-and-test-step
+              [execution]="executionDetails.value()!"
+              [stageStatus]="
+                mapStageStatusToStepStatus(
+                  executionDetails.value()!.buildAndTestStage.status
+                )
+              "
+            />
+          </ng-template>
+        </mxevolve-step>
+        <mxevolve-step stepId="merge">
+          <ng-template>
+            <mxevolve-build-and-test-merge-stage
+              [execution]="executionDetails.value()!"
+            />
+          </ng-template>
+        </mxevolve-step>
+      </mxevolve-stepper>
+    </div>
+    } @else {
+    <div class="flex-1 w-full flex flex-col items-center gap-[8px]">
+      <mxevolve-illustration
+        name="designing_architecture_in_metaverse"
+        size="xxl"
+      />
+      <span class="text-3xl font-bold">Your branch is being created</span>
+      <span class="text-xl font-medium">Refresh your page in a bit!</span>
+    </div>
+    }
+  </div>
+</div>
+}

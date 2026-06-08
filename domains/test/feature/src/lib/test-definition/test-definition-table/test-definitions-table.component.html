@@ -1,0 +1,113 @@
+<mxevolve-card-container>
+  <mxflow-header-title>
+    Test Package Definitions
+    <div class="flex" right-content>
+      <div>
+        <p-iconfield class="ml-auto mr-2">
+          <p-inputicon styleClass="pi pi-search" />
+          <input
+            type="text"
+            [(ngModel)]="searchInput"
+            pInputText
+            placeholder="Search"
+          />
+        </p-iconfield>
+      </div>
+      <div class="table-menu">
+        <button
+          pButton
+          label="Create Test Package Definition"
+          routerLink="create"
+          id="create-test-definition-btn"
+          *showElementIfAuthorized="{
+            action: 'create',
+            attributes: {},
+            package: 'test',
+            resource: 'test_definition'
+          }"
+        ></button>
+      </div>
+    </div>
+  </mxflow-header-title>
+  <p-table
+    [value]="testDefinitions | tableSearch : searchInput"
+    [loading]="isLoading"
+    [paginator]="true"
+    paginatorStyleClass="justify-end"
+    [rows]="10"
+    [totalRecords]="testDefinitions.length"
+    [rowsPerPageOptions]="[10, 20, 30, 40, 50]"
+    [showCurrentPageReport]="true"
+    [showLoader]="false"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  >
+    <ng-template pTemplate="loadingbody">
+      @for (row of Array(10); track row) {
+      <tr>
+        @for (col of Array(3); track col) {
+        <td>
+          <p-skeleton></p-skeleton>
+        </td>
+        }
+        <td
+          id="loadingEdit"
+          *showElementIfAuthorized="{
+            action: 'update',
+            attributes: {},
+            package: 'test',
+            resource: 'test_definition'
+          }"
+        >
+          <p-skeleton></p-skeleton>
+        </td>
+      </tr>
+      }
+    </ng-template>
+    <ng-template pTemplate="header">
+      <tr>
+        @for (column of listOfColumn; track column) {
+        <th
+          [style.width]="column.width"
+          [pSortableColumn]="column.field"
+          id="col-{{ column.field }}"
+        >
+          {{ column.header }}
+          <p-sortIcon [field]="column.field"></p-sortIcon>
+        </th>
+        }
+        <th id="action-header"></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-data>
+      <tr>
+        <td>
+          <a class="p-button-link" routerLink="details/{{ data.id }}">{{
+            data.name
+          }}</a>
+        </td>
+        <td>
+          {{ data.path }}
+        </td>
+        <td>{{ data.description }}</td>
+        <td>
+          <button
+            pButton
+            pRipple
+            type="button"
+            [routerLink]="'edit/' + data.id"
+            pTooltip="Edit"
+            icon="pi pi-pencil"
+            class="p-button-rounded p-button-text"
+            id="edit-test-package-definition-btn"
+            *showElementIfAuthorized="{
+              action: 'update',
+              attributes: {},
+              package: 'test',
+              resource: 'test_definition'
+            }"
+          ></button>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</mxevolve-card-container>

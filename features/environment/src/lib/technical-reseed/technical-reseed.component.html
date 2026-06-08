@@ -1,0 +1,18 @@
+<p-panel [toggleable]="true" header="Technical Reseed">
+  <mxflow-header-title>
+    <div right-content>
+      <mxevolve-launch-technical-reseed-button
+        [projectId]="projectId"
+        [executionGroupId]="executionGroupId"
+        [infraGroup]="infraGroup"
+        [targetBranch]="targetBranch"
+        (reseedLaunchedSuccessfully)="handleSuccessfulReseed()"
+      ></mxevolve-launch-technical-reseed-button>
+    </div>
+  </mxflow-header-title>
+  <mxevolve-technical-reseed-operation-details
+    [projectId]="projectId"
+    [executionGroupId]="executionGroupId"
+  >
+  </mxevolve-technical-reseed-operation-details>
+</p-panel>

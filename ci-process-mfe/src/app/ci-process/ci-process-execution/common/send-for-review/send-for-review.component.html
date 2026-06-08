@@ -1,0 +1,274 @@
+<p-dialog
+  header="Create Merge Request"
+  [(visible)]="isModalVisible"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  (onHide)="onCancel()"
+>
+  @if (isModalVisible) {
+
+  <mxflow-spinner [isLoading]="destinationBranchLoading">
+    <div class="col-start-2 col-span-10 m-2">
+      @if (errorMessage) {
+      <mxflow-error-alert
+        [errorMessage]="errorMessage!"
+        [closeable]="false"
+      ></mxflow-error-alert>
+      }
+    </div>
+
+    @if (hasPredefinedMergeRequestInputs) {
+    <form [formGroup]="sendForReviewForm">
+      <div class="grid grid-cols-12 gap-4 p-4">
+        <div class="col-span-10 col-start-2">
+          <p class="text-base text-gray-700">
+            Continue to create a merge request with the inputs provided on
+            process launch.
+          </p>
+        </div>
+        @if (supportsResourceManagement) {
+        <div
+          class="border border-red-500 rounded-md px-4 py-3 col-span-10 col-start-2 flex flex-col gap-2"
+        >
+          <div class="flex items-center">
+            <i
+              class="pi pi-exclamation-triangle text-red-500 mr-2 text-2xl"
+            ></i>
+
+            <p-checkbox
+              formControlName="deleteDevelopment"
+              inputId="deleteDevelopment"
+              binary="true"
+            ></p-checkbox>
+
+            <label for="deleteDevelopment" class="ml-2">
+              Delete branch
+              <b>{{
+                projectId | branchNameByDevelopment : developmentId | async
+              }}</b>
+              after changes are merged
+            </label>
+          </div>
+
+          <small class="mt-1 block text-xs">
+            Note: If the branch is used by another process, it will not be
+            deleted.
+          </small>
+        </div>
+
+        }
+      </div>
+    </form>
+    } @else {
+    <form [formGroup]="sendForReviewForm">
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-start-2 pt-2 col-span-10">
+          <mxflow-mandatory-field></mxflow-mandatory-field>
+        </div>
+        <div class="col-span-10 col-start-2 flex flex-col gap-2">
+          <label for="title">
+            Enter the title of your merge request
+            <span class="text-red-500">*</span>
+          </label>
+          <input
+            pInputText
+            type="text"
+            id="title"
+            placeholder="Enter a title for your merge request"
+            formControlName="mergeRequestTitle"
+          />
+          <ng-template
+            [ngTemplateOutlet]="errorTipTemplate"
+            [ngTemplateOutletContext]="{
+              $implicit: sendForReviewForm.get('mergeRequestTitle')
+            }"
+          ></ng-template>
+        </div>
+
+        <div class="col-span-10 col-start-2 flex flex-col gap-2">
+          <label for="backport-destination-branch">
+            Select the destination branch that you wish to merge your changes
+            into
+            <span class="text-red-500">*</span>
+          </label>
+          <mxflow-destination-branch-dropdown
+            [projectId]="projectId"
+            [repositoryId]="repositoryId"
+            [formControl]="destinationBranchFormController"
+            [defaultDestinationBranchName]="configurationParentBranch"
+            (failureEvent)="destinationBranchError($event)"
+            (loadingFinishedEventEmitter)="destinationBranchLoadingFinished()"
+          ></mxflow-destination-branch-dropdown>
+        </div>
+
+        <div class="col-span-10 col-start-2 flex flex-col gap-2">
+          <label for="reviewers">
+            Enter the names of the reviewers that you wish to review your
+            changes
+          </label>
+          <mxevolve-autocomplete-reviewers
+            [projectId]="projectId"
+            [reviewersFormControl]="reviewerFormController"
+            (errorMessageChange)="handleAutoCompleteError($event)"
+            [sourceDevelopmentId]="developmentId"
+            [destinationBranchFormControl]="destinationBranchFormController"
+          ></mxevolve-autocomplete-reviewers>
+        </div>
+
+        <div class="col-span-10 col-start-2 flex flex-col gap-2">
+          <label for="backport">
+            Do you want to backport your changes?
+            <span class="text-red-500">*</span>
+          </label>
+          <div class="pl-1">
+            <div class="inline-block mr-4">
+              <p-radioButton
+                name="backport"
+                [value]="true"
+                inputId="backport-yes"
+                formControlName="backport"
+                id="backport-yes"
+              >
+              </p-radioButton>
+              <label for="backport-yes" class="ml-2">Yes</label>
+            </div>
+            <div class="inline-block mr-4">
+              <p-radioButton
+                name="backport"
+                [value]="false"
+                inputId="backport-no"
+                formControlName="backport"
+                id="backport-no"
+              >
+              </p-radioButton>
+              <label for="backport-no" class="ml-2">No</label>
+            </div>
+          </div>
+          <ng-template
+            [ngTemplateOutlet]="errorTipTemplate"
+            [ngTemplateOutletContext]="{
+              $implicit: sendForReviewForm.get('backport')
+            }"
+          ></ng-template>
+        </div>
+
+        <div class="col-span-10 col-start-2">
+          @if (sendForReviewForm.controls['backport']?.value) { @if (ciVersion
+          === 1) {
+          <mxflow-spinner [isLoading]="backportDestinationBranchLoading">
+            <div class="flex flex-col gap-2">
+              <label for="backport-destination-branch">
+                Select the destination branch that you wish to backport your
+                changes into
+                <span class="text-red-500">*</span>
+              </label>
+              <mxevolve-merge-configuration-multiselect
+                id="backport-destination-branch"
+                [projectId]="projectId"
+                [repositoryId]="repositoryId"
+                [selectedMergeConfigurations]="
+                  backportMergeConfigurationFormController
+                "
+                (errorEventEmitter)="backportDestinationBranchError($event)"
+                (loadingFinishedEventEmitter)="
+                  backportDestinationBranchLoadingFinished()
+                "
+              >
+              </mxevolve-merge-configuration-multiselect>
+              <ng-template
+                [ngTemplateOutlet]="errorTipTemplate"
+                [ngTemplateOutletContext]="{
+                  $implicit: sendForReviewForm.get(
+                    'backportMergeConfigurations'
+                  )
+                }"
+              ></ng-template>
+            </div>
+          </mxflow-spinner>
+          } @else if (ciVersion === 2) {
+          <div class="flex flex-col gap-2">
+            <label for="backport-definitions">
+              Select the business process definitions for on-demand backport
+              <span class="text-red-500">*</span>
+            </label>
+            <mxevolve-business-process-definition-multi-select-dropdown
+              id="backport-definitions"
+              [projectId]="projectId"
+              [formControl]="backportDefinitionsFormController"
+              sourceDefinitionId="on-demand-backport"
+            >
+            </mxevolve-business-process-definition-multi-select-dropdown>
+            <ng-template
+              [ngTemplateOutlet]="errorTipTemplate"
+              [ngTemplateOutletContext]="{
+                $implicit: sendForReviewForm.get('backportDefinitions')
+              }"
+            ></ng-template>
+          </div>
+          }}
+        </div>
+
+        @if (supportsResourceManagement) {
+        <div
+          class="border border-red-500 rounded-md px-4 py-3 col-span-10 col-start-2 flex flex-col gap-2"
+        >
+          <div class="flex items-center">
+            <i
+              class="pi pi-exclamation-triangle text-red-500 mr-2 text-2xl"
+            ></i>
+
+            <p-checkbox
+              formControlName="deleteDevelopment"
+              inputId="deleteDevelopment"
+              binary="true"
+            ></p-checkbox>
+
+            <label for="deleteDevelopment" class="ml-2">
+              Delete branch
+              <b>{{
+                projectId | branchNameByDevelopment : developmentId | async
+              }}</b>
+              after changes are merged
+            </label>
+          </div>
+
+          <small class="mt-1 block text-xs">
+            Note: If the branch is used by another process, it will not be
+            deleted.
+          </small>
+        </div>
+        }
+      </div>
+    </form>
+    }
+  </mxflow-spinner>
+  }
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Send for Review"
+      (onClick)="sendForReview()"
+      [disabled]="!hasPredefinedMergeRequestInputs && !sendForReviewForm.valid"
+      [loading]="submitLoading"
+      id="submitButton"
+    >
+    </p-button>
+    <p-button (onClick)="onCancel()" [outlined]="true">Cancel</p-button>
+  </ng-template>
+</p-dialog>
+
+<ng-template #errorTipTemplate let-control>
+  <div class="h-4">
+    @if (control.invalid && control.dirty) {
+    <div class="flex gap-1">
+      @if (control.hasError('maxlength')) {
+      <small class="text-sm text-red-500">Maximum length is 255</small>
+      } @if (control.hasError('required')) {
+      <small class="text-sm text-red-500">Field is required</small>
+      } @if (control.hasError('whitespace')) {
+      <small class="text-sm text-red-500">Field cannot be whitespaces</small>
+      }
+    </div>
+    }
+  </div>
+</ng-template>

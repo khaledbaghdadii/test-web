@@ -1,0 +1,42 @@
+<mxevolve-business-process-content-container header="Test" [collapsable]="true">
+  @if (environmentId(); as envId) {
+  <mxevolve-environment-status-panel
+    class="col-span-12"
+    [projectId]="projectId()"
+    [environmentId]="envId"
+  >
+    <mxevolve-config-audit-button
+      extraActions
+      [projectId]="projectId()"
+      [environmentId]="envId"
+    />
+  </mxevolve-environment-status-panel>
+  }
+
+  @if (canRunTpk()) {
+  <div class="col-span-12">
+    <mxevolve-build-and-test-run-tpk
+      [branchName]="branchName()!"
+      [executionGroupId]="executionGroupId()!"
+      [machineGroupId]="machineGroupId()"
+      (scenarioPushed)="reloadExecution()"
+      (errorOccurred)="handleRunTpkError($event)"
+    />
+  </div>
+
+  <div class="col-span-12 border-t border-surface-200 dark:border-surface-700"></div>
+  }
+
+  <div class="col-span-12">
+    <h3 class="font-medium mb-2 text-lg">TPK Results</h3>
+    <mxevolve-scenario-runs
+      [projectId]="projectId()"
+      [contextId]="processId()"
+      [subContextId]="subContextId"
+      [warningMessageMap]="warningMessageMap"
+      [showHistory]="true"
+      [showHistorySummary]="true"
+      (scenarioChanged)="reloadExecution()"
+    />
+  </div>
+</mxevolve-business-process-content-container>

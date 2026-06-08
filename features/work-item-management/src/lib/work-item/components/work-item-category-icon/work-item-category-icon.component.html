@@ -1,0 +1,7 @@
+<p-tag class="h-full w-8" [severity]="getCategorySeverity()">
+  <fa-icon
+    [icon]="getCategoryIcon()"
+    class="flex text-lg"
+    [pTooltip]="this.workItem.workItemCategory | formatLabel"
+  ></fa-icon>
+</p-tag>

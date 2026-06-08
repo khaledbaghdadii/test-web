@@ -1,0 +1,57 @@
+<p-dialog
+  header="Defects in Validation Scope"
+  [(visible)]="isVisible"
+  [modal]="true"
+  [style]="{ 'min-width': '85vw' }"
+  [maximizable]="true"
+  [draggable]="false"
+  (onHide)="hideModal()"
+>
+  <div>
+    <div class="flex flex-col gap-3 w-full mb-4 mt-4">
+      <mxevolve-validation-scope-setter
+        [(validationScope)]="validationScope"
+        [initialValidationScope]="initialValidationScope()"
+      ></mxevolve-validation-scope-setter>
+      @if( warningMessageBanner ) {
+      <p-message
+        severity="warn"
+        [closable]="false"
+        [hideTransitionOptions]="'0ms'"
+      >
+        {{ warningMessageBanner }}
+      </p-message>
+      }
+    </div>
+    <mxevolve-defect-selection-table
+      [isVisible]="isVisible()"
+      [validationScope]="validationScope()"
+      [hideSelection]="hideSelection()"
+      (errorMessageChange)="handleErrorMessage($event)"
+      (warningMessageChange)="handleWarningMessage($event)"
+      (selectedDefectChange)="selectDefect($event)"
+    ></mxevolve-defect-selection-table>
+  </div>
+  <ng-template pTemplate="footer">
+    @if (!hideSelection()) {
+    <div>
+      <p-button
+        [disabled]="!defectSelected"
+        (click)="onSelect()"
+        (keydown)="onSelect()"
+        label="Select"
+        class="pl-4"
+        data-testId="select-button"
+      ></p-button>
+      <p-button
+        label="Cancel"
+        (click)="hideModal()"
+        (keydown)="hideModal()"
+        [outlined]="true"
+        class="pl-4"
+        data-testId="cancel-button"
+      ></p-button>
+    </div>
+    }
+  </ng-template>
+</p-dialog>

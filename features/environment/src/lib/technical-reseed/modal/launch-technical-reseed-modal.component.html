@@ -1,0 +1,64 @@
+<p-dialog
+  class="p-fluid"
+  header="Technical Reseed"
+  [(visible)]="modalOpen"
+  [modal]="true"
+  (onHide)="closeModal()"
+  [style]="{ width: '70vw' }"
+  [contentStyle]="{ overflow: 'visible' }"
+  appendTo="body"
+>
+  <span class="p-text-secondary block mb-8"
+    >Launch a new Technical Reseed operation</span
+  >
+  <form
+    [formGroup]="technicalReseedLaunchForm"
+    (ngSubmit)="onSubmit()"
+    novalidate
+  >
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="pb-2" for="finalProduct" mxevolveMandatory
+          >Final Product Tag</label
+        >
+        <mxevolve-final-product-dropdown-input
+          id="finalProduct"
+          formControlName="finalProduct"
+          [projectId]="projectId"
+          [labelMode]="labelMode"
+          [validationLevel]="['MQG', 'DQG']"
+          [dropdownDefaultSelectionMode]="dropdownSelectionMode"
+          [customFinalProductId]="''"
+          (selectedFinalProductChange)="handleSelectedFinalProduct($event)"
+        >
+        </mxevolve-final-product-dropdown-input>
+      </div>
+
+      <div>
+        <mxevolve-maintenance-level-dropdown
+          formControlName="maintenanceConfiguration"
+          [projectId]="projectId"
+          [form]="technicalReseedLaunchForm"
+        ></mxevolve-maintenance-level-dropdown>
+      </div>
+
+      <div>
+        <mxevolve-environment-select-input
+          formControlName="environmentDefinitionId"
+          [form]="technicalReseedLaunchForm"
+          [projectId]="projectId"
+        ></mxevolve-environment-select-input>
+      </div>
+
+      <div class="sm:col-span-2 flex justify-end items-end">
+        <button
+          type="submit"
+          class="p-button p-component"
+          [disabled]="technicalReseedLaunchForm.invalid"
+        >
+          Launch
+        </button>
+      </div>
+    </div>
+  </form>
+</p-dialog>

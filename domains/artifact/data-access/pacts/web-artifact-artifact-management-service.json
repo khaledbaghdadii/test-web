@@ -1,0 +1,554 @@
+{
+  "consumer": {
+    "name": "web-artifact"
+  },
+  "interactions": [
+    {
+      "description": "a request to fetch distinct software product builds",
+      "providerState": "can get distinct software product builds",
+      "request": {
+        "method": "GET",
+        "path": "/artifact-management/projects/projectId/factory-products/software-product-builds",
+        "query": "page=0&searchKey=searchKey&size=20&softwareProductVersion=3%2e1%2e65"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "buildId": "buildId",
+              "projectId": "projectId"
+            }
+          ],
+          "last": true
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.content": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].buildId": {
+            "match": "type"
+          },
+          "$.body.content[*].projectId": {
+            "match": "type"
+          },
+          "$.body.last": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch distinct software product versions",
+      "providerState": "can get distinct software product versions",
+      "request": {
+        "method": "GET",
+        "path": "/artifact-management/projects/projectId/factory-products/software-product-versions",
+        "query": "page=0&searchKey=searchKey&size=20"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "version": "3.1.65"
+            }
+          ],
+          "last": true
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.content": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].version": {
+            "match": "type"
+          },
+          "$.body.last": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch project scoped factory products that fails",
+      "providerState": "cannot get factory products",
+      "request": {
+        "method": "GET",
+        "path": "/artifact-management/projects/projectId/factory-products",
+        "query": "page=0&size=10&sort=createdOn%2casc"
+      },
+      "response": {
+        "body": {
+          "failureReason": "unexpected error",
+          "message": "factory products failure",
+          "status": 500,
+          "timestamp": "2026-04-01T00:00:00Z"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.failureReason": {
+            "match": "type"
+          },
+          "$.body.message": {
+            "match": "type"
+          },
+          "$.body.status": {
+            "match": "type"
+          },
+          "$.body.timestamp": {
+            "match": "type"
+          }
+        },
+        "status": 500
+      }
+    },
+    {
+      "description": "a request to fetch a missing factory product by id",
+      "providerState": "factory product does not exist",
+      "request": {
+        "method": "GET",
+        "path": "/artifact-management/projects/projectId/factory-products/factoryProductId"
+      },
+      "response": {
+        "body": {
+          "message": "not found"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.message": {
+            "match": "type"
+          }
+        },
+        "status": 404
+      }
+    },
+    {
+      "description": "a request to fetch a factory product by id",
+      "providerState": "factory product exists",
+      "request": {
+        "method": "GET",
+        "path": "/artifact-management/projects/projectId/factory-products/factoryProductId"
+      },
+      "response": {
+        "body": {
+          "configurationComponents": [
+            {
+              "builds": [
+                {
+                  "id": "configurationComponentBuildId",
+                  "mxBuild": {
+                    "buildId": "buildId",
+                    "version": "3.1.65"
+                  },
+                  "mxBundles": [
+                    {
+                      "id": "bundleId",
+                      "type": "BUNDLE"
+                    }
+                  ],
+                  "purged": false
+                }
+              ],
+              "id": "configurationComponentId",
+              "purged": false,
+              "type": "BIP",
+              "version": "1.0.0"
+            }
+          ],
+          "createdBy": "user",
+          "createdOn": "2026-01-01T00:00:00Z",
+          "id": "factoryProductId",
+          "lastModifiedBy": "user",
+          "lastModifiedOn": "2026-01-01T00:00:00Z",
+          "softwareProduct": {
+            "builds": [
+              {
+                "core": {
+                  "id": "coreBundleId",
+                  "type": "CORE"
+                },
+                "id": "softwareProductBuildId",
+                "mxBuild": {
+                  "buildId": "buildId",
+                  "os": "Linux",
+                  "revision": "revision",
+                  "version": "3.1.65"
+                },
+                "mxBundles": [
+                  {
+                    "id": "bundleId",
+                    "type": "BUNDLE"
+                  }
+                ],
+                "purged": false
+              }
+            ],
+            "id": "softwareProductId",
+            "patch": "patch",
+            "revision": "revision",
+            "version": "3.1.65"
+          },
+          "type": "OFFICIAL"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.configurationComponents": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.configurationComponents[*].builds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.configurationComponents[*].builds[*].id": {
+            "match": "type"
+          },
+          "$.body.configurationComponents[*].builds[*].mxBuild.buildId": {
+            "match": "type"
+          },
+          "$.body.configurationComponents[*].builds[*].mxBuild.version": {
+            "match": "type"
+          },
+          "$.body.configurationComponents[*].builds[*].mxBundles": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.configurationComponents[*].builds[*].mxBundles[*].id": {
+            "match": "type"
+          },
+          "$.body.configurationComponents[*].builds[*].mxBundles[*].type": {
+            "match": "type"
+          },
+          "$.body.configurationComponents[*].builds[*].purged": {
+            "match": "type"
+          },
+          "$.body.configurationComponents[*].id": {
+            "match": "type"
+          },
+          "$.body.configurationComponents[*].purged": {
+            "match": "type"
+          },
+          "$.body.configurationComponents[*].type": {
+            "match": "type"
+          },
+          "$.body.configurationComponents[*].version": {
+            "match": "type"
+          },
+          "$.body.createdBy": {
+            "match": "type"
+          },
+          "$.body.createdOn": {
+            "match": "type"
+          },
+          "$.body.id": {
+            "match": "type"
+          },
+          "$.body.lastModifiedBy": {
+            "match": "type"
+          },
+          "$.body.lastModifiedOn": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.softwareProduct.builds[*].core.id": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds[*].core.type": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds[*].id": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds[*].mxBuild.buildId": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds[*].mxBuild.os": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds[*].mxBuild.revision": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds[*].mxBuild.version": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds[*].mxBundles": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.softwareProduct.builds[*].mxBundles[*].id": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds[*].mxBundles[*].type": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.builds[*].purged": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.id": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.patch": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.revision": {
+            "match": "type"
+          },
+          "$.body.softwareProduct.version": {
+            "match": "type"
+          },
+          "$.body.type": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch project scoped factory products with filters",
+      "providerState": "factory products exist",
+      "request": {
+        "method": "GET",
+        "path": "/artifact-management/projects/projectId/factory-products",
+        "query": "configurationComponentVersionSearch=searchKey&fetchGlobal=true&page=0&size=20&softwareProductBuildIdFilter=buildId&softwareProductVersionFilter=3%2e1%2e65&sort=createdOn%2casc"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "configurationComponents": [
+                {
+                  "builds": [
+                    {
+                      "id": "configurationComponentBuildId",
+                      "mxBuild": {
+                        "buildId": "buildId",
+                        "version": "3.1.65"
+                      },
+                      "mxBundles": [
+                        {
+                          "id": "bundleId",
+                          "type": "BUNDLE"
+                        }
+                      ],
+                      "purged": false
+                    }
+                  ],
+                  "id": "configurationComponentId",
+                  "purged": false,
+                  "type": "BIP",
+                  "version": "1.0.0"
+                }
+              ],
+              "createdBy": "user",
+              "createdOn": "2026-01-01T00:00:00Z",
+              "id": "factoryProductId",
+              "lastModifiedBy": "user",
+              "lastModifiedOn": "2026-01-01T00:00:00Z",
+              "softwareProduct": {
+                "builds": [
+                  {
+                    "core": {
+                      "id": "coreBundleId",
+                      "type": "CORE"
+                    },
+                    "id": "softwareProductBuildId",
+                    "mxBuild": {
+                      "buildId": "buildId",
+                      "os": "Linux",
+                      "revision": "revision",
+                      "version": "3.1.65"
+                    },
+                    "mxBundles": [
+                      {
+                        "id": "bundleId",
+                        "type": "BUNDLE"
+                      }
+                    ],
+                    "purged": false
+                  }
+                ],
+                "id": "softwareProductId",
+                "patch": "patch",
+                "revision": "revision",
+                "version": "3.1.65"
+              },
+              "type": "OFFICIAL"
+            }
+          ],
+          "last": true,
+          "number": 0,
+          "size": 20,
+          "totalElements": 1,
+          "totalPages": 1
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.content": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].configurationComponents": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].configurationComponents[*].builds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].configurationComponents[*].builds[*].id": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationComponents[*].builds[*].mxBuild.buildId": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationComponents[*].builds[*].mxBuild.version": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationComponents[*].builds[*].mxBundles": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].configurationComponents[*].builds[*].mxBundles[*].id": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationComponents[*].builds[*].mxBundles[*].type": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationComponents[*].builds[*].purged": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationComponents[*].id": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationComponents[*].purged": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationComponents[*].type": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationComponents[*].version": {
+            "match": "type"
+          },
+          "$.body.content[*].createdBy": {
+            "match": "type"
+          },
+          "$.body.content[*].createdOn": {
+            "match": "type"
+          },
+          "$.body.content[*].id": {
+            "match": "type"
+          },
+          "$.body.content[*].lastModifiedBy": {
+            "match": "type"
+          },
+          "$.body.content[*].lastModifiedOn": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].softwareProduct.builds[*].core.id": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds[*].core.type": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds[*].id": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds[*].mxBuild.buildId": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds[*].mxBuild.os": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds[*].mxBuild.revision": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds[*].mxBuild.version": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds[*].mxBundles": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].softwareProduct.builds[*].mxBundles[*].id": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds[*].mxBundles[*].type": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.builds[*].purged": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.id": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.patch": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.revision": {
+            "match": "type"
+          },
+          "$.body.content[*].softwareProduct.version": {
+            "match": "type"
+          },
+          "$.body.content[*].type": {
+            "match": "type"
+          },
+          "$.body.last": {
+            "match": "type"
+          },
+          "$.body.number": {
+            "match": "type"
+          },
+          "$.body.size": {
+            "match": "type"
+          },
+          "$.body.totalElements": {
+            "match": "type"
+          },
+          "$.body.totalPages": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "12.5.2"
+    },
+    "pactRust": {
+      "ffi": "0.4.20",
+      "models": "1.2.0"
+    },
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  },
+  "provider": {
+    "name": "artifact-management-service"
+  }
+}

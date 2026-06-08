@@ -1,0 +1,44 @@
+<p-menu
+  #menu
+  [style]="{'position': 'absolute', 'top': repushButton.style?.['bottom'] + 'px', 'left': repushButton.style?.['left'] + 'px'}"
+  [model]="this.repushOptions"
+  [popup]="true"
+  appendTo="body"
+/>
+<p-button
+  [attr.data-testid]="'repush-button'"
+  #repushButton
+  [pTooltip]="
+    !testUnit.executionGroupId
+      ? 'Repush'
+      : (testUnit.headScenarioExecution.id
+        | repushTooltipEvaluator
+          : executionGroupScenarioRepushEligibility.get(
+              testUnit.headScenarioExecution.id
+            ))
+  "
+  tooltipPosition="left"
+  icon="pi pi-undo"
+  styleClass="text-blue-500"
+  [text]="true"
+  class="scenario-repush-button"
+  (click)="handleRepushClicked($event, menu)"
+  (keydown)="handleRepushClicked($event, menu)"
+  [disabled]="
+    testUnit.executionGroupId
+      ? !executionGroupScenarioRepushEligibility.get(
+          testUnit.headScenarioExecution.id
+        )?.actionAllowed
+      : !testUnit.repushable
+  "
+></p-button>
+<mxevolve-scenario-execution-repush-modal
+  [enableKeepServices]="enableKeepServices"
+  [disableKeepExecution]="testUnit.disableKeepExecution"
+  [warningMessage]="warningMessage"
+></mxevolve-scenario-execution-repush-modal>
+<mxevolve-scenario-execution-repush-from-final-product-modal
+  [enableKeepServices]="enableKeepServices"
+  [warningMessage]="warningMessage"
+>
+</mxevolve-scenario-execution-repush-from-final-product-modal>

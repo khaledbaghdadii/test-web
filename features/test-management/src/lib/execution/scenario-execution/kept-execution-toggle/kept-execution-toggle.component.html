@@ -1,0 +1,14 @@
+<p-toggleswitch
+  data-testid="kept-execution-toggle"
+  [ngModel]="keptExecution"
+  (onChange)="onToggle()"
+  [pTooltip]="showTooltip ? tooltipOptions.tooltipLabel : undefined"
+  [tooltipOptions]="showTooltip ? tooltipOptions : undefined"
+  [disabled]="
+    {
+      scenarioExecutionCleaningStatus: cleaningStatus,
+      isScenarioExecutionFailed: isFailed,
+      disableKeepExecution: disableKeepExecution
+    } | keptExecutionDisabled
+  "
+/>

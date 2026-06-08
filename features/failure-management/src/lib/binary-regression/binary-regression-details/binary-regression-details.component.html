@@ -1,0 +1,179 @@
+@if (!isLoading) {
+<div>
+  <div
+    class="grid grid-cols-12 gap-4 grid-nogutter bg-surface-0 dark:bg-surface-900"
+  >
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Title
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryRegression?.title || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Project
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">{{ projectName }}</div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Fix
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryRegression?.fix || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Owner
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryRegression?.owner || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Defect
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <a
+          class="p-button-link"
+          href="{{ binaryRegression?.defect?.link }}"
+          target="_blank"
+          rel="noopener"
+          >{{ binaryRegression?.defect?.id || "-" }}</a
+        >
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Creation Date
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{
+          binaryRegression?.creationDate
+            ? (binaryRegression?.creationDate | date : "medium")
+            : "-"
+        }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        MX Version
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryRegression?.mxVersion || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Incident
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        @if (binaryRegression?.incidentId | incidentExternalLink | async; as
+        externalLink) {
+        <a
+          [href]="externalLink?.link"
+          target="_blank"
+          rel="noopener"
+          class="p-button-link"
+        >
+          {{ externalLink?.id }}
+        </a>
+        } @else {
+        <span>-</span>
+        }
+      </div>
+    </div>
+    <div class="col-span-12 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Description
+      </div>
+      <mxevolve-quill-editor
+        [readOnly]="true"
+        [ngModel]="binaryRegression?.description"
+      >
+      </mxevolve-quill-editor>
+    </div>
+  </div>
+</div>
+} @if (isLoading) {
+<div>
+  <div
+    class="grid grid-cols-12 gap-4 grid-nogutter bg-surface-0 dark:bg-surface-900"
+  >
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Title
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Project
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Fix
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Owner
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Defect
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Creation Date
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        MX Version
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Incident
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Description
+      </div>
+      <p-skeleton styleClass="h-80"></p-skeleton>
+    </div>
+  </div>
+</div>
+}

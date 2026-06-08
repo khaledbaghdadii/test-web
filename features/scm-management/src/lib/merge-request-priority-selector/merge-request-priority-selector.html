@@ -1,0 +1,54 @@
+<form [formGroup]="priorityForm">
+  <div class="flex items-center gap-8">
+    <div class="flex items-center gap-12">
+      <strong>Select Priority:</strong>
+      <div class="flex gap-8">
+        <div class="flex gap-2">
+          <p-radioButton
+            ngDefaultControl
+            id="priorityLow"
+            [value]="mergeRequestPriority.LOW"
+            formControlName="priority"
+          ></p-radioButton>
+          <label for="priorityLow">Low</label>
+        </div>
+
+        <div class="flex gap-2">
+          <p-radioButton
+            ngDefaultControl
+            id="priorityMedium"
+            [value]="mergeRequestPriority.MEDIUM"
+            formControlName="priority"
+          ></p-radioButton>
+          <label for="priorityMedium">Medium</label>
+        </div>
+        <div class="flex gap-2">
+          <p-radioButton
+            ngDefaultControl
+            id="priorityHigh"
+            [value]="mergeRequestPriority.HIGH"
+            formControlName="priority"
+          ></p-radioButton>
+          <label for="priorityHigh">High</label>
+        </div>
+        <div class="flex gap-2">
+          <p-radioButton
+            ngDefaultControl
+            id="priorityCritical"
+            [value]="mergeRequestPriority.CRITICAL"
+            formControlName="priority"
+          ></p-radioButton>
+          <label for="priorityCritical">Critical</label>
+        </div>
+      </div>
+    </div>
+    <p-button
+      data-testid="save-button"
+      class="button"
+      label="Save"
+      [loading]="isLoadingDataSignal()"
+      [disabled]="!hasChanges()"
+      (click)="savePriority()"
+    ></p-button>
+  </div>
+</form>

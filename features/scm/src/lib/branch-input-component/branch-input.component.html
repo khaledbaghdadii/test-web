@@ -1,0 +1,30 @@
+<p-iconfield>
+  <input
+    pInputText
+    type="text"
+    id="branchName"
+    placeholder="Enter branch name"
+    [formControl]="branchNameFormControl"
+    fluid
+  />
+  @if (branchNameFormControl.pending) {
+  <p-inputicon class="pi pi-spin pi-spinner"></p-inputicon>
+  }
+</p-iconfield>
+
+@if (branchNameFormControl.hasError('branchInvalid')) {
+<div class="text-sm text-red-500 block">
+  {{ branchNameFormControl.getError("branchInvalid") }}
+</div>
+} @if (branchNameFormControl.hasError('branchApiError')) {
+<div class="text-sm text-red-500 block">
+  {{ branchNameFormControl.getError("branchApiError") }}
+</div>
+} @if (branchNameFormControl.hasError('branchNameFormat')) {
+<div class="text-sm text-red-500 block">
+  {{ branchNameFormControl.getError("branchNameFormat") }}
+</div>
+} @if (branchNameFormControl.hasError('required') &&
+branchNameFormControl.dirty) {
+<div class="text-sm text-red-500 block">Field is required</div>
+}

@@ -1,0 +1,160 @@
+@if (panelData.value(); as panelData) {
+<div class="surface-card px-4 py-3 border-round shadow-1">
+  <div class="flex flex-wrap items-center gap-3">
+    <span class="text-sm font-bold text-surface-900 dark:text-surface-0">
+      Environment
+    </span>
+
+    <mxevolve-environment-status-display [status]="panelData.status" />
+
+    <div class="flex items-center gap-2">
+      <mxevolve-service-actions-button
+        [projectId]="panelData.projectId"
+        [environmentId]="panelData.environmentId"
+        [status]="panelData.status"
+        [excludeFromShutdown]="panelData.excludeFromShutdown ?? false"
+        [environmentActions]="panelData.environmentActions ?? []"
+        (environmentChanged)="reloadPanelData()"
+      />
+
+      <mxevolve-open-client-button
+        [projectId]="panelData.projectId"
+        [environmentId]="panelData.environmentId"
+        [status]="panelData.status"
+        [environmentActions]="panelData.environmentActions ?? []"
+        [webClientUrl]="panelData.webClientUrl"
+        [secureClientArtifactUri]="panelData.secureClientArtifactUri"
+      />
+
+      <mxevolve-connect-to-database-button
+        [projectId]="panelData.projectId"
+        [environmentId]="panelData.environmentId"
+        [databases]="panelData.databases"
+        [status]="panelData.status"
+        (connectionError)="handleDatabaseConnectionError($event)"
+      />
+
+      <mxevolve-connect-applicative-button
+        [projectId]="panelData.projectId"
+        [environmentId]="panelData.environmentId"
+        [status]="panelData.status"
+        [primaryApplicative]="panelData.primaryApplicative"
+        [secondaryApplicatives]="panelData.secondaryApplicatives ?? []"
+        (connectionError)="handleApplicationConnectionError($event)"
+      />
+
+      <mxevolve-configure-mxtest-button
+        [projectId]="panelData.projectId"
+        [outputsDirectoryUri]="panelData.outputsDirectoryUri"
+        [bundles]="panelData.bundles ?? []"
+        [isTools]="panelData.isTools ?? []"
+        [status]="panelData.status"
+      />
+
+      @if (showOpenConfigEditorAction()) {
+      <mxevolve-open-config-editor-button
+        [projectId]="panelData.projectId"
+        [environmentId]="panelData.environmentId"
+        [status]="panelData.status"
+      />
+      }
+
+      <p-divider layout="vertical" />
+
+      <mxevolve-environment-details-link
+        [projectId]="panelData.projectId"
+        [environmentId]="panelData.environmentId"
+      />
+
+      <!--
+        [extraActions] projection slot: consumers may project additional icon
+        buttons or split-buttons into the actions row (e.g. Config Audit or
+        CI-only scenario details). Backward-compatible: renders nothing when
+        empty.
+      -->
+      <ng-content select="[extraActions]"></ng-content>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-start gap-6 mt-3">
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Deployment Start Date
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        <mxevolve-date-display [date]="panelData.deploymentStartDate" />
+      </span>
+    </div>
+
+    <div class="flex items-center justify-center px-3">
+      <div class="w-px h-10 bg-surface-200 dark:bg-surface-700"></div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Deployment End Date
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        <mxevolve-date-display [date]="panelData.deploymentEndDate" />
+      </span>
+    </div>
+
+    <div class="flex items-center justify-center px-3">
+      <div class="w-px h-10 bg-surface-200 dark:bg-surface-700"></div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Deployment Duration
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        <mxevolve-duration-display
+          [startDate]="panelData.deploymentStartDate"
+          [endDate]="panelData.deploymentEndDate"
+        />
+      </span>
+    </div>
+
+    <div class="flex items-center justify-center px-3">
+      <div class="w-px h-10 bg-surface-200 dark:bg-surface-700"></div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Termination Message
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        @if (truncatedTerminationMessage()) {
+        {{ truncatedTerminationMessage() }}
+        @if (isTerminationMessageTruncated()) {
+        <button
+          class="text-primary border-none bg-transparent cursor-pointer text-sm font-semibold p-0 ml-1"
+          (click)="showTerminationMessageDialog()"
+          aria-label="See full termination message"
+        >
+          see more
+        </button>
+        } } @else { - }
+      </span>
+    </div>
+  </div>
+</div>
+
+<p-dialog
+  header="Termination Message"
+  [modal]="true"
+  [(visible)]="terminationMessageDialogVisible"
+  [closeOnEscape]="true"
+  [closable]="true"
+  [dismissableMask]="true"
+  [style]="{ width: '30rem', 'border-radius': '12px' }"
+  [closeButtonProps]="{ outlined: false, text: true, severity: 'secondary' }"
+>
+  <p
+    class="text-sm font-normal text-surface-900 dark:text-surface-0"
+    style="line-height: 1.625"
+  >
+    {{ panelData.terminationMessage }}
+  </p>
+</p-dialog>
+}

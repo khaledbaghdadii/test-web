@@ -1,0 +1,24 @@
+<p-toast key="error"></p-toast>
+
+@if (launchers) {
+<p-splitButton
+  class="mr-2"
+  [label]="defaultClient"
+  [model]="launchers"
+  [disabled]="disabled"
+  [buttonDisabled]="disabled || defaultClientIsDisabled"
+  [menuButtonDisabled]="disabled || launchers.length === 0"
+  [pTooltip]="tooltipMessage"
+  tooltipPosition="top"
+  (onClick)="launchDefaultClient()"
+/>
+} @else {
+<p-button
+  class="mr-2"
+  [disabled]="disabled || defaultClientIsDisabled"
+  (onClick)="launchDefaultClient()"
+  [pTooltip]="tooltipMessage"
+  tooltipPosition="top"
+  [label]="defaultClient"
+></p-button>
+}

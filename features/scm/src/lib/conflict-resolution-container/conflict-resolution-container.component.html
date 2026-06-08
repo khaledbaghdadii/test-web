@@ -1,0 +1,15 @@
+@if (shouldRenderTextConflictEditor()) {
+<mxevolve-text-conflict-editor
+  class="block h-full"
+  [initialContent]="rawConflictContent()"
+  [language]="language()"
+  [isResolving]="isResolvingEditorContent()"
+  (resolvedContent)="onEditorContentResolved($event)"
+/>
+} @else {
+<mxevolve-conflict-resolution-buttons
+  [filePath]="filePath()"
+  [gitFileStatusCode]="gitFileStatusCode()"
+  (decisionTaken)="onDecisionSelected($event)"
+/>
+}

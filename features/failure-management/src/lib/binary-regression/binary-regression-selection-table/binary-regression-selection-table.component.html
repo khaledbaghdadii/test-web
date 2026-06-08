@@ -1,0 +1,198 @@
+<mxevolve-selected-analysis-objects-listing
+  [selectedAnalysisObjects]="selectedAnalysisObjects()"
+  (analysisObjectRemoved)="removeBinaryRegressionFromSelection($event)"
+></mxevolve-selected-analysis-objects-listing>
+
+<div class="mt-2 mb-6">
+  <p-table
+    data-testid="binary-regressions-selection-table"
+    [value]="isTableLoading() ? [] : listOfRegressions()"
+    [(selection)]="selectedBinaryRegressions"
+    [loading]="isTableLoading()"
+    [paginator]="true"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    paginatorStyleClass="justify-end"
+    paginatorDropdownAppendTo="body"
+    [scrollable]="true"
+    [showLoader]="false"
+    scrollHeight="50vh"
+    [tableStyle]="{ 'min-width': '50rem' }"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    [rows]="10"
+    [totalRecords]="totalRecords()"
+    [first]="firstRowIndex()"
+    [lazy]="true"
+    (onLazyLoad)="handleTableQueryParamsChange($event)"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th scope="col" style="width: 10px"></th>
+        <th scope="col">
+          Title
+          <p-columnFilter
+            field="titlePhrases"
+            matchMode="in"
+            display="menu"
+            data-testid="title-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedTitlePhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </th>
+        <th scope="col" class="w-2/12">
+          MX Version
+          <p-columnFilter
+            field="mxVersionPhrases"
+            matchMode="in"
+            display="menu"
+            data-testid="mxVersion-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+            ><ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedMxVersionPhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </th>
+        <th scope="col" class="w-2/12">
+          Defect
+          <p-columnFilter
+            field="defectIdPhrases"
+            matchMode="in"
+            display="menu"
+            data-testid="defect-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedDefectIdPhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </th>
+        <th scope="col" class="w-2/12">
+          Fix
+          <p-columnFilter
+            field="fixPhrase"
+            matchMode="contains"
+            display="menu"
+            data-testid="fix-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          >
+          </p-columnFilter>
+        </th>
+        <th scope="col" class="w-2/12">
+          Owner
+          <p-columnFilter
+            field="ownerPhrase"
+            matchMode="contains"
+            display="menu"
+            data-testid="owner-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          ></p-columnFilter>
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-regressionRow>
+      <tr>
+        <td>
+          <p-checkbox
+            [pTooltip]="
+              tableRowSelectionState().get(regressionRow.id)?.selectionState
+                ?.selectionMessage
+            "
+            [ngModel]="
+              tableRowSelectionState().get(regressionRow.id)?.selectionState
+                ?.checked
+            "
+            [binary]="true"
+            [value]="regressionRow"
+            [indeterminate]="
+              tableRowSelectionState().get(regressionRow.id)?.selectionState
+                ?.partialSelected
+            "
+            (onChange)="handleSelectionChange($event, regressionRow)"
+            [attr.data-testid]="regressionRow.id"
+          />
+        </td>
+        <td>
+          <a
+            class="p-button-link"
+            routerLink="{{
+              {
+                id: regressionRow.id,
+                category: DetectionCategory.Regression,
+                type: DetectionType.Binary
+              } | detectionUriBuilder
+            }}"
+            target="_blank"
+          >
+            {{ regressionRow.title }}
+          </a>
+        </td>
+        <td>{{ regressionRow.mxVersion }}</td>
+        <td>
+          <a
+            class="p-button-link"
+            href="{{ regressionRow.defect?.link }}"
+            target="_blank"
+            rel="noopener"
+            >{{ regressionRow.defect?.id }}</a
+          >
+        </td>
+        <td>{{ regressionRow.fix }}</td>
+        <td>
+          <mxevolve-hidden-detection-creation-detail
+            [field]="regressionRow.owner"
+          ></mxevolve-hidden-detection-creation-detail>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="loadingbody">
+      @for(row of Array(3); track row){
+      <tr>
+        @for(row of Array(6); track row){
+        <td>
+          <p-skeleton></p-skeleton>
+        </td>
+        }
+      </tr>
+      }
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="9" class="py-4">
+          <mxflow-table-empty-message></mxflow-table-empty-message>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

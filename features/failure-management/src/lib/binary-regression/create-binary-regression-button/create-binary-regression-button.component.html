@@ -1,0 +1,21 @@
+<p-button
+  data-testid="create-binary-regression-button"
+  [label]="buttonLabel"
+  (click)="onBinaryRegressionCreationStarted()"
+  (keydown)="onBinaryRegressionCreationStarted()"
+  severity="secondary"
+>
+</p-button>
+
+<mxevolve-create-binary-regression-modal
+  mxevolveAppendToBody
+  [projectId]="projectId"
+  [isVisible]="isCreateModalVisible"
+  [mxVersionInitialValue]="mxVersionInitialValue"
+  [validationScope]="validationScope"
+  [initialValidationScope]="initialValidationScope"
+  [submitCreationButtonLabel]="submitCreationButtonLabel"
+  [warningMessage]="defectsWarningMessage"
+  (binaryRegressionCreated)="onBinaryRegressionCreated($event)"
+  (createBinaryRegressionCancelled)="onBinaryRegressionCreationCancelled()"
+></mxevolve-create-binary-regression-modal>

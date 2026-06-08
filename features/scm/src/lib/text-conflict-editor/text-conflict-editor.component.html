@@ -1,0 +1,43 @@
+<div
+  class="flex flex-col h-full border border-surface-300 dark:border-surface-700 rounded-md overflow-hidden bg-surface-50 dark:bg-surface-800"
+>
+  <div
+    class="flex px-4 py-2 border-b border-surface-300 dark:border-surface-700"
+  >
+    <output
+      class="flex items-center gap-2 text-sm font-medium text-text-color"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      @if (allResolved()) {
+      <i class="pi pi-check-circle text-green-500" aria-hidden="true"></i>
+      <span>All conflicts resolved</span>
+      } @else {
+      <i
+        class="pi pi-exclamation-triangle text-orange-500"
+        aria-hidden="true"
+      ></i>
+      <span>{{ totalConflicts() }} conflict(s) remaining</span>
+      }
+    </output>
+  </div>
+
+  <mxevolve-monaco-editor
+    class="flex-1 min-h-0"
+    [initialContent]="initialContent()"
+    [language]="language()"
+    [options]="editorOptions"
+    (editorReady)="onEditorReady($event)"
+  />
+
+  <div
+    class="flex items-center justify-center px-4 py-2 border-t border-surface-300 dark:border-surface-700"
+  >
+    <p-button
+      label="Resolve"
+      [disabled]="!allResolved() || isResolving()"
+      [loading]="isResolving()"
+      (onClick)="onResolve()"
+    />
+  </div>
+</div>

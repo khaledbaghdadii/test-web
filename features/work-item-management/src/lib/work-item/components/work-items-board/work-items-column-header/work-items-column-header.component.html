@@ -1,0 +1,8 @@
+<p-card class="compact-card">
+  <div class="flex justify-between w-full">
+    <span class="text-base font-semibold">{{
+      columnConfig()?.title || ""
+    }}</span>
+    <p-badge [value]="totalItems().toString()" badgeSize="large"></p-badge>
+  </div>
+</p-card>

@@ -1,0 +1,17 @@
+{
+  "name": "shared-pipe",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/shared/pipe/src",
+  "prefix": "mxevolve",
+  "tags": ["scope:shared", "type:pipe"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/shared/pipe/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

@@ -1,0 +1,63 @@
+<mxevolve-definition-input
+  id="mqgCreateBranchInput"
+  style="display: contents"
+  label="Create Branch?"
+  [inputFormControl]="createBranchFormControl"
+  inputFormControlName="createBranch"
+  description=""
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowCreateBranch"
+>
+  <div class="flex flex-row gap-4 mt-2">
+    <div class="flex flex-row gap-1">
+      <p-radioButton
+        inputId="doCreateBranch"
+        name="createBranch"
+        [value]="true"
+        [formControl]="createBranchFormControl"
+      ></p-radioButton>
+      <label for="doCreateBranch">Yes</label>
+    </div>
+    <div class="flex flex-row gap-1">
+      <p-radioButton
+        inputId="doNotCreateBranch"
+        name="createBranch"
+        [value]="false"
+        [formControl]="createBranchFormControl"
+      ></p-radioButton>
+      <label for="doNotCreateBranch">No</label>
+    </div>
+  </div>
+</mxevolve-definition-input>
+@if (isCreateBranchSelected$ | async) {
+<mxevolve-mqg-from-new-branch-parameters
+  style="display: contents"
+  [projectId]="projectId"
+  [repositoryIdFormControl]="repositoryIdFormControl"
+  [archivalBranchNameFormControl]="archivalBranchNameFormControl"
+  [parentBranchFormControl]="parentBranchFormControl"
+  [finalProductIdFromControl]="finalProductIdFromControl"
+  [rtpCommitIdFromControl]="rtpCommitIdFromControl"
+  [configCommitIdFromControl]="configCommitIdFromControl"
+  [displayMode]="displayMode"
+  [inputAccessMode]="inputAccessMode"
+  [prefilledInputsToShow]="prefilledInputsToShow"
+>
+</mxevolve-mqg-from-new-branch-parameters>
+} @if (isUseExistingBranchSelected$ | async) {
+<mxevolve-final-product-from-existing-branch
+  style="display: contents"
+  [projectId]="projectId"
+  [repositoryIdFormControl]="repositoryIdFormControl"
+  [repositoryId]="repositoryIdFormControl.value"
+  [archivalBranchNameFormControl]="archivalBranchNameFormControl"
+  [finalProductIdFromControl]="finalProductIdFromControl"
+  [rtpCommitIdFromControl]="rtpCommitIdFromControl"
+  [configCommitIdFromControl]="configCommitIdFromControl"
+  [displayMode]="displayMode"
+  [inputAccessMode]="inputAccessMode"
+  [prefilledInputsToShow]="prefilledInputsToShow"
+>
+</mxevolve-final-product-from-existing-branch>
+}

@@ -1,0 +1,39 @@
+<div class="flex flex-col gap-6">
+  <p-panel header="Branch Details" [collapsed]="true" [toggleable]="true">
+    <mxevolve-build-and-test-branch-details
+      [projectId]="projectId"
+      [developmentId]="backport.initializeDevelopmentState.developmentId"
+    ></mxevolve-build-and-test-branch-details>
+  </p-panel>
+
+  <p-panel header="Merge Request" [toggleable]="true">
+    <mxevolve-backport-cherry-pick-and-merge-request-component
+      [projectId]="projectId"
+      [ciProcessExecutionId]="ciProcessExecutionId"
+      [repositoryId]="repositoryId"
+      [backport]="backport"
+    >
+    </mxevolve-backport-cherry-pick-and-merge-request-component>
+  </p-panel>
+
+  @if (shouldShowPublishing()) {
+  <p-panel header="Final Product Details" [toggleable]="true">
+    <mxevolve-final-product-publishing-component
+      [projectId]="projectId"
+      [finalProductPublishing]="backport.finalProductPublishing"
+    >
+    </mxevolve-final-product-publishing-component>
+  </p-panel>
+  }
+
+  <mxevolve-backport-actions-component
+    [projectId]="projectId"
+    [ciProcessExecutionId]="ciProcessExecutionId"
+    [ciProcessStatus]="ciProcessStatus"
+    [mergeConfigurationId]="
+      backport.mergeConfigurationId ? backport.mergeConfigurationId : ''
+    "
+    [canRepushBackport]="backport.mergeDevelopmentState.canRepush"
+  >
+  </mxevolve-backport-actions-component>
+</div>

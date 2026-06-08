@@ -1,0 +1,272 @@
+@if (!isLoading) {
+<div>
+  <div
+    class="grid grid-cols-12 gap-4 grid-nogutter bg-surface-0 dark:bg-surface-900"
+  >
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Title
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.title || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Project
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ projectName || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Owner
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.owner || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Creation Date
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact ? (binaryImpact.creationDate | date : "medium") : "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        MX Version
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.mxVersion || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Identification Pattern
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.identificationPattern || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Propagation Pattern
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.propagationPattern || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Propagation Query
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.propagationQuery || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Resolution Type
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.resolutionType?.name || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Configuration Design
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.configurationDesign || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Magnitude
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.magnitude || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Impacted Outputs
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.impactedOutputs?.name || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        CBPM L1/L2/L3
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.cbpmL1L2L3 | displayClientImpactNoteListField }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        CBPM L2/Scope
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.cbpmL2Scope | displayClientImpactNoteListField }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        CBPM L3/L4
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.cbpmL3L4 | displayClientImpactNoteListField }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Stream
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.stream?.name || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Source Type
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.sourceType?.name || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Region
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ binaryImpact?.region?.name || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Incident
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        @if (binaryImpact?.incidentId | incidentExternalLink | async; as
+        externalLink) {
+        <a
+          [href]="externalLink?.link"
+          target="_blank"
+          rel="noopener"
+          class="p-button-link"
+        >
+          {{ externalLink?.id }}
+        </a>
+        } @else {
+        <span>-</span>
+        }
+      </div>
+    </div>
+    <div class="col-span-12 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Client Context Description
+      </div>
+      <mxevolve-quill-editor
+        [readOnly]="true"
+        [ngModel]="binaryImpact?.description"
+      >
+      </mxevolve-quill-editor>
+    </div>
+    <div class="col-span-12 p-4">
+      <mxevolve-attachments
+        [attachments]="binaryImpact?.attachments ?? []"
+      ></mxevolve-attachments>
+    </div>
+  </div>
+</div>
+} @if (isLoading) {
+<div>
+  <div
+    class="grid grid-cols-12 gap-4 grid-nogutter border-t border-surface pt-2"
+  >
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Title
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Project
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Owner
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Creation Date
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
+    <div class="col-span-12 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Client Context Description
+      </div>
+      <p-skeleton styleClass="h-80"></p-skeleton>
+    </div>
+    <div class="col-span-12 p-4">
+      <mxevolve-attachments
+        [isLoading]="true"
+        [attachments]="[]"
+      ></mxevolve-attachments>
+    </div>
+  </div>
+</div>
+}
+
+<div class="mt-8 mb-4 p-4">
+  <p-divider>
+    <div class="my-6 text-xl font-medium">Inherited Upgrade Impact</div>
+  </p-divider>
+  @if (!binaryImpact?.upgradeImpactId) {
+  <p-message severity="info" [closable]="false">
+    This Binary Impact does not inherit from any Upgrade Impact
+  </p-message>
+  } @else { @if (upgradeImpact) {
+  <div class="grid grid-cols-12 gap-4 bg-surface-0 dark:bg-surface-900">
+    <div class="col-span-6">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Upgrade Impact ID
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <a
+          href="{{ upgradeImpact?.externalIssue?.link }}"
+          target="_blank"
+          rel="noopener"
+          class="p-button-link"
+          >{{ upgradeImpact?.externalIssue?.id }}</a
+        >
+      </div>
+    </div>
+  </div>
+  }
+  <mxevolve-upgrade-impact-details
+    (errorMessage)="handleErrorOccurredUponLoadingUpgradeImpact($event)"
+    [upgradeImpactId]="binaryImpact?.upgradeImpactId"
+    (upgradeImpact)="setUpgradeImpact($event)"
+  ></mxevolve-upgrade-impact-details>
+  }
+</div>

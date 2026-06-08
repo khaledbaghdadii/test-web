@@ -1,0 +1,40 @@
+<mxevolve-card-container>
+  <div class="border-b border-surface pt-2">
+    <mxflow-header-title
+      >Binary Impact Details
+      <div right-content>
+        <p-button label="Edit" (onClick)="handleEdit()"></p-button>
+      </div>
+    </mxflow-header-title>
+  </div>
+
+  <mxevolve-binary-impact-details
+    [projectId]="projectId"
+    [projectName]="projectName"
+    [binaryImpactId]="binaryImpactId"
+    (errorMessageEmitter)="handleError($event)"
+  ></mxevolve-binary-impact-details>
+
+  <div class="mt-8 mb-4 p-4">
+    <p-divider>
+      <div class="my-6 text-xl font-medium">
+        Scenario(s) Linked to this Impact
+      </div>
+    </p-divider>
+    <mxevolve-project-specific-analysis-object-links-table
+      [projectId]="projectId"
+      [analysisObjectId]="binaryImpactId"
+      [analysisObjectType]="AnalysisObjectType.BINARY_IMPACT"
+      (errorMessageEmitter)="handleError($event)"
+    ></mxevolve-project-specific-analysis-object-links-table>
+  </div>
+</mxevolve-card-container>
+
+<mxevolve-edit-binary-impact-modal
+  [isModalShown]="isEditModalVisible"
+  [warningMessage]="warningMessage"
+  [projectId]="projectId"
+  [binaryImpactId]="binaryImpactId"
+  (closeModalEvent)="handleCloseModalEvent()"
+  (binaryImpactEdited)="handleBinaryImpactEdited()"
+></mxevolve-edit-binary-impact-modal>

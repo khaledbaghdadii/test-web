@@ -1,0 +1,76 @@
+<p-table
+  [value]="regressions"
+  [showLoader]="false"
+  [loading]="isLoading"
+  [tableStyle]="{ 'min-width': '50rem' }"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th scope="col" class="w-3/12">Regression Title</th>
+      <th scope="col" class="w-2/12">MX Version</th>
+      <th scope="col" class="w-2/12">Defect</th>
+      <th scope="col" class="w-2/12">Fix</th>
+      <th scope="col" class="w-2/12">Owner</th>
+      <th scope="col" class="w-1/12"></th>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="body" let-binaryRegression>
+    <tr>
+      <td>
+        <a
+          class="p-button-link"
+          routerLink="{{
+            {
+              id: binaryRegression.id,
+              category: DetectionCategory.Regression,
+              type: DetectionType.Binary
+            } | detectionUriBuilder
+          }}"
+          target="_blank"
+          >{{ binaryRegression.title }}</a
+        >
+      </td>
+      <td>{{ binaryRegression.mxVersion }}</td>
+      <td>{{ binaryRegression?.defect.id }}</td>
+      <td>{{ binaryRegression.fix }}</td>
+      <td>
+        <mxevolve-hidden-detection-creation-detail
+          [field]="binaryRegression.owner"
+        ></mxevolve-hidden-detection-creation-detail>
+      </td>
+      <td>
+        <div
+          pTooltip="Unlink"
+          tooltipPosition="top"
+          style="display: flex; justify-content: center"
+        >
+          <p-button
+            icon="pi pi-link"
+            [rounded]="true"
+            [text]="true"
+            (onClick)="onUnlink(binaryRegression.id)"
+          ></p-button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="loadingbody">
+    @for (row of Array(3); track row) {
+    <tr>
+      @for (col of Array(6); track col) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="6" class="py-4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

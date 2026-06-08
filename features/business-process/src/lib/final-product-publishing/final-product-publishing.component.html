@@ -1,0 +1,29 @@
+<div>
+  @if (!finalProductPublishing?.publishingStartDate) {
+  <mxflow-info-alert
+    [infoMessage]="'Publishing will start after integrating changes passes'"
+    [closeable]="false"
+  >
+  </mxflow-info-alert>
+  } @if (awaitingToRequestPublishing()) {
+  <mxflow-info-alert
+    [infoMessage]="'Publishing will be requested'"
+    [closeable]="false"
+  >
+  </mxflow-info-alert>
+  } @if (didFailToRequestPublishingFinalProduct()) {
+  <mxflow-error-alert
+    [errorMessage]="
+      'Something Went Wrong! Failed to request publishing a final product'
+    "
+    [closeable]="false"
+  >
+  </mxflow-error-alert>
+  } @if (showFinalProductDetails()) {
+  <mxevolve-final-product-details-component
+    [finalProductId]="finalProductPublishing.id"
+    (errorEventEmitter)="onError($event)"
+    [projectId]="projectId"
+  ></mxevolve-final-product-details-component>
+  }
+</div>

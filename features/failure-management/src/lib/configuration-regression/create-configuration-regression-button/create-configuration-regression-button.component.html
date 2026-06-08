@@ -1,0 +1,19 @@
+<p-button
+  data-testid="create-configuration-regression-button"
+  type="submit"
+  [label]="buttonLabel"
+  severity="secondary"
+  (click)="onConfigurationRegressionCreationStarted()"
+  (keydown)="onConfigurationRegressionCreationStarted()"
+></p-button>
+
+<mxevolve-create-configuration-regression-modal
+  mxevolveAppendToBody
+  [projectId]="projectId"
+  [submitCreationButtonLabel]="submitCreationButtonLabel"
+  [isVisible]="isCreateModalVisible"
+  (configurationRegressionCreated)="onConfigurationRegressionCreated($event)"
+  (createConfigurationRegressionCancelled)="
+    onConfigurationRegressionCreationCancelled()
+  "
+></mxevolve-create-configuration-regression-modal>

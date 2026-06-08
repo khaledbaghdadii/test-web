@@ -1,0 +1,10 @@
+:host ::ng-deep .filter-active {
+  .p-select,
+  .p-multiselect,
+  .p-inputtext,
+  .p-autocomplete .p-autocomplete-input-multiple,
+  p-multiselect > div {
+    border-color: var(--p-primary-color);
+    transition: border-color 0.15s ease;
+  }
+}

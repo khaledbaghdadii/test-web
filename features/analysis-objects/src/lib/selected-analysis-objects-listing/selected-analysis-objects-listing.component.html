@@ -1,0 +1,46 @@
+<p-panel
+  header="Selected Items"
+  class="mb-3"
+  [toggleable]="true"
+  [collapsed]="true"
+>
+  @if (selectedAnalysisObjects().length === 0) {
+  <span id="no-items-selected" class="italic text-secondary"
+    >No items selected</span
+  >
+  } @else {
+  <span id="items-selected">
+    @if (fullySelectedAnalysisObjects().length > 0) {
+    <h3>Fully linked items</h3>
+    <span id="items-fully-selected">
+      @for (analysisObject of fullySelectedAnalysisObjects(); track
+      analysisObject.id) {
+      <p-chip
+        id="fully-selected-analysis-object-{{ analysisObject.id }}"
+        label="{{ analysisObject.title }}"
+        [removable]="true"
+        (onRemove)="analysisObjectRemoved.emit(analysisObject.id)"
+      />
+      }
+    </span>
+    } @if (fullySelectedAnalysisObjects().length > 0 &&
+    partiallySelectedAnalysisObjects().length > 0) {
+    <p-divider id="items-divider"></p-divider>
+    } @if (partiallySelectedAnalysisObjects().length > 0) {
+    <span id="items-partially-selected">
+      <h3>Partially linked items</h3>
+      @for (analysisObject of partiallySelectedAnalysisObjects(); track
+      analysisObject.id) {
+      <p-chip
+        id="partially-selected-analysis-object-{{ analysisObject.id }}"
+        label="{{ analysisObject.title }}"
+        [pTooltip]="analysisObject.selectionMessage"
+        [removable]="true"
+        (onRemove)="analysisObjectRemoved.emit(analysisObject.id)"
+      />
+      }
+    </span>
+    }
+  </span>
+  }
+</p-panel>

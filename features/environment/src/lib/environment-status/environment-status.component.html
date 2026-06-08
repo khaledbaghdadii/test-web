@@ -1,0 +1,16 @@
+<div class="flex w-full items-center">
+  @if (isEnvironmentPassed()) {
+  <i class="text-green-500 pi pi-check-circle"></i>
+  } @if (isEnvironmentFailed()) {
+  <i class="text-red-500 pi pi-times-circle"></i>
+  } @if (isEnvironmentUnderway()) {
+  <i class="text-orange-400 pi pi-clock"></i>
+  } @if (isEnvironmentNeutral()) {
+  <i class="text-gray-200 pi pi-minus-circle"></i>
+  } @if (isNotValidStatus()) {
+  <i class="text-gray-200 pi pi-minus-circle"></i>
+  }
+  <h4 class="pl-2 m-0">
+    {{ environmentStatus | environmentStatusName }}
+  </h4>
+</div>

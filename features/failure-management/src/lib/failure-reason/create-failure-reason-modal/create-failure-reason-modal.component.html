@@ -1,0 +1,106 @@
+<p-dialog
+  header="Add a Reason of Failure"
+  [(visible)]="isCreateFailureReasonModalShown"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  (onHide)="handleCreateFailureReasonCancelled()"
+>
+  <form
+    [formGroup]="failureReasonCreationForm"
+    (ngSubmit)="handleCreateFailureReasonSubmitted()"
+  >
+    <div class="grid grid-cols-12 gap-4">
+      <div class="gap-2 col-span-10 col-start-2 pt-2">
+        <mxflow-mandatory-field></mxflow-mandatory-field>
+      </div>
+      <div class="col-span-10 col-start-2 flex flex-col gap-2">
+        <label for="title" class="block"
+          >Title <span class="text-red-500">*</span></label
+        >
+        <input
+          id="title"
+          type="text"
+          pInputText
+          placeholder="Enter a Title"
+          formControlName="title"
+        />
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: failureReasonCreationForm.controls.title
+          }"
+        ></ng-template>
+      </div>
+
+      <div class="col-span-10 col-start-2 flex flex-col gap-2">
+        <label for="description" class="block"
+          >Description <span class="text-red-500">*</span></label
+        >
+        <textarea
+          class="textarea"
+          rows="5"
+          id="description"
+          type="text"
+          pTextarea
+          placeholder="Enter a Description"
+          formControlName="description"
+        ></textarea>
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: failureReasonCreationForm.controls.description
+          }"
+        ></ng-template>
+      </div>
+
+      <div class="col-span-10 col-start-2 flex flex-col gap-2">
+        <label for="activate" class="block">Active</label>
+        <p-toggleswitch
+          class="full-width"
+          id="activate"
+          formControlName="isEnabled"
+        ></p-toggleswitch>
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: failureReasonCreationForm.controls.isEnabled
+          }"
+        ></ng-template>
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <p-button
+        type="submit"
+        label="Create"
+        class="pl-4"
+        [disabled]="!isCreateFailureReasonFormValid()"
+        [loading]="isLoading"
+      ></p-button>
+      <p-button
+        label="Cancel"
+        [outlined]="true"
+        (click)="handleCreateFailureReasonCancelled()"
+        class="pl-4"
+      ></p-button>
+    </div>
+  </form>
+</p-dialog>
+
+<ng-template #errorTipTemplate let-control>
+  <div class="input-error h-4">
+    @if (control.invalid && control.dirty) {
+    <div class="flex gap-1 pt-1">
+      @if (control.hasError('maxlength')) {
+      <small class="p-error block"
+        >Maximum length is {{ control.errors?.maxlength.requiredLength }}</small
+      >
+      } @if (control.hasError('required')) {
+      <small class="p-error block">Field is required</small>
+      } @if (control.hasError('whitespace')) {
+      <small class="p-error block">Field cannot be whitespaces</small>
+      }
+    </div>
+    }
+  </div>
+</ng-template>

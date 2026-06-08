@@ -1,0 +1,174 @@
+<div
+  data-testid="sync-details-container"
+  *showElementIfAuthorized="{
+    action: 'read',
+    attributes: {},
+    package: 'artifact_management',
+    resource: 'final_product',
+    projectId: finalProductSyncDetails().projectId
+  }"
+  class="grid grid-cols-12 justify-between"
+>
+  <div class="grid grid-cols-1 col-span-3 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Sync State
+    </div>
+    <div class="text-surface-900 dark:text-surface-0">
+      <p-tag
+        [severity]="
+          getStateSeverity(finalProductSyncDetails().syncRequestDetails.state)
+        "
+        [value]="
+          getStateDisplayLabel(
+            finalProductSyncDetails().syncRequestDetails.state
+          )
+        "
+      ></p-tag>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 col-span-3 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Final Product Id
+    </div>
+    <div
+      class="text-surface-900 dark:text-surface-0"
+      mxevolveCopyable
+      [toCopy]="finalProductSyncDetails().finalProductId"
+    >
+      {{ finalProductSyncDetails().finalProductId }}
+    </div>
+  </div>
+  <div class="grid grid-cols-1 col-span-3 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Project Id
+    </div>
+    <div
+      class="text-surface-900 dark:text-surface-0 whitespace-normal"
+      mxevolveCopyable
+      [toCopy]="finalProductSyncDetails().projectId"
+    >
+      {{ finalProductSyncDetails().projectId }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 col-span-3 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Duration Time
+    </div>
+    <div class="text-surface-900 dark:text-surface-0">
+      {{
+        finalProductSyncDetails().syncRequestDetails.endDate
+          ? (finalProductSyncDetails().syncRequestDetails.startDate
+            | duration : finalProductSyncDetails().syncRequestDetails.endDate)
+          : "-"
+      }}
+    </div>
+  </div>
+  <div class="grid grid-cols-1 col-span-3 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Start Date
+    </div>
+    <div class="text-surface-900 dark:text-surface-0 whitespace-normal">
+      {{ finalProductSyncDetails().syncRequestDetails.startDate | formatDate }}
+    </div>
+  </div>
+  <div class="grid grid-cols-1 col-span-3 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      End Date
+    </div>
+    <div class="text-surface-900 dark:text-surface-0 whitespace-normal">
+      {{
+        finalProductSyncDetails().syncRequestDetails.endDate
+          ? (finalProductSyncDetails().syncRequestDetails.endDate | formatDate)
+          : "-"
+      }}
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 col-span-6 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Location
+    </div>
+    <div class="text-surface-900 dark:text-surface-0 break-words">
+      {{
+        finalProductSyncDetails().syncRequestDetails.asset
+          ? finalProductSyncDetails().syncRequestDetails.asset.locations[0]
+              .fullPath
+          : "-"
+      }}
+    </div>
+  </div>
+  <div class="grid grid-cols-1 col-span-3 p-4">
+    <div
+      class="flex items-center gap-2 text-surface-500 dark:text-surface-300 font-medium mb-2"
+    >
+      <span>Light Package</span>
+      <i
+        class="pi pi-info-circle text-sm text-secondary"
+        [pTooltip]="getLightPackageTooltip()"
+        data-testid="lightPackageInfoIcon"
+      ></i>
+    </div>
+    <div class="text-surface-900 dark:text-surface-0">
+      <p-toggleSwitch
+        [ngModel]="finalProductSyncDetails().syncRequestDetails.lightPackage"
+        [readonly]="true"
+        style="pointer-events: none"
+        data-testid="lightPackageToggle"
+      ></p-toggleSwitch>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 col-span-3 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      @if (showEnvironmentDefinitionNames()) { Environment Definition Names }
+      @else { Environment Definition Ids }
+    </div>
+    <div class="text-surface-900 dark:text-surface-0">
+      @if (fetchEnvironmentsLoading()) {
+      <p-skeleton width="100%" height="1.5rem"></p-skeleton>
+      } @else if (showEnvironmentDefinitionNames()) {
+      <mxevolve-show-more-less [listOfItems]="environmentDefinitionNames()">
+      </mxevolve-show-more-less>
+      } @else {
+      <mxevolve-show-more-less
+        [listOfItems]="
+          finalProductSyncDetails().syncRequestDetails.environmentDefinitionIds
+        "
+      >
+      </mxevolve-show-more-less>
+      }
+    </div>
+  </div>
+  @if (finalProductSyncDetails().syncRequestDetails.state.toLowerCase() ===
+  SyncState.FAILED.toLowerCase() &&
+  finalProductSyncDetails().syncRequestDetails.failureMessage) {
+  <div class="grid grid-cols-1 col-span-12 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Sync Failure Message
+    </div>
+    <div class="text-surface-900 dark:text-surface-0">
+      <mxevolve-show-more-less-text
+        [text]="
+          finalProductSyncDetails().syncRequestDetails.failureMessage ?? ''
+        "
+      >
+      </mxevolve-show-more-less-text>
+    </div>
+  </div>
+  } @if (finalProductSyncDetails().syncRequestDetails.state.toLowerCase() ===
+  SyncState.UNSTABLE.toLowerCase() &&
+  finalProductSyncDetails().syncRequestDetails.failureMessage) {
+  <div class="grid grid-cols-1 col-span-12 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Warning
+    </div>
+    <div class="text-surface-900 dark:text-surface-0">
+      <mxevolve-show-more-less-text
+        [text]="
+          finalProductSyncDetails().syncRequestDetails.failureMessage ?? ''
+        "
+      ></mxevolve-show-more-less-text>
+    </div>
+  </div>
+  }
+</div>

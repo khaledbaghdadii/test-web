@@ -1,0 +1,9 @@
+<mxevolve-multiselect-dropdown
+  [stateProvider]="stateProvider"
+  [dataParams]="{ projectId: projectId() }"
+  [config]="{
+    placeholder: 'Select Users'
+  }"
+  (errorEvent)="onError($event)"
+  (selectionChange)="onSelectionChange($event)"
+/>

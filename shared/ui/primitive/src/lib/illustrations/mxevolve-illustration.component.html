@@ -1,0 +1,8 @@
+@if (notFound) { } @else if (illustrationUrl) {
+<img
+  class="mxevolve-illustration__svg"
+  [src]="illustrationUrl"
+  [alt]="ariaLabel() ?? ''"
+  [attr.aria-hidden]="ariaLabel() ? null : true"
+/>
+}

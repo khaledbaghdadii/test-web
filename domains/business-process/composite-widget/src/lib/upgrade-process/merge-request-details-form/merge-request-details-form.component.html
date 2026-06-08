@@ -1,0 +1,61 @@
+<div class="grid-6">
+  @if (commitsBehind.hasValue() && commitsBehind.value().length > 0) {
+  <div class="col-span-6">
+    <p-message severity="warn">
+      <ng-template #icon>
+        <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+      </ng-template>
+      You are <b>{{ commitsBehind.value().length }}</b> commits behind
+      {{ destinationBranchValue()!.branchName }}.
+    </p-message>
+  </div>
+  }
+
+  <div class="col-span-3">
+    <p>Merge Request Title <span class="text-red-500">*</span></p>
+    <input
+      pInputText
+      type="text"
+      aria-label="Merge Request Title"
+      [formControl]="form.controls.mergeRequestTitle"
+      (blur)="onTouched()"
+      class="w-full"
+    />
+  </div>
+
+  <div class="col-span-3">
+    <p>Destination Branch <span class="text-red-500">*</span></p>
+    @if (repositoryId()) {
+    <mxevolve-merge-configuration-dropdown
+      [projectId]="projectId()"
+      [repositoryId]="repositoryId()"
+      [formControl]="form.controls.destinationBranch"
+      (blur)="onTouched()"
+    />
+    }
+  </div>
+
+  <div class="col-span-6">
+    <p>Suggested Reviewers</p>
+    @if (repositoryId()) {
+    <mxevolve-autocomplete-reviewers
+      [projectId]="projectId()"
+      [sourceDevelopmentId]="developmentId()"
+      [reviewersFormControl]="form.controls.reviewers"
+      [destinationBranchFormControl]="form.controls.destinationBranch"
+      (blur)="onTouched()"
+    />
+    }
+  </div>
+
+  @if (supportsResourceManagement()) {
+  <mxevolve-delete-development-checkbox
+    class="col-span-6"
+    [projectId]="projectId()"
+    [processId]="processId()"
+    [familyId]="ExecutionFamily.UPGRADE_PROCESS"
+    [formControl]="form.controls.deleteBranch"
+    actionLabel="after changes are merged"
+  />
+  }
+</div>

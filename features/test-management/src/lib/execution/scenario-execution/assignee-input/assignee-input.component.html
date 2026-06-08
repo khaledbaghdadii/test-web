@@ -1,0 +1,28 @@
+@if (isLoadingUsers || isLoading) {
+<p-skeleton width="14rem"></p-skeleton>
+} @if (!(isLoadingUsers || isLoading)) {
+<p-select
+  [style]="{ width: '14rem' }"
+  [filter]="true"
+  filterBy="mail,displayName"
+  [showClear]="true"
+  placeholder="Set an assignee"
+  [(ngModel)]="selectedAssigneeId"
+  (onChange)="changeAssignee(selectedAssigneeId)"
+  [options]="users"
+  optionLabel="displayName"
+  optionValue="id"
+  appendTo="body"
+  dataKey="id"
+  (click)="onOpenDropdown()"
+>
+  <ng-template let-user pTemplate="item">
+    @if (!(isLoadingUsers || isLoading)) {
+    <span>
+      {{ user.displayName }}
+      <em class="text-surface-400 dark:text-surface-400">{{ user.mail }}</em>
+    </span>
+    }
+  </ng-template>
+</p-select>
+}

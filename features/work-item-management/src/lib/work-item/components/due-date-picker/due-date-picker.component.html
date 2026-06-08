@@ -1,0 +1,40 @@
+<p-dialog
+  [(visible)]="isVisible"
+  [modal]="true"
+  [closable]="true"
+  [dismissableMask]="true"
+  (onHide)="hide()"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <ng-template pTemplate="header">
+    <span id="due-date-dialog-title">Select Due Date</span>
+  </ng-template>
+  <p-datepicker
+    [(ngModel)]="selectedDate"
+    placeholder="Select date"
+    dateFormat="yy.mm.dd"
+    [readonlyInput]="true"
+    [inline]="true"
+  >
+    <ng-template pTemplate="footer">
+      <div class="flex justify-between w-full gap-2 p-2">
+        <p-button
+          size="small"
+          label="Confirm"
+          (onClick)="onConfirm()"
+          [disabled]="!selectedDate"
+          data-testid="confirm-due-date-button"
+        />
+        <p-button
+          size="small"
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="onCancel()"
+          data-testid="cancel-due-date-button"
+        />
+      </div>
+    </ng-template>
+  </p-datepicker>
+</p-dialog>

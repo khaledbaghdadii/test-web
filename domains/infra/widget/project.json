@@ -1,0 +1,18 @@
+{
+  "name": "domains-infra-widget",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domains/infra/widget/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["scope:infra", "type:widget"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/domains/infra/widget/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

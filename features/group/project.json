@@ -1,0 +1,17 @@
+{
+  "name": "features-group",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/features/group/src",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/features/group/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

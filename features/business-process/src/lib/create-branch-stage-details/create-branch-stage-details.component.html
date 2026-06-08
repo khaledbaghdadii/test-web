@@ -1,0 +1,88 @@
+<div class="grid-container">
+  @if (development$ | async; as development) {
+  <p-table [value]="[{}]">
+    <ng-template pTemplate="body">
+      <tr>
+        <td class="header">Branch Name</td>
+        <td>{{ development.name }}</td>
+      </tr>
+      <tr>
+        <td class="header">Source</td>
+        <td>{{ development.source ?? "-" }}</td>
+      </tr>
+      <tr>
+        @if (createBranch) {
+        <td class="header">Parent Commit ID</td>
+        <td>{{ development.parentCommitId | commitIdShortner }}</td>
+        } @else {
+        <td class="header">Commit ID upon Execution</td>
+        <td>{{ commitIdUponExecution | commitIdShortner }}</td>
+        }
+      </tr>
+      <tr>
+        <td class="header">Head Commit ID</td>
+        <td>{{ development.latestCommitId | commitIdShortner }}</td>
+      </tr>
+      <tr>
+        <td class="header">Repository URL</td>
+        <td>
+          <a
+            class="text-blue-500 no-underline"
+            [href]="development.repository.url"
+            >{{ development.repository.url }}</a
+          >
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+  } @else {
+  <ng-container *ngTemplateOutlet="loading"></ng-container>
+  }
+
+  <div class="branch-model">
+    <img src="../../../assets/branch.svg" alt="branch" />
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="flex flex-col gap-3">
+    @if(!this.developmentId) {
+    <mxflow-warning-alert
+      warningMessage="The branch details are currently loading. Please refresh the page for the latest updates."
+      [closeable]="false"
+    >
+    </mxflow-warning-alert>
+    }
+    <p-table [value]="[{}]" styleClass="p-datatable-gridlines">
+      <ng-template pTemplate="body">
+        <tr>
+          <td class="header">Branch Name</td>
+          <td><p-skeleton width="10rem"></p-skeleton></td>
+        </tr>
+        <tr>
+          <td class="header">Source</td>
+          <td><p-skeleton width="10rem"></p-skeleton></td>
+        </tr>
+        @if (createBranch) {
+        <tr>
+          <td class="header">Parent Commit ID</td>
+          <td><p-skeleton width="10rem"></p-skeleton></td>
+        </tr>
+        } @if (!createBranch) {
+        <tr>
+          <td class="header">Commit ID upon Execution</td>
+          <td><p-skeleton width="10rem"></p-skeleton></td>
+        </tr>
+        }
+        <tr>
+          <td class="header">Head Commit ID</td>
+          <td><p-skeleton width="10rem"></p-skeleton></td>
+        </tr>
+        <tr>
+          <td class="header">Repository URL</td>
+          <td><p-skeleton width="10rem"></p-skeleton></td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</ng-template>

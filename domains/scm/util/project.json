@@ -1,0 +1,9 @@
+{
+  "name": "domains-scm-util",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domains/scm/util/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["scope:scm", "type:util"],
+  "targets": {}
+}

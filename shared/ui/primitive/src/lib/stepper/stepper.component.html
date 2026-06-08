@@ -1,0 +1,135 @@
+@if(isVertical()) {
+<div class="w-full h-full flex flex-row">
+  <div class="basis-[16%] flex flex-col">
+    <div
+      [class.flex-1]="!verticalStepperHeightLimitingClasses()"
+      [class]="`${verticalStepperHeightLimitingClasses()} flex flex-col`"
+    >
+      @for(step of steps(); track step.id) {
+      <div class="flex-1 flex flex-row items-center gap-x-[8px]">
+        <div class="h-full flex flex-col items-center">
+          <div
+            class="flex-1 w-[2px]"
+            [class.bg-primary]="step.status !== 'inactive' && !$first"
+            [class.bg-surface-300]="step.status === 'inactive' && !$first"
+          ></div>
+
+          <div
+            class="flex flex-row justify-center gap-x-[8px]"
+            [class.cursor-pointer]="isClickable(step)"
+            [class.cursor-default]="!isClickable(step)"
+            [attr.role]="isClickable(step) ? 'button' : null"
+            (click)="onStepClick(step)"
+            (keydown)="onStepClick(step)"
+            [pTooltip]="step.tooltip ?? ''"
+            tooltipPosition="right"
+            [tooltipDisabled]="!step.tooltip"
+          >
+            <mxevolve-icon [name]="iconName(step)" size="md" />
+          </div>
+
+          <div
+            class="flex-1 w-[2px]"
+            [class.bg-primary]="
+              !$last && steps()[$index + 1].status !== 'inactive'
+            "
+            [class.bg-surface-300]="
+              !$last && steps()[$index + 1].status === 'inactive'
+            "
+          ></div>
+        </div>
+        <div
+          [class.cursor-pointer]="isClickable(step)"
+          [class.cursor-default]="!isClickable(step)"
+          [attr.role]="isClickable(step) ? 'button' : null"
+          (click)="onStepClick(step)"
+          (keydown)="onStepClick(step)"
+        >
+          <span
+            class="text-sm font-medium"
+            [class.text-red-500]="step.status === 'failed'"
+            [class.text-primary]="
+              !isMuted(step) && step.status !== 'failed'
+            "
+            [class.text-surface-400]="isMuted(step)"
+            [pTooltip]="step.tooltip ?? ''"
+            tooltipPosition="right"
+            [tooltipDisabled]="!step.tooltip"
+            >{{ displayTitle(step) }}</span
+          >
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+  <p-divider layout="vertical" />
+  <div class="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+    @if (displayedStep()?.contentTemplate(); as tmpl) {
+    <ng-container [ngTemplateOutlet]="tmpl" />
+    }
+  </div>
+</div>
+} @else {
+<div class="w-full h-full flex-1 flex flex-col gap-y-[16px]">
+  <div class="w-full flex flex-row">
+    @for(step of steps(); track step.id) {
+    <div class="flex-1 flex flex-col items-center gap-y-[8px]">
+      <div class="w-full flex flex-row items-center">
+        <div
+          class="flex-1 h-[2px]"
+          [class.bg-primary]="step.status !== 'inactive' && !$first"
+          [class.bg-surface-300]="step.status === 'inactive' && !$first"
+        ></div>
+
+        <div
+          class="flex flex-col justify-center gap-y-[8px]"
+          [class.cursor-pointer]="isClickable(step)"
+          [class.cursor-default]="!isClickable(step)"
+          [attr.role]="isClickable(step) ? 'button' : null"
+          (click)="onStepClick(step)"
+          (keydown)="onStepClick(step)"
+          [pTooltip]="step.tooltip ?? ''"
+          tooltipPosition="top"
+          [tooltipDisabled]="!step.tooltip"
+        >
+          <mxevolve-icon [name]="iconName(step)" size="md" />
+        </div>
+
+        <div
+          class="flex-1 h-[2px]"
+          [class.bg-primary]="
+            !$last && steps()[$index + 1].status !== 'inactive'
+          "
+          [class.bg-surface-300]="
+            !$last && steps()[$index + 1].status === 'inactive'
+          "
+        ></div>
+      </div>
+      <div
+        [class.cursor-pointer]="isClickable(step)"
+        [class.cursor-default]="!isClickable(step)"
+        [attr.role]="isClickable(step) ? 'button' : null"
+        (click)="onStepClick(step)"
+        (keydown)="onStepClick(step)"
+      >
+        <span
+          class="text-sm font-medium"
+          [class.text-red-500]="step.status === 'failed'"
+          [class.text-primary]="!isMuted(step) && step.status !== 'failed'"
+          [class.text-surface-400]="isMuted(step)"
+          [pTooltip]="step.tooltip ?? ''"
+          tooltipPosition="top"
+          [tooltipDisabled]="!step.tooltip"
+          >{{ displayTitle(step) }}</span
+        >
+      </div>
+    </div>
+    }
+  </div>
+  <div class="w-full flex-1 flex flex-col">
+    @if (displayedStep()?.contentTemplate(); as tmpl) {
+    <ng-container [ngTemplateOutlet]="tmpl" />
+    }
+  </div>
+</div>
+}

@@ -1,0 +1,195 @@
+<p-dialog
+  [header]="dialogHeader()"
+  [modal]="true"
+  [(visible)]="isModalVisible"
+  [style]="{ width: '60vw' }"
+  (onHide)="hideModal()"
+>
+  <ng-template #header>
+    <div class="inline-flex items-center justify-center gap-4">
+      <span class="p-dialog-title">{{ dialogHeader() }}</span>
+      @if (chipMessage() && !disableTestCaseSelection()) {
+      <p-chip
+        data-testid="selected-test-cases-chip"
+        [pTooltip]="selectedTestCaseExecutionTitles()"
+        tooltipPosition="bottom"
+        [label]="chipMessage()"
+        icon="pi pi-eye"
+      />
+      }
+    </div>
+  </ng-template>
+
+  <p-stepper [(value)]="stepperPanelValue" class="basis-[50rem]">
+    <p-step-list></p-step-list>
+    <p-step-panels>
+      @if (!disableTestCaseSelection()) {
+      <p-step-panel [value]="1" data-testid="test-case-selection-step-panel">
+        <ng-template #content let-activateCallback="activateCallback">
+          <div>
+            <span class="text-surface-500 dark:text-surface-400 block mb-8"
+              >Select either the scenario execution or one or more test case
+              executions that you wish to link.</span
+            >
+            <div class="ml-4">
+              <p-checkbox
+                id="scenario-execution-checkbox"
+                [(ngModel)]="isScenarioExecutionChecked"
+                [binary]="true"
+              />
+              <label for="scenario-execution-checkbox" class="ml-2">{{
+                scenarioExecution().name
+              }}</label>
+            </div>
+            @if (showTestCaseSelectionTable()) {
+            <mxevolve-test-case-execution-selection-table
+              [testCaseExecutions]="testCaseExecutions()"
+              [isLoading]="false"
+              data-testid="test-case-execution-selection-table"
+              [(testCaseExecutionsSelection)]="selectedTestCaseExecutions"
+              [(selectedTestExecutionFilters)]="selectedTestExecutions"
+            >
+            </mxevolve-test-case-execution-selection-table>
+            }
+            <div class="flex pt-6 justify-end">
+              <p-button
+                data-testid="proceed-to-linking-button"
+                label="Proceed to Linking"
+                icon="pi pi-arrow-right"
+                iconPos="right"
+                [disabled]="
+                  selectedTestCaseExecutions().length === 0 &&
+                  !isScenarioExecutionChecked()
+                "
+                (onClick)="activateCallback(2)"
+              />
+            </div>
+          </div>
+        </ng-template>
+      </p-step-panel>
+      }
+
+      <p-step-panel
+        [value]="2"
+        data-testid="analysis-object-selection-step-panel"
+      >
+        <ng-template #content let-activateCallback="activateCallback">
+          @switch (analysisObjectType) { @case
+          (AnalysisObjectType.BINARY_IMPACT) {
+          <mxevolve-link-binary-impact-modal-content
+            [projectId]="projectId()"
+            [scenarioExecutionId]="scenarioExecution().id"
+            [mxVersionInitialValue]="scenarioExecution().mxVersion"
+            [validationScope]="validationScope()"
+            [initialValidationScope]="validationScope()"
+            [warningMessage]="validationScopeWarningMessage()"
+            [selectedImpactIdsLoading]="analysisObjectLinksLoading()"
+            [initiallySelectedImpacts]="initialAnalysisObjectsSelectionState()"
+            [createImpactLink]="createAnalysisObjectLink"
+            (selectedBinaryImpactsChange)="
+              onAnalysisObjectSelectionChange($event)
+            "
+          >
+          </mxevolve-link-binary-impact-modal-content>
+          } @case (AnalysisObjectType.CONFIGURATION_REGRESSION) {
+          <mxevolve-link-configuration-regression-modal-content
+            [projectId]="projectId()"
+            [scenarioExecutionId]="scenarioExecution().id"
+            [selectedRegressionIdsLoading]="analysisObjectLinksLoading()"
+            [initiallySelectedRegressions]="
+              initialAnalysisObjectsSelectionState()
+            "
+            [createRegressionLink]="createAnalysisObjectLink"
+            (selectedConfigurationRegressionsChange)="
+              onAnalysisObjectSelectionChange($event)
+            "
+          >
+          </mxevolve-link-configuration-regression-modal-content>
+          } @case (AnalysisObjectType.BINARY_REGRESSION) {
+          <mxevolve-link-binary-regression-modal-content
+            [projectId]="projectId()"
+            [mxVersionInitialValue]="scenarioExecution().mxVersion"
+            [validationScope]="validationScope()"
+            [initialValidationScope]="validationScope()"
+            [warningMessage]="validationScopeWarningMessage()"
+            [selectedRegressionIdsLoading]="analysisObjectLinksLoading()"
+            [initiallySelectedRegressions]="
+              initialAnalysisObjectsSelectionState()
+            "
+            [createRegressionLink]="createAnalysisObjectLink"
+            (selectedBinaryRegressionsChange)="
+              onAnalysisObjectSelectionChange($event)
+            "
+          >
+          </mxevolve-link-binary-regression-modal-content>
+          } @case (AnalysisObjectType.CONFIGURATION_IMPACT) {
+          <mxevolve-link-configuration-impact-modal-content
+            [projectId]="projectId()"
+            [initiallySelectedConfigurationImpacts]="
+              initialAnalysisObjectsSelectionState()
+            "
+            [selectedImpactIdsLoading]="analysisObjectLinksLoading()"
+            [createImpactLink]="createAnalysisObjectLink"
+            (selectedConfigurationImpactsChange)="
+              onAnalysisObjectSelectionChange($event)
+            "
+          >
+          </mxevolve-link-configuration-impact-modal-content>
+          } @case (AnalysisObjectType.INCIDENT) {
+          <mxevolve-link-incidents-modal-content
+            [scenarioExecutionId]="scenarioExecution().id"
+            [businessProcessId]="scenarioExecution().businessProcesses[0].id"
+            [environmentId]="scenarioExecution().environmentId"
+            [jumpType]="scenarioExecution().validation!.jumpType"
+            [mxVersion]="scenarioExecution().mxVersion"
+            [projectId]="projectId()"
+            [scenarioName]="scenarioExecution().name"
+            [qualityLevel]="scenarioExecution().qualityLevel"
+            [initiallySelectedIncidents]="
+              initialAnalysisObjectsSelectionState()
+            "
+            [selectedIncidentIdsLoading]="analysisObjectLinksLoading()"
+            (selectedIncidentsChange)="onAnalysisObjectSelectionChange($event)"
+            [createIncidentLink]="createCandidateAnalysisObjectLinks"
+          ></mxevolve-link-incidents-modal-content>
+          } @case (AnalysisObjectType.FAILURE_REASON) {
+          <mxevolve-link-failure-reason-modal-content
+            [initiallySelectedFailureReasons]="
+              initialAnalysisObjectsSelectionState()
+            "
+            [selectedFailureReasonIdsLoading]="analysisObjectLinksLoading()"
+            (selectedFailureReasonsChange)="
+              onAnalysisObjectSelectionChange($event)
+            "
+          ></mxevolve-link-failure-reason-modal-content>
+          } }
+          <div class="flex pt-6 justify-between">
+            <p-button
+              label="Back"
+              severity="secondary"
+              icon="pi pi-arrow-left"
+              data-testid="back-button"
+              (onClick)="activateCallback(1)"
+              [hidden]="disableTestCaseSelection()"
+            />
+            <p-button
+              label="Submit"
+              data-testid="submit-button"
+              (onClick)="updateLinks()"
+              [disabled]="
+                isLinkingFailureReason()
+                  ? !atLeastOneFailureReasonLinked()
+                  : !(
+                      initialAnalysisObjectsSelectionState()
+                      | analysisObjectLinksChanged
+                        : currentAnalysisObjectsSelectionState()
+                    )
+              "
+              class="ml-auto"
+            />
+          </div>
+        </ng-template>
+      </p-step-panel>
+    </p-step-panels>
+  </p-stepper>
+</p-dialog>

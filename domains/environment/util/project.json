@@ -1,0 +1,9 @@
+{
+  "name": "domains-environment-util",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domains/environment/util/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["scope:environment", "type:util"],
+  "targets": {}
+}

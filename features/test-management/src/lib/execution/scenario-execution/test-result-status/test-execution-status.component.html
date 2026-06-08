@@ -1,0 +1,41 @@
+@switch (status) { @case (TestExecutionStatus.PASSED) {
+<p-tag severity="success" rounded="true" id="test-case-passed-status">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-check-circle"></i><span class="text-sm">Passed</span>
+  </div>
+</p-tag>
+} @case (TestExecutionStatus.FAILED) {
+<p-tag severity="danger" rounded="true" id="test-case-failed-status">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-times-circle"></i><span class="text-sm">Failed</span>
+  </div>
+</p-tag>
+} @case (TestExecutionStatus.READY) {
+<p-tag severity="info" rounded="true" id="test-case-ready-status">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-user"></i>
+    <span class="text-sm">Ready</span>
+  </div>
+</p-tag>
+} @case (TestExecutionStatus.UNDERWAY) {
+<p-tag severity="warn" rounded="true" id="test-case-underway-status">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-spin pi-spinner"></i>
+    <span class="text-sm">Underway</span>
+  </div>
+</p-tag>
+} @case (TestExecutionStatus.QUEUED) {
+<p-tag severity="info" rounded="true" id="test-case-queued-status">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-clock"></i>
+    <span class="text-sm">Queued</span>
+  </div>
+</p-tag>
+} @case (TestExecutionStatus.NA) {
+<p-tag severity="secondary" rounded="true" id="test-case-na-status">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-minus-circle"></i>
+    <span class="text-sm">NA</span>
+  </div>
+</p-tag>
+} }

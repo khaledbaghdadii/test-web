@@ -1,0 +1,117 @@
+@if (integrateChangesStage) {
+<mxevolve-card-container>
+  <mxflow-header-title>
+    <div class="page-title">Integrate Changes</div>
+  </mxflow-header-title>
+  @if (errorMessage) {
+  <mxflow-error-alert
+    [errorMessage]="errorMessage!"
+    [closeable]="false"
+  ></mxflow-error-alert>
+  } @if (!backportStarted && integrateChangesStage.backportRequested &&
+  integrateDestinationBranch && ciVersion == 1) {
+  <mxflow-info-alert
+    [infoMessage]="
+      'Backport will start after integrating into ' +
+      integrateDestinationBranch +
+      ' passes'
+    "
+    [closeable]="false"
+  >
+  </mxflow-info-alert>
+  }
+  <ng-container>
+    @if (integrateChangesStage.backportRequested) {
+    <p-tabs value="0" class="mt-0.5">
+      <p-tablist>
+        <p-tab value="0"
+          ><h3 class="m-0">
+            Integrate into {{ integrateDestinationBranch }}
+          </h3></p-tab
+        >
+        @for (backport of integrateChangesStage.backports; track backport; let i
+        = $index) { @if
+        (backport.initializeDevelopmentState.destinationBranchName) {
+        <p-tab [value]="i + 1">
+          <h3 class="m-0">
+            Backport to
+            {{ backport.initializeDevelopmentState.destinationBranchName }}
+          </h3>
+        </p-tab>
+        }} @if(ciVersion == 2 && integrateChangesStage.backportRequested) {
+        <p-tab [value]="1"> Backports </p-tab>
+        }
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel value="0">
+          <ng-template [ngTemplateOutlet]="integrate"></ng-template>
+        </p-tabpanel>
+        @for (backport of integrateChangesStage.backports; track backport; let i
+        = $index) { @if
+        (backport.initializeDevelopmentState.destinationBranchName) {
+        <p-tabpanel [value]="i + 1">
+          <mxflow-backport-changes
+            [backport]="backport"
+            [projectId]="projectId"
+            [ciProcessExecutionId]="ciProcessExecutionId"
+            [repositoryId]="repositoryId"
+            [ciProcessStatus]="ciProcessStatus"
+          ></mxflow-backport-changes>
+        </p-tabpanel>
+        }} @if(ciVersion == 2 && integrateChangesStage.backportRequested) {
+        <p-tabpanel [value]="1">
+          <mxevolve-backport-executions-summary
+            [backportDestinationBranches]="backportDestinationBranches"
+            [backportExecutionIds]="integrateChangesStage.backportExecutions"
+            [failedBackportDefinitionIds]="
+              integrateChangesStage.failedBackportDefinitions
+            "
+            [integrateDestinationBranch]="integrateDestinationBranch"
+            [projectId]="projectId"
+          >
+          </mxevolve-backport-executions-summary>
+        </p-tabpanel>
+        }
+      </p-tabpanels>
+      <p-tabpanel>
+        <ng-template [ngTemplateOutlet]="integrate"></ng-template>
+      </p-tabpanel>
+    </p-tabs>
+    } @else {
+    <ng-container [ngTemplateOutlet]="integrate"></ng-container>
+    }
+    <ng-template #integrate>
+      <mxflow-integrate-changes
+        [mergeRequestDetails]="mergeRequest"
+        (fixIssuesEvent)="fixIssues()"
+        [actionsDisabled]="areActionsDisabled"
+        [requester]="actionRequester"
+        [showDecision]="showDecision"
+        [mergeJobId]="mergeJobId"
+        [ciProcessExecutionId]="ciProcessExecutionId"
+        [projectId]="projectId"
+        [developmentId]="developmentId"
+        [willPublishFinalProduct]="
+          integrateChangesStage.willPublishFinalProduct
+        "
+        [finalProductPublishing]="finalProductPublishing"
+      ></mxflow-integrate-changes>
+    </ng-template>
+    @if (backportDecisionMaker) {
+    <div class="p-1">
+      <mxflow-step-result>
+        <div result class="flex content-center gap-2">
+          <i class="pi stop pi-ban text-2xl" id="stop-icon"></i>
+          <h4 class="m-0">Stopped</h4>
+        </div>
+        <div additional-info>
+          <mxflow-input-provider
+            [requester]="backportDecisionMaker"
+          ></mxflow-input-provider>
+        </div>
+      </mxflow-step-result>
+    </div>
+    }
+  </ng-container>
+</mxevolve-card-container>
+}

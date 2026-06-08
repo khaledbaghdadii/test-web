@@ -1,0 +1,17 @@
+@if (environmentId) {
+<mxflow-build-environment-details
+  [projectId]="projectId"
+  [environmentId]="environmentId"
+></mxflow-build-environment-details>
+} @else {
+<mxflow-info-alert
+  [closeable]="false"
+  infoMessage="Please wait, we will show you the environment buttons once the deployment starts!"
+></mxflow-info-alert>
+}
+<mxflow-aggregated-scenario-executions-table
+  [projectId]="projectId"
+  [processId]="processId"
+  subContextId="PREPARE_BUILD_ENVIRONMENT"
+  [isUserInterventionDisabled]="isUserInterventionDisabled"
+></mxflow-aggregated-scenario-executions-table>

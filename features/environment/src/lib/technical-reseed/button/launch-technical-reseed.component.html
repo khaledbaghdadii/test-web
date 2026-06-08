@@ -1,0 +1,17 @@
+<p-toast position="top-right"></p-toast>
+<p-button
+  [disabled]="disabled"
+  [pTooltip]="tooltip"
+  tooltipPosition="left"
+  (onClick)="openTechnicalReseedModal()"
+  label="Technical Reseed"
+></p-button>
+
+<mxevolve-launch-technical-reseed-modal
+  [projectId]="projectId"
+  [executionGroupId]="executionGroupId"
+  [infraGroup]="infraGroup"
+  [targetBranch]="targetBranch"
+  [(modalOpen)]="modalOpen"
+  (operationLaunched)="operationLaunched($event)"
+></mxevolve-launch-technical-reseed-modal>

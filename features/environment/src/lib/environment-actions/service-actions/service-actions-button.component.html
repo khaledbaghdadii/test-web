@@ -1,0 +1,45 @@
+<p-confirmpopup [key]="startEnvironmentPopupKey"></p-confirmpopup>
+<p-toast position="top-right"></p-toast>
+<div class="split-button-wrapper">
+  <p-splitbutton
+    icon="pi pi-cog"
+    label="Services"
+    class="mr-2"
+    (onDropdownClick)="this.onButtonClick($event)"
+    [menuStyle]="{ display: 'none' }"
+  >
+  </p-splitbutton>
+  <p-tiered-menu
+    #tieredMenu
+    [model]="items"
+    appendTo="body"
+    [popup]="true"
+    (onShow)="shiftOverlay()"
+  >
+    <ng-template #item let-item>
+      <a
+        class="p-ripple p-tieredmenu-item-link"
+        [ngClass]="{ 'p-disabled': !!item.viewDisabled }"
+      >
+        @if(item.type === "toggle"){
+        <p-toggle-switch
+          [ngModel]="!excludeFromDailyShutdown"
+          (onChange)="onExcludeToggled($event)"
+        ></p-toggle-switch>
+        } @if(item.icon){
+        <span [class]="item.icon" class="p-tieredmenu-item-icon mr-2"></span>
+        }
+        <span class="p-tieredmenu-item-label">{{ item.label }}</span>
+      </a>
+    </ng-template>
+  </p-tiered-menu>
+</div>
+
+<mxevolve-view-environment-services
+  [projectId]="projectId"
+  [environmentId]="environmentId"
+  [dialogOpen]="viewOpen"
+  (servicesLoaded)="servicesLoaded($event)"
+  (componentClosed)="onViewClosed()"
+>
+</mxevolve-view-environment-services>

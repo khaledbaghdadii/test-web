@@ -1,0 +1,23 @@
+<div class="p-inputgroup">
+  <p-icon-field>
+    <p-inputicon>
+      <mxevolve-icon name="folder" size="sm" />
+    </p-inputicon>
+    <input
+      pInputText
+      readonly
+      data-testid="selected-path-input"
+      [value]="selectedPath()"
+      placeholder="Select a test selection path..."
+      fluid
+      (click)="openDialog()"
+    />
+  </p-icon-field>
+</div>
+<mxevolve-test-selection-browser-dialog
+  [projectId]="projectId()"
+  [testSequenceName]="testSequenceName()"
+  [repositoryId]="repositoryId()"
+  [(visible)]="dialogVisible"
+  (testSelectionPathSelected)="onPathSubmitted($event)"
+/>

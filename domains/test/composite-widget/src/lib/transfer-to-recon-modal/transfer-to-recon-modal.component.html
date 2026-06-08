@@ -1,0 +1,75 @@
+<p-dialog
+  [(visible)]="isVisible"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [style]="{ height: '70vh', width: '80vw' }"
+  closeAriaLabel="Close"
+>
+  @if (isVisible()) {
+  <p-stepper [(value)]="cycleStepperActiveStep">
+    <div class="flex justify-center">
+      <p-step-list class="w-1/2">
+        <p-step [value]="1">Reports To Be Transferred</p-step>
+        <p-step [value]="2">Select Cycle</p-step>
+      </p-step-list>
+    </div>
+    <p-step-panels>
+      <p-step-panel [value]="1">
+        <ng-template #content>
+          <span class="text-surface-500 dark:text-surface-400 block mb-8">
+            Please review the following reports. Only valid paths are shown.
+            Missing reports may be due to an unsupported MXtest version, an
+            invalid node, or an incomplete configuration
+          </span>
+          <div>
+            @for (reportFolderPath of pathsToTransfer; track $index) {
+            <p-chip label="{{ reportFolderPath }}" class="mb-0.5" />
+            }
+          </div>
+        </ng-template>
+      </p-step-panel>
+      <p-step-panel [value]="2">
+        <ng-template #content>
+          <div>
+            <mxevolve-cycle-selector
+              [projectId]="projectId"
+              (selectionChange)="setCycle($event)"
+              [multiSelect]="false"
+              [pageOnlySelect]="true"
+            ></mxevolve-cycle-selector>
+          </div>
+        </ng-template>
+      </p-step-panel>
+    </p-step-panels>
+  </p-stepper>
+  }
+
+  <ng-template pTemplate="footer">
+    @if (cycleStepperActiveStep() === 1) {
+    <div class="flex justify-end">
+      <p-button
+        label="Next"
+        icon="pi pi-arrow-right"
+        iconPos="right"
+        (onClick)="cycleStepperActiveStep.set(2)"
+      />
+    </div>
+    } @if (cycleStepperActiveStep() === 2) {
+    <div class="flex justify-between w-full">
+      <p-button
+        label="Back"
+        severity="secondary"
+        icon="pi pi-arrow-left"
+        (onClick)="cycleStepperActiveStep.set(1)"
+      />
+      <p-button
+        label="Submit"
+        [disabled]="!cycleId"
+        (click)="submit()"
+        (keydown)="submit()"
+      ></p-button>
+    </div>
+    }
+  </ng-template>
+</p-dialog>

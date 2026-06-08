@@ -1,0 +1,170 @@
+<mxevolve-selected-analysis-objects-listing
+  [selectedAnalysisObjects]="selectedAnalysisObjects()"
+  (analysisObjectRemoved)="removeBinaryImpactFromSelection($event)"
+></mxevolve-selected-analysis-objects-listing>
+
+<div class="mt-2 mb-6">
+  <p-table
+    data-testid="binary-impacts-selection-table"
+    [value]="isTableLoading() ? [] : listOfImpacts()"
+    [(selection)]="selectedBinaryImpacts"
+    [loading]="isTableLoading()"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    [rows]="10"
+    [first]="firstRowIndex()"
+    [totalRecords]="totalRecords()"
+    [paginator]="true"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    paginatorStyleClass="justify-end"
+    paginatorDropdownAppendTo="body"
+    [lazy]="true"
+    (onLazyLoad)="handleTableQueryParamsChange($event)"
+    [scrollable]="true"
+    [showLoader]="false"
+    scrollHeight="50vh"
+    [tableStyle]="{ 'min-width': '50rem' }"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th scope="col" style="width: 10px"></th>
+        <th scope="col">
+          Title
+          <p-columnFilter
+            field="titlePhrase"
+            matchMode="contains"
+            display="menu"
+            data-testid="title-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          ></p-columnFilter>
+        </th>
+        <th scope="col">
+          MX Version
+          <p-columnFilter
+            field="mxVersionPhrases"
+            matchMode="in"
+            display="menu"
+            data-testid="mxVersion-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedMxVersionPhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </th>
+        <th scope="col" class="w-4/12">
+          Upgrade Impact
+          <p-columnFilter
+            field="upgradeImpactExternalIssuePhrase"
+            matchMode="contains"
+            display="menu"
+            data-testid="external-issue-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          ></p-columnFilter>
+        </th>
+        <th scope="col" class="w-2/12">
+          Owner
+          <p-columnFilter
+            field="ownerPhrase"
+            matchMode="contains"
+            display="menu"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+            data-testid="owner-column-filter"
+          ></p-columnFilter>
+        </th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-impactRow>
+      <tr>
+        <td>
+          <p-checkbox
+            [pTooltip]="
+              tableRowSelectionState().get(impactRow.id)?.selectionState
+                ?.selectionMessage
+            "
+            [ngModel]="
+              tableRowSelectionState().get(impactRow.id)?.selectionState
+                ?.checked
+            "
+            [binary]="true"
+            [value]="impactRow"
+            [indeterminate]="
+              tableRowSelectionState().get(impactRow.id)?.selectionState
+                ?.partialSelected
+            "
+            (onChange)="handleSelectionChange($event, impactRow)"
+            [attr.data-testid]="impactRow.id"
+          />
+        </td>
+        <td>
+          <a
+            class="p-button-link"
+            routerLink="{{
+              {
+                id: impactRow.id,
+                category: DetectionCategory.Impact,
+                type: DetectionType.Binary,
+                projectId: projectId
+              } | detectionUriBuilder
+            }}"
+            target="_blank"
+          >
+            {{ impactRow.title }}
+          </a>
+        </td>
+        <td>{{ impactRow.mxVersion }}</td>
+        <td>
+          @if (!impactRow.upgradeImpact) {
+          <span>-</span>
+          } @else {
+          <a
+            class="p-button-link"
+            href="{{ impactRow.upgradeImpact?.externalIssue?.link }}"
+            rel="noopener"
+            >{{ impactRow.upgradeImpact?.externalIssue?.id }}</a
+          >
+          }
+        </td>
+        <td>{{ impactRow.owner }}</td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="loadingbody">
+      @for (row of Array(3); track row) {
+      <tr>
+        @for (col of Array(5); track col) {
+        <td>
+          <p-skeleton></p-skeleton>
+        </td>
+        }
+      </tr>
+      }
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="9" class="py-4">
+          <mxflow-table-empty-message></mxflow-table-empty-message>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

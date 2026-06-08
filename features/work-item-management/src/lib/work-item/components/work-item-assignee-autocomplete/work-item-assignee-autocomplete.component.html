@@ -1,0 +1,21 @@
+<p-autocomplete
+  class="w-full max-w-full overflow-hidden"
+  [suggestions]="suggestions()"
+  [virtualScroll]="true"
+  [emptyMessage]="isLoading() ? 'Loading...' : 'No assignees found'"
+  [minLength]="minSearchLength"
+  [appendTo]="'body'"
+  [virtualScrollOptions]="{
+    lazy: true,
+    step: itemsStep,
+    onLazyLoad: handleLazyLoad
+  }"
+  [virtualScrollItemSize]="34"
+  [(ngModel)]="selectedUser"
+  (completeMethod)="onSearch($event)"
+  (onSelect)="onSelect($event)"
+  [optionLabel]="'mail'"
+  [dataKey]="'mail'"
+  placeholder="Search Assignee"
+  data-testid="work-item-assignee-autocomplete"
+/>

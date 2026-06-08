@@ -1,0 +1,54 @@
+@if (!isLoading) {
+<div class="flex flex-row flex-wrap">
+  <div class="flex items-center justify-center mx-2">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center m-2">
+        <i
+          class="pi pi-exclamation-circle text-gray-500"
+          style="font-size: 2rem"
+        ></i>
+      </div>
+      <div class="flex items-center justify-center">Total</div>
+      <div class="flex items-center justify-center">
+        {{ incidentSummary | incidentStatusesTotalCount }}
+      </div>
+    </div>
+  </div>
+  @if (incidentSummary.statuses.length > 0) {
+  <div>
+    <p-divider layout="vertical"></p-divider>
+  </div>
+  } @for (status of incidentSummary.statuses; track status) {
+  <div class="flex items-center justify-center mx-2">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center m-2">
+        <i
+          class="pi pi-exclamation-circle text-blue-500"
+          style="font-size: 2rem"
+        ></i>
+      </div>
+      <div class="flex items-center justify-center">{{ status.name }}</div>
+      <div class="flex items-center justify-center">{{ status.count }}</div>
+    </div>
+  </div>
+  }
+</div>
+} @if (isLoading) {
+<div class="flex flex-row flex-wrap">
+  @for (i of [1, 2, 3, 4]; track i) {
+  <div class="flex items-center justify-center mx-2">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center m-2">
+        <p-skeleton shape="circle" size="2.5rem"></p-skeleton>
+      </div>
+      <div class="flex items-center justify-center mb-1">
+        <p-skeleton width="4rem" height="1rem"></p-skeleton>
+      </div>
+      <div class="flex items-center justify-center">
+        <p-skeleton width="2rem" height="1rem"></p-skeleton>
+      </div>
+    </div>
+  </div>
+  }
+</div>
+}

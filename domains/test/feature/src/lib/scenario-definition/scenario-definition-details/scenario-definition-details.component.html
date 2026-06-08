@@ -1,0 +1,205 @@
+<div class="mb-4">
+  <mxevolve-card-container>
+    <mxflow-header-title>
+      Scenario Definition Details
+      <div right-content>
+        @if (!scenarioDefinition?.archived) {
+        <p-button
+          *showElementIfAuthorized="{
+            action: 'edit',
+            attributes: {},
+            package: 'test',
+            resource: 'scenario_definition'
+          }"
+          label="Edit Scenario Definition"
+          id="edit-scenario-definition"
+          routerLink="../../edit/{{ scenarioDefinitionId }}"
+        />
+        }
+      </div>
+    </mxflow-header-title>
+    @if (!isLoading) {
+    <div>
+      <div
+        class="grid grid-cols-12 gap-4 grid-nogutter bg-surface-0 dark:bg-surface-900"
+      >
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Name
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            {{ scenarioDefinition ? scenarioDefinition.name : "-" }}
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Non-Functional Test
+          </div>
+          <div
+            class="text-surface-900 dark:text-surface-0"
+            data-testid="nonFunctionalTestLabel"
+          >
+            {{
+              scenarioDefinition
+                ? scenarioDefinition.nonFunctionalTest
+                  ? "Yes"
+                  : "No"
+                : "-"
+            }}
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Idempotent
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            {{
+              scenarioDefinition
+                ? scenarioDefinition.idempotent
+                  ? "Yes"
+                  : "No"
+                : "-"
+            }}
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Streams
+          </div>
+          <mxevolve-streams-tag-display
+            [bpcIds]="scenarioDefinitionBpcIds"
+            [isFormLoading]="isLoading"
+          ></mxevolve-streams-tag-display>
+        </div>
+        <div class="col-span-12 md:col-span-8 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            BPCs
+          </div>
+          @if (bpcNames && bpcNames.length > 0) {
+          <div>
+            <mxevolve-show-more-less
+              [listOfItems]="bpcNames"
+            ></mxevolve-show-more-less>
+          </div>
+          } @if (!bpcNames || bpcNames.length === 0) {
+          <div>No BPCs</div>
+          }
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Heaviness
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            {{ scenarioDefinition ? scenarioDefinition.heaviness : "-" }}
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Scenario Quality Level
+          </div>
+          <div
+            class="text-surface-900 dark:text-surface-0"
+            data-testid="qualityLevelLabel"
+          >
+            {{
+              scenarioDefinition ? scenarioDefinition.qualityLevel || "-" : "-"
+            }}
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-8 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Environment
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            @if (scenarioDefinition && scenarioDefinition.environmentDefinition)
+            {
+            <mxevolve-environment-definition-name
+              [environmentDefinition]="scenarioDefinition.environmentDefinition"
+            ></mxevolve-environment-definition-name>
+            } @else { - }
+          </div>
+        </div>
+      </div>
+    </div>
+    } @if (isLoading) {
+    <div>
+      <div
+        class="grid grid-cols-12 gap-4 grid-nogutter bg-surface-0 dark:bg-surface-900"
+      >
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Name
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            <p-skeleton></p-skeleton>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Non-Functional Test
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            <p-skeleton></p-skeleton>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Idempotent
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            <p-skeleton></p-skeleton>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Streams
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            <p-skeleton></p-skeleton>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-8 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            BPCs
+          </div>
+          <div>
+            <p-skeleton></p-skeleton>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Heaviness
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            <p-skeleton></p-skeleton>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-4 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Scenario Quality Level
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            <p-skeleton></p-skeleton>
+          </div>
+        </div>
+        <div class="col-span-12 md:col-span-8 p-4">
+          <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+            Environment
+          </div>
+          <div class="text-surface-900 dark:text-surface-0">
+            <p-skeleton></p-skeleton>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </mxevolve-card-container>
+</div>
+
+<mxevolve-card-container>
+  <mxflow-header-title> Tests</mxflow-header-title>
+  <mxevolve-scenario-definition-tests-table
+    [tests]="scenarioDefinition ? scenarioDefinition.tests : []"
+    [isLoading]="isLoading"
+  ></mxevolve-scenario-definition-tests-table>
+</mxevolve-card-container>

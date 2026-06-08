@@ -1,0 +1,101 @@
+<div class="on-demand-backport-summary">
+  @if (errorMessage) {
+  <div class="mt-4">
+    <mxflow-error-alert [errorMessage]="errorMessage" [closeable]="false" />
+  </div>
+  } @if(backportExecutionIds.length == 0 && failedBackportDefinitionIds.length
+  == 0 && missingDefinitions.length == 0 && integrateDestinationBranch) {
+  <div class="mt-4">
+    @if(backportDestinationBranches.length == 0) {
+    <mxflow-info-alert
+      [infoMessage]="`Backport processes will start after changes are integrated into ${integrateDestinationBranch}.`"
+      [closeable]="false"
+    />
+    }@else {
+    <mxflow-info-alert
+      [infoMessage]="`Backport into ${backportDestinationBranches.join(', ')} will start after integrating into ${integrateDestinationBranch} passes`"
+      [closeable]="false"
+    ></mxflow-info-alert>
+    }
+  </div>
+  } @if (backportExecutions.length > 0) {
+  <div class="mt-4">
+    <h4 class="mb-2 font-semibold text-lg">On-Demand Backport Executions</h4>
+    <p-table
+      [value]="backportExecutions"
+      class="p-datatable"
+      [scrollable]="true"
+    >
+      <ng-template pTemplate="header">
+        <tr class="">
+          <th scope="col" class="text-sm">Name</th>
+          <th scope="col" class="text-sm">Status</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-execution>
+        <tr>
+          <td>
+            <a
+              [href]="
+                '/app/' +
+                projectId +
+                '/business-process' +
+                (execution.id | businessProcessUriFactory)
+              "
+              target="_blank"
+              class="p-button-link"
+            >
+              {{ execution.name ?? execution.id }}
+            </a>
+          </td>
+          <td>
+            @if(execution.status) {
+            <app-business-process-execution-status [status]="execution.status">
+            </app-business-process-execution-status>
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+  } @if (failedBackportDefinitions.length > 0 || missingDefinitions.length > 0)
+  {
+
+  <div class="mt-6">
+    <h4 class="mb-2 font-semibold text-lg">Failed Backport Definitions</h4>
+    @if (failedBackportDefinitions.length > 0) {
+    <p-table
+      [value]="failedBackportDefinitions"
+      class="p-datatable"
+      [scrollable]="true"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th scope="col" class="text-sm">Definition Name</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-definition>
+        <tr>
+          <td>
+            <a
+              target="_blank"
+              class="p-button-link"
+              [href]="`/app/${projectId}/business-process/definition/details/${definition.id}`"
+            >
+              {{ definition.name }}
+            </a>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+    }
+  </div>
+  @if(missingDefinitions.length > 0) {
+  <div class="mt-4">
+    <mxflow-error-alert
+      [errorMessage]="`These business process definitions could not be fetched and executed: ${missingDefinitions.join(', ')}.`"
+      [closeable]="false"
+    />
+  </div>
+  } }
+</div>

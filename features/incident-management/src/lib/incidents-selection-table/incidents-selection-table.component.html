@@ -1,0 +1,165 @@
+<mxevolve-selected-analysis-objects-listing
+  [selectedAnalysisObjects]="selectedAnalysisObjects()"
+  (analysisObjectRemoved)="removeIncidentFromSelection($event)"
+>
+</mxevolve-selected-analysis-objects-listing>
+<p-table
+  #table
+  data-testid="all-incidents-table"
+  [value]="
+    isTableLoading || selectedIncidentIdsLoading ? [] : incidentSelections()
+  "
+  [lazyLoadOnInit]="false"
+  [showLoader]="false"
+  [loading]="isTableLoading || selectedIncidentIdsLoading"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  [rows]="incidentsQuery.size"
+  [totalRecords]="total"
+  scrollHeight="60vh"
+  [paginator]="true"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  paginatorStyleClass="justify-end"
+  [scrollable]="true"
+  [lazy]="true"
+  dataKey="id"
+  [(first)]="incidentsQuery.page"
+  [(selection)]="selectedIncidents"
+  (onLazyLoad)="handleTableQueryParamsChange($event)"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th scope="col" style="width: 10px"></th>
+      <th scope="col" class="w-2/12">
+        <div class="header-item">
+          <span class="whitespace-normal">Title</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="titlePhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th scope="col" class="w-2/12">
+        <div class="header-item">
+          <span class="whitespace-normal">Status</span>
+          <p-columnFilter
+            field="statuses"
+            display="menu"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showApplyButton]="false"
+            [showClearButton]="false"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-checkbox-filter
+                [filter]="filter"
+                [options]="statusOptions"
+                [(selected)]="selectedStatuses"
+              ></mxevolve-table-checkbox-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th scope="col" class="w-2/12">
+        <div class="header-item">
+          <span class="whitespace-normal">Linked Ticket ID</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="externalIssueIdPhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th scope="col" class="w-2/12">
+        <div class="header-item">
+          <span class="whitespace-normal">Reporter</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="reporterPhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th scope="col" class="w-2/12">
+        <div class="header-item">
+          <span class="whitespace-normal">Assignee</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="assigneePhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-incidentRow>
+    <tr>
+      <td>
+        <p-checkbox
+          [pTooltip]="incidentRow.selectionState.selectionMessage"
+          [ngModel]="incidentRow.selectionState.checked"
+          [binary]="true"
+          [value]="incidentRow"
+          [indeterminate]="incidentRow.selectionState.partialSelected"
+          (onChange)="handleSelectionChange($event, incidentRow.incident)"
+          [attr.data-testid]="incidentRow.incident.id"
+        />
+      </td>
+      <td>{{ incidentRow.incident.title }}</td>
+      <td>{{ incidentRow.incident.status }}</td>
+      <td>
+        <a
+          class="p-button-link"
+          [href]="incidentRow.incident.externalIssue.link"
+          target="_blank"
+          >{{ incidentRow.incident.externalIssue.id }}</a
+        >
+      </td>
+      <td>{{ incidentRow.incident.reporter || "-" }}</td>
+      <td>{{ incidentRow.incident.assignee || "-" }}</td>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="loadingbody">
+    @for (row of Array(10); track row) {
+    <tr>
+      @for (col of Array(6); track col) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="9" class="py-4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

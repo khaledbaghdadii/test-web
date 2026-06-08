@@ -1,0 +1,18 @@
+<p-button
+  data-testid="create-configuration-impact-button"
+  type="submit"
+  [label]="buttonLabel"
+  severity="secondary"
+  (click)="onConfigurationImpactCreationStarted()"
+  (keydown)="onConfigurationImpactCreationStarted()"
+></p-button>
+<mxevolve-create-configuration-impact-modal
+  mxevolveAppendToBody
+  [projectId]="projectId"
+  [isVisible]="isCreateModalVisible"
+  [submitCreationButtonLabel]="submitCreationButtonLabel"
+  (configurationImpactCreated)="onConfigurationImpactCreated($event)"
+  (createConfigurationImpactCancelled)="
+    onConfigurationImpactCreationCancelled()
+  "
+></mxevolve-create-configuration-impact-modal>

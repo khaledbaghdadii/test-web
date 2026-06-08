@@ -1,0 +1,85 @@
+<div class="conflict-resolution-workspace h-full flex flex-col gap-2">
+  @if (viewState() === "error") {
+  <p-message
+    class="w-full"
+    severity="error"
+    data-testid="conflict-resolution-workspace-error"
+  >
+    {{ stateErrorMessage()! }}
+  </p-message>
+  } @else if (viewState() === "no-rebase") {
+  <p-message
+    class="w-full"
+    severity="info"
+    data-testid="conflict-resolution-workspace-none"
+  >
+    No rebase is currently in progress for this repository.
+  </p-message>
+  } @else {
+  <div class="relative flex-1 min-h-0 flex flex-col gap-2">
+    @if (viewState() === "ready") {
+    <div
+      class="flex-1 min-h-0 flex flex-col gap-2"
+      [class.invisible]="showSkeleton()"
+    >
+      <p-splitter
+        [panelSizes]="workspacePanelSizes"
+        class="flex-1 min-h-0"
+        layout="horizontal"
+      >
+        <ng-template #panel>
+          <div class="h-full min-h-0 overflow-auto p-2">
+            <mxevolve-conflict-file-tree-view
+              [projectId]="projectId()"
+              [remoteRepositoryId]="remoteClonedRepositoryId()"
+              [reloadToken]="treeReloadToken()"
+              [showLoadingIndicator]="false"
+              (loaded)="onTreeLoaded()"
+              (fileSelected)="onFileSelected($event)"
+            />
+          </div>
+        </ng-template>
+
+        <ng-template #panel>
+          <div class="h-full min-h-0 p-2">
+            @if (selectedFile(); as file) {
+            <mxevolve-file-conflict-resolver
+              [projectId]="projectId()"
+              [remoteClonedRepositoryId]="remoteClonedRepositoryId()"
+              [filePath]="file.filePath"
+              [gitFileStatusCode]="file.gitFileStatusCode"
+              (resolved)="onFileResolved()"
+            />
+            } @else {
+            <div
+              class="h-full flex items-center justify-center text-color-secondary text-sm"
+              data-testid="conflict-resolution-workspace-empty-selection"
+            >
+              {{ emptySelectionMessage() }}
+            </div>
+            }
+          </div>
+        </ng-template>
+      </p-splitter>
+
+      <div
+        class="flex items-center justify-center gap-2 py-2 border-1 border-round surface-border surface-ground"
+      >
+        <p-button
+          label="Apply Fixes"
+          icon="pi pi-check"
+          [disabled]="applyFixesDisabled()"
+          [loading]="isApplyingFixes()"
+          (onClick)="applyFixes()"
+          data-testid="conflict-resolution-workspace-apply-fixes"
+        />
+      </div>
+    </div>
+    } @if (showSkeleton()) {
+    <div class="absolute inset-0 z-10">
+      <mxevolve-conflict-resolution-workspace-skeleton />
+    </div>
+    }
+  </div>
+  }
+</div>

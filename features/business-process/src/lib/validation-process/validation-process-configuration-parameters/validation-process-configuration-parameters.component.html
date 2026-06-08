@@ -1,0 +1,74 @@
+<mxevolve-definition-input
+  style="display: contents"
+  label="Repository"
+  description="Select the Repository where the configuration is stored"
+  [inputFormControl]="repositoryIdFormControl"
+  inputFormControlName="repositoryId"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowRepositoryId"
+>
+  <mxevolve-business-process-repository-selector
+    [projectId]="projectId"
+    [repositoryIdFormControl]="repositoryIdFormControl"
+    repositoryIdFormControlName="repositoryId"
+  >
+  </mxevolve-business-process-repository-selector>
+</mxevolve-definition-input>
+@if (businessProcessQualityLevelFormControl.enabled) {
+<mxevolve-definition-input
+  style="display: contents"
+  label="Business Process Quality Level"
+  description="Select the business process quality level"
+  [inputFormControl]="businessProcessQualityLevelFormControl"
+  inputFormControlName="businessProcessQualityLevel"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowBusinessProcessQualityLevel"
+>
+  <p-select
+    [attr.aria-describedby]="'businessProcessQualityLevel-help'"
+    [options]="[{ name: 'MQG' }, { name: 'DQG' }]"
+    [showClear]="true"
+    appendTo="body"
+    [formControl]="businessProcessQualityLevelFormControl"
+    placeholder="Select Quality Gate Level"
+    class="w-full"
+    optionLabel="name"
+    optionValue="name"
+    id="businessProcessQualityLevel"
+  ></p-select>
+</mxevolve-definition-input>
+} @if (isMQGQualityLevelSelected$ | async) {
+<mxevolve-validation-process-mqg-parameters
+  style="display: contents"
+  [projectId]="projectId"
+  [repositoryIdFormControl]="repositoryIdFormControl"
+  [createBranchFormControl]="createBranchFormControl"
+  [archivalBranchNameFormControl]="archivalBranchNameFormControl"
+  [parentBranchFormControl]="parentBranchFormControl"
+  [finalProductIdFromControl]="finalProductIdFromControl"
+  [rtpCommitIdFromControl]="rtpCommitIdFromControl"
+  [configCommitIdFromControl]="configCommitIdFromControl"
+  [displayMode]="displayMode"
+  [inputAccessMode]="inputAccessMode"
+  [prefilledInputsToShow]="prefilledInputsToShow"
+>
+</mxevolve-validation-process-mqg-parameters>
+} @if (isDQGQualityLevelSelected$ | async) {
+<mxevolve-validation-process-dqg-parameters
+  style="display: contents"
+  [projectId]="projectId"
+  [repositoryIdFormControl]="repositoryIdFormControl"
+  [createBranchFormControl]="createBranchFormControl"
+  [archivalBranchNameFormControl]="archivalBranchNameFormControl"
+  [parentBranchFormControl]="parentBranchFormControl"
+  [finalProductIdFromControl]="finalProductIdFromControl"
+  [rtpCommitIdFromControl]="rtpCommitIdFromControl"
+  [configCommitIdFromControl]="configCommitIdFromControl"
+  [displayMode]="displayMode"
+  [inputAccessMode]="inputAccessMode"
+  [prefilledInputsToShow]="prefilledInputsToShow"
+>
+</mxevolve-validation-process-dqg-parameters>
+}

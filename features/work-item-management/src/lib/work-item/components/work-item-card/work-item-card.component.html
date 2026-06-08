@@ -1,0 +1,171 @@
+<p-card>
+  <ng-template pTemplate="content">
+    <div class="flex flex-col h-full">
+      <div class="flex mb-2">
+        <div>
+          @switch (workItem.workItemPriority) { @case ('LOW') {
+          <p-tag severity="success">
+            <i class="pi pi-flag-fill font-bold"></i>
+            <span class="font-bold">{{ workItem.workItemPriority }}</span>
+          </p-tag>
+          } @case ('MEDIUM') {
+          <p-tag severity="warn">
+            <i class="pi pi-flag-fill font-bold"></i>
+            <span class="font-bold">{{ workItem.workItemPriority }}</span>
+          </p-tag>
+          } @case ('HIGH') {
+          <p-tag severity="danger">
+            <i class="pi pi-flag-fill font-bold"></i>
+            <span class="font-bold">{{ workItem.workItemPriority }}</span>
+          </p-tag>
+          } }
+        </div>
+        <mxevolve-work-item-category-icon
+          class="ml-2 flex"
+          [workItem]="workItem"
+        >
+        </mxevolve-work-item-category-icon>
+        <p-button
+          *showElementIfAuthorized="{
+            action: 'redirect',
+            attributes: {
+              workItem
+            },
+            package: 'work_item_management',
+            resource: 'work_item',
+            projectId: workItem.projectId
+          }"
+          class="ml-auto"
+          size="small"
+          data-testid="id-clear-btn"
+          (onClick)="onRedirect()"
+          severity="secondary"
+          icon="pi pi-arrow-right"
+        ></p-button>
+      </div>
+
+      <div
+        class="bg-gray-100 dark:bg-[#3B82F629] p-2 rounded flex-1 mb-2 break-words"
+      >
+        <mxevolve-show-more-less-text
+          class="text-lg font-semibold"
+          [maxLength]="30"
+          [text]="workItem.name"
+        ></mxevolve-show-more-less-text>
+        <div
+          class="mt-1 mb-1"
+          mxevolveCopyable
+          [toCopy]="workItem.objectId ?? ''"
+        >
+          {{ workItem.objectId }}
+        </div>
+        <div class="mb-1 flex items-center">
+          <i class="pi pi-clipboard mr-2"></i>
+          <span>{{ workItem.projectName }}</span>
+        </div>
+        <div class="flex items-baseline mt-1">
+          <i class="pi pi-folder mr-2"></i>
+          <span
+            class="truncate"
+            tooltipPosition="top"
+            [pTooltip]="
+              workItem.businessProcesses[0]?.name ??
+              workItem.businessProcesses[0]?.id
+            "
+            >{{
+              workItem.businessProcesses[0]?.name ??
+                workItem.businessProcesses[0]?.id
+            }}</span
+          >
+        </div>
+      </div>
+
+      <div class="flex-shrink-0">
+        <div class="flex items-center mb-2 min-w-0">
+          <p-avatar class="mr-2 flex-shrink-0" icon="pi pi-user"></p-avatar>
+          @if (!isEditingAssignee()) {
+          <div
+            class="text-sm flex-1 min-w-0 truncate"
+            [ngClass]="{ italic: !workItem.assignee }"
+          >
+            {{ workItem.assignee || "No assignee" }}
+          </div>
+          <p-button
+            *showElementIfAuthorized="{
+              action: 'update_assignee',
+              attributes: {
+                workItem
+              },
+              package: 'work_item_management',
+              resource: 'work_item',
+              projectId: workItem.projectId
+            }"
+            class="ml-2 flex-shrink-0"
+            size="small"
+            [text]="true"
+            icon="pi pi-pencil"
+            (onClick)="startEditingAssignee()"
+            [disabled]="isEditingAssignee()"
+            data-testid="edit-assignee-btn"
+          ></p-button>
+          } @else {
+          <div class="flex-1 flex items-center gap-2 min-w-0 overflow-hidden">
+            <mxevolve-work-item-assignee-autocomplete
+              class="flex-1 min-w-0 max-w-full"
+              [workItem]="workItem"
+              [(assignee)]="editedAssignee"
+            ></mxevolve-work-item-assignee-autocomplete>
+            <p-button
+              class="flex-shrink-0"
+              size="small"
+              [text]="true"
+              icon="pi pi-check"
+              severity="success"
+              (onClick)="saveAssignee()"
+              [loading]="isSavingAssignee()"
+              data-testid="save-assignee-btn"
+            ></p-button>
+            <p-button
+              class="flex-shrink-0"
+              size="small"
+              [text]="true"
+              icon="pi pi-times"
+              severity="danger"
+              (onClick)="cancelEditingAssignee()"
+              [disabled]="isSavingAssignee()"
+              data-testid="cancel-assignee-btn"
+            ></p-button>
+          </div>
+          }
+        </div>
+        @if (canEditDueDate() | async) {
+        <button
+          data-testid="open-due-date-picker-button"
+          class="flex items-center mb-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 w-full"
+          (click)="openDueDatePicker()"
+        >
+          <p-avatar class="mr-2" icon="pi pi-calendar"></p-avatar>
+          <div class="text-sm">{{ (workItem.dueDate | date) || "-" }}</div>
+        </button>
+        <mxevolve-due-date-picker
+          [projectId]="workItem.projectId"
+          [workItemId]="workItem.id"
+          [currentDueDate]="workItem.dueDate"
+          (dueDateUpdated)="onDueDateUpdated($event)"
+        ></mxevolve-due-date-picker>
+        } @else {
+        <div class="flex items-center mb-2">
+          <p-avatar class="mr-2" icon="pi pi-calendar"></p-avatar>
+          <div class="text-sm">{{ (workItem.dueDate | date) || "-" }}</div>
+        </div>
+        }
+        <div>
+          <div class="text-sm mb-1">Elapsed Time</div>
+          <p-progress-bar class="h-2" [value]="getElapsedTimePercentage()">
+            <ng-template #content let-value></ng-template>
+          </p-progress-bar>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</p-card>

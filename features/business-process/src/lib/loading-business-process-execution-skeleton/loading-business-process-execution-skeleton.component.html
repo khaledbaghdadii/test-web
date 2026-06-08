@@ -1,0 +1,28 @@
+<div class="flex flex-col gap-4">
+  <mxevolve-card-container>
+    <mxflow-header-title>
+      <div class="flex items-center gap-2">
+        Business Process Execution:
+        <div class="w-40">
+          <p-skeleton></p-skeleton>
+        </div>
+      </div>
+
+      <div right-content class="w-20 h-fit">
+        <p-skeleton></p-skeleton>
+      </div>
+    </mxflow-header-title>
+
+    <mxflow-status-bar
+      [isLoading]="true"
+      [numberOfStages]="numberOfStages"
+    ></mxflow-status-bar>
+  </mxevolve-card-container>
+
+  <mxevolve-card-container>
+    <div class="flex flex-col gap-4">
+      <p-skeleton class="w-40"></p-skeleton>
+      <p-skeleton height="150px"></p-skeleton>
+    </div>
+  </mxevolve-card-container>
+</div>

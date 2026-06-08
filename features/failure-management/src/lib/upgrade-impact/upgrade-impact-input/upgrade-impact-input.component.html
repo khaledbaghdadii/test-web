@@ -1,0 +1,58 @@
+<div class="">
+  <p-inputgroup>
+    <input
+      class="w-full"
+      type="text"
+      pInputText
+      placeholder="Select an Upgrade Impact"
+      [disabled]="isDisabled"
+      [value]="selectedUpgradeImpact?.externalIssue?.id"
+      readonly
+    />
+    <p-inputgroup-addon>
+      <p-button
+        [attr.data-testid]="'browse-upgrade-impacts-button'"
+        (click)="showUpgradeImpactModal()"
+        (keydown)="showUpgradeImpactModal()"
+        pTooltip="Browse upgrade impacts"
+        tooltipPosition="top"
+        icon="pi pi-search"
+        [disabled]="isDisabled"
+        severity="secondary"
+      ></p-button>
+    </p-inputgroup-addon>
+    <p-inputgroup-addon>
+      <p-button
+        [attr.data-testid]="'clear-upgrade-impact-button'"
+        (onClick)="clearSelectedUpgradeImpact()"
+        pTooltip="Clear upgrade impact"
+        tooltipPosition="top"
+        icon="pi pi-times"
+        [disabled]="isDisabled"
+        severity="secondary"
+      ></p-button>
+    </p-inputgroup-addon>
+  </p-inputgroup>
+</div>
+<p class="text-sm italic text-gray-500 mt-4">
+  Data will be inherited from the selected Upgrade Impact
+</p>
+@if (selectedUpgradeImpactId) {
+<span>
+  <p-panel [toggleable]="true" legend="Inherited Upgrade Impact Details">
+    <mxevolve-upgrade-impact-details
+      (errorMessage)="handleErrorMessage($event)"
+      [upgradeImpactId]="selectedUpgradeImpactId"
+      (upgradeImpact)="handleSetSelectedUpgradeImpact($event)"
+    ></mxevolve-upgrade-impact-details>
+  </p-panel>
+</span>
+}
+<mxevolve-upgrade-impact-selection-modal
+  [(isVisible)]="isUpgradeImpactModalVisible"
+  [selectedUpgradeImpactId]="selectedUpgradeImpactId ?? undefined"
+  [validationScope]="validationScope"
+  [initialValidationScope]="initialValidationScope"
+  [warningMessage]="warningMessage"
+  (selectedUpgradeImpactIdChange)="handleSelectedUpgradeImpactChange($event)"
+></mxevolve-upgrade-impact-selection-modal>

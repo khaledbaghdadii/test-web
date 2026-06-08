@@ -1,0 +1,91 @@
+<mxevolve-selected-analysis-objects-listing
+  [selectedAnalysisObjects]="selectedAnalysisObjects()"
+  (analysisObjectRemoved)="removeFailureReasonFromSelection($event)"
+></mxevolve-selected-analysis-objects-listing>
+
+<div class="mb-6">
+  <p-table
+    data-testid="failure-reasons-selection-table"
+    [value]="
+      selectedFailureReasonIdsLoading || isTableLoading
+        ? []
+        : tableRowSelectionState()
+    "
+    [(selection)]="selectedFailureReasons"
+    [loading]="selectedFailureReasonIdsLoading || isTableLoading"
+    [scrollable]="true"
+    [showLoader]="false"
+    scrollHeight="50vh"
+    [tableStyle]="{ 'min-width': '50rem' }"
+    [lazy]="true"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th scope="col" style="width: 10px"></th>
+        <th scope="col">
+          Title
+          <p-columnFilter
+            field="failureReason.title"
+            matchMode="contains"
+            display="menu"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          ></p-columnFilter>
+        </th>
+        <th scope="col" class="w-8/12">
+          Description
+          <p-columnFilter
+            field="failureReason.description"
+            matchMode="contains"
+            display="menu"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          ></p-columnFilter>
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-failureReasonRow>
+      <tr>
+        <td>
+          <p-checkbox
+            [ngModel]="failureReasonRow.checked"
+            [binary]="true"
+            [value]="failureReasonRow"
+            (onChange)="
+              handleSelectionChange($event, failureReasonRow.failureReason)
+            "
+            [attr.data-testid]="failureReasonRow.failureReason.id"
+          />
+        </td>
+        <td>
+          {{ failureReasonRow.failureReason.title }}
+        </td>
+        <td>{{ failureReasonRow.failureReason.description }}</td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="loadingbody">
+      @for (row of Array(3); track row) {
+      <tr>
+        @for (col of Array(3); track col) {
+        <td>
+          <p-skeleton></p-skeleton>
+        </td>
+        }
+      </tr>
+      }
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="9" class="py-4">
+          <mxflow-table-empty-message></mxflow-table-empty-message>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

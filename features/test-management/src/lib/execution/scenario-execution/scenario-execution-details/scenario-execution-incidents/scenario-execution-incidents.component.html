@@ -1,0 +1,16 @@
+<div>
+  <mxflow-header-title>Incidents</mxflow-header-title>
+  <div class="pt-2">
+    <mxevolve-incidents-table
+      [incidents]="linkedIncidents()"
+      [isLoading]="isIncidentTableLoading"
+      (unlinkIncident)="openUnlinkModal($event)"
+    >
+    </mxevolve-incidents-table>
+  </div>
+  <mxevolve-analysis-object-unlink-modal
+    [(isVisible)]="isUnlinkModalVisible"
+    [analysisObjectId]="incidentId"
+    [analysisObjectType]="AnalysisObjectType.INCIDENT"
+  ></mxevolve-analysis-object-unlink-modal>
+</div>

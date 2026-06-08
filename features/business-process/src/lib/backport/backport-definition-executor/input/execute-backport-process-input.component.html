@@ -1,0 +1,131 @@
+@if (isFormInitialized) {
+<form [formGroup]="form">
+  <mxflow-mandatory-field></mxflow-mandatory-field>
+
+  <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+    <mxevolve-definition-input
+      style="display: contents"
+      label="Execution Name"
+      description=""
+      inputFormControlName="nameFormControl"
+      [inputFormControl]="nameFormControl"
+      [displayMode]="DisplayMode.MODAL"
+      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    >
+      <input
+        pInputText
+        class="w-full"
+        placeholder="Enter an on demand backport process execution name"
+        [formControl]="nameFormControl"
+        id="onDemandBackportProcessExecutionNameInput"
+      />
+    </mxevolve-definition-input>
+  </div>
+
+  <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+    <mxevolve-definition-input
+      style="display: contents"
+      label="Pull Request Id"
+      description="Enter the 4‑digit pull request ID. This ID appears in the pull‑request URL and in the merge‑request list (e.g., 4402)."
+      inputFormControlName="pullRequestIdFormControl"
+      [inputFormControl]="pullRequestIdFormControl"
+      [displayMode]="DisplayMode.MODAL"
+      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    >
+      <input
+        pInputText
+        class="w-full"
+        placeholder="Enter the pull request id"
+        [formControl]="pullRequestIdFormControl"
+        id="backportProcessPullRequestIdInput"
+      />
+    </mxevolve-definition-input>
+  </div>
+
+  <mxevolve-definition-input-group
+    label="User Story IDs"
+    [formControls]="userStoriesFormControls"
+    [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    [forceShow]="true"
+  >
+    <div class="grid grid-cols-12 gap-8 gap-y-4">
+      <mxevolve-definition-input
+        style="display: contents"
+        description="Enter the IDs of the stories you will be working on"
+        inputFormControlName="userStoryIdsFormControl"
+        [inputFormControl]="userStoryIdsFormControl"
+        [displayMode]="DisplayMode.MODAL"
+        [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+        [forceShow]="true"
+      >
+        <mxflow-user-story-input
+          ngDefaultControl
+          [formControl]="userStoryIdsFormControl"
+          [requiredInput]="true"
+          [shouldValidate]="false"
+          [projectId]="projectId"
+        ></mxflow-user-story-input>
+      </mxevolve-definition-input>
+    </div>
+  </mxevolve-definition-input-group>
+
+  <div class="flex gap-8 justify-between my-4">
+    <mxevolve-definition-input
+      class="flex-1"
+      label="Merge Request Title"
+      description=""
+      inputFormControlName="pullRequestTitleFormControl"
+      [inputFormControl]="pullRequestTitleFormControl"
+      [displayMode]="DisplayMode.MODAL"
+      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    >
+      <input
+        pInputText
+        class="w-full"
+        placeholder="Enter the merge request title"
+        [formControl]="pullRequestTitleFormControl"
+        id="pullRequestTitleInput"
+      />
+    </mxevolve-definition-input>
+
+    <mxevolve-definition-input
+      class="flex-1"
+      label="Reviewers"
+      description="Enter the names of the reviewers that you wish to review your
+                changes"
+      inputFormControlName="pullRequestReviewersFormControl"
+      [inputFormControl]="pullRequestReviewersFormControl"
+      [displayMode]="DisplayMode.MODAL"
+      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    >
+      <mxevolve-autocomplete-reviewers
+        [projectId]="projectId"
+        [reviewersFormControl]="pullRequestReviewersFormControl"
+      ></mxevolve-autocomplete-reviewers>
+    </mxevolve-definition-input>
+  </div>
+
+  <mxevolve-definition-input-group
+    label="Notifications"
+    [formControls]="[notificationsRecipientsFormControl]"
+    [inputAccessMode]="InputAccessMode.ACCESS_EMPTY_OPTIONAL_INPUTS"
+  >
+    <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+      <mxevolve-definition-input
+        style="display: contents"
+        label="Expiry Date Notification Recipients"
+        description="Select the users who will receive email notifications as the business process approaches its expiry date"
+        [inputFormControl]="notificationsRecipientsFormControl"
+        inputFormControlName="notificationsRecipients"
+        [displayMode]="DisplayMode.MODAL"
+        [inputAccessMode]="InputAccessMode.ACCESS_EMPTY_OPTIONAL_INPUTS"
+      >
+        <mxevolve-notifications-recipients-input
+          [projectId]="projectId"
+          [formControl]="notificationsRecipientsFormControl"
+        ></mxevolve-notifications-recipients-input>
+      </mxevolve-definition-input>
+    </div>
+  </mxevolve-definition-input-group>
+</form>
+}

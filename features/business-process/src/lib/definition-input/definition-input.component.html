@@ -1,0 +1,40 @@
+@if (shouldShow) {
+<div
+  [ngClass]="{
+    'col-span-6': displayMode === DisplayMode.FULL_PAGE,
+    'col-span-12': displayMode === DisplayMode.MODAL
+  }"
+>
+  <div class="flex flex-col gap-2">
+    @if (label) {
+    <label
+      class="flex flex-row gap-2"
+      [for]="inputFormControlName"
+      [class.required]="inputFormControl.hasValidator(Validators.required)"
+    >
+      {{ label }}
+      @if (tooltip) {
+      <i
+        class="pi pi-info-circle icon-align"
+        [pTooltip]="tooltip"
+        tooltipPosition="bottom"
+      ></i>
+      }
+    </label>
+    }
+    <ng-content></ng-content>
+    @if (inputFormControl.valid || (showValidationErrors &&
+    !inputFormControl.dirty) || inputFormControl.pending) {
+    <small
+      [id]="inputFormControlName + '-help'"
+      class="italic text-gray-500 text-sm text-wrap"
+      >{{ description }}</small
+    >
+    } @else if(showValidationErrors) {
+    <small class="text-sm text-red-500">{{
+      inputFormControl | definitionInputError
+    }}</small>
+    }
+  </div>
+</div>
+}

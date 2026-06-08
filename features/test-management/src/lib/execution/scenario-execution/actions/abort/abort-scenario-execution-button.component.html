@@ -1,0 +1,18 @@
+<span>
+  <p-toast></p-toast>
+  <p-confirmpopup></p-confirmpopup>
+  <p-button
+    [attr.data-testid]="'abort-button'"
+    [pTooltip]="'Abort'"
+    tooltipPosition="left"
+    [loading]="loading"
+    severity="danger"
+    styleClass="text-red-500"
+    [text]="true"
+    icon="pi pi-power-off"
+    class="scenario-repush-button"
+    (keydown)="handleAbortClicked($event)"
+    (click)="handleAbortClicked($event)"
+    [disabled]="scenarioExecutionStatus | disableAbort"
+  ></p-button>
+</span>

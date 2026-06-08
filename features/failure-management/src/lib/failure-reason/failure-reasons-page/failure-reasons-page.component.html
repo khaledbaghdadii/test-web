@@ -1,0 +1,27 @@
+<mxevolve-card-container>
+  <mxflow-header-title>
+    Failure Reasons
+    <div right-content>
+      <p-button
+        (click)="openCreateFailureReasonModal()"
+        label="Add a Reason of Failure"
+      ></p-button>
+      <mxevolve-create-failure-reason-modal
+        [isCreateFailureReasonModalShown]="isCreateFailureReasonModalShown"
+        [isLoading]="isCreateFailureReasonLoading"
+        (failureReasonCreationSubmitted)="
+          handleFailureReasonCreationSubmitted($event)
+        "
+        (failureReasonCreationCancelled)="
+          handleFailureReasonCreationCancelled()
+        "
+      ></mxevolve-create-failure-reason-modal>
+    </div>
+  </mxflow-header-title>
+
+  <mxevolve-failure-reasons-table
+    [isLoading]="isLoading"
+    [failureReasons]="failureReasonsTableData"
+    (switchEnabledValue)="switchEnabledValue($event)"
+  ></mxevolve-failure-reasons-table>
+</mxevolve-card-container>

@@ -1,0 +1,380 @@
+{
+  "consumer": {
+    "name": "web-environment"
+  },
+  "interactions": [
+    {
+      "description": "a request to fetch environment that does not exist",
+      "providerState": "Environment does not exist",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId"
+      },
+      "response": {
+        "status": 404
+      }
+    },
+    {
+      "description": "a request to fetch environment by project and environment id",
+      "providerState": "Environment exists",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId"
+      },
+      "response": {
+        "body": {
+          "bundles": [
+            {
+              "branch": "iloveorange",
+              "id": "iloveorange",
+              "version": "iloveorange"
+            }
+          ],
+          "configurationIdentifier": {
+            "branch": "iloveorange",
+            "revision": "iloveorange"
+          },
+          "createdOn": "2015-08-06T16:53:10.123+01:00",
+          "databases": [
+            {
+              "mxDbTypes": [
+                "iloveorange"
+              ],
+              "name": "iloveorange"
+            }
+          ],
+          "id": "iloveorange",
+          "outputsDirectoryUri": "iloveorange",
+          "projectId": "iloveorange",
+          "status": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.bundles": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.bundles[*].branch": {
+            "match": "type"
+          },
+          "$.body.bundles[*].id": {
+            "match": "type"
+          },
+          "$.body.bundles[*].version": {
+            "match": "type"
+          },
+          "$.body.configurationIdentifier.branch": {
+            "match": "type"
+          },
+          "$.body.configurationIdentifier.revision": {
+            "match": "type"
+          },
+          "$.body.createdOn": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body.databases": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.databases[*].mxDbTypes": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.databases[*].mxDbTypes[*]": {
+            "match": "type"
+          },
+          "$.body.databases[*].name": {
+            "match": "type"
+          },
+          "$.body.id": {
+            "match": "type"
+          },
+          "$.body.outputsDirectoryUri": {
+            "match": "type"
+          },
+          "$.body.projectId": {
+            "match": "type"
+          },
+          "$.body.status": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to GET environment database editor",
+      "providerState": "environment database editor can be fetched",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/databases/DATABASE_NAME/editor"
+      },
+      "response": {
+        "headers": {
+          "Location": "iloveorange"
+        },
+        "matchingRules": {
+          "$.header.Location": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to GET environment database editor fails",
+      "providerState": "environment database editor can not be fetched",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/databases/DATABASE_NAME/editor"
+      },
+      "response": {
+        "status": 500
+      }
+    },
+    {
+      "description": "a request to fetch management requests by project and environment id",
+      "providerState": "environment requests can be fetched",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/requests"
+      },
+      "response": {
+        "body": [
+          {
+            "correlationId": "iloveorange",
+            "createdOn": "2015-08-06T16:53:10.123+01:00",
+            "endedOn": "2015-08-06T16:53:10.123+01:00",
+            "environmentId": "iloveorange",
+            "id": "iloveorange",
+            "result": {
+              "message": "iloveorange",
+              "status": "iloveorange"
+            },
+            "startedOn": "2015-08-06T16:53:10.123+01:00",
+            "status": "iloveorange",
+            "statusMessage": "iloveorange",
+            "type": "iloveorange"
+          }
+        ],
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].correlationId": {
+            "match": "type"
+          },
+          "$.body[*].createdOn": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body[*].endedOn": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body[*].environmentId": {
+            "match": "type"
+          },
+          "$.body[*].id": {
+            "match": "type"
+          },
+          "$.body[*].result.message": {
+            "match": "type"
+          },
+          "$.body[*].result.status": {
+            "match": "type"
+          },
+          "$.body[*].startedOn": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body[*].status": {
+            "match": "type"
+          },
+          "$.body[*].statusMessage": {
+            "match": "type"
+          },
+          "$.body[*].type": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch management requests fails",
+      "providerState": "environment requests can not be fetched",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/requests"
+      },
+      "response": {
+        "status": 500
+      }
+    },
+    {
+      "description": "a request to fetch user request status",
+      "providerState": "environment requests exists",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/user-requests",
+        "query": "requestIds=requestId"
+      },
+      "response": {
+        "body": [
+          {
+            "completedAt": "2015-08-06T16:53:10.123+01:00",
+            "environmentId": "iloveorange",
+            "id": "iloveorange"
+          }
+        ],
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].completedAt": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body[*].environmentId": {
+            "match": "type"
+          },
+          "$.body[*].id": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch environments by ids",
+      "providerState": "environments exist",
+      "request": {
+        "method": "GET",
+        "path": "/environments",
+        "query": "environmentId=environmentId&page=0&size=1&sort=createdOn%2casc"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "bundles": [
+                {
+                  "branch": "iloveorange",
+                  "id": "iloveorange",
+                  "version": "iloveorange"
+                }
+              ],
+              "configurationIdentifier": {
+                "branch": "iloveorange",
+                "revision": "iloveorange"
+              },
+              "createdOn": "2015-08-06T16:53:10.123+01:00",
+              "databases": [
+                {
+                  "mxDbTypes": [
+                    "iloveorange"
+                  ],
+                  "name": "iloveorange"
+                }
+              ],
+              "id": "iloveorange",
+              "outputsDirectoryUri": "iloveorange",
+              "projectId": "iloveorange",
+              "status": "iloveorange"
+            }
+          ],
+          "totalElements": 13
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.content": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].bundles": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].bundles[*].branch": {
+            "match": "type"
+          },
+          "$.body.content[*].bundles[*].id": {
+            "match": "type"
+          },
+          "$.body.content[*].bundles[*].version": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationIdentifier.branch": {
+            "match": "type"
+          },
+          "$.body.content[*].configurationIdentifier.revision": {
+            "match": "type"
+          },
+          "$.body.content[*].createdOn": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body.content[*].databases": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].databases[*].mxDbTypes": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].databases[*].mxDbTypes[*]": {
+            "match": "type"
+          },
+          "$.body.content[*].databases[*].name": {
+            "match": "type"
+          },
+          "$.body.content[*].id": {
+            "match": "type"
+          },
+          "$.body.content[*].outputsDirectoryUri": {
+            "match": "type"
+          },
+          "$.body.content[*].projectId": {
+            "match": "type"
+          },
+          "$.body.content[*].status": {
+            "match": "type"
+          },
+          "$.body.totalElements": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "12.5.2"
+    },
+    "pactRust": {
+      "ffi": "0.4.20",
+      "models": "1.2.0"
+    },
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  },
+  "provider": {
+    "name": "mxenv-management"
+  }
+}

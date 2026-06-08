@@ -1,0 +1,458 @@
+<p-dialog
+  header="Edit Binary Impact"
+  [(visible)]="isModalShown"
+  [modal]="true"
+  [style]="{ width: '50vw' }"
+  (onHide)="onCancel()"
+>
+  <form [formGroup]="editBinaryImpactForm" (ngSubmit)="onFormSubmission()">
+    <div class="grid grid-cols-12 gap-4">
+      <div class="gap-2 col-span-10 col-start-2 pt-2">
+        <mxflow-mandatory-field></mxflow-mandatory-field>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="title" class="block"
+          >Title <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton styleClass="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <input
+          id="title"
+          type="text"
+          pInputText
+          placeholder="Enter a Title"
+          formControlName="title"
+        />
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls.title
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="upgradeImpactId" class="block">Upgrade Impact</label>
+        @if (isFormLoading) {
+        <p-skeleton styleClass="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-upgrade-impact-input
+          id="upgradeImpactId"
+          formControlName="upgradeImpactId"
+          [warningMessage]="warningMessage"
+          (errorMessage)="handleErrorOccurred($event)"
+        ></mxevolve-upgrade-impact-input>
+        }
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="mxVersion" class="block"
+          >MX Version <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton styleClass="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <input
+          id="mxVersion"
+          type="text"
+          pInputText
+          placeholder="Enter an MX Version"
+          formControlName="mxVersion"
+        />
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls.mxVersion
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="description" class="block"
+          >Client Context Description <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton styleClass="mb-2 h-80"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-quill-editor
+          id="description"
+          [upload]="upload"
+          (attachmentUploaded)="appendAttachment($event)"
+          formControlName="description"
+        ></mxevolve-quill-editor>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls.description
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="identification-pattern-input" class="block"
+          >Identification Pattern</label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <input
+          data-testid="identification-pattern-input"
+          type="text"
+          pInputText
+          placeholder="Enter an Identification Pattern"
+          formControlName="identificationPattern"
+        />
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['identificationPattern']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="propagation-pattern-input" class="block"
+          >Propagation Pattern</label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <input
+          data-testid="propagation-pattern-input"
+          type="text"
+          pInputText
+          placeholder="Enter a Propagation Pattern"
+          formControlName="propagationPattern"
+        />
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['propagationPattern']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="propagation-query-input" class="block"
+          >Propagation Query</label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <input
+          data-testid="propagation-query-input"
+          type="text"
+          pInputText
+          placeholder="Enter a Propagation Query"
+          formControlName="propagationQuery"
+        />
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['propagationQuery']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="resolution-type-input" class="block"
+          >Resolution Type <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-client-impact-note-single-select-dropdown
+          data-testid="resolution-type-input"
+          [formControlName]="'resolutionType'"
+          [fieldType]="ClientImpactNoteFieldType.RESOLUTION_TYPE"
+          [invalid]="
+            editBinaryImpactForm.controls['resolutionType'].invalid &&
+            editBinaryImpactForm.controls['resolutionType'].dirty
+          "
+          placeholder="Select a Resolution Type"
+        ></mxevolve-client-impact-note-single-select-dropdown>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['resolutionType']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="configuration-design-input" class="block"
+          >Configuration Design</label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <input
+          data-testid="configuration-design-input"
+          type="text"
+          pInputText
+          placeholder="Enter a Configuration Design"
+          formControlName="configurationDesign"
+        />
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['configurationDesign']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="magnitude-input" class="block"
+          >Magnitude / Direction of Impact</label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <input
+          data-testid="magnitude-input"
+          type="text"
+          pInputText
+          placeholder="Enter a Magnitude / Direction of Impact"
+          formControlName="magnitude"
+        />
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['magnitude']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="impacted-outputs-input" class="block"
+          >Impacted Outputs</label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-client-impact-note-single-select-dropdown
+          data-testid="impacted-outputs-input"
+          [formControlName]="'impactedOutputs'"
+          [fieldType]="ClientImpactNoteFieldType.IMPACTED_OUTPUTS"
+          [invalid]="
+            editBinaryImpactForm.controls['impactedOutputs'].invalid &&
+            editBinaryImpactForm.controls['impactedOutputs'].dirty
+          "
+          placeholder="Select an Impacted Outputs"
+        ></mxevolve-client-impact-note-single-select-dropdown>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['impactedOutputs']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col mb-6">
+        <mxevolve-attachment-uploader
+          [isLoading]="isFormLoading"
+          (uploadFiles)="uploadFiles($event)"
+          [isUploadingAttachment]="uploadingAttachmentsCount[0] !== 0"
+          [attachments]="attachments"
+          (attachmentsChange)="updateAttachments($event)"
+        ></mxevolve-attachment-uploader>
+      </div>
+
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="incident-input" class="block">Incident</label>
+        <mxevolve-incident-input
+          id="incidentId"
+          formControlName="incidentId"
+        ></mxevolve-incident-input>
+      </div>
+
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="cbpmL1L2L3-input" class="block"
+          >CBPM L1/L2/L3 <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton styleClass="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-client-impact-note-multiselect-dropdown
+          data-testid="cbpmL1L2L3-input"
+          [formControlName]="'cbpmL1L2L3'"
+          [fieldType]="ClientImpactNoteFieldType.CBPM_L1_L2_L3"
+          [invalid]="
+            editBinaryImpactForm.controls['cbpmL1L2L3'].invalid &&
+            editBinaryImpactForm.controls['cbpmL1L2L3'].dirty
+          "
+          placeholder="Select a CBPM L1/L2/L3"
+        ></mxevolve-client-impact-note-multiselect-dropdown>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['cbpmL1L2L3']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="cbpmL2Scope-input" class="block"
+          >CBPM L2/Scope <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton styleClass="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-client-impact-note-multiselect-dropdown
+          data-testid="cbpmL2Scope-input"
+          [formControlName]="'cbpmL2Scope'"
+          [fieldType]="ClientImpactNoteFieldType.CBPM_L2_SCOPE"
+          [invalid]="
+            editBinaryImpactForm.controls['cbpmL2Scope'].invalid &&
+            editBinaryImpactForm.controls['cbpmL2Scope'].dirty
+          "
+          placeholder="Select a CBPM L2/Scope"
+        ></mxevolve-client-impact-note-multiselect-dropdown>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['cbpmL2Scope']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="cbpmL3L4-input" class="block">CBPM L3/L4</label>
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-client-impact-note-multiselect-dropdown
+          data-testid="cbpmL3L4-input"
+          [formControlName]="'cbpmL3L4'"
+          [fieldType]="ClientImpactNoteFieldType.CBPM_L3_L4"
+          [invalid]="
+            editBinaryImpactForm.controls['cbpmL3L4'].invalid &&
+            editBinaryImpactForm.controls['cbpmL3L4'].dirty
+          "
+          placeholder="Select a CBPM L3/L4"
+        ></mxevolve-client-impact-note-multiselect-dropdown>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['cbpmL3L4']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="stream-input" class="block"
+          >Stream <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-client-impact-note-single-select-dropdown
+          data-testid="stream-input"
+          [formControlName]="'stream'"
+          [fieldType]="ClientImpactNoteFieldType.STREAM"
+          [invalid]="
+            editBinaryImpactForm.controls['stream'].invalid &&
+            editBinaryImpactForm.controls['stream'].dirty
+          "
+          placeholder="Select a Stream"
+        ></mxevolve-client-impact-note-single-select-dropdown>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['stream']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="resolution-type-input" class="block"
+          >Source Type <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-client-impact-note-single-select-dropdown
+          data-testid="source-type-input"
+          [formControlName]="'sourceType'"
+          [fieldType]="ClientImpactNoteFieldType.SOURCE_TYPE"
+          [invalid]="
+            editBinaryImpactForm.controls['sourceType'].invalid &&
+            editBinaryImpactForm.controls['sourceType'].dirty
+          "
+          placeholder="Select a Source Type"
+        ></mxevolve-client-impact-note-single-select-dropdown>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['sourceType']
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="region-input" class="block"
+          >Region <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton class="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-client-impact-note-single-select-dropdown
+          data-testid="region-input"
+          [formControlName]="'region'"
+          [fieldType]="ClientImpactNoteFieldType.REGION"
+          [invalid]="
+            editBinaryImpactForm.controls['region'].invalid &&
+            editBinaryImpactForm.controls['region'].dirty
+          "
+          placeholder="Select a Region"
+        ></mxevolve-client-impact-note-single-select-dropdown>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls['region']
+          }"
+        ></ng-template>
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <p-button
+        data-testid="submit-button"
+        type="submit"
+        label="Submit"
+        class="pl-4"
+        [disabled]="
+          editBinaryImpactForm.invalid ||
+          !editBinaryImpactForm.dirty ||
+          uploadingAttachmentsCount[0] !== 0
+        "
+        [loading]="isButtonLoading"
+      ></p-button>
+      <p-button
+        label="Cancel"
+        [outlined]="true"
+        (onClick)="onCancel()"
+        class="pl-4"
+      ></p-button>
+    </div>
+  </form>
+</p-dialog>
+
+<ng-template #errorTipTemplate let-control>
+  <div class="input-error h-4">
+    @if (control.invalid && control.dirty) {
+    <div class="flex gap-1 pt-1">
+      @if (control.hasError('maxlength')) {
+      <small class="p-error block"
+        >Maximum length is {{ control.errors?.maxlength.requiredLength }}</small
+      >
+      } @if (control.hasError('required')) {
+      <small class="p-error block">Field is required</small>
+      } @if (control.hasError('whitespace')) {
+      <small class="p-error block">Field cannot be whitespaces</small>
+      }
+    </div>
+    }
+  </div>
+</ng-template>

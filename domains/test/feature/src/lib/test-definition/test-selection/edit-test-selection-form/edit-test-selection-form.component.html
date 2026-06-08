@@ -1,0 +1,86 @@
+<p-dialog
+  header="Update Test Selection Details"
+  [(visible)]="isEditTestSelectionOpen"
+  (onHide)="closeEditTestSelectionModal()"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+>
+  <div class="grid grid-cols-12 gap-4">
+    <div class="col-span-10 col-start-2 flex flex-col gap-4">
+      <mxflow-mandatory-field></mxflow-mandatory-field>
+      <form [formGroup]="form">
+        <div class="grid grid-cols-12 gap-4 formgrid p-fluid">
+          <div class="field mb-6 col-span-12">
+            <label for="name" mxevolveMandatory>Name</label>
+            @if (isLoading) {
+            <p-skeleton styleClass="h-12"> </p-skeleton>
+            } @if (!isLoading) {
+            <input
+              id="name"
+              pInputText
+              fluid
+              type="text"
+              formControlName="name"
+              placeholder="Enter Test Selection Name"
+            />
+            } @if (form.get('name')?.invalid && form.get('name')?.dirty) {
+            <div class="flex gap-1 mt-1">
+              <small class="p-error block text-red-500"
+                >Field is required</small
+              >
+            </div>
+            }
+          </div>
+          <div class="field mb-6 col-span-12">
+            <label for="path" mxevolveMandatory>Path</label>
+            @if (isLoading) {
+            <p-skeleton styleClass="h-12"></p-skeleton>
+            } @if (!isLoading && testDefinition) { @if (useTestSequenceSelector)
+            {
+            <mxevolve-test-selection-browser-form-input
+              formControlName="path"
+              [projectId]="testDefinition.projectId"
+              [repositoryId]="testDefinition.repoId"
+              [testSequenceName]="testDefinition.name"
+              (click)="onOpenDirectoryPicker()"
+              (keydown)="onOpenDirectoryPicker()"
+              (dialogVisibleChange)="
+                onChangeVisibilityForDirectoryPicker($event)
+              "
+            >
+            </mxevolve-test-selection-browser-form-input>
+            } @else {
+            <mxevolve-test-selection-directory-picker
+              formControlName="path"
+              [basePath]="testDefinition.path"
+              [selectedPath]="''"
+              [repositoryId]="testDefinition.repoId"
+              (click)="onOpenDirectoryPicker()"
+              (keydown)="onOpenDirectoryPicker()"
+              (dialogClosedEvent)="onCloseDirectoryPicker()"
+            >
+            </mxevolve-test-selection-directory-picker>
+            } }
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button
+      [attr.data-testid]="'edit-test-selection-submit-button'"
+      [loading]="isLoading"
+      label="Update"
+      [disabled]="form.invalid || !form.dirty"
+      (click)="onSubmit()"
+      (keydown)="onSubmit()"
+    ></p-button>
+    <p-button
+      [attr.data-testid]="'edit-test-selection-cancel-button'"
+      label="Cancel"
+      class="p-button-outlined"
+      (click)="closeEditTestSelectionModal()"
+      (keydown)="closeEditTestSelectionModal()"
+    ></p-button>
+  </ng-template>
+</p-dialog>

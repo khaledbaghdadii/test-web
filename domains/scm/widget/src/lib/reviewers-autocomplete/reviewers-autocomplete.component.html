@@ -1,0 +1,27 @@
+@if(defaultReviewersLoading) {
+<p-skeleton class="h-12"></p-skeleton>
+} @else {
+<p-autocomplete
+  [suggestions]="listOfReviewerSuggestions"
+  [virtualScroll]="true"
+  [emptyMessage]="isLoadingData() ? 'Loading...' : 'No Results Found'"
+  [minLength]="2"
+  [appendTo]="'body'"
+  [scrollHeight]="'200px'"
+  [virtualScrollItemSize]="virtualScrollItemSize"
+  [formControl]="reviewersFormControl"
+  (completeMethod)="getMatchingReviewers($event)"
+  [optionLabel]="'displayName'"
+  [dataKey]="'name'"
+  [multiple]="true"
+  [showClear]="true"
+  fluid
+></p-autocomplete>
+@if(showReviewersWarningMessage) {
+<div class="mt-2">
+  <mxflow-warning-alert
+    warningMessage="Could not retrieve the default reviewers. You can still enter the reviewers manually and proceed."
+    [closeable]="false"
+  ></mxflow-warning-alert>
+</div>
+} }

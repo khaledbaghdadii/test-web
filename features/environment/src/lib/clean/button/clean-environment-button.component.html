@@ -1,0 +1,18 @@
+<p-button
+  [rounded]="true"
+  [text]="true"
+  ariaLabel="Clean environment"
+  pTooltip="Clean environment"
+  tooltipPosition="top"
+  (onClick)="handleCleanClicked()"
+  [loading]="loading()"
+  icon="pi pi-eraser"
+>
+</p-button>
+
+<p-confirmDialog appendTo="body">
+  <ng-template #footer>
+    <p-button label="Cancel" severity="secondary" (onClick)="rejectClean()" />
+    <p-button label="Confirm" (onClick)="confirmClean()" />
+  </ng-template>
+</p-confirmDialog>

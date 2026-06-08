@@ -1,0 +1,11 @@
+:host .compact-card { --p-card-body-padding: .5rem 1rem; }
+
+:host ::ng-deep .filter-active {
+  .p-select,
+  .p-multiselect,
+  .p-inputtext,
+  p-multiselect > div {
+    border-color: var(--p-primary-color);
+    transition: border-color 0.15s ease;
+  }
+}

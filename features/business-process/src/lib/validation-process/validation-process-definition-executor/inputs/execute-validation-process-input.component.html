@@ -1,0 +1,208 @@
+@if (isFormInitialized) {
+<form [formGroup]="form">
+  <mxflow-mandatory-field></mxflow-mandatory-field>
+
+  <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+    <mxevolve-definition-input
+      style="display: contents"
+      description=""
+      inputFormControlName="officialFormControl"
+      [inputFormControl]="officialFormControl"
+      [displayMode]="DisplayMode.MODAL"
+      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    >
+      <div class="flex flex-row gap-4 mt-2">
+        <div class="flex flex-row gap-1">
+          <p-radioButton
+            inputId="officialValidationExecution"
+            name="officialUnofficialInput"
+            [value]="true"
+            [formControl]="officialFormControl"
+          ></p-radioButton>
+          <label for="officialValidationExecution">Official Execution</label>
+        </div>
+        <div class="flex flex-row gap-1">
+          <p-radioButton
+            inputId="unofficialValidationExecution"
+            name="officialUnofficialInput"
+            [value]="false"
+            [formControl]="officialFormControl"
+          ></p-radioButton>
+          <label for="unofficialValidationExecution"
+            >Unofficial Execution</label
+          >
+        </div>
+      </div>
+    </mxevolve-definition-input>
+
+    <mxevolve-definition-input
+      style="display: contents"
+      label="Execution Name"
+      description=""
+      inputFormControlName="nameFormControl"
+      [inputFormControl]="nameFormControl"
+      [displayMode]="DisplayMode.MODAL"
+      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    >
+      <input
+        pInputText
+        class="w-full"
+        placeholder="Enter a validation process execution name"
+        [formControl]="nameFormControl"
+        id="validationProcessExecutionNameInput"
+      />
+    </mxevolve-definition-input>
+  </div>
+
+  <mxevolve-definition-input-group
+    label="Configuration Parameters"
+    [formControls]="configurationParametersFormControls"
+    [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+  >
+    <mxevolve-validation-process-configuration-parameters
+      class="grid grid-cols-12 gap-x-8 gap-y-4"
+      [projectId]="projectId"
+      [repositoryIdFormControl]="repositoryIdFormControl"
+      [businessProcessQualityLevelFormControl]="
+        businessProcessQualityLevelFormControl
+      "
+      [createBranchFormControl]="createBranchFormControl"
+      [archivalBranchNameFormControl]="archivalBranchNameFormControl"
+      [parentBranchFormControl]="parentBranchFormControl"
+      [finalProductIdFromControl]="finalProductIdFromControl"
+      [rtpCommitIdFromControl]="rtpCommitIdFormControl"
+      [configCommitIdFromControl]="configCommitIdFormControl"
+      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+      [displayMode]="DisplayMode.MODAL"
+    ></mxevolve-validation-process-configuration-parameters>
+  </mxevolve-definition-input-group>
+
+  <mxevolve-definition-input-group
+    label="Tests"
+    [formControls]="testFormControls"
+    [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+  >
+    <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+      <mxevolve-definition-input
+        style="display: contents"
+        label="Quality Gate Execution Test Scenarios"
+        description='Select the collection of test scenarios that you wish to launch in the "Execute Quality Gate" step'
+        [inputFormControl]="testScenarioIdsFormControl"
+        inputFormControlName="testScenarioIds"
+        [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+        [displayMode]="DisplayMode.MODAL"
+      >
+        <mxevolve-business-process-scenario-definition-selector
+          [projectId]="projectId"
+          testScenariosFormControlName="testScenarioIds"
+          [testScenarioFormControl]="testScenarioIdsFormControl"
+        ></mxevolve-business-process-scenario-definition-selector>
+      </mxevolve-definition-input>
+
+      <mxevolve-definition-input
+        style="display: contents"
+        label="Do you want to enable nightly repush?"
+        description="The timing is configured under BP settings accessible by admins"
+        [inputFormControl]="nightlyRepusherEnabledFormControl"
+        inputFormControlName="nightlyRepusherEnabled"
+        [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+        [displayMode]="DisplayMode.MODAL"
+      >
+        <div class="flex flex-row gap-3 mt-2">
+          <div class="flex flex-row gap-1">
+            <p-radioButton
+              inputId="nightlyRepusherEnabledOption"
+              name="nightlyRepusher"
+              [value]="true"
+              [formControl]="nightlyRepusherEnabledFormControl"
+            ></p-radioButton>
+            <label for="nightlyRepusherEnabledOption">Yes</label>
+          </div>
+          <div class="flex flex-row gap-1">
+            <p-radioButton
+              inputId="nightlyRepusherDisabledOption"
+              name="nightlyRepusher"
+              [value]="false"
+              [formControl]="nightlyRepusherEnabledFormControl"
+            ></p-radioButton>
+            <label for="nightlyRepusherDisabledOption">No</label>
+          </div>
+        </div>
+      </mxevolve-definition-input>
+    </div>
+  </mxevolve-definition-input-group>
+
+  @if (showValidationScopeParameters) {
+  <mxevolve-definition-input-group
+    label="Validation Scope Parameters"
+    [formControls]="[validationScopeStartCommitIdFormControl]"
+    [inputAccessMode]="InputAccessMode.ACCESS_ALL_INPUTS"
+  >
+    <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+      <mxevolve-definition-input
+        style="display: contents"
+        description=""
+        [inputFormControl]="validationScopeStartCommitIdFormControl"
+        inputFormControlName="validationScopeStartCommitId"
+        [inputAccessMode]="InputAccessMode.ACCESS_ALL_INPUTS"
+        [displayMode]="DisplayMode.MODAL"
+        label="Please select the start of the validation scope from"
+      >
+        <mxevolve-validation-scope-start-commit-id-input
+          [projectId]="projectId"
+          [parentBranch]="resolvedParentBranch!"
+          [startCommitIdFormControl]="validationScopeStartCommitIdFormControl"
+        ></mxevolve-validation-scope-start-commit-id-input>
+      </mxevolve-definition-input>
+    </div>
+  </mxevolve-definition-input-group>
+  }
+
+  <mxevolve-definition-input-group
+    label="Infrastructure Parameters"
+    [formControls]="infraFormControls"
+    [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+  >
+    <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+      <mxevolve-definition-input
+        style="display: contents"
+        label="Quality Gate Execution Infra Group"
+        description='Select the Infra Group for the test(s) under "Execute Quality Gate" step'
+        [inputFormControl]="qualityGateExecutionInfraGroupFormControl"
+        inputFormControlName="qualityGateExecutionInfraGroupId"
+        [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+        [displayMode]="DisplayMode.MODAL"
+      >
+        <mxevolve-business-process-infra-group-selector
+          [projectId]="projectId"
+          [infraGroupFormControl]="qualityGateExecutionInfraGroupFormControl"
+          infraGroupFormControlName="qualityGateExecutionInfraGroupId"
+        ></mxevolve-business-process-infra-group-selector>
+      </mxevolve-definition-input>
+    </div>
+  </mxevolve-definition-input-group>
+
+  <mxevolve-definition-input-group
+    label="Notifications"
+    [formControls]="[notificationsRecipientsFormControl]"
+    [inputAccessMode]="InputAccessMode.ACCESS_EMPTY_OPTIONAL_INPUTS"
+  >
+    <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+      <mxevolve-definition-input
+        style="display: contents"
+        label="Expiry Date Notification Recipients"
+        description="Select the users who will receive email notifications as the business process approaches its expiry date"
+        [inputFormControl]="notificationsRecipientsFormControl"
+        inputFormControlName="notificationsRecipients"
+        [displayMode]="DisplayMode.MODAL"
+        [inputAccessMode]="InputAccessMode.ACCESS_EMPTY_OPTIONAL_INPUTS"
+      >
+        <mxevolve-notifications-recipients-input
+          [projectId]="projectId"
+          [formControl]="notificationsRecipientsFormControl"
+        ></mxevolve-notifications-recipients-input>
+      </mxevolve-definition-input>
+    </div>
+  </mxevolve-definition-input-group>
+</form>
+}

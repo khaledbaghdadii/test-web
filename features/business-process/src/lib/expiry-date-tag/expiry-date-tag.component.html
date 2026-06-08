@@ -1,0 +1,17 @@
+<div class="flex gap-2">
+  @if (!isExpiryReached) {
+  <p-tag>
+    <div class="flex gap-1 text-sm">
+      <span>Expires on {{ expiryDate | date : "medium" }}</span>
+    </div>
+  </p-tag>
+  @if (daysUntilExpiry <= 7) {
+  <p-tag severity="danger">
+    <div class="flex gap-1 text-sm">
+      <span>
+        {{ expiryMessage }}
+      </span>
+    </div>
+  </p-tag>
+  } }
+</div>

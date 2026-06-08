@@ -1,0 +1,11 @@
+@import 'libs/ui/utils/src/mixins';
+
+p-table {
+  @include table;
+  
+  th,td {
+    min-width: unset;
+  }
+}
+
+

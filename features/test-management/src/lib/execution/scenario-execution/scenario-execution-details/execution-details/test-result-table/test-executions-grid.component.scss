@@ -1,0 +1,14 @@
+:host ::ng-deep .p-splitbutton {
+  width: 100% !important;
+  display: flex !important;
+}
+
+:host ::ng-deep .p-splitbutton-button {
+  flex: 1 1 auto !important;
+  width: auto !important;
+}
+
+:host ::ng-deep .p-splitbutton-menubutton {
+  flex: 0 0 auto !important;
+  width: auto !important;
+}

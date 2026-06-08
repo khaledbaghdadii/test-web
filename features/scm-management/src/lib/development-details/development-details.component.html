@@ -1,0 +1,81 @@
+<div class="grid grid-cols-12 gap-4 grid-nogutter">
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Branch Name
+    </div>
+    <div [attr.data-testid]="'branchName'">
+      <a
+        class="text-blue-500 no-underline"
+        [href]="repositoryUrlWithBranch()"
+        target="_blank"
+      >
+        {{ configurationBranchName() }}
+      </a>
+    </div>
+  </div>
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Branch Creation Date
+    </div>
+    <div class="text-surface-900 dark:text-surface-0">
+      {{ createdAt() ? (createdAt() | date : "medium") : "-" }}
+    </div>
+  </div>
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Parent Branch Name
+    </div>
+    <div [attr.data-testid]="'parentBranchName'">
+      <a
+        class="text-blue-500 no-underline"
+        [href]="repositoryUrlWithParentBranch()"
+        target="_blank"
+      >
+        {{ configurationParentBranch() }}
+      </a>
+    </div>
+  </div>
+  @if (branchStatusMessage() && !developmentDetails()?.deleted) {
+  <div class="col-span-12 p-4">
+    <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+      Branch Status
+    </div>
+    @if (numberOfCommitsBehindMain() === 0) {
+    <div class="flex items-center">
+      <i
+        class="pi pi-check-circle mr-2 text-green-400"
+        style="font-size: 1.2rem"
+      ></i>
+      @if (branchStatusMessage()) {
+      <div
+        class="text-surface-900 dark:text-surface-0"
+        [attr.data-testid]="'branchStatus'"
+      >
+        {{ branchStatusMessage() }}
+      </div>
+      }
+    </div>
+    } @if (numberOfCommitsBehindMain() > 0) {
+    <div>
+      @if (branchStatusMessage()) {
+      <div
+        class="text-surface-900 dark:text-surface-0"
+        [attr.data-testid]="'branchStatus'"
+      >
+        {{ branchStatusMessage() }}
+      </div>
+      }
+      <div class="flex items-center mt-2">
+        <i
+          class="pi pi-exclamation-triangle text-yellow-500"
+          style="font-size: 1.2rem"
+        ></i>
+        <em class="ml-1"
+          >Please proceed by rebasing your branch to include recent changes.</em
+        >
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>

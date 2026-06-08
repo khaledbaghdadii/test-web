@@ -1,0 +1,52 @@
+<p-dialog
+  header="Selected Test Cases"
+  [(visible)]="isVisible"
+  (visibleChange)="isVisibleChange.emit($event)"
+  (onShow)="onOpenModal()"
+  (onHide)="onCloseModal()"
+  [modal]="true"
+  [style]="{ width: '60vw' }"
+>
+  <div class="flex flex-col gap-4 mb-2">
+    <div class="text-md text-gray-500 italic">
+      <p>Remove selection to unlink</p>
+    </div>
+
+    @if (isLinkedToScenarioExecution) {
+    <div class="flex items-center gap-2">
+      <p-checkbox
+        id="scenarioExecutionCheckbox"
+        [binary]="true"
+        [(ngModel)]="isScenarioExecutionSelected"
+      />
+      <label for="scenarioExecutionCheckbox"> Scenario Execution </label>
+    </div>
+    } @if(testCaseExecutionLinks().length > 0) {
+    <mxevolve-test-case-execution-selection-table
+      [isLoading]="testCaseExecutionsLoading()"
+      [testCaseExecutions]="testCaseExecutionsLinkedToAnalysisObject()"
+      [testCaseExecutionsSelection]="testCaseExecutionsLinkedToAnalysisObject()"
+      (testCaseExecutionsSelectionChange)="
+        onTestCaseExecutionsSelectionChange($event)
+      "
+      [selectedStatusFilters]="[]"
+    >
+    </mxevolve-test-case-execution-selection-table>
+    }
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="w-full flex justify-center">
+      <p-button
+        [attr.data-testid]="'unlink-button'"
+        label="Update Links"
+        [loading]="isUpdatingLinksInProgress"
+        [disabled]="
+          isScenarioExecutionSelected &&
+          testCaseExecutionLinksToUnlink.length === 0
+        "
+        (click)="updateAnalysisObjectLinks()"
+        (keydown)="updateAnalysisObjectLinks()"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>

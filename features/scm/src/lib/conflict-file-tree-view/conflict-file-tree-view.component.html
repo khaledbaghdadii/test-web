@@ -1,0 +1,7 @@
+<mxevolve-git-file-tree
+  [files]="files()"
+  [loading]="showLoadingIndicator() && loading()"
+  [openPredicate]="openPredicate"
+  (fileSelected)="onTreeFileSelected($event)"
+  (fileOpenBlocked)="onTreeFileOpenBlocked($event)"
+/>

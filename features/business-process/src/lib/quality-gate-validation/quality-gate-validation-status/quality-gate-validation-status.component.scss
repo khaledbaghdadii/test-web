@@ -1,0 +1,10 @@
+// import global variables css
+@import '../../../../../../ui/utils/src/global-variables.scss';
+
+.passed {
+  color: $mxevolve-success;
+}
+
+.failed {
+  color: $mxevolve-error;
+}

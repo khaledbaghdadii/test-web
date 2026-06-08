@@ -1,0 +1,15 @@
+<ag-grid-angular
+  class="ag-theme-quartz"
+  style="width: 100%"
+  [rowData]="scenarioRuns()"
+  [columnDefs]="columnDefinitions"
+  [defaultColDef]="defaultColumnDefinition"
+  [context]="gridContext"
+  [noRowsOverlayComponent]="noRowsOverlayComponent"
+  [noRowsOverlayComponentParams]="noRowsOverlayComponentParams"
+  [loadingOverlayComponent]="loadingOverlayComponent"
+  [loading]="isLoading()"
+  [rowHeight]="42"
+  (gridReady)="onGridReady($event)"
+  domLayout="autoHeight"
+></ag-grid-angular>

@@ -1,0 +1,56 @@
+<div class="flex flex-col h-full gap-2">
+  <p-splitter
+    [panelSizes]="workspacePanelSizes"
+    class="flex-1 min-h-0"
+    layout="horizontal"
+  >
+    <ng-template #panel>
+      <div class="h-full min-h-0 overflow-auto p-2">
+        <mxevolve-file-management-source-tree-view
+          #sourceTreeRef
+          [projectId]="projectId()"
+          [remoteRepositoryId]="repositoryId()"
+          [repositoryBasePath]="repositoryBasePath()"
+          (fileSelected)="onFileSelected($event)"
+          (entryDeleted)="onTreeEntryDeleted($event)"
+          (sourceTreeRefreshRequested)="onSourceTreeRefreshRequested()"
+        />
+      </div>
+    </ng-template>
+
+    <ng-template #panel>
+      <div class="h-full min-h-0 p-2">
+        @if (selectedFile(); as file) {
+        <mxevolve-file-editor-view
+          class="h-full"
+          [projectId]="projectId()"
+          [repositoryId]="repositoryId()"
+          [filePath]="file.filePath"
+          [reloadToken]="editorReloadToken()"
+          (fileSaved)="onFileSaved()"
+          (fileRestored)="onFileRestored()"
+        />
+        } @else if (!isTreeLoading() && !isTreeLoadFailed()) {
+        <div
+          class="h-full flex items-center justify-center text-color-secondary text-sm"
+        >
+          Select a file from the tree to view its content.
+        </div>
+        }
+      </div>
+    </ng-template>
+  </p-splitter>
+
+  @if (!isTreeLoadFailed()) {
+  <div class="flex items-center justify-center gap-2 py-2">
+    <mxevolve-push-changes-dialog
+      [projectId]="projectId()"
+      [repositoryId]="repositoryId()"
+      [branchName]="branchName()"
+      (pushSucceeded)="onPushSucceeded()"
+      [disabled]="isPushDisabled()"
+      [disabledTooltip]="pushDisabledTooltip()"
+    />
+  </div>
+  }
+</div>

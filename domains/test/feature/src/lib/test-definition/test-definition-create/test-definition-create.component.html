@@ -1,0 +1,138 @@
+<mxevolve-card-container>
+  <mxflow-header-title>Create Test Package Definition</mxflow-header-title>
+
+  <mxflow-spinner [isLoading]="isLoading">
+    <mxflow-mandatory-field></mxflow-mandatory-field>
+
+    <form [formGroup]="testDefinitionCreationForm" class="">
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-6 pr-4 flex flex-col">
+          <label class="pb-2" for="repositoryId"
+            >Repository <span class="text-red-500">*</span></label
+          >
+          <p-select
+            formControlName="repoId"
+            id="repositoryId"
+            placeholder="Select Repository URL"
+            [options]="repositories"
+            optionValue="id"
+            optionLabel="name"
+            [showClear]="true"
+            fluid
+            [filter]="true"
+          ></p-select>
+          <ng-template
+            [ngTemplateOutlet]="errorTipTemplate"
+            [ngTemplateOutletContext]="{
+              $implicit: testDefinitionCreationForm.get('repoId')
+            }"
+          ></ng-template>
+        </div>
+        <div class="col-span-6 pl-4 flex flex-col">
+          <label class="pb-2" for="path"
+            >Test Package Path <span class="text-red-500">*</span></label
+          >
+          @if (useTestSequenceSelector) {
+          <mxevolve-test-sequence-single-selector
+            id="path"
+            formControlName="path"
+            [projectId]="projectId"
+            [repositoryId]="getRepositoryId()"
+            [disabled]="!repositorySelected()"
+            (failureEvent)="showErrorMessage($event)"
+          ></mxevolve-test-sequence-single-selector>
+          } @else {
+          <mxevolve-test-package-directory-picker
+            id="path"
+            formControlName="path"
+            [selectedPath]="getSelectedPath()"
+            [repositoryId]="getRepositoryId()"
+            [repositorySelected]="repositorySelected()"
+          ></mxevolve-test-package-directory-picker>
+          }
+          <ng-template
+            [ngTemplateOutlet]="errorTipTemplate"
+            [ngTemplateOutletContext]="{
+              $implicit: testDefinitionCreationForm.get('path')
+            }"
+          ></ng-template>
+        </div>
+        <div class="col-span-6 pr-4 flex flex-col">
+          <label class="pb-2" for="description"
+            >Test Package Description <span class="text-red-500">*</span></label
+          >
+          <input
+            pInputText
+            type="text"
+            id="description"
+            placeholder="Enter a Description"
+            formControlName="description"
+          />
+          <ng-template
+            [ngTemplateOutlet]="errorTipTemplate"
+            [ngTemplateOutletContext]="{
+              $implicit: testDefinitionCreationForm.get('description')
+            }"
+          ></ng-template>
+        </div>
+        <div class="col-span-6 pl-4 flex flex-col">
+          <label for="timeout" class="pb-2 flex items-center">
+            Timeout Duration (in hours)
+            <em
+              class="pi pi-info-circle ml-1"
+              pTooltip="The default value is 24h"
+              tooltipPosition="top"
+            ></em>
+          </label>
+          <input
+            pInputText
+            type="text"
+            id="timeout"
+            placeholder="Enter Timeout Duration in Hours"
+            formControlName="timeout"
+          />
+          <ng-template
+            [ngTemplateOutlet]="errorTipTemplate"
+            [ngTemplateOutletContext]="{
+              $implicit: testDefinitionCreationForm.get('timeout')
+            }"
+          ></ng-template>
+        </div>
+      </div>
+    </form>
+  </mxflow-spinner>
+
+  <div class="flex justify-end">
+    <p-button
+      label="Submit"
+      [disabled]="isFormValid()"
+      (click)="onSubmit()"
+      id="submit-create-test-package-definition"
+    ></p-button>
+    <p-button
+      label="Cancel"
+      [outlined]="true"
+      (click)="onCancel()"
+      class="pl-4"
+      id="cancel-create-test-package-definition"
+    ></p-button>
+  </div>
+</mxevolve-card-container>
+
+<ng-template #errorTipTemplate let-control>
+  <div class="input-error h-4">
+    @if (control.invalid && control.dirty) {
+    <div class="flex gap-1 pt-1 text-red-500">
+      @if (control.hasError('maxlength')) {
+      <small class="p-error block">Maximum length is 255</small>
+      } @if (control.hasError('required')) {
+      <small class="p-error block">Field is required</small>
+      } @if (control.hasError('whitespace')) {
+      <small class="p-error block">Field cannot be whitespaces</small>
+      } @if (control.hasError('pattern')) {
+      <small class="p-error block">Timeout must be a number</small>
+      }
+    </div>
+    }
+  </div>
+</ng-template>

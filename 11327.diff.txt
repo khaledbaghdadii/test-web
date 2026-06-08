@@ -4497,10 +4497,10 @@ index 00000000000..614ef6e87d5
 +
 +## Preferences: guided mode (pause each phase), ask commit + branch each time, call user "Khaled".
 diff --git src://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.html dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.html
-index a648bfd9435..e2a9c73260a 100644
+index a648bfd9435..0f66d844de9 100644
 --- src://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.html
 +++ dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.html
-@@ -1,32 +1,34 @@
+@@ -1,32 +1,33 @@
  @if (loading) {
  <mxevolve-loading-business-process-execution-skeleton
    [numberOfStages]="4"
@@ -4520,23 +4520,23 @@ index a648bfd9435..e2a9c73260a 100644
      [expiryDate]="ciProcessExecution.expiryDate"
      [endDate]="ciProcessExecution.endDate"
 -    [isAborted]="status === BusinessProcessExecutionStatus.ABORTED"
-+    [errorMessage]="errorMessage"
-+    [aborted]="status === BusinessProcessExecutionStatus.ABORTED"
-     [notStarted]="notStarted"
+-    [notStarted]="notStarted"
 -    [executionStages]="executionStages"
-+  ></mxevolve-business-process-alert-display>
-+
-+  <mxflow-status-bar
-+    [numberOfStages]="executionStages.length"
-+    [stages]="executionStages"
-     [selectedStage]="genericSelectedStage"
+-    [selectedStage]="genericSelectedStage"
 -    [status]="status"
 -    (businessProcessAborted)="refetchExecution()"
--    [errorMessage]="errorMessage"
+     [errorMessage]="errorMessage"
 -    (selectStage)="selectStage($event)"
 -  ></mxevolve-business-process-execution-progress>
-+    (onStageSelected)="selectStage($event)"
-+  ></mxflow-status-bar>
++    [aborted]="status === BusinessProcessExecutionStatus.ABORTED"
++    [notStarted]="notStarted"
++  ></mxevolve-business-process-alert-display>
++
++  <mxevolve-stepper
++    [steps]="steps"
++    [displayedStepId]="selectedStepId"
++    (displayedStepIdChange)="onStepSelected($event)"
++  ></mxevolve-stepper>
  
    @if (ciProcessExecution.source.type ===
    BuildAndTestSourceType.BUSINESS_PROCESS) {
@@ -4548,10 +4548,11 @@ index a648bfd9435..e2a9c73260a 100644
          '/app/' +
          projectId +
 diff --git src://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.spec.ts dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.spec.ts
-index 40b96b5502c..091f47cd22a 100644
+index 40b96b5502c..24c58a55b13 100644
 --- src://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.spec.ts
 +++ dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.spec.ts
-@@ -20,35 +20,37 @@ import {
+@@ -19,36 +19,40 @@ import {
+ } from "@mxflow/features/project";
  import {
    fakeAsync,
    TestBed,
@@ -4561,9 +4562,11 @@ index 40b96b5502c..091f47cd22a 100644
  import {
    BuildAndTestProcessExecution,
    BuildAndTestProcessExecutionMapperService,
++  BuildAndTestProcessStageStatus,
  } from "@mxflow/features/business-process";
 +import { BuildAndTestExecutionFetcherService } from "@mxevolve/domains/business-process/data-access";
  import { CiProcessStageSelectorService } from "../service/ci-process-stage-selector.service";
++import { DatePipe } from "@angular/common";
  
  const CI_PROCESS_EXECUTION_ID = "ciProcessId";
  const PROJECT_ID = "projectId";
@@ -4589,7 +4592,7 @@ index 40b96b5502c..091f47cd22a 100644
        params: of({ executionId: CI_PROCESS_EXECUTION_ID }),
      } as unknown as ActivatedRoute;
  
-@@ -68,38 +70,46 @@ describe("Build and test process execution details", () => {
+@@ -68,42 +72,53 @@ describe("Build and test process execution details", () => {
      } as unknown as Store;
  
      router = {
@@ -4629,18 +4632,205 @@ index 40b96b5502c..091f47cd22a 100644
        ],
      }).overrideComponent(CiProcessExecutionDetailsComponent, {
        set: {
-         providers: [{ provide: ProjectService, useValue: projectService }],
+-        providers: [{ provide: ProjectService, useValue: projectService }],
++        providers: [
++          { provide: ProjectService, useValue: projectService },
++          DatePipe,
++        ],
        },
      });
  
      fixture = TestBed.createComponent(CiProcessExecutionDetailsComponent);
      component = fixture.componentInstance;
    });
+ 
+   it("should fetch the ci process execution on init", () => {
+     component.ngOnInit();
+ 
+@@ -130,38 +145,40 @@ describe("Build and test process execution details", () => {
+         id: CI_PROCESS_EXECUTION_ID,
+         projectId: PROJECT_ID,
+       })
+     );
+   });
+ 
+   it("given a process with no stage that was started, when displaying the process details, then the user should be alerted", fakeAsync(() => {
+     store.pipe = jest.fn().mockReturnValue(
+       of({
+         id: CI_PROCESS_EXECUTION_ID,
++        input: { buildEnvironment: { skipEnvironmentDeployment: false } },
+         createBranchStage: { startDate: null },
+         prepareBuildStage: { startDate: null },
+         buildAndTestStage: { startDate: null },
+         integrateChangesStage: { startDate: null },
+       } as unknown as BuildAndTestProcessExecution)
+     );
+ 
+     component.ngOnInit();
+ 
+     tick();
+ 
+     expect(component.notStarted).toBeTruthy();
+   }));
+ 
+   it("given a process with at least one stage that was started, when displaying the process details, then the user should not be alerted", fakeAsync(() => {
+     store.pipe = jest.fn().mockReturnValue(
+       of({
+         id: CI_PROCESS_EXECUTION_ID,
++        input: { buildEnvironment: { skipEnvironmentDeployment: false } },
+         createBranchStage: { startDate: "2025-10-06T12:41:44.410455491Z" },
+         prepareBuildStage: { startDate: null },
+         buildAndTestStage: { startDate: null },
+         integrateChangesStage: { startDate: null },
+       } as unknown as BuildAndTestProcessExecution)
+     );
+ 
+     component.ngOnInit();
+ 
+     tick();
+@@ -186,11 +203,133 @@ describe("Build and test process execution details", () => {
+       executionIdObservable as unknown as Observable<Params>;
+ 
+     component.ngOnInit();
+ 
+     expect(subject.observed).toBe(true);
+ 
+     component.ngOnDestroy();
+ 
+     expect(subject.observed).toBe(false);
+   });
++
++  describe("run stepper", () => {
++    function executionWithStages(
++      skipEnvironmentDeployment = false
++    ): BuildAndTestProcessExecution {
++      return {
++        id: CI_PROCESS_EXECUTION_ID,
++        name: "CI Run",
++        input: { buildEnvironment: { skipEnvironmentDeployment } },
++        createBranchStage: {
++          name: "Create Branch Stage",
++          route: "create-branch",
++          status: BuildAndTestProcessStageStatus.PASSED,
++        },
++        prepareBuildStage: {
++          name: "Prepare Build Stage",
++          route: "prepare-build",
++          status: BuildAndTestProcessStageStatus.PASSED,
++        },
++        buildAndTestStage: {
++          name: "Build And Test Stage",
++          route: "build-and-test",
++          status: BuildAndTestProcessStageStatus.RUNNING,
++        },
++        integrateChangesStage: {
++          name: "Integrate Changes Stage",
++          route: "integrate-changes",
++          status: BuildAndTestProcessStageStatus.NOT_STARTED,
++        },
++      } as unknown as BuildAndTestProcessExecution;
++    }
++
++    it("builds one step per stage keyed by route with mapped statuses", fakeAsync(() => {
++      store.pipe = jest
++        .fn()
++        .mockReturnValue(of(executionWithStages()));
++
++      component.ngOnInit();
++      tick();
++
++      expect(component.steps).toEqual([
++        expect.objectContaining({
++          id: "create-branch",
++          title: "Create Branch",
++          status: "completed",
++        }),
++        expect.objectContaining({
++          id: "prepare-build",
++          title: "Prepare Setup",
++          status: "completed",
++        }),
++        expect.objectContaining({
++          id: "build-and-test",
++          title: "Build & Test",
++          status: "active",
++        }),
++        expect.objectContaining({
++          id: "integrate-changes",
++          title: "Merge",
++          status: "inactive",
++        }),
++      ]);
++    }));
++
++    it("marks the prepare-build step skipped when environment deployment is skipped", fakeAsync(() => {
++      store.pipe = jest
++        .fn()
++        .mockReturnValue(of(executionWithStages(true)));
++
++      component.ngOnInit();
++      tick();
++
++      expect(component.steps[1]).toEqual(
++        expect.objectContaining({ id: "prepare-build", status: "skipped" })
++      );
++    }));
++
++    it("navigates to the selected step route and tracks the selected step", fakeAsync(() => {
++      store.pipe = jest
++        .fn()
++        .mockReturnValue(of(executionWithStages()));
++
++      component.ngOnInit();
++      tick();
++
++      component.onStepSelected("build-and-test");
++
++      expect(router.navigate).toHaveBeenCalledWith(
++        ["build-and-test"],
++        expect.objectContaining({ replaceUrl: true })
++      );
++      expect(component.selectedStepId).toBe("build-and-test");
++    }));
++
++    it("does not navigate when the selected step has not started", fakeAsync(() => {
++      store.pipe = jest
++        .fn()
++        .mockReturnValue(of(executionWithStages()));
++
++      component.ngOnInit();
++      tick();
++      (router.navigate as jest.Mock).mockClear();
++
++      component.onStepSelected("integrate-changes");
++
++      expect(router.navigate).not.toHaveBeenCalled();
++    }));
++
++    it("does not navigate when the selected step id is undefined", fakeAsync(() => {
++      store.pipe = jest
++        .fn()
++        .mockReturnValue(of(executionWithStages()));
++
++      component.ngOnInit();
++      tick();
++      (router.navigate as jest.Mock).mockClear();
++
++      component.onStepSelected(undefined);
++
++      expect(router.navigate).not.toHaveBeenCalled();
++    }));
++  });
+ });
 diff --git src://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.ts dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.ts
-index c66d0e1beba..dc1b9362e67 100644
+index c66d0e1beba..23c57e0edca 100644
 --- src://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.ts
 +++ dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution-details/ci-process-execution-details.component.ts
-@@ -4,20 +4,22 @@ import {
+@@ -1,65 +1,85 @@
+ import { Component, inject, OnDestroy, OnInit } from "@angular/core";
++import { DatePipe } from "@angular/common";
+ import { concatMap, Subject, takeUntil, tap } from "rxjs";
+ import {
    BuildAndTestProcessExecution,
    BuildAndTestProcessExecutionMapperService,
    BuildAndTestProcessStageStatus,
@@ -4653,6 +4843,10 @@ index c66d0e1beba..dc1b9362e67 100644
  import { Store } from "@ngrx/store";
 +import { BuildAndTestExecutionFetcherService } from "@mxevolve/domains/business-process/data-access";
 +import { BuildAndTestProcessExecution as DomainBuildAndTestProcessExecution } from "@mxevolve/domains/business-process/util";
++import {
++  StepDefinition,
++  StepStatus,
++} from "@mxevolve/shared/ui/primitive";
  import { CiProcessExecutionAction } from "../state";
  import { getCiProcessExecution } from "../state/ci-process-execution.selector";
  import { CiProcessStageSelectorService } from "../service/ci-process-stage-selector.service";
@@ -4663,7 +4857,15 @@ index c66d0e1beba..dc1b9362e67 100644
    ProjectService,
  } from "@mxflow/features/project";
  import { Title } from "@angular/platform-browser";
-@@ -32,25 +34,27 @@ export class CiProcessExecutionDetailsComponent implements OnInit, OnDestroy {
+ 
+ @Component({
+   selector: "ci-process-execution-details",
+   templateUrl: "ci-process-execution-details.component.html",
+   standalone: false,
+-  providers: [ProjectService],
++  providers: [ProjectService, DatePipe],
+ })
+ export class CiProcessExecutionDetailsComponent implements OnInit, OnDestroy {
    activatedRoute = inject(ActivatedRoute);
    router = inject(Router);
    store = inject(Store);
@@ -4675,6 +4877,7 @@ index c66d0e1beba..dc1b9362e67 100644
    projectService = inject(ProjectService);
    title = inject(Title);
 +  domainExecutionFetcher = inject(BuildAndTestExecutionFetcherService);
++  private readonly datePipe = inject(DatePipe);
  
    ciProcessId: string;
    projectId: string;
@@ -4686,18 +4889,42 @@ index c66d0e1beba..dc1b9362e67 100644
    status: BusinessProcessExecutionStatus;
    executionStages: Stage[] = [];
    genericSelectedStage: Stage;
++  steps: StepDefinition[] = [];
++  selectedStepId?: string;
    loading = false;
    notStarted = false;
    private readonly destroy$ = new Subject();
  
++  /** Stepper titles per stage index (Figma 9615-68110). */
++  private static readonly STEP_TITLES = [
++    "Create Branch",
++    "Prepare Setup",
++    "Build & Test",
++    "Merge",
++  ];
++
    protected readonly window = window;
-@@ -83,20 +87,21 @@ export class CiProcessExecutionDetailsComponent implements OnInit, OnDestroy {
+ 
+   ngOnInit(): void {
+     this.projectId = this.projectIdResolver.resolve();
+     this.loading = true;
+     this.activatedRoute.params
+       .pipe(
+         concatMap((params) => {
+           this.ciProcessId = params["executionId"];
+           return this.projectService.getProjectById(params["projectId"]);
+@@ -79,70 +99,160 @@ export class CiProcessExecutionDetailsComponent implements OnInit, OnDestroy {
+         takeUntil(this.destroy$)
+       )
+       .subscribe({
+         next: (ciProcessExecution) => {
            if (ciProcessExecution.id === this.ciProcessId) {
              this.ciProcessExecution = ciProcessExecution;
              this.errorMessage = ciProcessExecution.errorMessage;
              this.status = ciProcessExecution.status;
              this.notStarted = this.resolveNotStarted();
              this.executionStages = this.getExecutionStages();
++            this.steps = this.buildSteps();
              this.navigateToWantedStage(ciProcessExecution);
              this.title.setTitle(
                `BP Execution - ${this.ciProcessExecution.name} - ${this.projectName}`
@@ -4713,9 +4940,36 @@ index c66d0e1beba..dc1b9362e67 100644
            this.loading = false;
          },
        });
-@@ -117,20 +122,29 @@ export class CiProcessExecutionDetailsComponent implements OnInit, OnDestroy {
+   }
+ 
+   selectStage(stageName: string) {
+     const stageToSelect = this.ciProcessStages.find(
+       (stage) => stage.name === stageName
+     );
++    this.activateStage(stageToSelect);
++  }
++
++  /** Stepper click handler — steps are keyed by stage route. */
++  onStepSelected(stepId: string | undefined) {
++    if (!stepId) return;
++    const stageToSelect = this.ciProcessStages.find(
++      (stage) => stage.route === stepId
++    );
++    this.activateStage(stageToSelect);
++  }
++
++  private activateStage(stageToSelect?: BuildAndTestProcessStage) {
+     if (
+       stageToSelect &&
+       stageToSelect.status !== BuildAndTestProcessStageStatus.NOT_STARTED
+     ) {
+       this.router.navigate([stageToSelect.route], {
+         relativeTo: this.activatedRoute,
+         replaceUrl: true,
+       });
        this.genericSelectedStage =
          this.buildAndTestProcessExecutionMapperService.toStage(stageToSelect);
++      this.selectedStepId = stageToSelect.route;
      }
    }
  
@@ -4743,11 +4997,88 @@ index c66d0e1beba..dc1b9362e67 100644
      return this.buildAndTestProcessExecutionMapperService.toExecutionStages(
        this.ciProcessStages
      );
+   }
+ 
++  private buildSteps(): StepDefinition[] {
++    const skipPrepareBuild =
++      this.ciProcessExecution.input.buildEnvironment.skipEnvironmentDeployment;
++
++    return this.ciProcessStages.map((stage, index) => {
++      const skipped = index === 1 && skipPrepareBuild;
++      const status: StepStatus = skipped
++        ? "skipped"
++        : this.mapStageStatusToStepStatus(stage.status);
++      return {
++        id: stage.route,
++        title:
++          CiProcessExecutionDetailsComponent.STEP_TITLES[index] ?? stage.name,
++        status,
++        tooltip: this.computeStepTooltip(stage, status),
++      };
++    });
++  }
++
++  private mapStageStatusToStepStatus(
++    status: BuildAndTestProcessStageStatus
++  ): StepStatus {
++    switch (status) {
++      case BuildAndTestProcessStageStatus.SKIPPED:
++        return "skipped";
++      case BuildAndTestProcessStageStatus.NOT_STARTED:
++      case BuildAndTestProcessStageStatus.STOPPED:
++      case BuildAndTestProcessStageStatus.NA:
++        return "inactive";
++      case BuildAndTestProcessStageStatus.RUNNING:
++      case BuildAndTestProcessStageStatus.PENDING_INPUT:
++        return "active";
++      case BuildAndTestProcessStageStatus.PASSED:
++        return "completed";
++      case BuildAndTestProcessStageStatus.FAILED:
++        return "failed";
++      default:
++        return "inactive";
++    }
++  }
++
++  private computeStepTooltip(
++    stage: BuildAndTestProcessStage,
++    status: StepStatus
++  ): string | undefined {
++    if (status === "inactive") return undefined;
++
++    const start = stage.startDate;
++    if (!start) return undefined;
++
++    const formattedStart = this.formatDate(start);
++    if (
++      stage.endDate &&
++      (status === "completed" || status === "failed" || status === "skipped")
++    ) {
++      return `Start: ${formattedStart}\nEnd: ${this.formatDate(stage.endDate)}`;
++    }
++    return `Start: ${formattedStart}`;
++  }
++
++  private formatDate(dateStr: string | undefined): string {
++    if (!dateStr) return "";
++    return this.datePipe.transform(dateStr, "MMM d, y, hh:mm a") ?? dateStr;
++  }
++
+   private navigateToWantedStage(
+     ciProcessExecution: BuildAndTestProcessExecution
+   ) {
+     const wantedStage = this.stageSelector.getWantedStage(
+       ciProcessExecution,
+       location.href
+     );
+     this.selectStage(wantedStage);
+   }
+ 
 diff --git src://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution.module.ts dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution.module.ts
-index 0dfc61c8709..28d16491684 100644
+index 0dfc61c8709..e851f11b51d 100644
 --- src://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution.module.ts
 +++ dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process-execution/ci-process-execution.module.ts
-@@ -12,20 +12,22 @@ import {
+@@ -12,51 +12,55 @@ import {
    BusinessProcessUriFactoryPipeModule,
    LoadingBusinessProcessExecutionSkeletonComponent,
  } from "@mxflow/features/business-process";
@@ -4764,13 +5095,23 @@ index 0dfc61c8709..28d16491684 100644
  import { HeaderTitleModule } from "@mxflow/ui/header";
  import { ErrorAlertComponent, InfoAlertComponent } from "@mxflow/ui/alert";
  import { CiProcessExecutionStateUpdaterService } from "./ci-process-execution-details/ci-process-state-updater.service";
- import { StatusBarComponent } from "@mxflow/ui/horizontal-timeline";
+-import { StatusBarComponent } from "@mxflow/ui/horizontal-timeline";
++import { StepperComponent } from "@mxevolve/shared/ui/primitive";
  import { MxflowSpinnerModule } from "@mxflow/ui/utils";
  import { ArtifactManagerService } from "@mxflow/features/artifact-manager";
  import { MessageModule } from "primeng/message";
  
  @NgModule({
-@@ -41,22 +43,24 @@ import { MessageModule } from "primeng/message";
+   imports: [
+     CommonModule,
+     CiProcessExecutionRoutingModule,
+     StoreModule.forFeature("ciProcessExecution", CiProcessExecutionReducer),
+     EffectsModule.forFeature([CiProcessExecutionEffects]),
+     CardContainerModule,
+     HeaderTitleModule,
+-    StatusBarComponent,
++    StepperComponent,
+     ErrorAlertComponent,
      MessageModule,
      BusinessProcessExecutionStatusComponent,
      MxflowSpinnerModule,
@@ -4795,6 +5136,74 @@ index 0dfc61c8709..28d16491684 100644
    ],
  })
  export class CiProcessExecutionModule {}
+diff --git src://web/apps/ci-process-mfe/src/app/ci-process/ci-process.module.ts dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process.module.ts
+index b03594e9930..02751613337 100644
+--- src://web/apps/ci-process-mfe/src/app/ci-process/ci-process.module.ts
++++ dst://web/apps/ci-process-mfe/src/app/ci-process/ci-process.module.ts
+@@ -7,27 +7,37 @@ import { APP_CONFIG } from "@mxflow/config";
+ import {
+   environment,
+   EnvironmentProvider,
+ } from "../../environments/environment";
+ import { CiProcessExecutionModule } from "./ci-process-execution/ci-process-execution.module";
+ import { StoreModule } from "@ngrx/store";
+ import { ciProcessReducer } from "./state/ci-process.reducer";
+ import { ErrorAlertComponent } from "@mxflow/ui/alert";
+ import { CiProcessGlobalMessageComponent } from "./ci-process-global-message.component";
+ import { BusinessProcessExecutionService } from "@mxflow/features/business-process";
++import { GATEWAY_CONFIG } from "@mxevolve/shared/core/config";
++import { CUSTOM_ICONS_PATH, ILLUSTRATIONS_PATH } from "@mxevolve/shared/ui/primitive";
++import {AllEnterpriseModule, LicenseManager as AgGridLicenseManager, ModuleRegistry} from "ag-grid-enterprise";
++import {LicenseManager as AgChartLicenseManager} from "ag-charts-enterprise";
+ 
+ @NgModule({
+   imports: [
+     CommonModule,
+     CiProcessRoutingModule,
+     CiProcessExecutionModule,
+     StoreModule.forFeature("ciProcess", ciProcessReducer),
+     ErrorAlertComponent,
+   ],
+   declarations: [CiProcessComponent, CiProcessGlobalMessageComponent],
+   providers: [
+     EnvironmentProvider,
+     { provide: APP_CONFIG, useValue: environment },
++    {provide: GATEWAY_CONFIG, useValue: environment},
++        { provide: CUSTOM_ICONS_PATH, useValue: "assets/icons" },
++        { provide: ILLUSTRATIONS_PATH, useValue: "assets/illustrations" },
+     BusinessProcessExecutionService,
+   ],
+ })
+ export class CiProcessModule {}
++ModuleRegistry.registerModules([AllEnterpriseModule]);
++AgGridLicenseManager.setLicenseKey(environment.agGridChartLicenseKey);
++AgChartLicenseManager.setLicenseKey(environment.agGridChartLicenseKey);
+\ No newline at end of file
+diff --git src://web/apps/ci-process-mfe/src/environments/environment.ts dst://web/apps/ci-process-mfe/src/environments/environment.ts
+index 6feee199761..76cbdf11710 100644
+--- src://web/apps/ci-process-mfe/src/environments/environment.ts
++++ dst://web/apps/ci-process-mfe/src/environments/environment.ts
+@@ -5,18 +5,20 @@ const config = (window as unknown as EnvConfig).env;
+ const remoteEntryFileName = `remoteEntry.js?t=${Date.now()}`;
+ export const environment = {
+   testMfeUrl: `${
+     config?.local ? "http://localhost:4202" : config?.baseUrl
+   }/test/${remoteEntryFileName}`,
+   scmMfeUrl: `${
+     config?.local ? "http://localhost:4208" : config?.baseUrl
+   }/scm/${remoteEntryFileName}`,
+   gatewayUrl: `${config?.baseUrl}/gateway/api/v1/`,
+   production: config?.production,
++  agGridChartLicenseKey: config?.agGridChartLicenseKey,
++
+ };
+ 
+ @Injectable({ providedIn: "root" })
+ export class EnvironmentProvider {
+   getEnvironment(): any {
+     return environment;
+   }
+ }
 diff --git src://web/libs/contract-tests/src/lib/environment-management-service.spec.pact.ts dst://web/libs/contract-tests/src/lib/environment-management-service.spec.pact.ts
 index 7676660b86c..329763846fd 100644
 --- src://web/libs/contract-tests/src/lib/environment-management-service.spec.pact.ts
@@ -5597,14 +6006,16 @@ index 00000000000..f4dfb34fb62
 +  }
 +}
 diff --git src://web/libs/domains/business-process/data-access/src/index.ts dst://web/libs/domains/business-process/data-access/src/index.ts
-index 097189dd05a..e7331687c57 100644
+index 097189dd05a..6c0daa0935f 100644
 --- src://web/libs/domains/business-process/data-access/src/index.ts
 +++ dst://web/libs/domains/business-process/data-access/src/index.ts
-@@ -1,12 +1,14 @@
+@@ -1,12 +1,16 @@
  export { ReferenceEnvironmentService } from "./lib/upgrade-process/reference-environments.service";
  export { UpgradeProcessStateUpdaterService } from "./lib/upgrade-process/upgrade-process-state-updater.service";
 +export { BuildAndTestExecutionFetcherService } from "./lib/build-and-test/build-and-test-execution-fetcher.service";
 +export { BuildAndTestProcessStateUpdaterService } from "./lib/build-and-test/build-and-test-process-state-updater.service";
++export { BuildAndTestEnvironmentResolverService } from "./lib/build-and-test/build-and-test-environment-resolver.service";
++export type { BuildAndTestEnvironment } from "./lib/build-and-test/build-and-test-environment-resolver.service";
  export { ExecutionAbortService } from "./lib/execution-abort/execution-abort.service";
  export type { AbortExecutionRequest } from "./lib/execution-abort/abort-execution-request";
  export { ExecutionResourcesService } from "./lib/execution-resources/execution-resources.service";
@@ -5615,6 +6026,162 @@ index 097189dd05a..e7331687c57 100644
  } from "./lib/execution-resources/execution-resource";
  export { QualityGateValidationService } from "./lib/upgrade-process/quality-gate-validation.service";
  export type { MarkQualityGateFailedRequest } from "./lib/upgrade-process/models/quality-gate.model";
+diff --git src://web/libs/domains/business-process/data-access/src/lib/build-and-test/build-and-test-environment-resolver.service.spec.ts dst://web/libs/domains/business-process/data-access/src/lib/build-and-test/build-and-test-environment-resolver.service.spec.ts
+new file mode 100644
+index 00000000000..3dd7da8ce24
+--- /dev/null
++++ dst://web/libs/domains/business-process/data-access/src/lib/build-and-test/build-and-test-environment-resolver.service.spec.ts
+@@ -0,0 +1,94 @@
++import { provideHttpClient } from "@angular/common/http";
++import {
++  HttpTestingController,
++  provideHttpClientTesting,
++} from "@angular/common/http/testing";
++import { TestBed } from "@angular/core/testing";
++import { APP_CONFIG } from "@mxflow/config";
++import { BuildAndTestEnvironmentResolverService } from "./build-and-test-environment-resolver.service";
++
++describe("BuildAndTestEnvironmentResolverService", () => {
++  const PROJECT_ID = "projectId";
++  const SCENARIO_EXECUTION_ID = "scenario-exec-1";
++  const GATEWAY_URL = "https://api.test.com/";
++  const EXPECTED_URL = `${GATEWAY_URL}projects/${PROJECT_ID}/test-execution-manager/scenario-executions/${SCENARIO_EXECUTION_ID}`;
++
++  let service: BuildAndTestEnvironmentResolverService;
++  let httpTestingController: HttpTestingController;
++
++  beforeEach(() => {
++    TestBed.configureTestingModule({
++      providers: [
++        provideHttpClient(),
++        provideHttpClientTesting(),
++        { provide: APP_CONFIG, useValue: { gatewayUrl: GATEWAY_URL } },
++        BuildAndTestEnvironmentResolverService,
++      ],
++    });
++
++    service = TestBed.inject(BuildAndTestEnvironmentResolverService);
++    httpTestingController = TestBed.inject(HttpTestingController);
++  });
++
++  afterEach(() => {
++    httpTestingController.verify();
++  });
++
++  it("should call the scenario-execution endpoint correctly", () => {
++    service.resolveEnvironment(PROJECT_ID, SCENARIO_EXECUTION_ID).subscribe();
++
++    httpTestingController.expectOne({ method: "GET", url: EXPECTED_URL });
++  });
++
++  it("should map envInfo to the environment id and status", () => {
++    let result: unknown;
++
++    service
++      .resolveEnvironment(PROJECT_ID, SCENARIO_EXECUTION_ID)
++      .subscribe((env) => {
++        result = env;
++      });
++
++    httpTestingController
++      .expectOne(EXPECTED_URL)
++      .flush({ envInfo: { environmentId: "env-1", status: "READY" } });
++
++    expect(result).toEqual({
++      environmentId: "env-1",
++      environmentStatus: "READY",
++    });
++  });
++
++  it("should default to empty values when envInfo is absent", () => {
++    let result: unknown;
++
++    service
++      .resolveEnvironment(PROJECT_ID, SCENARIO_EXECUTION_ID)
++      .subscribe((env) => {
++        result = env;
++      });
++
++    httpTestingController.expectOne(EXPECTED_URL).flush({});
++
++    expect(result).toEqual({ environmentId: "", environmentStatus: "" });
++  });
++
++  it("should surface the error message on failure", () => {
++    let errorMessage: string | undefined;
++
++    service.resolveEnvironment(PROJECT_ID, SCENARIO_EXECUTION_ID).subscribe({
++      error: (error) => {
++        errorMessage = error.message;
++      },
++    });
++
++    httpTestingController
++      .expectOne(EXPECTED_URL)
++      .flush(
++        { message: "Scenario execution not found" },
++        { status: 404, statusText: "Not Found" }
++      );
++
++    expect(errorMessage).toBe("Scenario execution not found");
++  });
++});
+diff --git src://web/libs/domains/business-process/data-access/src/lib/build-and-test/build-and-test-environment-resolver.service.ts dst://web/libs/domains/business-process/data-access/src/lib/build-and-test/build-and-test-environment-resolver.service.ts
+new file mode 100644
+index 00000000000..e8b6405c322
+--- /dev/null
++++ dst://web/libs/domains/business-process/data-access/src/lib/build-and-test/build-and-test-environment-resolver.service.ts
+@@ -0,0 +1,50 @@
++import { HttpClient } from "@angular/common/http";
++import { inject, Injectable } from "@angular/core";
++import { APP_CONFIG, AppConfig } from "@mxflow/config";
++import { catchError, map, Observable, throwError } from "rxjs";
++
++/**
++ * Environment info resolved indirectly from a scenario execution.
++ *
++ * The CI process model does not carry the build/test environment id directly;
++ * legacy resolves it from the latest deploy scenario via
++ * `GET .../test-execution-manager/scenario-executions/{id}` and reads
++ * `envInfo.environmentId`. This service ports that exact lookup so the env
++ * status bar, Config Audit and Open Config Editor can render.
++ */
++export interface BuildAndTestEnvironment {
++  readonly environmentId: string;
++  readonly environmentStatus: string;
++}
++
++interface ScenarioExecutionEnvApiResponse {
++  readonly envInfo?: {
++    readonly environmentId?: string;
++    readonly status?: string;
++  };
++}
++
++@Injectable()
++export class BuildAndTestEnvironmentResolverService {
++  private readonly http = inject(HttpClient);
++  private readonly config = inject<AppConfig>(APP_CONFIG);
++
++  resolveEnvironment(
++    projectId: string,
++    scenarioExecutionId: string
++  ): Observable<BuildAndTestEnvironment> {
++    return this.http
++      .get<ScenarioExecutionEnvApiResponse>(
++        `${this.config.gatewayUrl}projects/${projectId}/test-execution-manager/scenario-executions/${scenarioExecutionId}`
++      )
++      .pipe(
++        map((response) => ({
++          environmentId: response.envInfo?.environmentId ?? "",
++          environmentStatus: response.envInfo?.status ?? "",
++        })),
++        catchError((error) =>
++          throwError(() => new Error(error.error?.message ?? error.message))
++        )
++      );
++  }
++}
 diff --git src://web/libs/domains/business-process/data-access/src/lib/build-and-test/build-and-test-execution-fetcher.service.spec.ts dst://web/libs/domains/business-process/data-access/src/lib/build-and-test/build-and-test-execution-fetcher.service.spec.ts
 new file mode 100644
 index 00000000000..78a92e91ed8
@@ -6728,10 +7295,10 @@ index 00000000000..07e49598464
 +}
 diff --git src://web/libs/domains/business-process/feature/src/lib/build-and-test/build-and-test-step/build-and-test-step.component.html dst://web/libs/domains/business-process/feature/src/lib/build-and-test/build-and-test-step/build-and-test-step.component.html
 new file mode 100644
-index 00000000000..f08006ecc44
+index 00000000000..b76600d3c9d
 --- /dev/null
 +++ dst://web/libs/domains/business-process/feature/src/lib/build-and-test/build-and-test-step/build-and-test-step.component.html
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,58 @@
 +<mxevolve-stage-container>
 +  @if (errorMessage()) {
 +  <p-message severity="error">{{ errorMessage() }}</p-message>
@@ -6761,6 +7328,8 @@ index 00000000000..f08006ecc44
 +  <mxevolve-build-and-test-build-section
 +    [projectId]="projectId()"
 +    [storyIds]="storyIds()"
++    [environmentId]="environmentId()"
++    [environmentStatus]="environmentStatus()"
 +  />
 +
 +  <!-- Technical Reseed panel (placeholder — content lands in Story C) -->
@@ -6779,6 +7348,7 @@ index 00000000000..f08006ecc44
 +  <mxevolve-build-and-test-test-section
 +    [projectId]="projectId()"
 +    [processId]="processId()"
++    [environmentId]="environmentId()"
 +  />
 +
 +  <!-- Merge action (placeholder — content lands in Story C) -->
@@ -6789,16 +7359,20 @@ index 00000000000..f08006ecc44
 +</mxevolve-stage-container>
 diff --git src://web/libs/domains/business-process/feature/src/lib/build-and-test/build-and-test-step/build-and-test-step.component.spec.ts dst://web/libs/domains/business-process/feature/src/lib/build-and-test/build-and-test-step/build-and-test-step.component.spec.ts
 new file mode 100644
-index 00000000000..128c95aad58
+index 00000000000..4e7e6644bbe
 --- /dev/null
 +++ dst://web/libs/domains/business-process/feature/src/lib/build-and-test/build-and-test-step/build-and-test-step.component.spec.ts
-@@ -0,0 +1,271 @@
+@@ -0,0 +1,317 @@
 +import { render, screen, waitFor } from "@testing-library/angular";
 +import { MockComponent } from "ng-mocks";
++import { of } from "rxjs";
 +import { BuildAndTestStepComponent } from "./build-and-test-step.component";
 +import { BuildAndTestBuildSectionComponent } from "./build-and-test-build-section/build-and-test-build-section.component";
 +import { BuildAndTestTestSectionComponent } from "./build-and-test-test-section/build-and-test-test-section.component";
-+import { BuildAndTestProcessStateUpdaterService } from "@mxevolve/domains/business-process/data-access";
++import {
++  BuildAndTestProcessStateUpdaterService,
++  BuildAndTestEnvironmentResolverService,
++} from "@mxevolve/domains/business-process/data-access";
 +import {
 +  BuildAndTestProcessExecution,
 +  BuildAndTestSourceType,
@@ -6815,6 +7389,10 @@ index 00000000000..128c95aad58
 +
 +const mockStateUpdater = {
 +  reloadProcessDetails: jest.fn(),
++};
++
++const mockEnvironmentResolver = {
++  resolveEnvironment: jest.fn(() => of({ environmentId: "", environmentStatus: "" })),
 +};
 +
 +function buildStage(
@@ -6892,6 +7470,10 @@ index 00000000000..128c95aad58
 +      {
 +        provide: BuildAndTestProcessStateUpdaterService,
 +        useValue: mockStateUpdater,
++      },
++      {
++        provide: BuildAndTestEnvironmentResolverService,
++        useValue: mockEnvironmentResolver,
 +      },
 +    ],
 +  });
@@ -7063,20 +7645,59 @@ index 00000000000..128c95aad58
 +      expect(screen.queryByTestId("technical-reseed-stub")).toBeNull();
 +    });
 +  });
++
++  describe("environment resolution", () => {
++    it("resolves the environment from the prepare-build latest scenario execution", async () => {
++      const execution = {
++        ...buildExecution(),
++        prepareBuildStage: {
++          name: "prepare-build",
++          route: "prepare-build",
++          status: StageStatus.PASSED,
++          latestScenarioExecutionId: "scenario-exec-1",
++        },
++      } as BuildAndTestProcessExecution;
++
++      await renderComponent(execution);
++
++      await waitFor(() =>
++        expect(mockEnvironmentResolver.resolveEnvironment).toHaveBeenCalledWith(
++          "project-1",
++          "scenario-exec-1"
++        )
++      );
++    });
++
++    it("does not resolve an environment when there is no deploy scenario", async () => {
++      await renderComponent(buildExecution());
++
++      await waitFor(() =>
++        expect(
++          document.querySelector("mxevolve-build-and-test-build-section")
++        ).toBeTruthy()
++      );
++      expect(mockEnvironmentResolver.resolveEnvironment).not.toHaveBeenCalled();
++    });
++  });
 +});
 diff --git src://web/libs/domains/business-process/feature/src/lib/build-and-test/build-and-test-step/build-and-test-step.component.ts dst://web/libs/domains/business-process/feature/src/lib/build-and-test/build-and-test-step/build-and-test-step.component.ts
 new file mode 100644
-index 00000000000..12a7af0902c
+index 00000000000..518631e6d54
 --- /dev/null
 +++ dst://web/libs/domains/business-process/feature/src/lib/build-and-test/build-and-test-step/build-and-test-step.component.ts
-@@ -0,0 +1,93 @@
+@@ -0,0 +1,138 @@
 +import { Component, computed, inject, input } from "@angular/core";
++import { rxResource } from "@angular/core/rxjs-interop";
 +import { Message } from "primeng/message";
-+import { BuildAndTestProcessStateUpdaterService } from "@mxevolve/domains/business-process/data-access";
++import {
++  BuildAndTestProcessStateUpdaterService,
++  BuildAndTestEnvironmentResolverService,
++} from "@mxevolve/domains/business-process/data-access";
 +import {
 +  StageContainerComponent,
 +  BusinessProcessContentContainerComponent,
 +} from "@mxevolve/domains/business-process/ui";
++import { EnvironmentStatus } from "@mxevolve/domains/environment/util";
 +import { MxevolveIllustrationComponent } from "@mxevolve/shared/ui/primitive";
 +import type { StepStatus } from "@mxevolve/shared/ui/primitive";
 +import type { BuildAndTestProcessExecution } from "@mxevolve/domains/business-process/util";
@@ -7104,7 +7725,10 @@ index 00000000000..12a7af0902c
 +    BuildAndTestBuildSectionComponent,
 +    BuildAndTestTestSectionComponent,
 +  ],
-+  providers: [BuildAndTestProcessStateUpdaterService],
++  providers: [
++    BuildAndTestProcessStateUpdaterService,
++    BuildAndTestEnvironmentResolverService,
++  ],
 +  host: {
 +    style: "display: contents;",
 +  },
@@ -7114,6 +7738,9 @@ index 00000000000..12a7af0902c
 +  readonly stageStatus = input.required<StepStatus>();
 +
 +  private readonly stateUpdater = inject(BuildAndTestProcessStateUpdaterService);
++  private readonly environmentResolver = inject(
++    BuildAndTestEnvironmentResolverService
++  );
 +
 +  private readonly stage = computed(() => this.execution().buildAndTestStage);
 +
@@ -7154,6 +7781,40 @@ index 00000000000..12a7af0902c
 +  /** Technical Reseed section is conditional on a reseed execution group. */
 +  readonly showTechnicalReseed = computed(
 +    () => !!this.stage().technicalReseedExecutionGroupId
++  );
++
++  /**
++   * The build/test environment id is not on the CI model; it is resolved
++   * indirectly from the latest deploy scenario of the prepare-build stage
++   * (mirrors the legacy `getScenarioExecution(...).environmentId` lookup).
++   * Absent when the run skips environment deployment (no deploy scenario).
++   */
++  private readonly environmentScenarioId = computed(
++    () => this.execution().prepareBuildStage.latestScenarioExecutionId
++  );
++
++  private readonly environmentResource = rxResource({
++    params: () => {
++      const scenarioExecutionId = this.environmentScenarioId();
++      if (!scenarioExecutionId) return undefined;
++      return { projectId: this.projectId(), scenarioExecutionId };
++    },
++    stream: ({ params }) =>
++      this.environmentResolver.resolveEnvironment(
++        params.projectId,
++        params.scenarioExecutionId
++      ),
++  });
++
++  readonly environmentId = computed(
++    () => this.environmentResource.value()?.environmentId || undefined
++  );
++
++  readonly environmentStatus = computed(
++    () =>
++      (this.environmentResource.value()?.environmentStatus as
++        | EnvironmentStatus
++        | undefined) ?? EnvironmentStatus.READY
 +  );
 +
 +  reloadExecution(): void {
@@ -7421,10 +8082,10 @@ index 3d920e7693c..70a72d1bf5f 100644
 +} from "./lib/build-and-test/build-and-test-process-execution";
 diff --git src://web/libs/domains/business-process/util/src/lib/build-and-test/build-and-test-process-execution.ts dst://web/libs/domains/business-process/util/src/lib/build-and-test/build-and-test-process-execution.ts
 new file mode 100644
-index 00000000000..142b4034598
+index 00000000000..dd3bf411a6a
 --- /dev/null
 +++ dst://web/libs/domains/business-process/util/src/lib/build-and-test/build-and-test-process-execution.ts
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,69 @@
 +import { ExecutionStatus } from "../execution-status";
 +import { Stage } from "../stage";
 +
@@ -7473,6 +8134,10 @@ index 00000000000..142b4034598
 +export interface BuildAndTestProcessStage extends Stage {
 +  readonly route: string;
 +  readonly developmentId?: string;
++  // Latest deploy scenario for the stage (populated on prepareBuildStage). The
++  // build/test environment id is resolved indirectly from this scenario, mirroring
++  // the legacy `getScenarioExecution(...).environmentId` lookup.
++  readonly latestScenarioExecutionId?: string;
 +  // Build & Test stage-specific fields (additive — populated only on buildAndTestStage).
 +  readonly readyForBuildAndTest?: boolean;
 +  readonly cherryPickRunning?: boolean;
@@ -8998,6 +9663,130 @@ index 00000000000..52582ba1dcf
 +    return `/app/${this.projectId()}/environments/${this.environmentId()}/configuration-editor`;
 +  }
 +}
+diff --git src://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-analytics-tracker.service.spec.ts dst://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-analytics-tracker.service.spec.ts
+new file mode 100644
+index 00000000000..39dbcabd9a6
+--- /dev/null
++++ dst://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-analytics-tracker.service.spec.ts
+@@ -0,0 +1,37 @@
++import { MockBuilder, ngMocks } from "ng-mocks";
++import { AbortScenarioRunAnalyticsTrackerService } from "./abort-scenario-run-analytics-tracker.service";
++import {
++  AnalyticsTrackerService,
++  EventAction,
++  EventCategory,
++} from "@mxflow/core/analytics-tracker";
++
++describe("AbortScenarioRunAnalyticsTrackerService", () => {
++  let service: AbortScenarioRunAnalyticsTrackerService;
++  let analyticsTrackerService: { trackEvent: jest.Mock };
++
++  beforeEach(() => {
++    analyticsTrackerService = { trackEvent: jest.fn() };
++
++    return MockBuilder()
++      .provide(AbortScenarioRunAnalyticsTrackerService)
++      .provide({
++        provide: AnalyticsTrackerService,
++        useValue: analyticsTrackerService,
++      });
++  });
++
++  beforeEach(() => {
++    service = ngMocks.findInstance(AbortScenarioRunAnalyticsTrackerService);
++  });
++
++  it("should track abort execution button click", () => {
++    service.trackAbortExecution();
++
++    expect(analyticsTrackerService.trackEvent).toHaveBeenCalledWith(
++      EventCategory.BUTTON,
++      EventAction.CLICK_BUTTON,
++      "Abort Execution"
++    );
++  });
++});
+diff --git src://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-analytics-tracker.service.ts dst://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-analytics-tracker.service.ts
+new file mode 100644
+index 00000000000..42dc0c7a2a9
+--- /dev/null
++++ dst://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-analytics-tracker.service.ts
+@@ -0,0 +1,19 @@
++import { inject, Injectable } from "@angular/core";
++import {
++  AnalyticsTrackerService,
++  EventAction,
++  EventCategory,
++} from "@mxflow/core/analytics-tracker";
++
++@Injectable({ providedIn: "root" })
++export class AbortScenarioRunAnalyticsTrackerService {
++  private readonly analyticsTrackerService = inject(AnalyticsTrackerService);
++
++  trackAbortExecution(): void {
++    this.analyticsTrackerService.trackEvent(
++      EventCategory.BUTTON,
++      EventAction.CLICK_BUTTON,
++      "Abort Execution"
++    );
++  }
++}
+\ No newline at end of file
+diff --git src://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-button.component.ts dst://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-button.component.ts
+index 477a145dc3f..bfb6a47e837 100644
+--- src://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-button.component.ts
++++ dst://web/libs/domains/test/widget/src/lib/abort-scenario-run-button/abort-scenario-run-button.component.ts
+@@ -9,22 +9,21 @@ import {
+ import { Button } from "primeng/button";
+ import { ConfirmDialogModule } from "primeng/confirmdialog";
+ import { ConfirmationService } from "primeng/api";
+ import { TooltipModule } from "primeng/tooltip";
+ import { ScenarioRunService } from "@mxevolve/domains/test/data-access";
+ import { ScenarioRunStatus } from "@mxevolve/domains/test/model";
+ import {
+   MxevolveIconComponent,
+   ToastMessageService,
+ } from "@mxevolve/shared/ui/primitive";
+-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+-
++import { AbortScenarioRunAnalyticsTrackerService } from "./abort-scenario-run-analytics-tracker.service";
+ @Component({
+   selector: "mxevolve-abort-scenario-run-button",
+   standalone: true,
+   imports: [Button, ConfirmDialogModule, TooltipModule, MxevolveIconComponent],
+   providers: [ScenarioRunService, ConfirmationService],
+   template: `
+     <p-button
+       [rounded]="true"
+       [text]="true"
+       size="small"
+@@ -66,23 +65,23 @@ export class AbortScenarioRunButtonComponent {
+   scenarioAborted = output<void>();
+ 
+   loading = signal(false);
+   disabled = computed(
+     () => this.scenarioRunStatus() !== ScenarioRunStatus.UNDERWAY
+   );
+ 
+   private readonly scenarioRunService = inject(ScenarioRunService);
+   private readonly confirmationService = inject(ConfirmationService);
+   private readonly toastMessageService = inject(ToastMessageService);
+-  private readonly analyticsTrackerService = inject(
+-    TestManagementAnalyticsTrackerService
+-  );
++private readonly analyticsTrackerService = inject(
++  AbortScenarioRunAnalyticsTrackerService
++);
+ 
+   handleAbortClicked() {
+     this.confirmationService.confirm({
+       header: "Confirmation",
+       message: `Are you sure you want to abort <b>${this.scenarioRunName()}</b>?`,
+       icon: "pi pi-exclamation-triangle",
+     });
+   }
+ 
+   confirmAbort() {
 diff --git src://web/libs/shared/core/config/src/index.ts dst://web/libs/shared/core/config/src/index.ts
 index 18ded4a1a95..87aca7bc71f 100644
 --- src://web/libs/shared/core/config/src/index.ts

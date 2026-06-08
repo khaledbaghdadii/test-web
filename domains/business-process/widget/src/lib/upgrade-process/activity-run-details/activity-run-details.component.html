@@ -1,0 +1,163 @@
+<div class="flex flex-col gap-4 p-4">
+  <h4 class="text-lg font-bold m-0">Activity Run Details</h4>
+
+  <div class="flex flex-wrap items-stretch gap-6">
+    <div class="flex flex-col gap-1">
+      <span class="text-muted-color">Template Name</span>
+      <span class="font-semibold">{{ execution().definitionName || "-" }}</span>
+    </div>
+    <p-divider layout="vertical" />
+    <div class="flex flex-col gap-1">
+      <span class="text-muted-color">Activity Type</span>
+      <span class="font-semibold">{{
+        execution().familyName + " / " + execution().processName
+      }}</span>
+    </div>
+    <p-divider layout="vertical" />
+    <div class="flex flex-col gap-1">
+      <span class="text-muted-color">Upgrade Jump</span>
+      <span class="font-semibold">{{
+        execution().input.upgradeJump || "-"
+      }}</span>
+    </div>
+    <p-divider layout="vertical" />
+    <div class="flex flex-col gap-1">
+      <span class="text-muted-color">Quality Level</span>
+      <span class="font-semibold">{{
+        execution().input.businessProcessQualityLevel || "-"
+      }}</span>
+    </div>
+    <p-divider layout="vertical" />
+    <div class="flex flex-col gap-1 max-w-xl">
+      <span class="text-muted-color">Description</span>
+      @if (description()) {
+      <mxevolve-show-more-less-text
+        class="font-semibold"
+        [text]="description()!"
+      />
+      } @else {
+      <span class="font-semibold">-</span>
+      }
+    </div>
+  </div>
+
+  <p-divider class="m-0" />
+
+  <div class="flex flex-col gap-3">
+    <div class="flex items-center gap-2">
+      <span class="text-primary font-bold">MX Parameters</span>
+      <span class="text-muted-color"> - Factory Product</span>
+    </div>
+    <div class="flex items-stretch gap-6">
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">MX Version</span>
+        <span class="font-semibold">{{
+          execution().input.mxVersion || "-"
+        }}</span>
+      </div>
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">MX Build ID</span>
+        <span class="font-semibold">{{
+          execution().input.mxBuildId || "-"
+        }}</span>
+      </div>
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">BIP Version</span>
+        <span class="font-semibold">{{
+          execution().input.bipVersion || "-"
+        }}</span>
+      </div>
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">BIP Build ID</span>
+        <span class="font-semibold">{{
+          execution().input.bipBuildId || "-"
+        }}</span>
+      </div>
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">Parent MX Archival Branch</span>
+        <span class="font-semibold">{{
+          execution().input.parentMxArchivalBranch || "-"
+        }}</span>
+      </div>
+    </div>
+  </div>
+
+  <p-divider class="m-0" />
+
+  <div class="flex items-stretch gap-6">
+    <div class="flex flex-col gap-3">
+      <span class="text-primary font-bold">Configuration Parameters</span>
+      <div class="flex items-stretch gap-6">
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Repository</span>
+          <span class="font-semibold">
+            @if (execution().input.repositoryId) {
+            <mxevolve-repository-name
+              [projectId]="execution().projectId"
+              [repositoryId]="execution().input.repositoryId"
+            />
+            } @else { - }
+          </span>
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Configuration Branch</span>
+          <span class="font-semibold">{{
+            execution().input.configurationBranchName || "-"
+          }}</span>
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Create Branch</span>
+          <span class="font-semibold">{{
+            execution().input.createBranch ? "Yes" : "No"
+          }}</span>
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Configuration Parent Branch</span>
+          <span class="font-semibold">{{
+            execution().input.configurationParentBranch || "-"
+          }}</span>
+        </div>
+      </div>
+    </div>
+
+    <p-divider layout="vertical" />
+
+    <div class="flex flex-col gap-3">
+      <span class="text-primary font-bold">Infrastructure Parameters</span>
+      <div class="flex items-stretch gap-6">
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Binary Conversion Infra Group</span>
+          <span class="font-semibold">
+            @if (execution().input.binaryConversionInfraGroupId) {
+            <mxevolve-infra-group-name
+              [projectId]="execution().projectId"
+              [infraGroupId]="execution().input.binaryConversionInfraGroupId"
+            />
+            } @else { - }
+          </span>
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Quality Gate Infra Group</span>
+          <span class="font-semibold">
+            @if (execution().input.qualityGateExecutionInfraGroupId) {
+            <mxevolve-infra-group-name
+              [projectId]="execution().projectId"
+              [infraGroupId]="
+                execution().input.qualityGateExecutionInfraGroupId
+              "
+            />
+            } @else { - }
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

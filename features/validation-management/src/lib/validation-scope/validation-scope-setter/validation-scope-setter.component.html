@@ -1,0 +1,70 @@
+<form
+  [formGroup]="validationScopeSetterForm"
+  (ngSubmit)="onSubmit()"
+  class="flex gap-4 w-full sm:w-56"
+>
+  <div class="flex flex-col gap-1">
+    <p-floatlabel variant="on">
+      <input
+        pInputText
+        id="sourceVersion"
+        placeholder="Enter Version"
+        formControlName="sourceVersion"
+      />
+      <label for="sourceVersion">From Version</label>
+      <ng-template
+        [ngTemplateOutlet]="errorTipTemplate"
+        [ngTemplateOutletContext]="{
+          $implicit: validationScopeSetterForm.controls.sourceVersion
+        }"
+      ></ng-template>
+    </p-floatlabel>
+  </div>
+  <div class="flex flex-col gap-1">
+    <p-floatlabel variant="on">
+      <input
+        pInputText
+        type="text"
+        id="targetVersion"
+        placeholder="Enter Version"
+        formControlName="targetVersion"
+      />
+      <label for="targetVersion">To Version</label>
+      <ng-template
+        [ngTemplateOutlet]="errorTipTemplate"
+        [ngTemplateOutletContext]="{
+          $implicit: validationScopeSetterForm.controls.targetVersion
+        }"
+      ></ng-template>
+    </p-floatlabel>
+  </div>
+  <p-splitbutton
+    label="Submit"
+    (onClick)="onSubmit()"
+    (onDropdownClick)="showValidationScopeMenuOptions()"
+    [model]="validationScopeMenuItems"
+    [disabled]="!validationScopeSetterForm.valid"
+  ></p-splitbutton>
+</form>
+
+@if (validationScopeSetterForm.hasError('bothOrNoneRequired')) {
+<div class="flex gap-1 pt-1 input-error">
+  <small class="text-red-500 block">
+    Both 'From Version' and 'To Version' must be filled in together
+  </small>
+</div>
+}
+
+<ng-template #errorTipTemplate let-control>
+  <div>
+    @if (control.invalid && control.dirty) {
+    <div class="flex gap-1 pt-1">
+      @if (control.hasError('whitespace')) {
+      <small data-testid="control-error-tip" class="text-red-500 block"
+        >Field cannot be blank</small
+      >
+      }
+    </div>
+    }
+  </div>
+</ng-template>

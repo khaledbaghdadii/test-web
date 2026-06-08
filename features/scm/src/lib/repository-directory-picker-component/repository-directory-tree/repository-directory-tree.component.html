@@ -1,0 +1,28 @@
+<p-tree
+  [loading]="isLoading"
+  [value]="directoriesTreeNode"
+  selectionMode="single"
+  [(selection)]="selectedDirectory"
+>
+  <ng-template let-node pTemplate="default">
+    {{ node.label }}
+  </ng-template>
+</p-tree>
+
+<div class="flex justify-end mt-6">
+  <button
+    label="Select"
+    pButton
+    (click)="select()"
+    [disabled]="isDirectoryNotSelected()"
+    id="repository-directory-picker-submit"
+    class="mr-2"
+  ></button>
+  <button
+    pButton
+    class="p-button-outlined"
+    (click)="close()"
+    id="repository-directory-picker-cancel"
+    label="Cancel"
+  ></button>
+</div>

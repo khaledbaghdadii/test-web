@@ -1,0 +1,7 @@
+<mxevolve-multiselect-dropdown
+  [stateProvider]="stateProvider"
+  [dataParams]="{ projectId: projectId() }"
+  [config]="{ placeholder: 'Select Test Scenarios', disabled: disabled() }"
+  (selectionChange)="onSelectionChange($event)"
+  (errorEvent)="onError($event)"
+/>

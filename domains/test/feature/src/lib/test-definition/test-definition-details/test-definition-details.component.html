@@ -1,0 +1,82 @@
+<div class="mb-4">
+  <mxevolve-card-container>
+    <mxflow-header-title>
+      Test Package Definition Details
+      <div right-content>
+        <p-button
+          label="Edit Test Package"
+          routerLink="../../edit/{{ testDefinitionId }}"
+          id="edit-test-package"
+          *showElementIfAuthorized="{
+            action: 'update',
+            attributes: {},
+            package: 'test',
+            resource: 'test_definition'
+          }"
+        ></p-button>
+      </div>
+    </mxflow-header-title>
+    <div
+      class="grid grid-cols-12 gap-4 grid-nogutter bg-surface-0 dark:bg-surface-900"
+    >
+      <div class="col-span-12 md:col-span-6 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Name
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{ testDefinition ? testDefinition.name : "-" }}
+        </div>
+      </div>
+      <div class="col-span-12 md:col-span-6 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Repository Name
+        </div>
+        @if (testRepo) {
+        <a class="p-button-link" href="{{ testRepo.url }}">{{
+          testRepo.name
+        }}</a>
+        } @if (!testRepo) {
+        <div>-</div>
+        }
+      </div>
+      <div class="col-span-12 md:col-span-6 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Path
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{ testDefinition ? testDefinition.path : "-" }}
+        </div>
+      </div>
+      <div class="col-span-12 md:col-span-6 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Description
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{ testDefinition ? testDefinition.description : "-" }}
+        </div>
+      </div>
+      <div class="col-span-12 md:col-span-6 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Timeout Duration (in hours)
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          @if ( isTestDefinitionTimeoutValid()) {
+          <div>
+            {{ testDefinition.timeoutDuration | getTimeoutDurationInHours }}
+          </div>
+          } @else { - }
+        </div>
+      </div>
+    </div>
+  </mxevolve-card-container>
+</div>
+
+<mxevolve-card-container>
+  <mxevolve-test-selection-table
+    [testDefinition]="testDefinition"
+    [isLoading]="isLoading"
+    [projectId]="projectId"
+    [defaultBranch]="testRepo ? testRepo.defaultBranch : ''"
+    (reloadTestDefinition)="reloadTestDefinition()"
+  ></mxevolve-test-selection-table>
+</mxevolve-card-container>

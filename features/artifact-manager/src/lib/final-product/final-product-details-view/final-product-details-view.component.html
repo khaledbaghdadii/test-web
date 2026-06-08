@@ -1,0 +1,42 @@
+<mxevolve-card-container
+  *showElementIfAuthorized="{
+    action: 'read',
+    projectId: finalProduct.projectId,
+    attributes: {},
+    package: 'artifact_management',
+    resource: 'final_product'
+  }"
+>
+  <mxflow-header-title>
+    Final Product: {{ finalProduct.id }}
+  </mxflow-header-title>
+
+  @if (hasSyncRequests || isFailed) {
+  <p-tabs [value]="hasSyncRequests ? '0' : '1'">
+    <p-tablist>
+      @if (hasSyncRequests) {
+      <p-tab value="0">Sync Details</p-tab>
+      } @if (isFailed) {
+      <p-tab value="1">Failure Details</p-tab>
+      }
+    </p-tablist>
+    <p-tabpanels>
+      @if (hasSyncRequests) {
+      <p-tabpanel value="0">
+        <mxevolve-final-product-sync-details-view
+          [finalProduct]="finalProduct"
+        ></mxevolve-final-product-sync-details-view>
+      </p-tabpanel>
+      } @if (isFailed) {
+      <p-tabpanel value="1">
+        <mxevolve-final-product-failure-details-view
+          [finalProduct]="finalProduct"
+        ></mxevolve-final-product-failure-details-view>
+      </p-tabpanel>
+      }
+    </p-tabpanels>
+  </p-tabs>
+  } @else {
+  <p>No details available</p>
+  }
+</mxevolve-card-container>

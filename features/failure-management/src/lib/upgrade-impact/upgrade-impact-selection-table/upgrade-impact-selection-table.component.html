@@ -1,0 +1,366 @@
+<p-table
+  data-testid="upgrade-impacts-selection-table"
+  [value]="upgradeImpacts"
+  [showLoader]="false"
+  [loading]="isLoading"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  [rows]="10"
+  [first]="query.page * query.size"
+  [totalRecords]="total"
+  [paginator]="true"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  paginatorStyleClass="justify-end"
+  paginatorDropdownAppendTo="body"
+  [resizableColumns]="true"
+  columnResizeMode="expand"
+  [scrollable]="true"
+  [lazy]="true"
+  dataKey="id"
+  (selectionChange)="impactSelected($event)"
+  [(selection)]="selectedImpact"
+  (onLazyLoad)="handleTableQueryParamsChange($event)"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th
+        [hidden]="hideSelection"
+        scope="col"
+        data-testId="selection-column-header"
+      >
+        <!-- radio buttons -->
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Upgrade Impact ID</span>
+          <p-columnFilter
+            [showApplyButton]="false"
+            [showClearButton]="false"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            field="externalIssueIdPhrases"
+            display="menu"
+            matchMode="in"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedExternalIssueIdPhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Title</span>
+          <p-columnFilter
+            [showApplyButton]="false"
+            [showClearButton]="false"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            field="titlePhrases"
+            display="menu"
+            matchMode="in"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedTitlePhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Description</span>
+          <p-columnFilter
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showMatchModes]="false"
+            [hideOnClear]="true"
+            type="text"
+            field="descriptionPhrase"
+            display="menu"
+          >
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Introduced in Archival</span>
+          <p-columnFilter
+            [showApplyButton]="false"
+            [showClearButton]="false"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            field="introducedInArchivalPhrases"
+            display="menu"
+            matchMode="in"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedIntroducedInArchivalPhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Defect IDs</span>
+          <p-columnFilter
+            [showApplyButton]="false"
+            [showClearButton]="false"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            field="defectIdPhrases"
+            display="menu"
+            matchMode="in"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedDefectIdPhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">BPC/FF/TOPIC</span>
+          <p-columnFilter
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showApplyButton]="false"
+            [showClearButton]="false"
+            field="bpcFfTopicPhrases"
+            display="menu"
+            matchMode="in"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedBpcFFTopicPhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Introduced in Release Version</span>
+          <p-columnFilter
+            [showApplyButton]="false"
+            [showClearButton]="false"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            field="introducedInReleaseVersionPhrases"
+            display="menu"
+            matchMode="in"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedIntroducedInReleaseVersionPhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Impacted Outputs</span>
+          <p-columnFilter
+            [showApplyButton]="false"
+            [showClearButton]="false"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            field="impactedOutputsPhrases"
+            display="menu"
+            matchMode="in"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedImpactedOutputPhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th pResizableColumn scope="col">
+        <div class="flex justify-between items-center gap-2">
+          <span class="whitespace-normal">Impacted Instrument Scope</span>
+          <p-columnFilter
+            [showApplyButton]="false"
+            [showClearButton]="false"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            field="impactedInstrumentsScopePhrases"
+            display="menu"
+            matchMode="in"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedImpactedInstrumentsScopePhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-impact>
+    <tr data-testid="tableBody">
+      <td [hidden]="hideSelection" data-testId="selection-column">
+        <p-tableRadioButton [value]="impact"></p-tableRadioButton>
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="impact.externalIssue.link"
+        tooltipPosition="top"
+        [showDelay]="1000"
+      >
+        <a
+          class="p-button-link"
+          href="{{ impact.externalIssue.link }}"
+          target="_blank"
+          rel="noopener"
+          >{{ impact.externalIssue.id }}</a
+        >
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="impact.title"
+        tooltipPosition="top"
+        [showDelay]="1000"
+      >
+        {{ impact.title }}
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="impact.textOnlyDescription"
+        tooltipPosition="top"
+        [showDelay]="1000"
+      >
+        {{ impact.textOnlyDescription }}
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="impact.introducedInArchival"
+        tooltipPosition="top"
+        [showDelay]="1000"
+      >
+        @if(impact.introducedInArchival?.length > 0){
+        <ng-container>
+          <span>{{ impact.introducedInArchival.join(", ") }}</span>
+        </ng-container>
+        } @else { - }
+      </td>
+      <td class="truncate" [pTooltip]="getDefectIds(impact.defects)">
+        @if(impact.defects?.length > 0){
+        <ng-container>
+          @for(defect of impact.defects; track $index; let isLast = $last){
+          <ng-container class="whitespace-normal">
+            <span>
+              <a
+                href="{{ defect.defectLink }}"
+                target="_blank"
+                rel="noopener"
+                class="p-button-link"
+              >
+                {{ defect.defectId }}</a
+              >
+              @if(!isLast){
+              <span>, </span>
+              }
+            </span> </ng-container
+          >}
+        </ng-container>
+        } @else { - }
+      </td>
+      <td
+        [pTooltip]="impact.bpcFFTopic"
+        tooltipPosition="top"
+        [showDelay]="1000"
+        class="truncate"
+      >
+        @if(impact.bpcFFTopic?.length > 0){
+        <ng-container>
+          <span>{{ impact.bpcFFTopic.join(", ") }}</span> </ng-container
+        >} @else { - }
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="impact.introducedInReleaseVersion"
+        tooltipPosition="top"
+        [showDelay]="1000"
+      >
+        @if(impact.introducedInReleaseVersion?.length > 0){
+
+        <ng-container>
+          <span>{{ impact.introducedInReleaseVersion.join(", ") }}</span>
+        </ng-container>
+        } @else { - }
+      </td>
+      <td
+        class="truncate"
+        [pTooltip]="impact.impactedOutputs"
+        tooltipPosition="top"
+        [showDelay]="1000"
+      >
+        @if(impact.impactedOutputs){
+
+        <ng-container>
+          <span>{{ impact.impactedOutputs }}</span> </ng-container
+        >} @else { - }
+      </td>
+      <td
+        [pTooltip]="impact.impactedInstrumentsScope"
+        tooltipPosition="top"
+        [showDelay]="1000"
+        class="truncate"
+      >
+        @if(impact.impactedInstrumentsScope?.length > 0){
+
+        <ng-container>
+          <span>{{
+            impact.impactedInstrumentsScope.join(", ")
+          }}</span> </ng-container
+        >} @else { - }
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="loadingbody">
+    @for(row of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track row) {
+    <tr>
+      @for(col of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track col){
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="12" class="py-4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

@@ -1,0 +1,31 @@
+<p-dialog
+  header="Select Incident"
+  [(visible)]="isVisible"
+  [modal]="true"
+  appendTo="body"
+  [style]="{ width: '80vw', maxWidth: '1200px' }"
+  [closable]="true"
+  (onHide)="handleCancel()"
+>
+  <mxevolve-single-select-incident
+    [refresh]="triggerRefresh$"
+    [(selectedIncident)]="selection"
+  >
+  </mxevolve-single-select-incident>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2">
+      <p-button
+        data-testid="cancel-button"
+        label="Cancel"
+        severity="secondary"
+        (onClick)="handleCancel()"
+      ></p-button>
+      <p-button
+        data-testid="submit-button"
+        label="Select"
+        (onClick)="submit()"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>

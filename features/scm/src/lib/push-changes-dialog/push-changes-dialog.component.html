@@ -1,0 +1,79 @@
+<p-button
+  label="Push Changes"
+  [disabled]="disabled() || pushInProgress"
+  [pTooltip]="disabled() ? disabledTooltip() : ''"
+  styleClass="w-12rem"
+  (click)="openDialog()"
+  (keydown.enter)="openDialog()"
+  data-testid="push-changes-button"
+></p-button>
+
+<p-dialog
+  header="Push Changes"
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [style]="{ width: '35vw' }"
+  [dismissableMask]="!pushInProgress"
+  [closeOnEscape]="!pushInProgress"
+  [styleClass]="pushInProgress ? 'push-in-progress' : ''"
+>
+  <form>
+    <div class="flex flex-col gap-4 mb-4">
+      <label for="commitMessage" class="text-lg font-medium required"
+        >Commit Message</label
+      >
+      <input
+        pInputText
+        id="commitMessage"
+        class="flex-auto"
+        placeholder="Enter your commit message here..."
+        [formControl]="commitMessageFormControl"
+        [maxlength]="maxCommitMessageLength"
+        data-testid="commit-message-input"
+      />
+      @if (commitMessageFormControl.invalid && commitMessageFormControl.dirty) {
+      <span class="text-sm text-red-400" data-testid="validation-error">
+        @if (commitMessageFormControl.hasError("whitespace")) { Commit message
+        cannot be whitespaces } @else if
+        (commitMessageFormControl.hasError("required")) { Commit message is
+        required }
+      </span>
+      }
+      <span class="text-sm text-right text-gray-400">
+        {{ commitMessageFormControl.value?.length ?? 0 }} /
+        {{ maxCommitMessageLength }}
+      </span>
+    </div>
+
+    @if (dialogVisible) {
+    <div class="mb-4">
+      <mxevolve-changed-files-list
+        [projectId]="projectId()"
+        [repositoryId]="repositoryId()"
+      />
+    </div>
+    }
+
+    <div class="flex justify-end gap-2">
+      <p-button
+        label="Cancel"
+        [outlined]="true"
+        [disabled]="pushInProgress"
+        (click)="cancelDialog()"
+        (keydown.enter)="cancelDialog()"
+        data-testid="cancel-push-button"
+      />
+      <p-button
+        label="Push"
+        class="text-white"
+        [loading]="pushInProgress"
+        [disabled]="pushInProgress"
+        (click)="submitPush()"
+        (keydown.enter)="submitPush()"
+        data-testid="submit-push-button"
+      />
+    </div>
+  </form>
+</p-dialog>
+
+<p-toast />

@@ -1,0 +1,41 @@
+<mxevolve-groups-multi-selection-filter
+  [selectedGroupsLimit]="10"
+  [selectFirstNGroups]="10"
+  [projectId]="projectId()"
+  (selectedGroupsListChange)="handleGroupListChange($event)"
+  (failureEvent)="handleGroupMultiselectError($event)"
+  [appendToBody]="true"
+>
+</mxevolve-groups-multi-selection-filter>
+<div class="my-1">
+  <small class="italic text-gray-500 text-sm"
+    >Select up to 10 groups to see the details in the chart below</small
+  >
+</div>
+@if (groupMultiselectErrorMessage()) {
+<mxflow-error-alert
+  data-testId="group-multiselect-error"
+  [closeable]="false"
+  [errorMessage]="groupMultiselectErrorMessage()!"
+></mxflow-error-alert>
+} @if (groupMetricsErrorMessage()) {
+<mxflow-error-alert
+  data-testId="group-metrics-error"
+  [closeable]="false"
+  [errorMessage]="groupMetricsErrorMessage()!"
+></mxflow-error-alert>
+} @if (shouldShowGroupNamesWithNoMetricsMessage()) {
+<mxflow-error-alert
+  class="my-3"
+  data-testId="group-names-with-no-metrics-message"
+  [closeable]="false"
+  [errorMessage]="getWarningMessage()"
+  [errorDetails]="getMetricsErrorDetails()"
+></mxflow-error-alert>
+} @if (shouldShowChart()) {
+<div class="mt-1 flex flex-col items-center">
+  <div style="display: grid; width: 100%; height: 50vh">
+    <ag-charts [options]="chartOptions()"></ag-charts>
+  </div>
+</div>
+}

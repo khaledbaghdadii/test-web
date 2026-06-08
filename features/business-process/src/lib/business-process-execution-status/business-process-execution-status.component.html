@@ -1,0 +1,106 @@
+<div [ngSwitch]="status">
+  <div [ngSwitch]="status">
+    <p-tag
+      severity="success"
+      *ngSwitchCase="businessProcessExecutionStatus.PASSED"
+    >
+      <div class="flex gap-1 text-sm">
+        <i
+          class="flex items-center pi pi-check-circle"
+          style="display: flex"
+        ></i>
+        <span>Passed</span>
+      </div>
+    </p-tag>
+    <p-tag
+      severity="info"
+      *ngSwitchCase="businessProcessExecutionStatus.RUNNING"
+    >
+      <div class="flex gap-1 text-sm">
+        <i
+          class="flex items-center pi pi-spin pi-spinner"
+          style="display: flex"
+        ></i>
+        <span>Running</span>
+      </div>
+    </p-tag>
+    <p-tag
+      severity="danger"
+      *ngSwitchCase="businessProcessExecutionStatus.FAILED"
+    >
+      <div class="flex gap-1 text-sm">
+        <i
+          class="flex items-center pi pi-times-circle"
+          style="display: flex"
+        ></i>
+        <span>Failed</span>
+      </div>
+    </p-tag>
+    <p-tag
+      severity="danger"
+      *ngSwitchCase="businessProcessExecutionStatus.ABORTED"
+    >
+      <div class="flex gap-1 text-sm">
+        <i
+          class="flex items-center pi pi-exclamation-circle"
+          style="display: flex"
+        ></i>
+        <span>Aborted</span>
+      </div>
+    </p-tag>
+    <p-tag
+      severity="danger"
+      *ngSwitchCase="businessProcessExecutionStatus.ABORTING"
+    >
+      <div class="flex gap-1 text-sm">
+        <i
+          class="flex items-center pi pi-spin pi-spinner"
+          style="display: flex"
+        ></i>
+        <span>Aborting</span>
+      </div>
+    </p-tag>
+    <p-tag
+      severity="secondary"
+      *ngSwitchCase="businessProcessExecutionStatus.STOPPED"
+    >
+      <div class="flex gap-1 text-sm /90">
+        <i class="flex items-center pi pi-ban" style="display: flex"></i>
+        <span>Stopped</span>
+      </div>
+    </p-tag>
+    <p-tag
+      severity="warn"
+      *ngSwitchCase="businessProcessExecutionStatus.NOT_STARTED"
+    >
+      <div class="flex gap-1 text-sm">
+        <i
+          class="flex items-center pi pi-exclamation-circle"
+          style="display: flex"
+        ></i>
+        <span>Not Started</span>
+      </div>
+    </p-tag>
+    <p-tag
+      severity="warn"
+      *ngSwitchCase="businessProcessExecutionStatus.PENDING_INPUT"
+    >
+      <div class="flex gap-1 text-sm">
+        <i
+          class="flex items-center pi pi-exclamation-triangle"
+          style="display: flex"
+        ></i>
+        <span>Pending Input</span>
+      </div>
+    </p-tag>
+    <p-tag severity="contrast" *ngSwitchDefault>
+      <div class="flex gap-1 text-sm">
+        <i
+          class="flex items-center pi pi-minus-circle"
+          style="display: flex"
+        ></i>
+        <span>NA</span>
+      </div>
+    </p-tag>
+  </div>
+</div>

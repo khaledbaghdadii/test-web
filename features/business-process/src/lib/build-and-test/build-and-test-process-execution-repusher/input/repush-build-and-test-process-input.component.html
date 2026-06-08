@@ -1,0 +1,193 @@
+@if (isFormInitialized) {
+<form [formGroup]="form">
+  <mxflow-mandatory-field></mxflow-mandatory-field>
+
+  <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+    <mxevolve-definition-input
+      style="display: contents"
+      label="Execution Name"
+      description=""
+      inputFormControlName="nameFormControl"
+      [inputFormControl]="nameFormControl"
+      [displayMode]="DisplayMode.MODAL"
+      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="true"
+    >
+      <input
+        pInputText
+        class="w-full"
+        placeholder="Enter a build and test process execution name"
+        [formControl]="nameFormControl"
+        id="validationProcessExecutionNameInput"
+      />
+    </mxevolve-definition-input>
+  </div>
+
+  <mxevolve-definition-input-group
+    label="Configuration Parameters"
+    [formControls]="configurationParametersFormControls"
+    [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    [forceShow]="forceShowConfigurationParametersGroup"
+  >
+    <mxevolve-build-and-test-configuration-params-inputs
+      class="grid grid-cols-12 gap-x-8 gap-y-4"
+      [projectId]="projectId"
+      [displayMode]="DisplayMode.MODAL"
+      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+      [repositoryIdFormControl]="repositoryFormControl"
+      [configurationBranchNameFormControl]="configurationBranchNameFormControl"
+      [configurationParentBranchFormControl]="
+        configurationParentBranchFormControl
+      "
+      [forceShowRepositoryId]="forceShowRepositoryInput"
+      [forceShowConfigurationBranchName]="forceShowConfigurationBranchNameInput"
+      [forceShowConfigurationParentBranch]="
+        forceShowConfigurationParentBranchInput
+      "
+    ></mxevolve-build-and-test-configuration-params-inputs>
+  </mxevolve-definition-input-group>
+
+  <mxevolve-definition-input-group
+    label="Build Scenario"
+    [formControls]="buildEnvironmentFormControls"
+    [inputAccessMode]="InputAccessMode.ACCESS_ALL_INPUTS"
+  >
+    <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+      <mxevolve-definition-input
+        style="display: contents"
+        label=""
+        description=""
+        [inputFormControl]="skipEnvironmentDeploymentFormControl"
+        inputFormControlName="skipEnvironmentDeployment"
+        [displayMode]="DisplayMode.MODAL"
+        [inputAccessMode]="InputAccessMode.ACCESS_ALL_INPUTS"
+      >
+        <mxevolve-skip-build-scenario-radial-input
+          ngDefaultControl
+          [formControl]="skipEnvironmentDeploymentFormControl"
+        />
+      </mxevolve-definition-input>
+      @if(!initialBuildScenarioDefinitionId &&
+      !skipEnvironmentDeploymentFormControl.value) {
+      <mxevolve-definition-input
+        style="display: contents"
+        label="Build Scenario"
+        description=""
+        [inputFormControl]="buildScenarioDefinitionFormControl"
+        inputFormControlName="buildScenarioDefinitionId"
+        [displayMode]="DisplayMode.MODAL"
+        [inputAccessMode]="InputAccessMode.ACCESS_ALL_INPUTS"
+      >
+        <mxevolve-business-process-scenario-definition-selector
+          ngDefaultControl
+          [clearArchived]="!initialBuildScenarioDefinitionId"
+          [projectId]="projectId"
+          [testScenarioFormControl]="buildScenarioDefinitionFormControl"
+          testScenariosFormControlName="buildScenarioDefinitionId"
+          [multiValue]="false"
+        />
+      </mxevolve-definition-input>
+      }
+    </div>
+  </mxevolve-definition-input-group>
+
+  <mxevolve-definition-input-group
+    label="User Story IDs"
+    [formControls]="userStoriesFormControls"
+    [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    [forceShow]="true"
+  >
+    <div class="grid grid-cols-12 gap-8 gap-y-4">
+      <mxevolve-definition-input
+        inputFormControlName="userStoryIds"
+        style="display: contents"
+        label="User Story IDs"
+        description="Enter the IDs of the stories you will be working on"
+        [inputFormControl]="userStoryIdsFormControl"
+        [displayMode]="DisplayMode.MODAL"
+        [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+        [forceShow]="true"
+      >
+        <mxflow-user-story-input
+          ngDefaultControl
+          [formControl]="userStoryIdsFormControl"
+          [requiredInput]="false"
+          [projectId]="projectId"
+          [shouldValidate]="true"
+        >
+        </mxflow-user-story-input>
+      </mxevolve-definition-input>
+    </div>
+  </mxevolve-definition-input-group>
+
+  <mxevolve-definition-input-group
+    label="Infrastructure Parameters"
+    [formControls]="infrastructureParametersFormControls"
+    [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+    [forceShow]="forceShowInfrastructureParametersGroup"
+  >
+    <div class="grid grid-cols-12 gap-8 gap-y-4">
+      <mxevolve-definition-input
+        style="display: contents"
+        label="Build Environment Infra Group"
+        description="Select the Infra Group for the build environment"
+        [inputFormControl]="buildEnvironmentInfraGroupFormControl"
+        inputFormControlName="buildEnvironmentInfraGroup"
+        [displayMode]="DisplayMode.MODAL"
+        [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+        [forceShow]="forceShowBuildEnvironmentInfraGroupInput"
+      >
+        <mxevolve-business-process-infra-group-selector
+          infraGroupFormControlName="buildEnvironmentInfraGroup"
+          [projectId]="projectId"
+          [infraGroupFormControl]="buildEnvironmentInfraGroupFormControl"
+        >
+        </mxevolve-business-process-infra-group-selector>
+      </mxevolve-definition-input>
+
+      <mxevolve-definition-input
+        style="display: contents"
+        label="Build and Test Infra Group"
+        description='Select the Infra Group for the test(s) executed under "Build & Test" step'
+        [inputFormControl]="buildAndTestInfraGroupFormControl"
+        inputFormControlName="buildAndTestInfraGroup"
+        [displayMode]="DisplayMode.MODAL"
+        [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+        [forceShow]="forceShowBuildAndTestInfraGroupInput"
+      >
+        <mxevolve-business-process-infra-group-selector
+          infraGroupFormControlName="buildAndTestInfraGroup"
+          [projectId]="projectId"
+          [infraGroupFormControl]="buildAndTestInfraGroupFormControl"
+        >
+        </mxevolve-business-process-infra-group-selector>
+      </mxevolve-definition-input>
+    </div>
+  </mxevolve-definition-input-group>
+
+  <mxevolve-definition-input-group
+    label="Notifications"
+    [formControls]="[notificationsRecipientsFormControl]"
+    [inputAccessMode]="InputAccessMode.ACCESS_EMPTY_OPTIONAL_INPUTS"
+    [forceShow]="forceShowNotificationsRecipients"
+  >
+    <div class="grid grid-cols-12 gap-x-8 gap-y-4">
+      <mxevolve-definition-input
+        style="display: contents"
+        label="Expiry Date Notification Recipients"
+        description="Select the users who will receive email notifications as the business process approaches its expiry date"
+        [inputFormControl]="notificationsRecipientsFormControl"
+        inputFormControlName="notificationsRecipients"
+        [displayMode]="DisplayMode.MODAL"
+        [inputAccessMode]="InputAccessMode.ACCESS_EMPTY_OPTIONAL_INPUTS"
+        [forceShow]="forceShowNotificationsRecipients"
+      >
+        <mxevolve-notifications-recipients-input
+          [projectId]="projectId"
+          [formControl]="notificationsRecipientsFormControl"
+        ></mxevolve-notifications-recipients-input>
+      </mxevolve-definition-input>
+    </div>
+  </mxevolve-definition-input-group>
+</form>
+}

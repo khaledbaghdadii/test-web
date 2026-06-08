@@ -1,0 +1,40 @@
+<mxevolve-card-container>
+  <div class="border-b border-surface pt-2">
+    <mxflow-header-title
+      >Binary Regression Details
+      <div right-content>
+        <p-button label="Edit" (onClick)="handleEdit()"></p-button>
+      </div>
+    </mxflow-header-title>
+  </div>
+
+  <div class="my-4">
+    <mxevolve-binary-regression-details
+      [projectId]="projectId"
+      [binaryRegressionId]="binaryRegressionId"
+      (errorMessageEmitter)="handleError($event)"
+    ></mxevolve-binary-regression-details>
+  </div>
+
+  <div class="mt-8 mb-4 p-4">
+    <p-divider>
+      <div class="my-6 text-xl font-medium">
+        Scenario(s) Linked to this Regression
+      </div>
+    </p-divider>
+    <mxevolve-global-analysis-object-links-table
+      [projectId]="projectId"
+      [analysisObjectId]="binaryRegressionId"
+      [analysisObjectType]="AnalysisObjectType.BINARY_REGRESSION"
+      (errorMessageEmitter)="handleError($event)"
+    ></mxevolve-global-analysis-object-links-table>
+  </div>
+</mxevolve-card-container>
+
+<mxevolve-edit-binary-regression-modal
+  [binaryRegressionId]="binaryRegressionId"
+  [isModalShown]="isEditModalShown"
+  (closeModalEvent)="handleCloseEditModal()"
+  (binaryRegressionEdited)="handleBinaryRegressionEdited()"
+>
+</mxevolve-edit-binary-regression-modal>

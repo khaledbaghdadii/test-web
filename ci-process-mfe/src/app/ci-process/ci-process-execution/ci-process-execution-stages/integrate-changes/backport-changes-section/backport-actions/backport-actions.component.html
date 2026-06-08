@@ -1,0 +1,11 @@
+<div class="flex justify-end">
+  <p-button
+    label="Repush Backport Merge Request"
+    id="create-new-merge-request-submit-btn"
+    [disabled]="
+      !canRepushBackport ||
+      ciProcessStatus === BusinessProcessExecutionStatus.FAILED
+    "
+    (onClick)="repushBackportMergeRequest()"
+  ></p-button>
+</div>

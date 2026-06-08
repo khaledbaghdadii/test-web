@@ -1,0 +1,20 @@
+<div class="p-inputgroup">
+  <p-iconfield>
+    <p-inputicon styleClass="pi pi-folder-open" />
+    <input
+      type="text"
+      pInputText
+      data-testid="test-selection-selection-input"
+      placeholder="Select a Test Selection"
+      [(ngModel)]="selectedPath"
+      [readOnly]="true"
+      fluid
+      (click)="testSelectionFieldClicked()"
+  /></p-iconfield>
+</div>
+
+<mxflow-repo-browser-component
+  [projectId]="projectId"
+  (dialogClosed)="onDialogClosed()"
+  (pathSelected)="handleTestDirectorySelected($event)"
+></mxflow-repo-browser-component>

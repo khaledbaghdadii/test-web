@@ -1,0 +1,55 @@
+<p-table
+  [value]="failureReasons"
+  [rows]="10"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  [paginator]="true"
+  [loading]="isLoading"
+  paginatorStyleClass="justify-end"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th scope="col" id="name-col">Name</th>
+      <th scope="col" id="description-col">Description</th>
+      <th scope="col" id="active-col">Active</th>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="body" let-reason>
+    <tr>
+      <td>{{ reason.title }}</td>
+      <td>{{ reason.description }}</td>
+      <td>
+        <p-toggleswitch
+          [(ngModel)]="reason.isEnabled"
+          (onChange)="
+            switchEnabledValue.emit({
+              reasonId: reason.id,
+              newValue: $event.checked
+            })
+          "
+          [disabled]="reason.isDisabled"
+        ></p-toggleswitch>
+        @if (reason.isLoading) {
+        <p-progressSpinner styleClass="w-8 h-8"></p-progressSpinner>
+        }
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="loadingbody">
+    @for (row of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track row) {
+    <tr>
+      @for (col of [1, 2, 3]; track col) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="9" class="py-4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

@@ -1,0 +1,17 @@
+{
+  "name": "shared-ui-form",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/shared/ui/form/src",
+  "prefix": "mxevolve",
+  "tags": ["scope:shared", "type:ui"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/shared/ui/form/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

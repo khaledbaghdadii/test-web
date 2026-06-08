@@ -1,0 +1,125 @@
+<p-table
+  data-testid="test-case-executions-selection-table"
+  [value]="testCaseExecutionsTableData()"
+  [showLoader]="false"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  [rows]="10"
+  [totalRecords]="this.testCaseExecutions.length || 0"
+  [paginator]="true"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  paginatorStyleClass="justify-end"
+  paginatorDropdownAppendTo="body"
+  [scrollable]="true"
+  [loading]="isLoading"
+  dataKey="id"
+  [selection]="testCaseExecutionsSelection"
+  (selectionChange)="testCaseExecutionSelected($event)"
+  [filters]="filters()"
+>
+  <ng-template #header>
+    <tr>
+      <th scope="col" style="width: 10px">
+        <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+      </th>
+      <th id="table-name-header" scope="col">
+        <span class="whitespace-normal">Name</span>
+        <p-columnFilter
+          field="title"
+          display="menu"
+          matchMode="contains"
+          [showMatchModes]="false"
+          [showOperator]="false"
+          [showAddButton]="false"
+          [showApplyButton]="true"
+          [showClearButton]="true"
+        >
+        </p-columnFilter>
+      </th>
+      <th id="table-text-execution-header" scope="col">
+        <span class="whitespace-normal">Test Execution</span>
+        <p-columnFilter
+          field="testExecutionId"
+          data-testid="test-execution-selection-filter"
+          display="menu"
+          matchMode="in"
+          [showMatchModes]="false"
+          [showOperator]="false"
+          [showAddButton]="false"
+          [showApplyButton]="false"
+          [showClearButton]="false"
+        >
+          <ng-template pTemplate="filter" let-filter="filterCallback">
+            <mxevolve-table-checkbox-filter
+              [filter]="filter"
+              [options]="testExecutionFilterOptions()"
+              [(selected)]="selectedTestExecutionFilters"
+              [limitWidth]="true"
+            ></mxevolve-table-checkbox-filter>
+          </ng-template>
+        </p-columnFilter>
+      </th>
+      <th id="table-status-header" scope="col">
+        <div>
+          Status
+          <p-columnFilter
+            field="status"
+            data-testid="status-selection-filter"
+            display="menu"
+            matchMode="in"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showApplyButton]="false"
+            [showClearButton]="false"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-checkbox-filter
+                [filter]="filter"
+                [options]="statusFilterOptions"
+                [(selected)]="selectedStatusFilters"
+              ></mxevolve-table-checkbox-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+    </tr>
+  </ng-template>
+  <ng-template #body let-testCaseExecution>
+    <tr>
+      <td>
+        <p-tableCheckbox
+          [value]="testCaseExecution"
+          id="{{ testCaseExecution.id }}"
+        ></p-tableCheckbox>
+      </td>
+      <td>
+        {{ testCaseExecution.title }}
+      </td>
+      <td id="table-text-execution-row" class="max-w-64 truncate">
+        <span
+          pTooltip="{{ testCaseExecution.testSelectionNames }}"
+          tooltipPosition="right"
+        >
+          {{ testCaseExecution.testPackageDefinitionName }}
+        </span>
+      </td>
+      <td>
+        <mxevolve-test-case-execution-status
+          [status]="testCaseExecution.status"
+        ></mxevolve-test-case-execution-status>
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="loadingbody">
+    @for (row of [1, 2, 3, 4, 5]; track row) {
+    <tr>
+      @for (col of [1, 2, 3]; track col) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+</p-table>

@@ -1,0 +1,11 @@
+<mxevolve-card-container>
+  <app-ci-process-executions-table
+    [businessProcessDefinitions]="businessProcessDefinitions"
+    [projectId]="projectId"
+    [isLoading]="isLoading"
+    [executions]="executions"
+    [total]="total"
+    (paginationParamsChangeEmitter)="handlePaginationParamsChange($event)"
+  >
+  </app-ci-process-executions-table>
+</mxevolve-card-container>

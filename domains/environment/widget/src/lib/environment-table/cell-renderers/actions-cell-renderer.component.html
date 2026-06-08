@@ -1,0 +1,63 @@
+<div class="flex flex-row items-center justify-center gap-1">
+  @if (environment()) {
+  <mxevolve-open-client-button
+    [iconOnly]="true"
+    [projectId]="projectId()"
+    [environmentId]="environment().id"
+    [status]="environment().status"
+    [environmentActions]="environment().environmentActions ?? []"
+    [webClientUrl]="environment().webClientUrl"
+    [secureClientArtifactUri]="environment().secureClientArtifactUri"
+  />
+  <mxevolve-service-actions-button
+    [iconOnly]="true"
+    [projectId]="projectId()"
+    [environmentId]="environment().id"
+    [status]="environment().status"
+    [excludeFromShutdown]="environment().excludeFromShutdown ?? false"
+    [environmentActions]="environment().environmentActions ?? []"
+  />
+  <mxevolve-connect-applicative-button
+    [iconOnly]="true"
+    [projectId]="projectId()"
+    [environmentId]="environment().id"
+    [status]="environment().status"
+    [primaryApplicative]="environment().primaryApplicative"
+    [secondaryApplicatives]="environment().secondaryApplicatives ?? []"
+  />
+  <p-popover #actionsPopover>
+    <div class="flex flex-col">
+      <mxevolve-connect-to-database-button
+        [projectId]="projectId()"
+        [environmentId]="environment().id"
+        [databases]="environment().databases"
+        [status]="environment().status"
+      />
+      <mxevolve-configure-mxtest-button
+        [projectId]="projectId()"
+        [status]="environment().status"
+        [outputsDirectoryUri]="environment().outputsDirectoryUri"
+        [bundles]="environment().bundles"
+        [isTools]="environment().isTools"
+      />
+      <mxevolve-environment-details-link
+        [projectId]="projectId()"
+        [environmentId]="environment().id"
+      />
+    </div>
+  </p-popover>
+  <p-button
+    [text]="true"
+    [rounded]="true"
+    severity="secondary"
+    (onClick)="actionsPopover.toggle($event)"
+    ariaLabel="More actions"
+    pTooltip="More actions"
+    tooltipPosition="top"
+  >
+    <ng-template #icon>
+      <mxevolve-icon name="more_vert" size="md" />
+    </ng-template>
+  </p-button>
+  }
+</div>

@@ -1,0 +1,16 @@
+<mxflow-header-title>
+  <div>Prepare Build Environment</div>
+  <div right-content class="flex gap-2">
+    <mxevolve-view-environment-details-button
+      [projectId]="projectId"
+      [environmentId]="environmentId"
+      [disabled]="isViewEnvironmentDisabled"
+    ></mxevolve-view-environment-details-button>
+  </div>
+</mxflow-header-title>
+<mxflow-aggregated-scenario-executions-table
+  [projectId]="projectId"
+  [processId]="processId"
+  subContextId="PREPARE_BUILD_ENVIRONMENT"
+  [isUserInterventionDisabled]="isUserInterventionDisabled"
+></mxflow-aggregated-scenario-executions-table>

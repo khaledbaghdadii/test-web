@@ -1,0 +1,163 @@
+<mxevolve-selected-analysis-objects-listing
+  [selectedAnalysisObjects]="selectedAnalysisObjects()"
+  (analysisObjectRemoved)="removeConfigurationRegressionFromSelection($event)"
+></mxevolve-selected-analysis-objects-listing>
+<div class="mt-2 mb-6">
+  <p-table
+    data-testid="configuration-regressions-selection-table"
+    [value]="isTableLoading() ? [] : configurationRegressions()"
+    [(selection)]="selectedConfigurationRegressions"
+    [loading]="isTableLoading()"
+    [paginator]="true"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    paginatorStyleClass="justify-end"
+    paginatorDropdownAppendTo="body"
+    [scrollable]="true"
+    [showLoader]="false"
+    scrollHeight="50vh"
+    [tableStyle]="{ 'min-width': '50rem' }"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+    [rows]="10"
+    [totalRecords]="totalRecords()"
+    [lazy]="true"
+    (onLazyLoad)="handleTableQueryParamsChange($event)"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th scope="col" style="width: 10px"></th>
+        <th scope="col">
+          Title
+          <p-columnFilter
+            field="titlePhrases"
+            matchMode="in"
+            display="menu"
+            data-testid="title-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedTitlePhrases"
+              ></mxevolve-table-chips-filter> </ng-template
+          ></p-columnFilter>
+        </th>
+        <th scope="col" class="w-4/12">
+          Guilty Change
+          <p-columnFilter
+            field="guiltyChangePhrases"
+            matchMode="in"
+            display="menu"
+            data-testid="guilty-change-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-chips-filter
+                [filter]="filter"
+                [(values)]="selectedGuiltyChangePhrases"
+              ></mxevolve-table-chips-filter>
+            </ng-template>
+          </p-columnFilter>
+        </th>
+        <th scope="col" class="w-2/12">
+          Owner
+          <p-columnFilter
+            field="ownerPhrase"
+            matchMode="contains"
+            display="menu"
+            data-testid="owner-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          ></p-columnFilter>
+        </th>
+        <th scope="col" class="w-2/12">
+          Fix
+          <p-columnFilter
+            field="fixPhrase"
+            matchMode="contains"
+            display="menu"
+            data-testid="fix-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          ></p-columnFilter>
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-regressionRow>
+      <tr>
+        <td>
+          <p-checkbox
+            [pTooltip]="
+              tableRowSelectionState().get(regressionRow.id)?.selectionState
+                ?.selectionMessage
+            "
+            [ngModel]="
+              tableRowSelectionState().get(regressionRow.id)?.selectionState
+                ?.checked
+            "
+            [binary]="true"
+            [value]="regressionRow"
+            [indeterminate]="
+              tableRowSelectionState().get(regressionRow.id)?.selectionState
+                ?.partialSelected
+            "
+            (onChange)="handleSelectionChange($event, regressionRow)"
+            [attr.data-testid]="regressionRow.id"
+          />
+        </td>
+        <td>
+          <a
+            data-testid="configuration-regression-title"
+            class="p-button-link"
+            routerLink="{{
+              {
+                id: regressionRow.id,
+                category: DetectionCategory.Regression,
+                type: DetectionType.Configuration,
+                projectId: projectId
+              } | detectionUriBuilder
+            }}"
+            target="_blank"
+          >
+            {{ regressionRow.title }}
+          </a>
+        </td>
+        <td>{{ regressionRow.guiltyChange }}</td>
+        <td>{{ regressionRow.owner }}</td>
+        <td>{{ regressionRow.fix }}</td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="loadingbody">
+      @for (row of Array(3); track row) {
+      <tr>
+        @for (col of Array(5); track col) {
+        <td>
+          <p-skeleton></p-skeleton>
+        </td>
+        }
+      </tr>
+      }
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="9" class="py-4">
+          <mxflow-table-empty-message></mxflow-table-empty-message>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

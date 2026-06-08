@@ -1,0 +1,59 @@
+<div class="flex flex-col gap-6 p-4">
+  <h3 class="text-lg font-semibold">Merge Request Details</h3>
+
+  <div class="flex flex-wrap items-stretch gap-6">
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500">Review Status</span>
+      <p-tag [severity]="reviewStatusSeverity()" class="text-sm">
+        {{ reviewStatusLabel() }}
+      </p-tag>
+    </div>
+
+    <p-divider layout="vertical" />
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500">Merge Request ID</span>
+      <span class="text-sm font-semibold">{{ data().mergeRequestId }}</span>
+    </div>
+
+    <p-divider layout="vertical" />
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500">Destination Branch</span>
+      <span class="text-sm font-semibold">{{ data().destinationBranch }}</span>
+    </div>
+
+    <p-divider layout="vertical" />
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500">Reviewers Comments</span>
+      <a
+        target="_blank"
+        rel="noopener noreferrer"
+        [href]="data().pullRequestUrl"
+      >
+        <p-tag severity="info" class="text-sm cursor-pointer">
+          View Comments
+          <mxevolve-icon name="open_in_new" size="sm" />
+        </p-tag>
+      </a>
+    </div>
+  </div>
+  @if (data().mergeRequestState === 'IN_REVIEW') {
+  <div
+    class="flex ml-2 mt-6"
+    *showElementIfAuthorized="{
+      action: 'update_priority',
+      attributes: {},
+      package: 'scm',
+      resource: 'merge_request'
+    }"
+  >
+    <mxevolve-merge-request-priority-selector
+      [mergeRequest]="prioritySelectorModel()"
+    />
+  </div>
+  }
+
+  <mxevolve-illustration name="blockchain_distribution" size="lg" />
+</div>

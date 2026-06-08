@@ -1,0 +1,21 @@
+<div class="flex flex-col gap-4">
+  <mxevolve-branch-details-card-widget
+    [development]="development()"
+    (errorOccurred)="errorOccurred.emit($event)"
+  />
+  @if (commitsBehindCount() > 0) {
+  <p-message severity="warn">
+    <ng-template #icon>
+      <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+    </ng-template>
+    You are <b>{{ commitsBehindCount() }}</b>
+    {{ commitsBehindCount() === 1 ? "commit" : "commits" }} behind
+    {{ development().source ?? "" }}.
+  </p-message>
+  }
+  <mxevolve-merge-request-commits
+    [development]="development()"
+    [mergeRequest]="mergeRequest()"
+    (errorOccurred)="errorOccurred.emit($event)"
+  />
+</div>

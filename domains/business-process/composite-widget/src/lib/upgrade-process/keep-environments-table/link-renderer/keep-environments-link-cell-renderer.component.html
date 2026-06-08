@@ -1,0 +1,18 @@
+<div class="flex flex-row items-center gap-2 my-1">
+  @if (link) {
+  <a
+    class="p-button-link truncate min-w-0 flex-1"
+    [routerLink]="link"
+    target="_blank"
+  >
+    {{ params.value }}
+  </a>
+  } @else {
+  <span class="truncate min-w-0 flex-1">{{ params.value }}</span>
+  } @if (tag) {
+  <span
+    class="text-xs bg-primary text-primary-contrast rounded-lg px-1.5 py-1 shrink-0"
+    >{{ tag }}</span
+  >
+  }
+</div>

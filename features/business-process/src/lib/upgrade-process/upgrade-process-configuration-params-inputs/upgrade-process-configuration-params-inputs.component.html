@@ -1,0 +1,117 @@
+<mxevolve-definition-input
+  style="display: contents"
+  label="Business Process Quality Level"
+  description="Select the business process quality level"
+  [inputFormControl]="businessProcessQualityLevelFormControl"
+  inputFormControlName="businessProcessQualityLevel"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowBusinessProcessQualityLevel"
+>
+  <p-select
+    [attr.aria-describedby]="'businessProcessQualityLevel-help'"
+    [options]="[{ name: 'MQG' }, { name: 'DQG' }]"
+    [showClear]="true"
+    appendTo="body"
+    [formControl]="businessProcessQualityLevelFormControl"
+    placeholder="Select Business Process Quality Level"
+    class="w-full"
+    optionLabel="name"
+    optionValue="name"
+    id="businessProcessQualityLevel"
+  ></p-select>
+</mxevolve-definition-input>
+<mxevolve-definition-input
+  style="display: contents"
+  label="Repository"
+  description="Select the Repository where the configuration is stored"
+  [inputFormControl]="repositoryIdFormControl"
+  inputFormControlName="repositoryId"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowRepositoryId"
+>
+  <mxevolve-business-process-repository-selector
+    [projectId]="projectId"
+    [repositoryIdFormControl]="repositoryIdFormControl"
+    (repositoryChanged)="resetConfigurationParamsInputs()"
+    repositoryIdFormControlName="repositoryId"
+  >
+  </mxevolve-business-process-repository-selector>
+</mxevolve-definition-input>
+@if (repositoryIdFormControl.value){
+<mxevolve-definition-input
+  style="display: contents"
+  label="Create Branch?"
+  [inputFormControl]="createBranchFormControl"
+  inputFormControlName="createBranch"
+  description=""
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowCreateBranch"
+>
+  <div class="flex flex-row gap-4 mt-2">
+    <div class="flex flex-row gap-1">
+      <p-radioButton
+        inputId="doCreateBranch"
+        name="createBranch"
+        [value]="true"
+        [formControl]="createBranchFormControl"
+      ></p-radioButton>
+      <label for="doCreateBranch">Yes</label>
+    </div>
+    <div class="flex flex-row gap-1">
+      <p-radioButton
+        inputId="doNotCreateBranch"
+        name="createBranch"
+        [value]="false"
+        [formControl]="createBranchFormControl"
+      ></p-radioButton>
+      <label for="doNotCreateBranch">No</label>
+    </div>
+  </div>
+</mxevolve-definition-input>
+@if(createBranchFormControl.value !== null){
+<mxevolve-definition-input
+  style="display: contents"
+  label="Configuration Branch Name"
+  description="Enter the Configuration Branch Name that you wish to use"
+  [inputFormControl]="configurationBranchNameFormControl"
+  inputFormControlName="configurationBranchName"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowConfigurationBranchName"
+  [showValidationErrors]="false"
+>
+  <mxevolve-branch-input
+    [branchShouldExist]="createBranchFormControl.value !== true"
+    [projectId]="projectId"
+    [repoId]="repositoryIdFormControl.value"
+    [branchNameFormControl]="configurationBranchNameFormControl"
+    [initialValue]="configurationBranchNameInitialValue"
+    (initialInvalid)="showConfigBranchError()"
+  >
+  </mxevolve-branch-input>
+</mxevolve-definition-input>
+<mxevolve-definition-input
+  style="display: contents"
+  label="Configuration Parent Branch"
+  description="Enter the Parent Branch from where you want to create your branch"
+  [inputFormControl]="configurationParentBranchFormControl"
+  inputFormControlName="configurationParentBranch"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowConfigurationParentBranch"
+  [showValidationErrors]="false"
+>
+  <mxevolve-branch-input
+    [branchShouldExist]="true"
+    [projectId]="projectId"
+    [repoId]="repositoryIdFormControl.value"
+    [branchNameFormControl]="configurationParentBranchFormControl"
+    [initialValue]="parentBranchNameInitialValue"
+    (initialInvalid)="showParentBranchError()"
+  >
+  </mxevolve-branch-input>
+</mxevolve-definition-input>
+} }

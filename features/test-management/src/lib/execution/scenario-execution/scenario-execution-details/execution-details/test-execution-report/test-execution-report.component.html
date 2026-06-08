@@ -1,0 +1,100 @@
+<div class="flex items-center">
+  <p-button
+    id="report-back-button"
+    (onClick)="back()"
+    [icon]="'pi pi-angle-left'"
+    [link]="true"
+    [size]="'large'"
+    class="mb-4"
+  ></p-button>
+  <mxflow-header-title>MXtest Report</mxflow-header-title>
+  <div class="ml-auto">
+    <mxevolve-test-case-execution-analysis-status-dropdown
+      [testCaseExecution]="
+        this.stateService.webReportCurrentlyViewedTestCaseExecution()
+      "
+      (statusUpdate)="onStatusUpdated()"
+      data-testid="update-test-case-analysis-status"
+      *showElementIfAuthorized="{
+        action: 'update_analysis_status',
+        attributes: {},
+        package: 'test',
+        resource: 'test_case_execution'
+      }"
+    >
+    </mxevolve-test-case-execution-analysis-status-dropdown>
+  </div>
+</div>
+<mxevolve-test-execution-web-engine-report
+  [projectId]="projectId"
+  [scenarioExecutionId]="scenarioExecutionId"
+  [testExecutionId]="testExecutionId"
+  (errorMessage)="handleError($event)"
+>
+</mxevolve-test-execution-web-engine-report>
+<div class="mt-4">
+  <mxevolve-card-container>
+    <p-tabs value="update-reference">
+      <p-tablist>
+        <p-tab
+          value="update-reference"
+          *showElementIfAuthorized="{
+            action: 'read',
+            attributes: {},
+            package: 'test',
+            resource: 'update_reference'
+          }"
+          >Update Reference
+        </p-tab>
+        @if (transferToReconEnabled()) {
+
+        <p-tab
+          value="transfer-progress"
+          *showElementIfAuthorized="{
+            action: 'fetch_recon_report_transfer_progress',
+            attributes: {},
+            package: 'test',
+            resource: 'scenario_execution'
+          }"
+          >Transfer to Recon Progress
+        </p-tab>
+        }
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel
+          value="update-reference"
+          *showElementIfAuthorized="{
+            action: 'read',
+            attributes: {},
+            package: 'test',
+            resource: 'update_reference'
+          }"
+        >
+          <mxevolve-update-reference-table
+            data-testid="update-reference-table"
+            [projectId]="projectId"
+            [testExecutionId]="testExecutionId"
+          >
+          </mxevolve-update-reference-table>
+        </p-tabpanel>
+        <p-tabpanel
+          value="transfer-progress"
+          *showElementIfAuthorized="{
+            action: 'fetch_recon_report_transfer_progress',
+            attributes: {},
+            package: 'test',
+            resource: 'scenario_execution'
+          }"
+        >
+          <mxevolve-transfer-to-recon-progress-table
+            data-testid="transfer-to-recon-progress-table"
+            [projectId]="projectId"
+            [scenarioExecutionId]="scenarioExecutionId"
+            [testExecutionId]="testExecutionId"
+          >
+          </mxevolve-transfer-to-recon-progress-table>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  </mxevolve-card-container>
+</div>

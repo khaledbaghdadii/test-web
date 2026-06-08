@@ -1,0 +1,28 @@
+<div>
+  @switch (status) { @case (TransferToReconStatus.PASSED) {
+  <p-tag severity="success">
+    <div class="flex gap-2 items-center">
+      <mxevolve-icon name="check_circle" size="sm"></mxevolve-icon>
+      <span class="text-sm">{{ displayValue[status] }}</span>
+    </div>
+  </p-tag>
+  } @case (TransferToReconStatus.FAILED) {
+  <p-tag severity="danger">
+    <div class="flex gap-2 items-center">
+      <mxevolve-icon name="cancel" size="sm"></mxevolve-icon>
+      <span class="text-sm">{{ displayValue[status] }}</span>
+    </div>
+  </p-tag>
+  } @case (TransferToReconStatus.IN_PROGRESS) {
+  <p-tag severity="warn">
+    <div class="flex gap-2 items-center">
+      <mxevolve-icon
+        name="progress_activity"
+        size="sm"
+        [spin]="true"
+      ></mxevolve-icon>
+      <span class="text-sm">{{ displayValue[status] }}</span>
+    </div>
+  </p-tag>
+  } }
+</div>

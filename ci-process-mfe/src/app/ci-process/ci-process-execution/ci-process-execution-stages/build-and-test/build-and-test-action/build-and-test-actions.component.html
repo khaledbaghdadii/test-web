@@ -1,0 +1,44 @@
+<div class="flex flex-col gap-2">
+  <div class="flex justify-end gap-2">
+    @if(mergeRequestDetails === undefined) {
+    <p-skeleton width="150px" height="2rem"></p-skeleton>
+    } @else if (mergeRequestDetails?.isReOpenable) {
+    <mxevolve-ci-process-merge-request-reopen
+      [projectId]="projectId"
+      [processId]="ciProcessExecutionId"
+      [areMergeRequestDetailsEditable]="true"
+      [actionsDisabled]="actionsNotAllowed"
+      [mergeRequestTitle]="mergeRequestDetails?.title!"
+      [mergeConfigurationId]="mergeRequestDetails?.mergeConfiguration?.id!"
+      [mergeRequestReviewers]="mergeRequestDetails?.reviewers!"
+      (reopened)="mergeRequestReopened()"
+    />
+    } @else {
+    <p-button
+      [disabled]="actionsNotAllowed"
+      id="create-new-merge-request"
+      (click)="createMergeRequest()"
+      (keydown)="createMergeRequest()"
+    >
+      Create New Merge Request
+    </p-button>
+    }
+  </div>
+
+  @if (isDecisionMade()) {
+  <mxflow-build-and-test-result
+    [requester]="buildAndTestStage.requester!"
+    [stageResult]="buildAndTestStage.status"
+  >
+  </mxflow-build-and-test-result>
+  }
+</div>
+
+<mxflow-send-for-review
+  [projectId]="projectId"
+  [processId]="ciProcessExecutionId"
+  [showModalEvenEmitter]="showModalEventEmitter"
+  [hideModalEvenEmitter]="hideModalEventEmitter"
+  (mergeRequestCreated)="mergeRequestCreated()"
+>
+</mxflow-send-for-review>

@@ -1,0 +1,17 @@
+{
+  "name": "features-user",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/features/user/src",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/features/user/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

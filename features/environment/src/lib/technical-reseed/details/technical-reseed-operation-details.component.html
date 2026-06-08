@@ -1,0 +1,124 @@
+<p-dialog
+  header="Message"
+  [modal]="true"
+  [(visible)]="isDialogVisible"
+  [closeOnEscape]="true"
+  [closable]="true"
+  [dismissableMask]="true"
+  (onHide)="hideDialog()"
+  [style]="{ width: '50rem' }"
+  [closeButtonProps]="{
+    outlined: false,
+    text: true
+  }"
+>
+  <p>{{ dialogContent }}</p>
+</p-dialog>
+@if (hasOperations) {
+<div class="flex flex-col gap-4">
+  @for (reseedOperation of technicalReseedOperations; track reseedOperation.id)
+  {
+  <p-panel
+    [toggleable]="true"
+    [collapsed]="reseedOperation.isContainerCollapsed"
+  >
+    <ng-template #header>
+      <div class="flex flex-col justify-start items-start mt-1">
+        <div class="flex flex-row justify-start">
+          <span class="font-bold">Operation Details</span>
+          <p-tag
+            [ngClass]="{
+              'ml-3': true,
+              'cursor-pointer': canShowDialog(reseedOperation)
+            }"
+            [severity]="reseedOperation.statusTagSeverity"
+            [icon]="reseedOperation.statusTagIcon"
+            [value]="reseedOperation.status.toString()"
+            (click)="onStatusClicked(reseedOperation)"
+          ></p-tag>
+        </div>
+        <span class="text-sm text-surface-500 mt-1 mb-1">
+          Created On: {{ reseedOperation.createdOn | date : "medium" }}
+        </span>
+      </div>
+    </ng-template>
+    <div class="grid grid-cols-12 grid-nogutter">
+      <div class="col-span-12 md:col-span-4 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Commit Id
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{ reseedOperation.sourceCommit }}
+        </div>
+      </div>
+      <div class="col-span-12 md:col-span-4 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Branch Name
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{ reseedOperation.branch }}
+        </div>
+      </div>
+      <div class="col-span-12 md:col-span-4 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Validation Level
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{ reseedOperation.validationLevel || "N/A" }}
+        </div>
+      </div>
+      <div class="col-span-12 md:col-span-4 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Environment Definition
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          {{ reseedOperation.environmentDefinitionName }}
+        </div>
+      </div>
+      <div class="col-span-12 md:col-span-4 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Environment Id
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          @if (reseedOperation.environmentId) {
+          <a
+            class="hover:underline p-button-link"
+            routerLink="/app/{{ projectId }}/environments/{{
+              reseedOperation.environmentId
+            }}"
+            (click)="$event.stopPropagation()"
+          >
+            {{ reseedOperation.environmentId }}
+          </a>
+          } @else { N/A }
+        </div>
+      </div>
+      <div class="col-span-12 md:col-span-4 p-4">
+        <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+          Dump Ids
+        </div>
+        <div class="text-surface-900 dark:text-surface-0">
+          @if (reseedOperation.dumpIds && reseedOperation.dumpIds.length > 0) {
+          <ul class="list-disc pl-5">
+            @for (id of reseedOperation.dumpIds; track id) {
+            <li>{{ id }}</li>
+            }
+          </ul>
+          } @else { N/A }
+        </div>
+      </div>
+    </div>
+  </p-panel>
+  }
+</div>
+} @else {
+<p-panel>
+  <ng-template #header>
+    <div class="flex items-center gap-2">
+      <span class="font-bold">Operations</span>
+    </div>
+  </ng-template>
+  <mxflow-table-empty-message></mxflow-table-empty-message>
+</p-panel>
+
+}

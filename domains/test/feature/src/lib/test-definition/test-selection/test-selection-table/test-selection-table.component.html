@@ -1,0 +1,190 @@
+<p-confirmpopup></p-confirmpopup>
+<mxflow-header-title
+  >Test Selections
+  <div right-content>
+    @if (isTestSelectionTagsFeatureEnabled) {
+    <p-splitButton
+      data-testid="add-test-selection-form-split-button"
+      label="Add Test Selection"
+      id="add-test-selection-split-button"
+      [disabled]="isLoading"
+      (onClick)="openAddTestSelectionModal()"
+      *showElementIfAuthorized="{
+        action: 'update',
+        attributes: {},
+        package: 'test',
+        resource: 'test_selection'
+      }"
+      [model]="addTestSelectionButtonOptions"
+    />
+    } @else {
+    <p-button
+      data-testid="add-test-selection-form-button"
+      label="Add Test Selection"
+      id="add-test-selection"
+      (click)="openAddTestSelectionModal()"
+      [disabled]="isLoading"
+      *showElementIfAuthorized="{
+        action: 'update',
+        attributes: {},
+        package: 'test',
+        resource: 'test_selection'
+      }"
+    ></p-button>
+    }
+    <p-button
+      data-testid="delete-test-selections-button"
+      label="Delete All Test Selections"
+      id="delete-test-selections"
+      (click)="confirmDeleteAll($event)"
+      icon="pi pi-trash"
+      class="ml-2"
+      severity="danger"
+      [disabled]="isLoading || testDefinition.testSelections.length === 0"
+      *showElementIfAuthorized="{
+        action: 'delete',
+        attributes: {},
+        package: 'test',
+        resource: 'test_selection'
+      }"
+    ></p-button>
+  </div>
+</mxflow-header-title>
+<p-table
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  styleClass="p-datatable-sm"
+  [paginator]="true"
+  paginatorStyleClass="justify-end"
+  [rows]="10"
+  [scrollable]="true"
+  [scrollHeight]="'40vh'"
+  [totalRecords]="testDefinition ? testDefinition.testSelections.length : 0"
+  [rowsPerPageOptions]="[10, 20, 30, 40, 50]"
+  [value]="testDefinition ? testDefinition.testSelections : []"
+  [loading]="isLoading"
+  [showLoader]="false"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th
+        [pSortableColumn]="'name'"
+        scope="col"
+        id="test-selection-name"
+        class="w-4/12"
+      >
+        Name
+        <p-sortIcon [field]="'name'"></p-sortIcon>
+      </th>
+      @if (isTestSelectionTagsFeatureEnabled) {
+      <th scope="col" id="test-selection-path" class="w-4/12">Path</th>
+      <th scope="col" id="test-selection-tags" class="w-3/12">Tags</th>
+      } @else {
+      <th scope="col" id="test-selection-path-legacy" class="w-7/12">Path</th>
+      }
+      <th scope="col" id="action-column" class="w-1/12"></th>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="loadingbody" let-columns="columns">
+    <tr>
+      @for (col of Array(3); track col) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+      <td
+        id="loadingTestSelectionsEdit"
+        *showElementIfAuthorized="{
+          action: 'delete',
+          attributes: {},
+          package: 'test',
+          resource: 'test_selection'
+        }"
+      >
+        <p-skeleton></p-skeleton>
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="body" let-data>
+    @if (!isLoading) {
+    <tr>
+      <td>
+        {{ data.name }}
+      </td>
+      <td>
+        {{ data.path }}
+      </td>
+      @if (isTestSelectionTagsFeatureEnabled) {
+      <td>
+        @if(data.tags.length > 0) {
+        <mxevolve-show-more-less
+          [listOfItems]="data.tags"
+          [defaultNbOfItemsToShow]="3"
+          [isVertical]="false"
+        ></mxevolve-show-more-less>
+        } @else { - }
+      </td>
+      }
+      <td>
+        <p-button
+          data-testid="edit-test-selection-form-button"
+          severity="primary"
+          (click)="openEditTestSelectionModal(data)"
+          (keydown)="openEditTestSelectionModal(data)"
+          pTooltip="Edit"
+          icon="pi pi-pencil"
+          class="p-button-rounded p-button-text"
+          [text]="true"
+          *showElementIfAuthorized="{
+            action: 'update',
+            attributes: {},
+            package: 'test',
+            resource: 'test_selection'
+          }"
+        ></p-button>
+        <p-button
+          [text]="true"
+          data-testid="delete-test-selection-form-button"
+          type="button"
+          severity="danger"
+          (click)="onRemoveTestSelection($event, data.id)"
+          (keydown)="onRemoveTestSelection($event, data.id)"
+          pTooltip="Delete"
+          icon="pi pi-trash"
+          class="p-button-rounded p-button-text p-button-danger"
+          *showElementIfAuthorized="{
+            action: 'delete',
+            attributes: {},
+            package: 'test',
+            resource: 'test_selection'
+          }"
+        ></p-button>
+      </td>
+    </tr>
+    }
+  </ng-template>
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+<mxevolve-add-test-selection-form
+  [(isAddTestSelectionOpen)]="isAddTestSelectionOpen"
+  [(testDefinition)]="testDefinition"
+></mxevolve-add-test-selection-form>
+<mxevolve-edit-test-selection-form
+  [(testDefinition)]="testDefinition"
+  [(isEditTestSelectionOpen)]="isEditTestSelectionOpen"
+  [testSelection]="testSelectiontoEdit"
+></mxevolve-edit-test-selection-form>
+
+<mxevolve-add-test-selections-with-tags-modal
+  [projectId]="projectId"
+  [testDefinitionId]="testDefinition ? testDefinition.id : ''"
+  [(isModalVisible)]="isAddTestSelectionsWithTagsOpen"
+  (addedTestSelections)="handleAddedTestSelections()"
+  [defaultBranch]="defaultBranch"
+></mxevolve-add-test-selections-with-tags-modal>

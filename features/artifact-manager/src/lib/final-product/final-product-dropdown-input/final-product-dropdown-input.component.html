@@ -1,0 +1,51 @@
+<p-select
+  [options]="finalProductDropdownOptions()"
+  optionLabel="label"
+  optionValue="value"
+  [ngModel]="selectedOption()?.value"
+  (onChange)="handleFinalProductSelected($event)"
+  placeholder="Select a Final Product"
+  appendTo="body"
+  styleClass="w-full"
+  [showClear]="true"
+  [virtualScroll]="true"
+  [virtualScrollOptions]="{
+    lazy: true,
+    step: itemsSize,
+    itemSize: itemHeight,
+    onLazyLoad: handleScroll,
+    scrollHeight: dropDownHeight()
+  }"
+  [filter]="true"
+>
+  <ng-template #selectedItem>
+    @if (this.selectedOption()) {
+    <span
+      [attr.data-testid]="'selectedFinalProduct'"
+      class="flex items-center gap-2 p-dropdown-label text-slate-700"
+      >{{ this.selectedOption()?.label }}</span
+    >
+    }
+  </ng-template>
+
+  <ng-template pTemplate="filter">
+    <p-iconfield class="p-fluid w-full">
+      <p-inputicon styleClass="pi pi-search" />
+      <input
+        type="text"
+        [ngModel]="searchKey()"
+        pInputText
+        placeholder="Search"
+        (ngModelChange)="handleSearchKeyInputChange($event)"
+        class="w-full"
+      />
+      @if (searchKey()) {
+      <p-inputicon
+        styleClass="pi pi-times cursor-pointer"
+        (click)="clearSearchKey($event)"
+        (keydown)="clearSearchKey($event)"
+      ></p-inputicon>
+      }
+    </p-iconfield>
+  </ng-template>
+</p-select>

@@ -1,0 +1,26 @@
+<div class="flex justify-end">
+  @if (isConfigurationEditorEnabled) {
+  <mxevolve-environment-workspace-configuration-editor-button
+    [projectId]="projectId"
+    [environmentId]="environmentId"
+  ></mxevolve-environment-workspace-configuration-editor-button>
+  }
+
+  <mxevolve-service-actions-button
+    [projectId]="projectId"
+    [environmentId]="environment.id"
+  ></mxevolve-service-actions-button>
+  <mxevolve-view-environment-details-button
+    [environmentId]="environmentId"
+    [projectId]="projectId"
+  ></mxevolve-view-environment-details-button>
+  <mxevolve-deploy-client-button
+    [disabled]="disableCompanion"
+    [environmentId]="environmentId"
+    [projectId]="projectId"
+  ></mxevolve-deploy-client-button>
+  <mxevolve-copy-package-details-button
+    [environmentId]="environmentId"
+    [projectId]="projectId"
+  ></mxevolve-copy-package-details-button>
+</div>

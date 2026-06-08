@@ -1,0 +1,27 @@
+<div>
+  @switch (status) { @case (businessProcessOfficialStatus.OFFICIAL) {
+  <p-tag severity="success">
+    <div class="flex gap-1 text-sm">
+      <span>Official</span>
+    </div>
+  </p-tag>
+  } @case (businessProcessOfficialStatus.UNOFFICIAL) {
+  <p-tag severity="warn">
+    <div class="flex gap-1 text-sm">
+      <span>Unofficial</span>
+    </div>
+  </p-tag>
+  } @case (businessProcessOfficialStatus.NA) {
+  <p-tag severity="secondary">
+    <div class="flex gap-1 text-sm">
+      <span>N/A</span>
+    </div>
+  </p-tag>
+  } @default {
+  <p-tag severity="secondary">
+    <div class="flex gap-1 text-sm">
+      <span>NA</span>
+    </div>
+  </p-tag>
+  } }
+</div>

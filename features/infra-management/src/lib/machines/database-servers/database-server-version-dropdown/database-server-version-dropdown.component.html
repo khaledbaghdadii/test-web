@@ -1,0 +1,17 @@
+<form [formGroup]="form">
+  <p-select
+    [options]="databaseServerVersionOptions()"
+    placeholder="Select a Database Server Version"
+    appendTo="body"
+    styleClass="w-full"
+    [showClear]="
+      form &&
+      form.controls &&
+      form.controls['serverVersion'] &&
+      form.controls['serverVersion'].valid
+    "
+    [filter]="true"
+    formControlName="serverVersion"
+  >
+  </p-select>
+</form>

@@ -1,0 +1,155 @@
+{
+  "consumer": {
+    "name": "web-scm"
+  },
+  "interactions": [
+    {
+      "description": "a request to get a development",
+      "providerState": "can get development",
+      "request": {
+        "method": "GET",
+        "path": "/scm-management/projects/projectId/developments/developmentId"
+      },
+      "response": {
+        "body": {
+          "createdOn": "iloveorange",
+          "id": "iloveorange",
+          "latestCommitId": "iloveorange",
+          "name": "iloveorange",
+          "parentCommitId": "iloveorange",
+          "projectId": "iloveorange",
+          "repository": {
+            "id": "iloveorange",
+            "url": "iloveorange"
+          },
+          "source": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.createdOn": {
+            "match": "type"
+          },
+          "$.body.id": {
+            "match": "type"
+          },
+          "$.body.latestCommitId": {
+            "match": "type"
+          },
+          "$.body.name": {
+            "match": "type"
+          },
+          "$.body.parentCommitId": {
+            "match": "type"
+          },
+          "$.body.projectId": {
+            "match": "type"
+          },
+          "$.body.repository.id": {
+            "match": "type"
+          },
+          "$.body.repository.url": {
+            "match": "type"
+          },
+          "$.body.source": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to get a development with includeDeleted",
+      "providerState": "can get development",
+      "request": {
+        "matchingRules": {
+          "$.query.includeDeleted": {
+            "match": "regex",
+            "regex": "true|false"
+          }
+        },
+        "method": "GET",
+        "path": "/scm-management/projects/projectId/developments/developmentId",
+        "query": "includeDeleted=true"
+      },
+      "response": {
+        "body": {
+          "createdOn": "iloveorange",
+          "id": "iloveorange",
+          "latestCommitId": "iloveorange",
+          "name": "iloveorange",
+          "parentCommitId": "iloveorange",
+          "projectId": "iloveorange",
+          "repository": {
+            "id": "iloveorange",
+            "url": "iloveorange"
+          },
+          "source": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.createdOn": {
+            "match": "type"
+          },
+          "$.body.id": {
+            "match": "type"
+          },
+          "$.body.latestCommitId": {
+            "match": "type"
+          },
+          "$.body.name": {
+            "match": "type"
+          },
+          "$.body.parentCommitId": {
+            "match": "type"
+          },
+          "$.body.projectId": {
+            "match": "type"
+          },
+          "$.body.repository.id": {
+            "match": "type"
+          },
+          "$.body.repository.url": {
+            "match": "type"
+          },
+          "$.body.source": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to get a development that fails",
+      "providerState": "cannot get development",
+      "request": {
+        "method": "GET",
+        "path": "/scm-management/projects/projectId/developments/developmentId"
+      },
+      "response": {
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 400
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "12.5.2"
+    },
+    "pactRust": {
+      "ffi": "0.4.20",
+      "models": "1.2.0"
+    },
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  },
+  "provider": {
+    "name": "scm-management-service"
+  }
+}

@@ -1,0 +1,9 @@
+@for (userStoryId of userStoryIds; track userStoryId; let last = $last) {
+<a
+  [href]="userStoryId | jiraIssueUrlResolver : jiraBaseUrl"
+  target="_blank"
+  rel="noopener noreferrer"
+  class="p-button-link"
+  >{{ userStoryId }}</a
+>
+@if (!last) {<span>, </span>} }

@@ -1,0 +1,63 @@
+<p-confirmpopup></p-confirmpopup>
+<div class="col-span-12">
+  <div class="text-surface-500 dark:text-surface-300 font-medium mb-4">
+    Attachments
+  </div>
+
+  @if (!isLoading) {
+  <div>
+    @if (attachments.length > 0) {
+    <div>
+      @for (attachment of attachments; track attachment) {
+      <div
+        class="flex md:items-center md:justify-between border-t border-surface p-4 flex-col md:flex-row"
+      >
+        <div class="grow flex items-center">
+          <span class="block pi pi-file mr-2"></span>
+          <span class="text-surface-900 dark:text-surface-0">{{
+            attachment.name
+          }}</span>
+        </div>
+        <a
+          pButton
+          icon="pi pi-download"
+          [href]="attachment.downloadLink"
+          label="Download"
+          class="p-button-outlined mt-2 md:mt-0 mr-2 min-w-max"
+        ></a>
+        @if (showDelete) {
+        <p-button
+          (onClick)="confirmDelete($event, attachment)"
+          icon="pi pi-trash"
+          class="mt-2 md:mt-0"
+          severity="danger"
+        />
+        }
+      </div>
+      }
+    </div>
+    } @else {
+    <div
+      class="flex flex-col items-center text-gray-400 ng-star-inserted p-4 border-solid rounded-md border border border-gray-300"
+    >
+      <i class="pi pi-inbox mb-2" style="font-size: 3rem"></i>
+      <span>No Attachments Uploaded</span>
+    </div>
+    }
+  </div>
+  } @if (isLoading) {
+  <div>
+    @for (attachment of [1, 2, 3]; track attachment) {
+    <div
+      class="flex md:items-center md:justify-between border-t border-surface p-4 flex-col md:flex-row"
+    >
+      <div class="flex items-center">
+        <p-skeleton shape="circle" size="1rem" styleClass="mr-2"></p-skeleton>
+        <p-skeleton width="10rem"></p-skeleton>
+      </div>
+      <p-skeleton width="10rem" height="2rem"></p-skeleton>
+    </div>
+    }
+  </div>
+  }
+</div>

@@ -1,0 +1,40 @@
+<mxevolve-card-container>
+  <div class="border-b border-surface pt-2">
+    <mxflow-header-title
+      >Configuration Impact Details
+      <div right-content>
+        <p-button label="Edit" (onClick)="handleEdit()"></p-button>
+      </div>
+    </mxflow-header-title>
+  </div>
+
+  <mxevolve-configuration-impact-details
+    [projectId]="projectId"
+    [projectName]="projectName"
+    [configurationImpactId]="configurationImpactId"
+    (errorMessageEmitter)="handleError($event)"
+  ></mxevolve-configuration-impact-details>
+
+  <div class="mt-8 mb-4 p-4">
+    <p-divider>
+      <div class="my-6 text-xl font-medium">
+        Scenario(s) Linked to this Impact
+      </div>
+    </p-divider>
+    <mxevolve-project-specific-analysis-object-links-table
+      [analysisObjectId]="configurationImpactId"
+      [analysisObjectType]="AnalysisObjectType.CONFIGURATION_IMPACT"
+      [projectId]="projectId"
+      (errorMessageEmitter)="handleError($event)"
+    ></mxevolve-project-specific-analysis-object-links-table>
+  </div>
+</mxevolve-card-container>
+
+<mxevolve-edit-configuration-impact-modal
+  [isModalShown]="isEditModalVisible"
+  [projectId]="projectId"
+  [configurationImpactId]="configurationImpactId"
+  (closeModalEvent)="handleCloseModalEvent()"
+  (configurationImpactEdited)="handleConfigurationImpactEdited()"
+>
+</mxevolve-edit-configuration-impact-modal>

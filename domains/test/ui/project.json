@@ -1,0 +1,18 @@
+{
+  "name": "domains-test-ui",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domains/test/ui/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["scope:test", "type:ui"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/domains/test/ui/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

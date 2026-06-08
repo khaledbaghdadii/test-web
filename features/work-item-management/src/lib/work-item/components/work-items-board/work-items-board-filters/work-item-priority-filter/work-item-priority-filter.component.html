@@ -1,0 +1,11 @@
+<p-select
+  [options]="priorityOptions"
+  [ngModel]="workItemPriority"
+  (ngModelChange)="onPriorityChange($event)"
+  placeholder="Priority"
+  [showClear]="true"
+  class="w-full"
+  appendTo="body"
+  [disabled]="disabled"
+  data-testid="priority-filter"
+/>

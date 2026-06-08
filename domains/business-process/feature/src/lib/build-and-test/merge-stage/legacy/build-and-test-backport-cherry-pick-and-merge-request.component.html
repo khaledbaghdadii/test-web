@@ -1,0 +1,30 @@
+@switch (backport().applyBackportDevelopmentState.cherryPickStatus) { @case
+(CherryPickStatus.AUTOMATIC_CHERRY_PICK_IN_PROGRESS) {
+<p-message severity="info">
+  <ng-template #icon>
+    <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+  </ng-template>
+  Automatic cherry picking is in progress. Please refresh the page for the
+  latest update.
+</p-message>
+} @case (CherryPickStatus.AUTOMATIC_CHERRY_PICK_FAILED) {
+<mxevolve-build-and-test-backport-manual-cherry-pick
+  [projectId]="projectId()"
+  [processId]="processId()"
+  [repositoryId]="repositoryId()"
+  [backport]="backport()"
+/>
+} @case (CherryPickStatus.COMMITS_CHERRY_PICKED) {
+@if (backport().mergeDevelopmentState.latestMergeJobId) {
+<mxevolve-merge-request-stepper
+  [projectId]="projectId()"
+  [mergeRequestId]="backport().mergeDevelopmentState.latestMergeJobId"
+/>
+} @else {
+<p-message severity="info">
+  <ng-template #icon>
+    <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+  </ng-template>
+  Backport merge request is being prepared.
+</p-message>
+} } }

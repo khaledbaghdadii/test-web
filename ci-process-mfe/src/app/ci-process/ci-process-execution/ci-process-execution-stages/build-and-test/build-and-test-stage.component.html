@@ -1,0 +1,58 @@
+<mxevolve-card-container>
+  <mxflow-header-title>
+    <div class="page-title">Build & Test</div>
+  </mxflow-header-title>
+
+  @if (errorMessage) {
+  <mxflow-error-alert
+    [errorMessage]="errorMessage!"
+    [closeable]="false"
+  ></mxflow-error-alert>
+  } @else if (!readyForBuildAndTest) {
+  <mxflow-info-alert
+    infoMessage="The step is currently loading. Please refresh the page for the latest updates."
+    [closeable]="false"
+  >
+  </mxflow-info-alert>
+  } @else {
+  <div class="flex flex-col gap-6">
+    <mxevolve-build-and-test-cherry-pick
+      [cherryPickRunning]="buildAndTestStage.cherryPickRunning"
+      [cherryPickFailed]="buildAndTestStage.cherryPickFailed"
+      [temporaryBranchName]="configurationBranchName"
+    ></mxevolve-build-and-test-cherry-pick>
+    <p-panel header="Branch Details" [toggleable]="true">
+      <mxevolve-build-and-test-branch-details
+        [projectId]="projectId"
+        [developmentId]="developmentId"
+      ></mxevolve-build-and-test-branch-details>
+    </p-panel>
+    @if (showEnvironmentDetails) {
+    <p-panel header="Build Environment Details" [toggleable]="true">
+      <mxflow-build-environment-section
+        [projectId]="projectId"
+        [processId]="ciProcessExecutionId"
+        [prepareBuildStage]="prepareBuildStage"
+        [isUserInterventionDisabled]="isUserInterventionDisabled"
+      ></mxflow-build-environment-section>
+    </p-panel>
+    } @if (showTechnicalReseedDetails) {
+    <mxevolve-technical-reseed-operation
+      [projectId]="projectId"
+      [executionGroupId]="technicalReseedExecutionGroupId"
+      [infraGroup]="infraGroup"
+      [targetBranch]="configurationBranchName"
+      (reseedLaunchedSuccessfully)="refreshPage()"
+    ></mxevolve-technical-reseed-operation>
+    }
+    <mxevolve-build-and-test-test-section
+      [projectId]="projectId"
+    ></mxevolve-build-and-test-test-section>
+    <mxflow-build-and-test-actions
+      [mergeRequestDetails]="mergeRequestDetails"
+      [ciProcessExecutionId]="ciProcessExecutionId"
+      [buildAndTestStage]="buildAndTestStage"
+    ></mxflow-build-and-test-actions>
+  </div>
+  }
+</mxevolve-card-container>

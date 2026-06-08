@@ -1,0 +1,44 @@
+@switch (status) { @case (TestCaseExecutionAnalysisStatus.PASSED) {
+<p-tag data-testid="passed" severity="success">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-check-circle"></i>
+    <span class="text-sm">{{
+      TestCaseExecutionAnalysisStatusDisplayValue[status]
+    }}</span>
+  </div>
+</p-tag>
+} @case (TestCaseExecutionAnalysisStatus.FAILED) {
+<p-tag data-testid="failed" severity="danger">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-times-circle"></i>
+    <span class="text-sm">{{
+      TestCaseExecutionAnalysisStatusDisplayValue[status]
+    }}</span>
+  </div>
+</p-tag>
+} @case (TestCaseExecutionAnalysisStatus.INCIDENT_SENT) {
+<p-tag data-testid="incident-sent" severity="info">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-send"></i>
+    <span class="text-sm">{{
+      TestCaseExecutionAnalysisStatusDisplayValue[status]
+    }}</span>
+  </div>
+</p-tag>
+} @case (TestCaseExecutionAnalysisStatus.CANCELLED) {
+<p-tag data-testid="cancelled" severity="warn">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-ban"></i>
+    <span class="text-sm">{{
+      TestCaseExecutionAnalysisStatusDisplayValue[status]
+    }}</span>
+  </div>
+</p-tag>
+} @default {
+<p-tag data-testid="na" severity="secondary">
+  <div class="flex gap-2 items-center">
+    <i class="pi pi-minus-circle"></i>
+    <span class="text-sm">NA</span>
+  </div>
+</p-tag>
+} }

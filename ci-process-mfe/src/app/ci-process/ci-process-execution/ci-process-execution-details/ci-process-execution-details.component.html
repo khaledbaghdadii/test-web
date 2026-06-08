@@ -1,0 +1,50 @@
+@if (loading) {
+<mxevolve-loading-business-process-execution-skeleton
+  [numberOfStages]="4"
+></mxevolve-loading-business-process-execution-skeleton>
+} @else {
+<div class="flex flex-col gap-4">
+  @if (domainExecution) {
+  <mxevolve-build-and-test-run-header [execution]="domainExecution" />
+  }
+
+  <mxevolve-business-process-alert-display
+    [expiryDate]="ciProcessExecution.expiryDate"
+    [endDate]="ciProcessExecution.endDate"
+    [errorMessage]="errorMessage"
+    [aborted]="status === BusinessProcessExecutionStatus.ABORTED"
+    [notStarted]="notStarted"
+  ></mxevolve-business-process-alert-display>
+
+  <mxevolve-stepper
+    [steps]="steps"
+    [displayedStepId]="selectedStepId"
+    (displayedStepIdChange)="onStepSelected($event)"
+  ></mxevolve-stepper>
+
+  @if (ciProcessExecution.source.type ===
+  BuildAndTestSourceType.BUSINESS_PROCESS) {
+  <p-message severity="info">
+    This process was started by the following BP:
+    <a
+      class="p-button-link"
+      [routerLink]="
+        '/app/' +
+        projectId +
+        '/business-process/' +
+        (ciProcessExecution.source.id | businessProcessUriFactory)
+      "
+      target="_blank"
+    >
+      {{
+        ciProcessExecution.source.id | businessProcessName : projectId | async
+      }}
+    </a>
+  </p-message>
+  }
+
+  <div>
+    <router-outlet></router-outlet>
+  </div>
+</div>
+}

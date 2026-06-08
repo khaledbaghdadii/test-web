@@ -1,0 +1,7 @@
+::ng-deep .p-multiselect-list-container p-scroller > div {
+  min-height: 40px;
+}
+
+::ng-deep .p-multiselect-overlay {
+  min-width: 16rem;
+}

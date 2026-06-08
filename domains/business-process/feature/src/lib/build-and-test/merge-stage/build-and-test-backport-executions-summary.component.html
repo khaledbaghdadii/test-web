@@ -1,0 +1,50 @@
+@if (executionFetchError) {
+<p-message severity="error" class="mt-4">
+  <ng-template #icon>
+    <mxevolve-icon name="cancel" size="md" class="mr-2 mt-1" />
+  </ng-template>
+  {{ executionFetchError }}
+</p-message>
+}
+
+@if (showEmptyBackportInfo()) {
+<p-message severity="info" class="mt-4">
+  <ng-template #icon>
+    <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+  </ng-template>
+  {{ infoMessage() }}
+</p-message>
+}
+
+@if (missingDefinitionsMessage()) {
+<p-message severity="error" class="mt-4">
+  <ng-template #icon>
+    <mxevolve-icon name="cancel" size="md" class="mr-2 mt-1" />
+  </ng-template>
+  {{ missingDefinitionsMessage() }}
+</p-message>
+}
+
+@if (backportExecutionRows().length > 0) {
+<div class="mt-4 flex flex-col gap-2">
+  <h4 class="mb-0 font-semibold text-lg">On-Demand Backport Executions</h4>
+  <ag-grid-angular
+    class="ag-theme-quartz w-full h-[220px]"
+    [rowData]="backportExecutionRows()"
+    [columnDefs]="executionColumnDefinitions"
+    [defaultColDef]="defaultColumnDefinition"
+  />
+</div>
+}
+
+@if (failedBackportDefinitionRows().length > 0) {
+<div class="mt-6 flex flex-col gap-2">
+  <h4 class="mb-0 font-semibold text-lg">Failed to Launch Backports</h4>
+  <ag-grid-angular
+    class="ag-theme-quartz w-full h-[220px]"
+    [rowData]="failedBackportDefinitionRows()"
+    [columnDefs]="failedDefinitionColumnDefinitions"
+    [defaultColDef]="defaultColumnDefinition"
+  />
+</div>
+}

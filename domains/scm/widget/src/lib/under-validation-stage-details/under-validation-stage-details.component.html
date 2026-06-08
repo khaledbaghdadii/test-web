@@ -1,0 +1,136 @@
+<div class="flex flex-col gap-4 p-4">
+  <!-- Queue Info Cards - always shown -->
+  <div class="flex items-stretch gap-6">
+    @if (data().queuePosition !== undefined) {
+    <div
+      class="flex items-center gap-3 border border-surface-200 rounded-lg px-4 py-3 w-[195px]"
+    >
+      <div
+        class="flex items-center justify-center w-9 h-9 bg-surface-100 rounded-lg"
+      >
+        <mxevolve-icon
+          name="pending"
+          size="sm"
+          color="var(--p-text-muted-color)"
+        />
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-sm text-muted-color">Place in Queue</span>
+        <span class="text-sm font-semibold text-primary">{{
+          data().queuePosition ?? "N/A"
+        }}</span>
+      </div>
+    </div>
+    }
+    <div
+      class="flex items-center gap-3 border border-surface-200 rounded-lg px-4 py-3 w-[195px]"
+    >
+      <div
+        class="flex items-center justify-center w-9 h-9 bg-surface-100 rounded-lg"
+      >
+        <mxevolve-icon
+          name="account_tree"
+          size="sm"
+          color="var(--p-text-muted-color)"
+        />
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-sm text-muted-color"
+          >Merge Mode <span class="text-muted-color">ⓘ</span></span
+        >
+        <span class="text-sm font-semibold text-primary">{{
+          mergeMode() === "N/A" ? "N/A" : mergeMode() + " Mode"
+        }}</span>
+      </div>
+    </div>
+    @if (mergeRequestPriority()) {
+    <div
+      class="flex items-center gap-3 border border-surface-200 rounded-lg px-4 py-3 w-[195px]"
+    >
+      <div
+        class="flex items-center justify-center w-9 h-9 bg-surface-100 rounded-lg"
+      >
+        <mxevolve-icon
+          name="flag"
+          size="sm"
+          color="var(--p-text-muted-color)"
+        />
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-sm text-muted-color">Merge Priority</span>
+        <span class="text-sm font-semibold text-primary">{{
+          mergeRequestPriority()
+        }}</span>
+      </div>
+    </div>
+    }
+  </div>
+
+  @if (isQueued()) {
+  <div
+    class="flex ml-2"
+    *showElementIfAuthorized="{
+      action: 'update_priority',
+      attributes: {},
+      package: 'scm',
+      resource: 'merge_request'
+    }"
+  >
+    <mxevolve-merge-request-priority-selector
+      [mergeRequest]="prioritySelectorModel()"
+    />
+  </div>
+
+  <!-- QUEUED: Please Wait illustration -->
+  <div class="flex flex-col items-center justify-center gap-4 py-12">
+    <mxevolve-illustration name="out_of_time" size="lg" />
+    <span class="text-2xl leading-4 font-bold">Please Wait</span>
+    <span class="text-lg font-medium">Your merge is in queue</span>
+  </div>
+
+  } @else {
+  <!-- Non-queued states: Rebase section -->
+  <div class="flex flex-col gap-2">
+    <h4 class="text-base font-semibold">Rebase</h4>
+    <div class="flex flex-wrap items-stretch gap-6">
+      <div class="flex flex-col gap-1">
+        <span class="text-sm text-surface-500">Rebase Status</span>
+        <div class="flex">
+          <p-tag
+            [severity]="rebaseStatusSeverity()"
+            data-testid="rebase-status-tag"
+          >
+            {{ rebaseStatusLabel() }}
+          </p-tag>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (isRebaseFailed()) {
+  <!-- Rebase Failed: show commits table -->
+  <div class="flex flex-col gap-4">
+    <span class="text-base font-semibold">List of Commits</span>
+    <mxevolve-paginated-commits-difference
+      [projectId]="data().projectId"
+      [repositoryId]="data().repositoryId"
+      [source]="data().destinationBranch"
+      [destination]="data().sourceBranch"
+    />
+  </div>
+  } @if ((isUnderValidation() || isValidationFailed()) &&
+  scenarioRunIds().length > 0) {
+  <!-- Under Validation / Validation Failed: show scenario runs -->
+  <div class="flex flex-col gap-2 overflow-hidden">
+    <span class="text-base font-bold">Test Result</span>
+    <mxevolve-scenario-runs
+      [projectId]="data().projectId"
+      [scenarioRunIds]="scenarioRunIds()"
+      [showEnvironmentDetails]="false"
+      [showActionButtons]="false"
+      [showTopBarActions]="false"
+      [detailsExpandedByDefault]="true"
+    />
+  </div>
+  } }
+</div>

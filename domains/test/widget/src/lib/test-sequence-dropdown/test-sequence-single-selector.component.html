@@ -1,0 +1,11 @@
+<mxevolve-single-select-dropdown
+  [stateProvider]="stateProvider"
+  [dataParams]="{ projectId: projectId(), repositoryId: repositoryId() }"
+  [config]="{
+    placeholder: 'Select Test Definition',
+    filter: true,
+    disabled: disabled()
+  }"
+  (selectionChange)="onSelectionChange($event)"
+  (errorEvent)="onError($event)"
+/>

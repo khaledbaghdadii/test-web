@@ -1,0 +1,23 @@
+<div class="p-input-icon-right w-full">
+  <p-iconfield>
+    <p-inputicon styleClass="pi pi-folder" />
+    <input
+      pTooltip="Select a repository to enable this field"
+      tooltipPosition="top"
+      [tooltipDisabled]="repositorySelected"
+      type="text"
+      pInputText
+      placeholder="Select a Test Package"
+      class="{{ !repositorySelected ? 'disabled w-full' : 'w-full' }}"
+      [(ngModel)]="selectedPath"
+      [readOnly]="true"
+      [disabled]="!repositorySelected"
+      (click)="openDirectoryBrowser()"
+    />
+  </p-iconfield>
+</div>
+
+<mxflow-repo-browser-component
+  [projectId]="projectId"
+  (pathSelected)="handleTestDirectorySelected($event)"
+></mxflow-repo-browser-component>

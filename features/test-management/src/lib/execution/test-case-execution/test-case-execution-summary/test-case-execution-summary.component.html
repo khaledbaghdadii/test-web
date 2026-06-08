@@ -1,0 +1,420 @@
+<div class="flex items-center">
+  <p-button
+    [attr.data-testid]="'summary-report-back-button'"
+    (click)="back()"
+    (keydown.enter)="back()"
+    [icon]="'pi pi-angle-left'"
+    [link]="true"
+    [size]="'large'"
+    class="mb-4"
+  ></p-button>
+  <mxflow-header-title class="ml-2 flex items-center"
+    >Test Case Executions Summary
+  </mxflow-header-title>
+</div>
+<p-divider></p-divider>
+@if (unmappedTestCaseExecutionsExist) {
+<p-message [severity]="'warn'" data-testid="unmapped-test-cases-warning-message"
+  >There are unmapped test cases, please review your package.
+</p-message>
+}
+<div
+  data-testId="test-case-execution-count"
+  class="flex justify-end mt-3 mr-1 text-xs"
+>
+  Showing {{ displayedTestCaseExecutionCount() }} of
+  {{ testCaseExecutionsSummaryData().length }}
+</div>
+<p-table
+  data-testid="test-case-execution-summary-table"
+  [value]="testCaseExecutionsSummaryData()"
+  dataKey="id"
+  [loading]="isLoading()"
+  [resizableColumns]="true"
+  [scrollable]="true"
+  [showLoader]="false"
+  class="pt-3"
+  (onFilter)="updateDisplayedTestCaseExecutionCount($event)"
+  #testCaseSummaryTable
+>
+  <ng-template #header>
+    <tr>
+      <th pResizableColumn id="table-name-header">
+        <span class="whitespace-normal">Name</span>
+        <p-columnFilter
+          data-testId="title-column-filter"
+          field="testCaseExecution.title"
+          display="menu"
+          matchMode="contains"
+          [showMatchModes]="false"
+          [showOperator]="false"
+          [showAddButton]="false"
+          [showApplyButton]="true"
+          [showClearButton]="true"
+        >
+        </p-columnFilter>
+      </th>
+      <th pResizableColumn id="table-functional-id-header">
+        FTC Id
+        <p-columnFilter
+          data-testId="functional-id-column-filter"
+          field="testCaseExecution.functionalTestCaseId"
+          display="menu"
+          matchMode="contains"
+          [showMatchModes]="false"
+          [showOperator]="false"
+          [showAddButton]="false"
+          [showApplyButton]="true"
+          [showClearButton]="true"
+        >
+        </p-columnFilter>
+      </th>
+      <th id="table-status-header" scope="col">
+        <div>
+          Status
+          <p-columnFilter
+            data-testid="summary-status-filter"
+            field="testCaseExecution.status"
+            display="menu"
+            matchMode="in"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showApplyButton]="false"
+            [showClearButton]="false"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-checkbox-filter
+                [filter]="filter"
+                [options]="statusFilterOptions"
+                [(selected)]="selectedStatusFilters"
+                (selectedChange)="onStatusFilterChange($event)"
+              ></mxevolve-table-checkbox-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th
+        scope="col"
+        data-testid="analysis-status-header"
+        *showElementIfAuthorized="{
+          action: 'read_analysis_status',
+          attributes: {},
+          package: 'test',
+          resource: 'scenario_execution'
+        }"
+      >
+        <div>
+          Analysis Status
+          <p-columnFilter
+            data-testid="summary-analysis-status-filter"
+            field="testCaseExecution.analysisStatus"
+            display="menu"
+            matchMode="in"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showAddButton]="false"
+            [showApplyButton]="false"
+            [showClearButton]="false"
+          >
+            <ng-template pTemplate="filter" let-filter="filterCallback">
+              <mxevolve-table-checkbox-filter
+                [filter]="filter"
+                [options]="analysisStatusFilterOptions"
+                [(selected)]="selectedAnalysisStatusFilters"
+              ></mxevolve-table-checkbox-filter>
+            </ng-template>
+          </p-columnFilter>
+        </div>
+      </th>
+      <th
+        pResizableColumn
+        scope="col"
+        data-testid="linked-incidents-header"
+        *showElementIfAuthorized="{
+          action: 'view',
+        attributes: {},
+        package: 'web',
+        resource: 'analysis_object',
+        }"
+      >
+        Incidents
+        <p-columnFilter
+          data-testid="linked-incidents-header-filter"
+          field="linkedIncidents"
+          display="menu"
+          matchMode="arrayContainsIncident"
+          [showMatchModes]="false"
+          [showOperator]="false"
+          [showAddButton]="false"
+          [showApplyButton]="true"
+          [showClearButton]="true"
+        >
+        </p-columnFilter>
+      </th>
+      <th
+        pResizableColumn
+        scope="col"
+        data-testid="linked-impacts-header"
+        *showElementIfAuthorized="{
+          action: 'view',
+        attributes: {},
+        package: 'web',
+        resource: 'analysis_object',
+        }"
+      >
+        Impacts
+        <p-columnFilter
+          data-testid="linked-impacts-header-filter"
+          field="linkedImpacts"
+          display="menu"
+          matchMode="arrayContainsDetection"
+          [showMatchModes]="false"
+          [showOperator]="false"
+          [showAddButton]="false"
+          [showApplyButton]="true"
+          [showClearButton]="true"
+        >
+        </p-columnFilter>
+      </th>
+      <th
+        pResizableColumn
+        scope="col"
+        data-testid="linked-regressions-header"
+        *showElementIfAuthorized="{
+          action: 'view',
+        attributes: {},
+        package: 'web',
+        resource: 'analysis_object',
+        }"
+      >
+        Regressions
+        <p-columnFilter
+          data-testid="linked-regressions-header-filter"
+          field="linkedRegressions"
+          display="menu"
+          matchMode="arrayContainsDetection"
+          [showMatchModes]="false"
+          [showOperator]="false"
+          [showAddButton]="false"
+          [showApplyButton]="true"
+          [showClearButton]="true"
+        >
+        </p-columnFilter>
+      </th>
+      <th pResizableColumn id="table-start-date-header">Start Date</th>
+      <th pResizableColumn id="table-end-date-header">End Date</th>
+      <th pResizableColumn id="table-duration-date-header">Duration</th>
+      <th scope="col"></th>
+    </tr>
+  </ng-template>
+  @if (!isLoading()) {
+  <ng-template #body let-data>
+    <tr>
+      <td class="truncate">{{ data.testCaseExecution.title }}</td>
+      <td>
+        @if (data.testCaseExecution.functionalTestCaseId) {
+        <a
+          id="functional-test-case-id-link-{{ data.testCaseExecution.id }}"
+          href="{{
+            functionalTestCaseBaseUrl +
+              data.testCaseExecution.functionalTestCaseId
+          }}"
+          class="p-button-link"
+          target="_blank"
+        >
+          {{ data.testCaseExecution.functionalTestCaseId }}
+        </a>
+        } @else { - }
+      </td>
+
+      <td>
+        <mxevolve-test-case-execution-status
+          [status]="data.testCaseExecution.status"
+        >
+        </mxevolve-test-case-execution-status>
+      </td>
+      <td>
+        <mxevolve-test-case-execution-analysis-status
+          [status]="data.testCaseExecution.analysisStatus"
+        >
+        </mxevolve-test-case-execution-analysis-status>
+      </td>
+      <td
+        class="max-w-64 truncate"
+        data-testid="linked-incidents-data"
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'analysis_object',
+        }"
+      >
+        @if (data.linkedIncidents?.length !== 0) { @for (incident of
+        data.linkedIncidents; track incident; let isLast = $last) {
+        <span>
+          <a
+            data-testid="linked-incident-display"
+            [pTooltip]="data.linkedIncidents | linkedIncident"
+            tooltipPosition="top"
+            class="p-button-link"
+            target="_blank"
+            [href]="incident.externalIssue.link"
+          >
+            {{ incident.externalIssue.id }}
+          </a>
+          {{ isLast ? "" : ", " }}
+        </span>
+        } } @else {
+        <span> - </span>
+        }
+      </td>
+      <td
+        class="max-w-64 truncate"
+        data-testid="linked-impacts-data"
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'analysis_object',
+        }"
+      >
+        <mxevolve-analysis-object-links-display
+          data-testid="linked-impacts-display"
+          [pTooltip]="data.linkedImpacts | linkedDetection"
+          tooltipPosition="top"
+          [linkedDetectionsData]="data.linkedImpacts ? data.linkedImpacts : []"
+          [detectionCategory]="DetectionCategory.Impact"
+        >
+        </mxevolve-analysis-object-links-display>
+      </td>
+      <td
+        class="max-w-64 truncate"
+        data-testid="linked-regressions-data"
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'analysis_object',
+        }"
+      >
+        <mxevolve-analysis-object-links-display
+          data-testid="linked-regressions-display"
+          [pTooltip]="data.linkedRegressions | linkedDetection"
+          tooltipPosition="top"
+          [linkedDetectionsData]="
+            data.linkedRegressions ? data.linkedRegressions : []
+          "
+          [detectionCategory]="DetectionCategory.Regression"
+        >
+        </mxevolve-analysis-object-links-display>
+      </td>
+
+      <td class="truncate">
+        @if (data.testCaseExecution.startDate) {
+        <span
+          id="test-case-execution-start-date-{{ data.testCaseExecution.id }}"
+        >
+          {{ data.testCaseExecution.startDate | date : "medium" }}
+        </span>
+        } @else {
+        <span
+          id="test-case-execution-start-date-empty-{{
+            data.testCaseExecution.id
+          }}"
+        >
+          -
+        </span>
+        }
+      </td>
+      <td class="truncate">
+        @if (data.testCaseExecution.endDate) {
+        <span id="test-case-execution-end-date-{{ data.testCaseExecution.id }}">
+          {{ data.testCaseExecution.endDate | date : "medium" }}
+        </span>
+        } @else {
+        <span
+          id="test-case-execution-end-date-empty-{{
+            data.testCaseExecution.id
+          }}"
+        >
+          -
+        </span>
+        }
+      </td>
+      <td>
+        @if (data.testCaseExecution.startDate && data.testCaseExecution.endDate)
+        {
+        <span id="test-case-execution-duration-{{ data.testCaseExecution.id }}">
+          {{
+            data.testCaseExecution.startDate
+              | duration : data.testCaseExecution.endDate
+          }}
+        </span>
+        } @else {
+        <span
+          id="test-case-execution-duration-empty-{{
+            data.testCaseExecution.id
+          }}"
+        >
+          -
+        </span>
+        }
+      </td>
+      <td>
+        <p-button
+          [attr.data-testid]="
+            'view-test-unit-links-button-' + data.testCaseExecution.id
+          "
+          icon="pi pi-eye"
+          [rounded]="true"
+          [text]="true"
+          [pTooltip]="
+            data.hasTestUnitAnalysisObjectLinks
+              ? 'View test unit links'
+              : 'Test Case has no Incidents or Detections linked'
+          "
+          tooltipPosition="left"
+          (onClick)="openDrawer(data)"
+          [disabled]="!data.hasTestUnitAnalysisObjectLinks"
+        />
+      </td>
+    </tr>
+  </ng-template>
+  }
+  <ng-template pTemplate="loadingbody">
+    @for (row of Array(10); track $index) {
+    <tr>
+      @for (col of Array(7); track $index) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      } @for (col of Array(3); track col) {
+      <td
+        *showElementIfAuthorized="{
+          action: 'view',
+          attributes: {},
+          package: 'web',
+          resource: 'analysis_object',
+        }"
+      >
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="8" class="py-4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>
+
+<mxevolve-test-case-test-unit-links-drawer
+  [(visible)]="drawerVisible"
+  [testCaseExecution]="selectedTestCaseExecution()"
+>
+</mxevolve-test-case-test-unit-links-drawer>

@@ -1,0 +1,26 @@
+<mxevolve-stage-container>
+  <mxevolve-business-process-content-container header="Convert Binary">
+    <mxevolve-scenario-runs
+      class="col-span-12"
+      [projectId]="projectId()"
+      [contextId]="processId()"
+      subContextId="TECHNICAL_UPGRADE"
+      [showEnvironmentLink]="false"
+      [showHistory]="true"
+      [showHistorySummary]="true"
+      [showTopBarActions]="false"
+      (scenarioChanged)="reloadExecution()"
+    >
+      <ng-template #topBar>Latest Scenario Run</ng-template>
+    </mxevolve-scenario-runs>
+  </mxevolve-business-process-content-container>
+
+  <mxevolve-business-process-content-container footer [clearBackground]="true">
+    <mxevolve-pick-reference-scenario
+      class="col-span-2 col-start-6"
+      [projectId]="projectId()"
+      [processId]="processId()"
+      [stageStatus]="stageStatus()"
+    />
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>

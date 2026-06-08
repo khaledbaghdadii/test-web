@@ -1,0 +1,72 @@
+<div>
+  <div class="text-md text-gray-500 italic">
+    <p>Select one or more regressions causing your test(s) to fail</p>
+  </div>
+
+  <div class="flex flex-col gap-3 w-full mt-4 mb-2">
+    <div class="grid grid-cols-12">
+      <div class="col-span-8">
+        <mxevolve-validation-scope-setter
+          [(validationScope)]="validationScope"
+          [initialValidationScope]="initialValidationScope()"
+        ></mxevolve-validation-scope-setter>
+      </div>
+      <div class="col-span-4 flex flex-col">
+        <div class="flex justify-between items-center">
+          <mxevolve-show-detection-with-no-defects-toggle
+            [detectionType]="DetectionType.Binary"
+            [detectionCategory]="DetectionCategory.Regression"
+            [warningMessage]="warningMessage"
+            [(showDetectionsWithoutDefects)]="
+              showBinaryRegressionsWithoutDefects
+            "
+            [(validationScope)]="validationScope"
+          ></mxevolve-show-detection-with-no-defects-toggle>
+          <mxevolve-create-binary-regression-button
+            [projectId]="projectId"
+            [mxVersionInitialValue]="mxVersionInitialValue"
+            [validationScope]="validationScope()"
+            [initialValidationScope]="initialValidationScope()"
+            [defectsWarningMessage]="warningMessage"
+            [buttonLabel]="'Create New'"
+            [submitCreationButtonLabel]="'Create and Link'"
+            (binaryRegressionCreationModalOpened)="
+              showCreateBinaryRegressionModal()
+            "
+            (binaryRegressionCreationModalClosed)="
+              onCreateBinaryRegressionCancelled()
+            "
+            (binaryRegressionCreated)="onBinaryRegressionCreated($event)"
+          ></mxevolve-create-binary-regression-button>
+        </div>
+      </div>
+    </div>
+  </div>
+  @if (warningMessage) {
+  <p-message
+    data-testid="warning-message"
+    severity="warn"
+    styleClass="mt-1 mb-4 mx-0.5"
+    [closable]="false"
+    [showTransitionOptions]="'0ms'"
+    [hideTransitionOptions]="'0ms'"
+  >
+    {{ warningMessage }}
+  </p-message>
+  }
+  <mxevolve-binary-regression-selection-table
+    data-testid="binary-regression-selection-table"
+    [selectedRegressionIdsLoading]="selectedRegressionIdsLoading"
+    [initiallySelectedRegressions]="initiallySelectedRegressions"
+    [refresh]="refresh$"
+    [validationScope]="validationScope()"
+    [showBinaryRegressionsWithoutDefects]="
+      showBinaryRegressionsWithoutDefects()
+    "
+    (selectedBinaryRegressionsChange)="
+      onBinaryRegressionSelectionChange($event)
+    "
+    (warningMessageChange)="handleWarningMessage($event)"
+  >
+  </mxevolve-binary-regression-selection-table>
+</div>

@@ -1,0 +1,25 @@
+<div
+  class="truncate inline-block max-w-full"
+  [pTooltip]="incidentsTooltip()"
+  tooltipPosition="top"
+  [showDelay]="500"
+>
+  @if ( incidents().length > 0) {
+  <span id="incidents-list">
+    @for ( incident of incidents(); track incident; let isLast = $last) {
+    <span id="incident-{{ incident.externalIssue.id }}">
+      <a
+        class="p-button-link"
+        target="_blank"
+        [href]="incident.externalIssue.link"
+      >
+        {{ incident.externalIssue.id }}
+      </a>
+      {{ isLast ? "" : ", " }}
+    </span>
+    }
+  </span>
+  } @else {
+  <span id="empty-incidents-list"> - </span>
+  }
+</div>

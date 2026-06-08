@@ -1,0 +1,174 @@
+<mxevolve-stage-container>
+  <mxevolve-business-process-content-container header="Merge">
+    @if (stage().errorMessage) {
+    <p-message severity="error" class="col-span-12">
+      <ng-template #icon>
+        <mxevolve-icon name="cancel" size="md" class="mr-2 mt-1" />
+      </ng-template>
+      {{ stage().errorMessage }}
+    </p-message>
+    }
+
+    @if (shouldShowV1BackportInfo()) {
+    <p-message severity="info" class="col-span-12">
+      <ng-template #icon>
+        <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+      </ng-template>
+      Backport will start after integrating into
+      {{ integrateDestinationBranch() }} passes
+    </p-message>
+    }
+
+    <div class="col-span-12">
+      @if (backportRequested()) {
+      <p-tabs value="0">
+        <p-tablist>
+          <p-tab value="0">
+            Integrate into {{ integrateDestinationBranch() }}
+          </p-tab>
+          @if (hasV1Backports()) { @for (backport of backports(); track
+          backport; let i = $index) { @if
+          (backport.initializeDevelopmentState.destinationBranchName) {
+          <p-tab [value]="i + 1">
+            Backport to
+            {{ backport.initializeDevelopmentState.destinationBranchName }}
+          </p-tab>
+          } } } @if (hasV2Backports()) {
+          <p-tab value="1">Backports</p-tab>
+          }
+        </p-tablist>
+        <p-tabpanels>
+          <p-tabpanel value="0">
+            <ng-container [ngTemplateOutlet]="integrateContent" />
+          </p-tabpanel>
+          @if (hasV1Backports()) { @for (backport of backports(); track
+          backport; let i = $index) { @if
+          (backport.initializeDevelopmentState.destinationBranchName) {
+          <p-tabpanel [value]="i + 1">
+            <mxevolve-build-and-test-legacy-backport-changes
+              [projectId]="execution().projectId"
+              [processId]="execution().id"
+              [repositoryId]="execution().input.repositoryId"
+              [processStatus]="execution().status"
+              [backport]="backport"
+            />
+          </p-tabpanel>
+          } } } @if (hasV2Backports()) {
+          <p-tabpanel value="1">
+            <mxevolve-build-and-test-backport-executions-summary
+              [projectId]="execution().projectId"
+              [backportExecutionIds]="stage().backportExecutions ?? []"
+              [failedBackportDefinitionIds]="
+                stage().failedBackportDefinitions ?? []
+              "
+              [integrateDestinationBranch]="integrateDestinationBranch()"
+              [backportDestinationBranches]="backportDestinationBranches()"
+            />
+          </p-tabpanel>
+          }
+        </p-tabpanels>
+      </p-tabs>
+      } @else {
+      <ng-container [ngTemplateOutlet]="integrateContent" />
+      }
+    </div>
+  </mxevolve-business-process-content-container>
+
+  <mxevolve-business-process-content-container footer [clearBackground]="true">
+    @if (latestMergeJobId() && mergeRequestResource.isLoading()) {
+    <p-skeleton class="col-start-5 col-span-2" height="2.5rem" />
+    } @else if (canReopenMergeRequest()) {
+    <p-button
+      class="col-start-5 col-span-2"
+      styleClass="w-full"
+      label="Reopen Merge Request"
+      [disabled]="actionsDisabled()"
+      [loading]="actionLoading()"
+      (onClick)="reopenMergeRequest()"
+    />
+    } @else {
+    <p-button
+      class="col-start-5 col-span-2"
+      styleClass="w-full"
+      label="Create a New Merge Request"
+      [disabled]="actionsDisabled()"
+      (onClick)="openSendForReview()"
+    />
+    }
+
+    <p-button
+      class="col-start-7 col-span-2"
+      styleClass="w-full"
+      label="Fix Issues"
+      [disabled]="actionsDisabled()"
+      [loading]="actionLoading()"
+      (onClick)="fixIssues()"
+    />
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>
+
+<ng-template #integrateContent>
+  <div class="flex flex-col gap-6">
+    @if (developmentResource.hasValue()) {
+    <p-panel header="Branch Details" [collapsed]="true" [toggleable]="true">
+      <mxevolve-development-details-widget
+        [development]="developmentResource.value()"
+      />
+    </p-panel>
+    }
+
+    <p-panel header="Merge Request" [toggleable]="true">
+      @if (latestMergeJobId()) {
+      <mxevolve-merge-request-stepper
+        [projectId]="execution().projectId"
+        [mergeRequestId]="latestMergeJobId()"
+      />
+      } @else {
+      <p-message severity="info">
+        <ng-template #icon>
+          <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+        </ng-template>
+        Merge request has not been created yet.
+      </p-message>
+      }
+    </p-panel>
+
+    @if (shouldShowFinalProduct()) {
+    <p-panel header="Final Product Details" [toggleable]="true">
+      <mxevolve-final-product-details
+        [projectId]="execution().projectId"
+        [finalProductId]="stage().finalProductPublishing?.id"
+        [publishingStartDate]="
+          stage().finalProductPublishing?.publishingStartDate
+        "
+        [finalProductFailure]="stage().finalProductPublishing?.finalProductFailure"
+        (errorOccurred)="handleFinalProductError($event)"
+      />
+    </p-panel>
+    }
+
+    @if (showDecision()) {
+    <p-message severity="secondary">
+      <ng-template #icon>
+        <mxevolve-icon name="block" size="md" class="mr-2 mt-1" />
+      </ng-template>
+      Stopped @if (stage().requester) { by {{ stage().requester }} }
+    </p-message>
+    }
+  </div>
+</ng-template>
+
+<mxevolve-build-and-test-send-for-review
+  [(visible)]="sendForReviewVisible"
+  [projectId]="execution().projectId"
+  [processId]="execution().id"
+  [repositoryId]="execution().input.repositoryId"
+  [developmentId]="execution().createBranchStage.developmentId!"
+  [parentBranchName]="execution().input.configurationParentBranch"
+  [supportsResourceManagement]="execution().supportsResourceManagement"
+  [hasPredefinedMergeRequestInputs]="
+    execution().hasPredefinedMergeRequestInputs
+  "
+  [ciVersion]="execution().ciVersion"
+  (mergeRequestCreated)="handleMergeRequestCreated()"
+/>

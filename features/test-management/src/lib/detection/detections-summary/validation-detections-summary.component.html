@@ -1,0 +1,91 @@
+@if (!isLoading) {
+<div class="flex flex-row flex-wrap">
+  <div class="flex items-center justify-center mx-2">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center m-2">
+        <fa-icon
+          class="text-red-500 pl-2 pr-1 text-4xl"
+          [icon]="bugIcon"
+        ></fa-icon>
+      </div>
+      <div class="flex items-center justify-center">Regressions</div>
+      <div class="flex items-center justify-center">
+        {{ (scenarioDetections | detectionsSummary).regressionCount }}
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center justify-center mx-2">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center m-2">
+        <fa-icon
+          class="text-teal-500 pl-2 pr-1 text-4xl"
+          [icon]="bullseyeIcon"
+        ></fa-icon>
+      </div>
+      <div class="flex items-center justify-center">Impacts</div>
+      <div class="flex items-center justify-center">
+        {{ (scenarioDetections | detectionsSummary).impactCount }}
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center justify-center mx-2">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center m-2">
+        <fa-icon
+          class="text-gray-500 pl-2 pr-1 text-4xl"
+          [icon]="dumpsterFireIcon"
+        ></fa-icon>
+      </div>
+      <div class="flex items-center justify-center">Failure Reasons</div>
+      <div class="flex items-center justify-center">
+        {{ (scenarioDetections | detectionsSummary).failureReasonCount }}
+      </div>
+    </div>
+  </div>
+</div>
+} @if (isLoading) {
+<div class="flex flex-row flex-wrap">
+  <div class="flex items-center justify-center mx-2">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center m-2">
+        <fa-icon
+          class="text-red-500 pl-2 pr-1 text-4xl"
+          [icon]="bugIcon"
+        ></fa-icon>
+      </div>
+      <div class="flex items-center justify-center">Regressions</div>
+      <div class="flex items-center justify-center">
+        <p-skeleton width="2rem" height="1rem"></p-skeleton>
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center justify-center mx-2">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center m-2">
+        <fa-icon
+          class="text-teal-500 pl-2 pr-1 text-4xl"
+          [icon]="bullseyeIcon"
+        ></fa-icon>
+      </div>
+      <div class="flex items-center justify-center">Impacts</div>
+      <div class="flex items-center justify-center">
+        <p-skeleton width="2rem" height="1rem"></p-skeleton>
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center justify-center mx-2">
+    <div class="flex flex-col">
+      <div class="flex items-center justify-center m-2">
+        <fa-icon
+          class="text-gray-500 pl-2 pr-1 text-4xl"
+          [icon]="dumpsterFireIcon"
+        ></fa-icon>
+      </div>
+      <div class="flex items-center justify-center">Failure Reasons</div>
+      <div class="flex items-center justify-center">
+        <p-skeleton width="2rem" height="1rem"></p-skeleton>
+      </div>
+    </div>
+  </div>
+</div>
+}

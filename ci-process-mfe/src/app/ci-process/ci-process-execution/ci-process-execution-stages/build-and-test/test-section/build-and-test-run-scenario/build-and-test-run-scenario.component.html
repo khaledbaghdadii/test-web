@@ -1,0 +1,16 @@
+@if (!isLoading) {
+<mxevolve-run-scenario-dropdown
+  [subContextId]="subContextId"
+  [branchName]="branchName"
+  [executionGroupId]="executionGroupId!"
+  [warningMessageMap]="warningMessageMap"
+  [machineGroupId]="machineGroupId"
+  [enableKeepServices]="true"
+  [keepServices]="false"
+  [disableConfigurationEditor]="false"
+  [validationScopeEnabled]="false"
+  [incidentEnabled]="false"
+  (scenarioPushed)="onScenarioPushed()"
+  (errorEventEmitter)="onError($event)"
+></mxevolve-run-scenario-dropdown>
+}

@@ -1,0 +1,7 @@
+<div class="flex flex-col w-full" #columnContainer>
+  <div class="grid grid-cols-1 gap-4 w-full">
+    @for (item of items(); track trackByWorkItemId($index, item)) {
+    <mxevolve-work-item-card [workItem]="item"></mxevolve-work-item-card>
+    }
+  </div>
+</div>

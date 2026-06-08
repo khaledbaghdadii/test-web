@@ -1,0 +1,114 @@
+<p-button
+  label="Next Step"
+  [disabled]="buttonDisabled()"
+  (onClick)="openDialog()"
+  styleClass="w-full"
+/>
+
+<p-dialog
+  [header]="dialogHeader()"
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  class="dialog-cols-6"
+  styleClass="h-[600px]"
+>
+  <mxevolve-stepper [steps]="steps()" [(displayedStepId)]="displayedStep">
+    <mxevolve-step stepId="validate-qg">
+      <ng-template>
+        <mxevolve-quality-gate-validation-form
+          [formControl]="qualityGateValidationControl"
+          [projectId]="projectId()"
+          [processId]="processId()"
+          [supportsResourceManagement]="supportsResourceManagement()"
+        />
+
+        <div class="flex-1 grid-6">
+          <div class="col-start-3 col-span-2 self-end">
+            @if (validationDecision() ===
+            QualityGateValidationDecision.VALIDATION_PASSED) {
+            <p-button
+              styleClass="w-full"
+              label="Next"
+              (onClick)="goToKeepEnvironments()"
+              [loading]="loading()"
+            />
+            } @else if (validationDecision() ===
+            QualityGateValidationDecision.FAILED_AND_STOP_THE_PROCESS) {
+            <p-button
+              styleClass="w-full"
+              label="Stop Process"
+              (onClick)="submitFailedAndStop()"
+              [loading]="loading()"
+            />
+            } @else {
+            <p-button styleClass="w-full" label="Next" [disabled]="true" />
+            }
+          </div>
+        </div>
+      </ng-template>
+    </mxevolve-step>
+
+    <mxevolve-step stepId="keep-environments">
+      <ng-template>
+        <mxevolve-keep-environments-table
+          [mode]="keepEnvironmentsMode()"
+          [projectId]="projectId()"
+          [processId]="processId()"
+          [preselectedEnvironmentIds]="selectedEnvironments().environmentIds"
+          [preselectedScenarioIds]="selectedEnvironments().scenarioIds"
+          (selectionChanged)="onSelectionChanged($event)"
+        />
+
+        <div class="flex-1 grid-6 content-end">
+          <p-button
+            styleClass="w-full"
+            label="Back"
+            severity="secondary"
+            class="col-start-3"
+            [outlined]="true"
+            (onClick)="goBackToValidateQg()"
+          />
+          <p-button
+            styleClass="w-full"
+            label="Next"
+            class="col-start-4"
+            (onClick)="goToMergeRequest()"
+            [loading]="loading()"
+          />
+        </div>
+      </ng-template>
+    </mxevolve-step>
+
+    <mxevolve-step stepId="merge-request">
+      <ng-template>
+        <mxevolve-merge-request-details-form
+          [formControl]="mergeRequestControl"
+          [projectId]="projectId()"
+          [processId]="processId()"
+          [developmentId]="developmentId()"
+          [supportsResourceManagement]="supportsResourceManagement()"
+          [parentBranchName]="parentBranchName()"
+        />
+
+        <div class="flex-1 grid-6">
+          <p-button
+            styleClass="w-full"
+            label="Back"
+            severity="secondary"
+            class="col-start-3 self-end"
+            [outlined]="true"
+            (onClick)="goBackToKeepEnvironments()"
+          />
+          <p-button
+            styleClass="w-full"
+            label="Send"
+            class="col-start-4 self-end"
+            (onClick)="submitSendForReview()"
+            [loading]="loading()"
+            [disabled]="mergeRequestControl.invalid"
+          />
+        </div>
+      </ng-template>
+    </mxevolve-step>
+  </mxevolve-stepper>
+</p-dialog>

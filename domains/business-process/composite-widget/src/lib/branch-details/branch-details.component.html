@@ -1,0 +1,24 @@
+@if (branchCreation().failed) {
+<p-message
+  severity="error"
+  class="mb-4"
+  [pt]="{ content: { style: { alignItems: 'flex-start' } } }"
+>
+  <ng-template #icon>
+    <mxevolve-icon name="info" size="sm" class="mr-2 mt-1" />
+  </ng-template>
+  Branch creation failed. @if (branchCreation().failureReason) {
+  <a class="ml-2 underline cursor-pointer" (click)="toggleFailureDetails()">
+    {{ failureDetailsVisible() ? "Hide failure details" : "View details" }}
+  </a>
+  @if (failureDetailsVisible()) {
+  <div class="mt-2">{{ branchCreation().failureReason }}</div>
+  } }
+</p-message>
+} @else if (development()) {
+<mxevolve-development-details-widget
+  [development]="development()"
+  [mergeRequest]="latestMergeRequest()"
+  [commitsBehindCount]="commitsBehindCount()"
+/>
+}

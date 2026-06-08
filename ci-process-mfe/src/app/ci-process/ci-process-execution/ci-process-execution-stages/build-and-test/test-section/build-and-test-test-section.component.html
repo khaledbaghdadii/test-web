@@ -1,0 +1,13 @@
+<p-panel header="Tests" [toggleable]="true">
+  <h3 class="font-medium mb-2 text-lg">Test Selection</h3>
+  <mxevolve-build-and-test-run-scenario
+    [projectId]="projectId"
+  ></mxevolve-build-and-test-run-scenario>
+  <div class="my-6">
+    <p-divider></p-divider>
+  </div>
+  <h3 class="font-medium mb-2 text-lg">Execution Results</h3>
+  <mxflow-build-and-test-scenario-executions
+    [projectId]="projectId"
+  ></mxflow-build-and-test-scenario-executions>
+</p-panel>

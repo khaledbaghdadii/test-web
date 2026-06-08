@@ -1,0 +1,463 @@
+<div class="flex flex-col gap-4">
+  <div class="flex items-center justify-between">
+    <div>
+      <ng-container *ngTemplateOutlet="topBarTemplate()!" />
+    </div>
+    @if (showTopBarActions()) {
+    <div class="flex items-center gap-6" data-testid="top-bar-actions">
+      <div class="flex items-center gap-2">
+        <p-toggleSwitch
+          [ngModel]="isAllExpanded()"
+          (onChange)="toggleExpandAll()"
+          data-testid="expand-all-toggle"
+        ></p-toggleSwitch>
+        <span class="text-sm font-semibold select-none">Expand All</span>
+      </div>
+
+      <p-select
+        [options]="assigneeFilterOptions"
+        [ngModel]="assigneeFilter()"
+        (ngModelChange)="assigneeFilter.set($event)"
+        placeholder="Assignee"
+        [showClear]="true"
+        data-testid="assignee-filter-select"
+      />
+
+      <p-iconfield>
+        <p-inputicon>
+          <mxevolve-icon name="search" size="sm" />
+        </p-inputicon>
+        <input
+          #searchInput
+          pInputText
+          type="text"
+          placeholder="Search"
+          [value]="searchTerm()"
+          (input)="searchTerm.set(searchInput.value)"
+          data-testid="search-input"
+        />
+      </p-iconfield>
+
+      @if (showBulkRerun()) {
+      <mxevolve-bulk-rerun-scenarios
+        [projectId]="projectId()"
+        [panels]="panels()"
+        (rerunCompleted)="onBulkRerunCompleted()"
+      />
+      }
+    </div>
+    }
+  </div>
+  @for (panel of filteredPanels(); track panel.head.id) {
+  <div
+    class="bg-surface-50 dark:bg-surface-800 rounded-md border border-surface p-4"
+    data-testid="scenario-runs-panel"
+  >
+    <div class="flex" data-testid="details-row-1">
+      <button
+        type="button"
+        class="bg-transparent border-none text-primary cursor-pointer p-0 leading-none self-start mt-2 mx-4"
+        (click)="toggleDetails(panel.head.id)"
+        aria-label="Toggle scenario run details"
+        data-testid="collapse-button"
+      >
+        <mxevolve-icon
+          [name]="
+            isDetailsExpanded(panel.head.id) ? 'expand_less' : 'expand_more'
+          "
+        />
+      </button>
+      <div class="flex flex-col min-w-0 flex-1">
+        <div class="flex items-start">
+          <div class="flex items-start min-w-0 flex-1">
+            <div
+              class="flex flex-col gap-1 min-w-0 flex-[1.5] pr-5"
+              data-testid="scenario-name"
+            >
+              <span class="text-sm text-muted-color whitespace-nowrap"
+                >Name</span
+              >
+              <span class="text-sm font-semibold truncate">
+                <mxevolve-scenario-run-name-display
+                  [scenarioRunId]="panel.head.id"
+                  [name]="panel.head.name || '-'"
+                  [projectId]="projectId()"
+                />
+              </span>
+            </div>
+
+            <div
+              class="flex flex-col gap-1 min-w-0 flex-1 px-5 border-l border-surface-200 dark:border-surface-700"
+              data-testid="scenario-status"
+            >
+              <span class="text-sm text-muted-color whitespace-nowrap"
+                >Status</span
+              >
+              <mxevolve-scenario-run-status-display
+                [status]="panel.head.status"
+              />
+            </div>
+
+            @if (!showEnvironmentDetails()) {
+            <div
+              class="flex flex-col gap-1 min-w-0 flex-1 px-5 border-l border-surface-200 dark:border-surface-700"
+              data-testid="environment-status"
+            >
+              <span class="text-sm text-muted-color whitespace-nowrap"
+                >Env Status</span
+              >
+              <mxevolve-environment-status-display
+                [status]="panel.head.environmentStatus"
+              />
+            </div>
+            }
+
+            <ng-container
+              *showElementIfAuthorized="{
+                action: 'read_analysis_status',
+                resource: 'scenario_execution',
+                package: 'test',
+                attributes: {}
+              }"
+            >
+              <div
+                class="flex flex-col gap-1 min-w-0 flex-1 px-5 border-l border-surface-200 dark:border-surface-700"
+                data-testid="analysis-status"
+              >
+                <span class="text-sm text-muted-color whitespace-nowrap"
+                  >Analysis Status</span
+                >
+                <mxevolve-analysis-status-display
+                  [status]="panel.head.analysisStatus || 'NA'"
+                />
+              </div>
+            </ng-container>
+
+            <ng-container
+              *showElementIfAuthorized="{
+                action: 'view',
+                resource: 'analysis_object',
+                package: 'web',
+                attributes: {}
+              }"
+            >
+              <div
+                class="flex flex-col gap-1 min-w-0 flex-1 px-5 border-l border-surface-200 dark:border-surface-700"
+                data-testid="test-unit-findings"
+              >
+                <span class="text-sm text-muted-color whitespace-nowrap"
+                  >Test Unit Findings</span
+                >
+                <div class="flex gap-4 items-center text-sm font-semibold">
+                  <span
+                    class="flex items-center gap-1"
+                    data-testid="impacts-count"
+                    pTooltip="Impacts"
+                    tooltipPosition="top"
+                  >
+                    <mxevolve-icon
+                      name="radar"
+                      size="sm"
+                      color="var(--p-text-muted-color)"
+                    />
+                    <a
+                      class="text-blue-500 cursor-pointer hover:text-blue-700 no-underline hover:underline"
+                      [routerLink]="getDetectionsLink(panel.head)"
+                      [queryParams]="{ tab: 'detections' }"
+                      target="_blank"
+                      >{{ panel.totalNumberOfImpacts }}</a
+                    >
+                  </span>
+                  <span
+                    class="flex items-center gap-1"
+                    data-testid="regressions-count"
+                    pTooltip="Regressions"
+                    tooltipPosition="top"
+                  >
+                    <mxevolve-icon
+                      name="bug_report"
+                      size="sm"
+                      color="var(--p-text-muted-color)"
+                    />
+                    <a
+                      class="text-blue-500 cursor-pointer hover:text-blue-700 no-underline hover:underline"
+                      [routerLink]="getDetectionsLink(panel.head)"
+                      [queryParams]="{ tab: 'detections' }"
+                      target="_blank"
+                      >{{ panel.totalNumberOfRegressions }}</a
+                    >
+                  </span>
+                  <span
+                    class="flex items-center gap-1"
+                    data-testid="incidents-count"
+                    pTooltip="Incidents"
+                    tooltipPosition="top"
+                  >
+                    <mxevolve-icon
+                      name="healing"
+                      size="sm"
+                      color="var(--p-text-muted-color)"
+                    />
+                    <a
+                      class="text-blue-500 cursor-pointer hover:text-blue-700 no-underline hover:underline"
+                      [routerLink]="getIncidentsLink(panel.head)"
+                      [queryParams]="{ tab: 'incidents' }"
+                      target="_blank"
+                      >{{ panel.totalNumberOfIncidents }}</a
+                    >
+                  </span>
+                </div>
+              </div>
+            </ng-container>
+
+            <div
+              class="flex flex-col gap-1 min-w-0 flex-1 px-5 border-l border-surface-200 dark:border-surface-700"
+              data-testid="duration"
+              (mouseenter)="showDurationPopover($event, durationPopover, panel)"
+              (mouseleave)="hideDurationPopover(durationPopover)"
+            >
+              <span class="text-sm text-muted-color whitespace-nowrap"
+                >Duration</span
+              >
+              <span class="text-sm font-semibold truncate">
+                <mxevolve-duration-display
+                  [startDate]="panel.head.startDate"
+                  [endDate]="panel.head.endDate"
+                />
+              </span>
+            </div>
+            <p-popover #durationPopover styleClass="duration-popover-no-arrow">
+              @if (getDurationBreakdown(panel); as breakdown) {
+              <p class="font-bold text-lg">Duration Breakdown</p>
+              <div
+                class="flex flex-col gap-2 text-sm"
+                data-testid="duration-breakdown"
+              >
+                <div class="gap-4">
+                  <span class="font-semibold">{{ breakdown.testTime }}</span>
+                  <br />
+                  <span class="text-muted-color">Test Time</span>
+                </div>
+                <div class="gap-4">
+                  <span class="font-semibold">{{
+                    breakdown.deploymentTime
+                  }}</span>
+                  <br />
+                  <span class="text-muted-color">Deployment Time</span>
+                </div>
+                <div class="gap-4">
+                  <span class="font-semibold">{{ breakdown.other }}</span>
+                  <br />
+                  <span class="text-muted-color">Other</span>
+                </div>
+              </div>
+              }
+            </p-popover>
+
+            <div
+              class="flex flex-col gap-1 min-w-0 flex-1 px-5 border-l border-surface-200 dark:border-surface-700"
+              data-testid="commit-id"
+            >
+              <span class="text-sm text-muted-color whitespace-nowrap"
+                >Commit ID</span
+              >
+              <span class="text-sm font-semibold truncate">
+                <mxevolve-commit-id-display [commitId]="panel.head.commitId" />
+              </span>
+            </div>
+
+            <div
+              class="flex flex-col gap-1 min-w-0 flex-1 px-5 border-l border-surface-200 dark:border-surface-700"
+              data-testid="assignee"
+            >
+              <span class="text-sm text-muted-color whitespace-nowrap"
+                >Assignee</span
+              >
+              @if (panel.head.scenarioDefinitionId && panel.head.contextId) {
+              <mxevolve-scenario-run-assignee-dropdown
+                [projectId]="projectId()"
+                [scenarioDefinitionId]="panel.head.scenarioDefinitionId"
+                [contextId]="panel.head.contextId"
+                [subContextId]="panel.head.subContextId"
+                [selectedAssigneeId]="panel.head.assigneeId"
+                (assigneeChanged)="onAssigneeChanged(panel.head.id, $event)"
+                data-testid="assignee-dropdown"
+              />
+              } @else {
+              <mxevolve-assignee-display
+                [assigneeDisplayName]="panel.head.assigneeDisplayName || '-'"
+                [assigneeEmail]="panel.head.assigneeEmail"
+              />
+              }
+            </div>
+          </div>
+
+          @if (showActionButtons()) {
+          <div class="flex items-center gap-3 shrink-0 pl-5">
+            <div
+              class="border-l border-surface-200 dark:border-surface-700 self-stretch"
+            ></div>
+            <div data-testid="rerun-button">
+              <mxevolve-rerun-scenario-button
+                [projectId]="projectId()"
+                [scenarioRunId]="panel.head.id"
+                [factoryProductId]="panel.head.factoryProductId"
+                [executionGroupId]="panel.head.executionGroupId"
+                [repushable]="panel.head.repushable ?? true"
+                [warningMessage]="panel.head.warningMessage"
+                [warningMessageMap]="warningMessageMap()"
+                (scenarioRerun)="onScenarioChanged()"
+              />
+            </div>
+            @if (showEnvironmentLink() && panel.head.environmentId) {
+            <mxevolve-environment-link-button
+              [projectId]="projectId()"
+              [environmentId]="panel.head.environmentId"
+              data-testid="environment-link"
+            />
+            }
+            <div data-testid="abort-button">
+              <mxevolve-abort-scenario-run-button
+                [projectId]="projectId()"
+                [scenarioRunId]="panel.head.id"
+                [scenarioRunName]="panel.head.name || '-'"
+                [scenarioRunStatus]="panel.head.status"
+                (scenarioAborted)="onScenarioChanged()"
+              />
+            </div>
+          </div>
+          }
+        </div>
+
+        @if (isDetailsExpanded(panel.head.id)) {
+        <div
+          class="flex items-start gap-6 mt-4 ml-0"
+          data-testid="details-row-2"
+        >
+          <div class="flex flex-col gap-1 pr-5" data-testid="mx-version">
+            <span class="text-sm text-muted-color whitespace-nowrap"
+              >MX Version</span
+            >
+            <span class="text-sm font-semibold truncate">{{
+              panel.head.mxVersion || "-"
+            }}</span>
+          </div>
+
+          <div
+            class="flex flex-col gap-1 px-5 border-l border-surface-200 dark:border-surface-700"
+            data-testid="mx-build-id"
+          >
+            <span class="text-sm text-muted-color whitespace-nowrap"
+              >MX Build ID</span
+            >
+            <span class="text-sm font-semibold truncate">{{
+              panel.head.mxBuildId || "-"
+            }}</span>
+          </div>
+
+          @if (showHistorySummary()) {
+          <div
+            class="flex flex-col gap-1 shrink-0 px-5 border-l border-surface-200 dark:border-surface-700"
+            data-testid="history"
+          >
+            <span class="text-sm text-muted-color whitespace-nowrap"
+              >History</span
+            >
+            <div class="flex items-center gap-3 text-sm font-semibold">
+              <span
+                class="flex items-center gap-1"
+                data-testid="history-failed"
+              >
+                <span
+                  class="inline-block w-4 h-4 rounded-full bg-red-500"
+                ></span>
+                <span>{{ failedRunCount(panel.previousRuns) }}</span>
+              </span>
+              <span
+                class="flex items-center gap-1"
+                data-testid="history-underway"
+              >
+                <span
+                  class="inline-block w-4 h-4 rounded-full bg-yellow-500"
+                ></span>
+                <span>{{ underwayRunCount(panel.previousRuns) }}</span>
+              </span>
+              <span
+                class="flex items-center gap-1"
+                data-testid="history-passed"
+              >
+                <span
+                  class="inline-block w-4 h-4 rounded-full bg-green-500"
+                ></span>
+                <span>{{ passedRunCount(panel.previousRuns) }}</span>
+              </span>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+    @if (showEnvironmentDetails() && panel.head.environmentId) {
+    <div
+      class="border-t border-surface-200 dark:border-surface-700 my-3"
+      data-testid="environment-divider"
+    ></div>
+    <div class="ml-10 mt-2">
+      <mxevolve-environment-status-panel
+        [projectId]="projectId()"
+        [environmentId]="panel.head.environmentId"
+        data-testid="environment-panel"
+      />
+    </div>
+    }
+  </div>
+
+  @if (showHistory() && panel.previousRuns.length > 0) {
+  <div class="mt-3" data-testid="history-section">
+    <p-button
+      [outlined]="true"
+      (onClick)="toggleHistory(panel.head.id)"
+      data-testid="toggle-history-button"
+    >
+      <ng-template #content>
+        <span class="p-button-label">{{
+          isHistoryVisible(panel.head.id)
+            ? "Hide Previous Runs"
+            : "Show Previous Runs"
+        }}</span>
+        <mxevolve-icon
+          [name]="
+            isHistoryVisible(panel.head.id) ? 'expand_less' : 'expand_more'
+          "
+          size="sm"
+        />
+      </ng-template>
+    </p-button>
+
+    @if (isHistoryVisible(panel.head.id)) {
+    <div class="mt-3" data-testid="previous-runs-table">
+      <div class="mb-3">Previous Scenario Runs</div>
+      <mxevolve-scenario-run-table
+        [scenarioRuns]="panel.previousRuns"
+        [projectId]="projectId()"
+        [loading]="loading()"
+      />
+    </div>
+    }
+  </div>
+  } } @empty { @if (!loading()) {
+  <div
+    class="bg-surface-50 dark:bg-surface-800 rounded-md border border-surface p-4"
+    data-testid="scenario-runs-panel"
+  >
+    <span class="text-muted-color">
+      {{
+        panels().length > 0
+          ? "No scenario runs match the current filters"
+          : "No scenario run data available"
+      }}
+    </span>
+  </div>
+  } }
+</div>

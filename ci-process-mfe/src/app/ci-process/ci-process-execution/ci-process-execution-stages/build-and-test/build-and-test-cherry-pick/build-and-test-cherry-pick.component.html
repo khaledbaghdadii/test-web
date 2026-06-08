@@ -1,0 +1,11 @@
+@if (cherryPickRunning) {
+<mxflow-info-alert
+  [closeable]="false"
+  infoMessage="Automatic cherry picking is in progress. Please refresh the page for the latest update."
+></mxflow-info-alert>
+} @else if (cherryPickFailed) {
+<mxflow-warning-alert
+  [closeable]="false"
+  [warningMessage]="`Cherry-pick could not be completed automatically. Please manually cherry-pick your commits to the branch '${temporaryBranchName}' and then click 'Proceed to the Next Step' to open a merge request.`"
+></mxflow-warning-alert>
+}

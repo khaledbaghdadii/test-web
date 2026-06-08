@@ -1,0 +1,19 @@
+<span data-testid="execution-list">
+  @if (businessProcessExecutions.length === 0) {
+  <span data-testid="empty-state">-</span>
+  } @else { @for (execution of businessProcessExecutions; track execution.id;
+  let isLast = $last) {
+  <a
+    [attr.data-testid]="'execution-link-' + execution.id"
+    class="p-button-link"
+    routerLink="/app/{{ projectId }}/business-process/{{
+      execution.id | businessProcessUriFactory
+    }}"
+    target="_blank"
+  >
+    {{ execution.name }}
+  </a>
+  @if (!isLast) {
+  <span [attr.data-testid]="'separator-' + execution.id">, </span>
+  } } }
+</span>

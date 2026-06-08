@@ -1,0 +1,17 @@
+{
+  "name": "features-announcement-banner",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/features/announcement-banner/src",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/features/announcement-banner/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

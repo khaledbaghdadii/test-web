@@ -1,0 +1,15 @@
+<div class="flex">
+  @if (decision === validationDecision.PASSED) {
+  <i
+    class="flex items-center pi pi-check-circle passed"
+    style="display: flex"
+  ></i>
+  <h4 class="ml-2 text-lg font-semibold">Passed</h4>
+  } @if (decision === validationDecision.FAILED) {
+  <i
+    class="flex items-center pi pi-times-circle failed"
+    style="display: flex"
+  ></i>
+  <h4 class="ml-2 text-lg font-semibold">Failed</h4>
+  }
+</div>

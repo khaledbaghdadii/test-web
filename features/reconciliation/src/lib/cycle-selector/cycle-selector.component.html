@@ -1,0 +1,109 @@
+<mxevolve-card-container>
+  @if (showSearch) {
+  <div class="cycle-selector-toolbar">
+    <p-iconfield>
+      <p-inputicon styleClass="pi pi-search" />
+      <input
+        type="text"
+        pInputText
+        [(ngModel)]="searchValue"
+        (input)="onSearch($event)"
+        placeholder="Search by name or description..."
+        class="cycle-search-input"
+      />
+    </p-iconfield>
+    @if (searchValue) {
+    <p-button
+      icon="pi pi-times"
+      [text]="true"
+      size="small"
+      (click)="clearSearch()"
+      (keydown.enter)="clearSearch()"
+      pTooltip="Clear search"
+    >
+    </p-button>
+    }
+  </div>
+  }
+  <p-table
+    #cycleTable
+    [value]="cycles"
+    [loading]="loading"
+    [tableStyle]="{ 'min-width': '50rem' }"
+    [paginator]="true"
+    [rows]="pageSize"
+    [rowsPerPageOptions]="[5, 10, 25]"
+    [globalFilterFields]="['name', 'description']"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} cycles"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th id="selection" style="width: 4rem">
+          @if (multiSelect) {
+          <p-checkbox
+            [binary]="true"
+            [ngModel]="allSelected"
+            (onChange)="toggleSelectAll()"
+          >
+          </p-checkbox>
+          }
+        </th>
+        <th pSortableColumn="name" id="name">
+          Name
+          <p-sortIcon field="name"></p-sortIcon>
+        </th>
+        <th pSortableColumn="description" id="description">
+          Description
+          <p-sortIcon field="description"></p-sortIcon>
+        </th>
+        <th pSortableColumn="sourceVersion" id="source">
+          Source Version
+          <p-sortIcon field="sourceVersion"></p-sortIcon>
+        </th>
+        <th pSortableColumn="targetVersion" id="target">
+          Target Version
+          <p-sortIcon field="targetVersion"></p-sortIcon>
+        </th>
+        <th pSortableColumn="createdAt" id="date">
+          Creation date
+          <p-sortIcon field="createdAt"></p-sortIcon>
+        </th>
+        <th pSortableColumn="creatorEmail" id="createdby">
+          Created by
+          <p-sortIcon field="creatorEmail"></p-sortIcon>
+        </th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-cycle>
+      <tr>
+        <td>
+          @if (multiSelect) {
+          <p-checkbox
+            [binary]="true"
+            [ngModel]="isCycleSelected(cycle)"
+            (onChange)="onCheckboxChange(cycle, $event.checked)"
+          >
+          </p-checkbox>
+          } @else {
+          <p-radioButton
+            [value]="cycle"
+            [(ngModel)]="selectedCycle"
+            (onClick)="onRadioChange(cycle)"
+            name="cycleSelection"
+          >
+          </p-radioButton>
+          }
+        </td>
+        <td>
+          {{ cycle.name }}
+        </td>
+        <td>{{ cycle.description }}</td>
+        <td>{{ cycle.sourceVersion }}</td>
+        <td>{{ cycle.targetVersion }}</td>
+        <td>{{ cycle.createdAt | date : "MMM d,y" }}</td>
+        <td>{{ cycle.creatorEmail }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</mxevolve-card-container>

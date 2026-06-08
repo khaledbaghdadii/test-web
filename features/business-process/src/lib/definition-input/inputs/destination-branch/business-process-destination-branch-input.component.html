@@ -1,0 +1,12 @@
+<mxflow-destination-branch-dropdown
+  [projectId]="projectId"
+  [repositoryId]="repositoryId"
+  [formControl]="formControlAdapter"
+  [setDefaultDestinationBranch]="false"
+  (loadingFinishedEventEmitter)="mergeConfigurationLoadingFinished()"
+  [class.hidden]="mergeConfigurationLoading"
+></mxflow-destination-branch-dropdown>
+
+@if (mergeConfigurationLoading) {
+<p-select [loading]="true" class="w-full"></p-select>
+}

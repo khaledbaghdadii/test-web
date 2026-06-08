@@ -1,0 +1,64 @@
+<mxevolve-definition-input
+  style="display: contents"
+  label="Repository"
+  description="Select the Repository where the configuration is stored"
+  [inputFormControl]="repositoryIdFormControl"
+  inputFormControlName="repositoryId"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowRepositoryId"
+>
+  <mxevolve-business-process-repository-selector
+    [projectId]="projectId"
+    [repositoryIdFormControl]="repositoryIdFormControl"
+    (repositoryChanged)="resetConfigurationParamsInputs()"
+    repositoryIdFormControlName="repositoryId"
+  >
+  </mxevolve-business-process-repository-selector>
+</mxevolve-definition-input>
+
+@if (repositoryIdFormControl.value){
+<mxevolve-definition-input
+  style="display: contents"
+  label="Configuration Branch Name"
+  description="Enter the Configuration Branch Name that you wish to use"
+  [inputFormControl]="configurationBranchNameFormControl"
+  inputFormControlName="configurationBranchName"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowConfigurationBranchName"
+  [showValidationErrors]="false"
+>
+  <mxevolve-branch-input
+    [branchShouldExist]="false"
+    [projectId]="projectId"
+    [repoId]="repositoryIdFormControl.value"
+    [branchNameFormControl]="configurationBranchNameFormControl"
+    [initialValue]="configurationBranchNameInitialValue"
+    (initialInvalid)="showConfigBranchError()"
+  >
+  </mxevolve-branch-input>
+</mxevolve-definition-input>
+
+<mxevolve-definition-input
+  style="display: contents"
+  label="Configuration Parent Branch"
+  description="Enter the Parent Branch from where you want to create your branch"
+  [inputFormControl]="configurationParentBranchFormControl"
+  inputFormControlName="configurationParentBranch"
+  [inputAccessMode]="inputAccessMode"
+  [displayMode]="displayMode"
+  [forceShow]="forceShowConfigurationParentBranch"
+  [showValidationErrors]="false"
+>
+  <mxevolve-branch-input
+    [branchShouldExist]="true"
+    [projectId]="projectId"
+    [repoId]="repositoryIdFormControl.value"
+    [branchNameFormControl]="configurationParentBranchFormControl"
+    [initialValue]="parentBranchNameInitialValue"
+    (initialInvalid)="showParentBranchError()"
+  >
+  </mxevolve-branch-input>
+</mxevolve-definition-input>
+}

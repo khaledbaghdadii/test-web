@@ -1,0 +1,68 @@
+<p-table
+  [value]="configurationImpacts"
+  [showLoader]="false"
+  [loading]="isLoading"
+  [tableStyle]="{ 'min-width': '50rem' }"
+>
+  <ng-template pTemplate="header">
+    <tr>
+      <th scope="col" class="w-6/12">Impact Title</th>
+      <th scope="col" class="w-3/12">Guilty Change</th>
+      <th scope="col" class="w-2/12">Owner</th>
+      <th scope="col" class="w-1/12"></th>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="body" let-configurationImpact>
+    <tr>
+      <td>
+        <a
+          class="p-button-link"
+          routerLink="{{
+            {
+              id: configurationImpact.id,
+              category: DetectionCategory.Impact,
+              type: DetectionType.Configuration,
+              projectId: configurationImpact.projectId
+            } | detectionUriBuilder
+          }}"
+          target="_blank"
+          >{{ configurationImpact.title }}</a
+        >
+      </td>
+      <td>{{ configurationImpact.guiltyChange }}</td>
+      <td>{{ configurationImpact.owner }}</td>
+      <td>
+        <div
+          pTooltip="Unlink"
+          tooltipPosition="top"
+          class="flex justify-center"
+        >
+          <p-button
+            icon="pi pi-link"
+            [rounded]="true"
+            [text]="true"
+            (onClick)="handleUnlink(configurationImpact.id)"
+          ></p-button>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+  <ng-template pTemplate="loadingbody">
+    @for (row of [1, 2, 3]; track row) {
+    <tr>
+      @for (col of [1, 2, 3, 4]; track col) {
+      <td>
+        <p-skeleton></p-skeleton>
+      </td>
+      }
+    </tr>
+    }
+  </ng-template>
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="9" class="py-4">
+        <mxflow-table-empty-message></mxflow-table-empty-message>
+      </td>
+    </tr>
+  </ng-template>
+</p-table>

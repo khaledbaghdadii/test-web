@@ -1,0 +1,133 @@
+@if (publishingNotStarted()) {
+<p-message severity="info">
+  <ng-template #icon>
+    <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+  </ng-template>
+  Publishing will start after integrating changes passes
+</p-message>
+} @else if (awaitingPublishingRequest()) {
+<p-message severity="info">
+  <ng-template #icon>
+    <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+  </ng-template>
+  Publishing will be requested
+</p-message>
+} @else if (shouldShowFailure()) {
+<p-message severity="error">
+  <ng-template #icon>
+    <mxevolve-icon name="cancel" size="md" class="mr-2 mt-1" />
+  </ng-template>
+  Something Went Wrong! Failed to request publishing a final product
+</p-message>
+} @else {
+<div class="grid grid-cols-12 gap-4 bg-surface-0 dark:bg-surface-900">
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-gray-500 font-medium mb-2">Final Product Id</div>
+    @if (loading()) {
+    <p-skeleton height="2rem" />
+    } @else {
+    <div class="text-surface-900 dark:text-surface-0">
+      {{ finalProduct()?.id ?? finalProductId() ?? "-" }}
+    </div>
+    }
+  </div>
+
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-gray-500 font-medium mb-2">Branch</div>
+    @if (loading()) {
+    <p-skeleton height="2rem" />
+    } @else {
+    <div class="text-surface-900 dark:text-surface-0">
+      {{ finalProduct()?.branch ?? "-" }}
+    </div>
+    }
+  </div>
+
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-gray-500 font-medium mb-2">Commit</div>
+    @if (loading()) {
+    <p-skeleton height="2rem" />
+    } @else {
+    <div class="text-surface-900 dark:text-surface-0">
+      {{ finalProduct()?.configurationCommitId ?? "-" }}
+    </div>
+    }
+  </div>
+
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-gray-500 font-medium mb-2">Validation Level</div>
+    @if (loading()) {
+    <p-skeleton height="2rem" />
+    } @else {
+    <p-tag [value]="finalProduct()?.validationLevel ?? '-'" />
+    }
+  </div>
+
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-gray-500 font-medium mb-2">Status</div>
+    @if (loading()) {
+    <p-skeleton height="2rem" />
+    } @else {
+    <p-tag [severity]="statusConfiguration().severity">
+      <div class="flex items-center gap-1 text-sm">
+        <mxevolve-icon
+          [name]="statusConfiguration().icon"
+          size="sm"
+          [spin]="statusConfiguration().spin ?? false"
+        />
+        <span>{{ statusConfiguration().label }}</span>
+      </div>
+    </p-tag>
+    }
+  </div>
+
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-gray-500 font-medium mb-2">Factory Product</div>
+    @if (loading()) {
+    <p-skeleton height="2rem" />
+    } @else {
+    <div class="ml-8">
+      <div class="text-gray-500 font-normal mt-2">ID</div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ finalProduct()?.factoryProduct?.id ?? "-" }}
+      </div>
+      <div class="text-gray-500 font-normal mt-2">Type</div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ finalProduct()?.factoryProduct?.type ?? "-" }}
+      </div>
+    </div>
+    }
+  </div>
+
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-gray-500 font-medium mb-2">Software Product</div>
+    @if (loading()) {
+    <p-skeleton height="2rem" />
+    } @else {
+    <div class="ml-8">
+      <div class="text-gray-500 font-normal mt-2">ID</div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ finalProduct()?.factoryProduct?.softwareProduct?.id ?? "-" }}
+      </div>
+      <div class="text-gray-500 font-normal mt-2">Version</div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ finalProduct()?.factoryProduct?.softwareProduct?.version ?? "-" }}
+      </div>
+      <div class="text-gray-500 font-normal mt-2">Change List</div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{ finalProduct()?.factoryProduct?.softwareProduct?.revision ?? "-" }}
+      </div>
+    </div>
+    }
+  </div>
+
+  @if (finalProduct()?.failureMessage) {
+  <div class="col-span-12 md:col-span-6 p-4">
+    <div class="text-gray-500 font-medium mb-2">Failure Message</div>
+    <div class="text-surface-900 dark:text-surface-0">
+      {{ finalProduct()?.failureMessage }}
+    </div>
+  </div>
+  }
+</div>
+}

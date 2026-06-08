@@ -1,0 +1,62 @@
+<div class="flex flex-col gap-3">
+  <div class="flex flex-row flex-wrap align-items-center gap-3">
+    <div class="flex flex-row gap-4">
+      <div class="flex flex-row align-items-center gap-1">
+        <p-radioButton
+          inputId="suggestedList"
+          name="commitIdSelectionMode"
+          [value]="CommitIdSelectionMode.SUGGESTED_LIST"
+          [formControl]="selectionModeControl"
+        ></p-radioButton>
+        <label for="suggestedList">Suggested commits</label>
+      </div>
+      <div class="flex flex-row align-items-center gap-1">
+        <p-radioButton
+          inputId="customizedCommitId"
+          name="commitIdSelectionMode"
+          [value]="CommitIdSelectionMode.CUSTOMIZED"
+          [formControl]="selectionModeControl"
+        ></p-radioButton>
+        <label for="customizedCommitId">Custom Commit ID</label>
+      </div>
+    </div>
+  </div>
+
+  @if (selectionModeControl.value === CommitIdSelectionMode.SUGGESTED_LIST) {
+  <div class="flex flex-col gap-2">
+    <label for="suggestedCommitId">Start of Validation Scope</label>
+    <mxevolve-single-select-dropdown
+      class="w-full"
+      [stateProvider]="commitIdStateProvider"
+      [dataParams]="{ projectId: projectId, parentBranch: parentBranch }"
+      [config]="{
+        placeholder: 'Select Commit ID',
+        lazyLoad: true,
+        showClear: true
+      }"
+      (selectionChange)="onCommitIdSelected($event)"
+    />
+    <small
+      >The commit where the validation scope begins. All issues linked to
+      commits after this commit will be marked as MQG Validated when the cycle
+      ends.</small
+    >
+  </div>
+  } @if (selectionModeControl.value === CommitIdSelectionMode.CUSTOMIZED) {
+  <div class="flex flex-col gap-2">
+    <label for="suggestedCommitId">Start of Validation Scope</label>
+    <input
+      pInputText
+      class="w-full"
+      id="customCommitId"
+      [formControl]="customCommitIdControl"
+      placeholder="Enter Commit ID"
+    />
+    <small
+      >The commit where the validation scope begins. All issues linked to
+      commits after this commit will be marked as MQG Validated when the cycle
+      ends.</small
+    >
+  </div>
+  }
+</div>

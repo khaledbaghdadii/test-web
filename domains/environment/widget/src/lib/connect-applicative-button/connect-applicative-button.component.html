@@ -1,0 +1,77 @@
+@if (iconOnly()) {
+<p-button
+  [text]="true"
+  [rounded]="true"
+  severity="primary"
+  [disabled]="disabled() || !hasApplicatives()"
+  [loading]="loading()"
+  ariaLabel="Connect Applicative"
+  pTooltip="Connect Applicative"
+  tooltipPosition="top"
+  (onClick)="menu.toggle($event)"
+  data-testid="connect-applicative-button-trigger"
+>
+  <ng-template #icon let-class="class">
+    <mxevolve-icon name="dataset_linked" size="md" [class]="class" />
+  </ng-template>
+</p-button>
+} @else {
+<p-button
+  [text]="true"
+  severity="primary"
+  iconPos="right"
+  [disabled]="disabled() || !hasApplicatives()"
+  [loading]="loading()"
+  (onClick)="menu.toggle($event)"
+  data-testid="connect-applicative-button-trigger"
+>
+  <span pButtonLabel>Connect Applicative</span>
+  <mxevolve-icon pButtonIcon name="keyboard_arrow_down" size="sm" />
+</p-button>
+}
+<p-tieredmenu
+  #menu
+  [model]="menuItems()"
+  [popup]="true"
+  appendTo="body"
+  data-testid="connect-applicative-button-menu"
+>
+  <ng-template #item let-item>
+    <ng-container
+      [ngTemplateOutlet]="applicativeItemTemplate"
+      [ngTemplateOutletContext]="{ $implicit: item, menu: menu }"
+    />
+  </ng-template>
+</p-tieredmenu>
+
+<ng-template #applicativeItemTemplate let-item let-menu="menu">
+  <a
+    class="flex items-center gap-2 px-3 py-2 cursor-pointer"
+    [class.opacity-50]="item.disabled"
+    [class.pointer-events-none]="item.disabled"
+    data-testid="applicative-menu-item"
+  >
+    <span class="flex-1">{{ item.label }}</span>
+    @if (item['showSettings']) {
+    <button
+      type="button"
+      class="flex items-center border-0 bg-transparent p-0"
+      aria-label="Open PuTTY configuration"
+      (click)="
+        menu.hide();
+        puttyConfigurationDialogVisible.set(true);
+        $event.stopPropagation()
+      "
+      data-testid="ssh-settings-icon"
+    >
+      <mxevolve-icon name="settings" size="sm" />
+    </button>
+    } @if (item.items) {
+    <mxevolve-icon name="chevron_right" size="sm" />
+    }
+  </a>
+</ng-template>
+
+<mxevolve-putty-configuration-dialog
+  [(visible)]="puttyConfigurationDialogVisible"
+/>

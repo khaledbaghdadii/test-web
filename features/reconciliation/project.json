@@ -1,0 +1,17 @@
+{
+  "name": "features-reconciliation",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/reconciliation/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/features/reconciliation/jest.config.ts"
+      }
+    }
+  }
+}
+

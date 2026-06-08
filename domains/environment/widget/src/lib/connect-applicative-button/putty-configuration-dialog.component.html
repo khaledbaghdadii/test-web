@@ -1,0 +1,64 @@
+<p-dialog
+  header="WinSCP - PuTTY client path configuration"
+  [modal]="true"
+  [(visible)]="visible"
+  class="dialog-cols-4"
+  [closeOnEscape]="true"
+  [closable]="true"
+  [dismissableMask]="true"
+  [closeButtonProps]="{ outlined: false, text: true, severity: 'secondary' }"
+  data-testid="putty-configuration-dialog"
+>
+  <div class="grid-4">
+    <div class="col-span-4 space-y-4">
+      <div
+        class="space-y-2 text-sm text-surface-700 dark:text-surface-200"
+        style="line-height: 1.625"
+      >
+        <p>
+          If the PuTTY client does not automatically take you to the application
+          directory path, please follow these steps to configure it.
+        </p>
+        <p>
+          Once configured, you will be redirected to the correct path upon
+          clicking 'Connect SSH'.
+        </p>
+        <p>
+          This configuration only needs to be set up once and will apply to all
+          future environment connections made from MXevolve Studio.
+        </p>
+      </div>
+      <p
+        class="text-sm text-surface-700 dark:text-surface-200"
+        style="line-height: 1.625"
+      >
+        Open <span class="font-semibold">WinSCP</span> &gt; go to
+        <span class="font-semibold">Options</span> &gt; Select
+        <span class="font-semibold">Preferences</span> &gt;
+        <span class="font-semibold">Integration</span> &gt;
+        <span class="font-semibold">Applications</span> &gt; Under
+        <span class="font-semibold">PuTTY/Terminal client path</span> add the
+        following command:
+      </p>
+      <div
+        class="rounded-md border border-surface-200 bg-surface-50 px-3 py-3 dark:border-surface-700 dark:bg-surface-900"
+        data-testid="putty-command"
+      >
+        <p
+          class="break-all font-mono text-xs leading-5 text-surface-700 dark:text-surface-100"
+        >
+          {{ puttyClientConfiguration }}
+        </p>
+      </div>
+      <div class="flex justify-end">
+        <p-button
+          [label]="copied() ? 'Copied' : 'Copy'"
+          severity="primary"
+          size="small"
+          (onClick)="copyCommand()"
+          data-testid="copy-putty-command"
+        />
+      </div>
+    </div>
+  </div>
+</p-dialog>

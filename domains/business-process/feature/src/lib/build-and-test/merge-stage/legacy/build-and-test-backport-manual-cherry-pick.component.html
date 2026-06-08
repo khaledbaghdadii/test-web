@@ -1,0 +1,21 @@
+<p-message severity="warn">
+  <ng-template #icon>
+    <mxevolve-icon name="warning" size="md" class="mr-2 mt-1" />
+  </ng-template>
+  Cherry-pick could not be completed automatically. Please manually cherry-pick
+  your commits to the branch
+  '{{ backport().initializeDevelopmentState.cherryPickBranchName }}' and then
+  click 'Cherry-Pick Done' to open a merge request
+</p-message>
+
+<div class="flex flex-col items-center mt-4">
+  <p-button
+    label="Cherry-Pick Done"
+    size="large"
+    [disabled]="cherryPickDoneDisabled()"
+    [loading]="loading()"
+    (onClick)="confirmCommitsCherryPicked($event)"
+  />
+</div>
+
+<p-confirmpopup />

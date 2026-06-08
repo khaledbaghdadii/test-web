@@ -1,0 +1,53 @@
+<form [formGroup]="form" class="field">
+  @if (showLabel) {
+  <label htmlFor="environment-definition" mxevolveMandatory
+    >Environment Definition</label
+  >
+  } @if (isFormLoading) {
+  <p-skeleton styleClass="h-12"></p-skeleton>
+  } @if (!isFormLoading) {
+  <p-select
+    class="p-fluid"
+    styleClass="w-full"
+    formControlName="environmentDefinitionId"
+    ariaLabelledBy="environment-definition"
+    appendTo="body"
+    [options]="filteredEnvironmentDefinitions || []"
+    optionLabel="name"
+    optionValue="id"
+    [filter]="true"
+    placeholder="Select Environment Definition"
+    [showClear]="true"
+  >
+    <ng-template pTemplate="filter">
+      <p-iconfield class="ml-auto mr-2">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          [ngModelOptions]="{ standalone: true }"
+          type="text"
+          [(ngModel)]="searchKey"
+          pInputText
+          placeholder="Search"
+          (input)="onSearch()"
+          class="w-full"
+        />
+        @if (searchKey) {
+        <p-inputicon
+          class="pi pi-times cursor-pointer"
+          (click)="clearSearchValue($event)"
+          (keydown)="clearSearchValue($event)"
+        >
+        </p-inputicon>
+        }
+      </p-iconfield>
+    </ng-template>
+  </p-select>
+  }
+
+  <ng-template
+    [ngTemplateOutlet]="errorTipTemplate"
+    [ngTemplateOutletContext]="{
+      $implicit: form.get('environmentDefinitionId')
+    }"
+  ></ng-template>
+</form>

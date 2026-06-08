@@ -1,0 +1,25 @@
+{
+  "name": "features-scm",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/features/scm/src",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/features/scm/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "contract-test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/features/scm"],
+      "options": {
+        "jestConfig": "libs/features/scm/jest.pact.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

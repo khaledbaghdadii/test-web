@@ -1,0 +1,102 @@
+<p-dialog
+  header="Edit Test Details"
+  [modal]="true"
+  [(visible)]="isVisible"
+  [style]="{ width: '40vw' }"
+  [contentStyle]="{ overflow: 'visible' }"
+  (onHide)="onCloseModal()"
+  (onShow)="onOpenModal()"
+>
+  <form [formGroup]="editTestForm">
+    <div class="grid grid-cols-12 gap-4">
+      <div class="col-span-10 col-start-2 flex flex-col gap-4">
+        <div class="field mb-6 col-span-12">
+          <mxflow-mandatory-field></mxflow-mandatory-field>
+          <label for="testPackageDefinition" mxevolveMandatory
+            >Test Package Definition</label
+          >
+          @if (isLoading) {
+          <p-skeleton height="2rem"></p-skeleton>
+          } @else {
+          <p-select
+            id="testPackageDefinition"
+            formControlName="testPackageDefinition"
+            placeholder="Select a Test Package Definition"
+            filterBy="name"
+            fluid="true"
+            optionLabel="name"
+            [filter]="true"
+            [showClear]="true"
+            [options]="testDefinitionOptions"
+            (onChange)="onTestDefinitionSelect($event)"
+          >
+          </p-select>
+          } @if(editTestForm.controls['testPackageDefinition'].dirty &&
+          editTestForm.controls['testPackageDefinition'].invalid) {
+          <small class="p-error block">Field is required</small>
+          }
+        </div>
+        <div
+          class="field mb-6 col-span-12"
+          *mxevolveShowIfFeatureToggled="{projectId, featureId: 'test-tags'}"
+        >
+          <label for="tags">Test Package Tags</label>
+          @if (isLoading) {
+          <p-skeleton height="2rem"></p-skeleton>
+          } @else {
+          <p-multiSelect
+            id="tags"
+            formControlName="tags"
+            placeholder="Select tags"
+            fluid="true"
+            display="chip"
+            [showClear]="false"
+            [maxSelectedLabels]="6"
+            [options]="tagOptions"
+            (onChange)="onTagsSelect($event)"
+          ></p-multiSelect>
+          }
+        </div>
+        <div class="field mb-6 col-span-12">
+          <label for="testPackageSelections">Test Package Selections</label>
+          @if (isLoading) {
+          <p-skeleton height="2rem"></p-skeleton>
+          } @else {
+          <p-multiSelect
+            formControlName="testPackageSelections"
+            id="testPackageSelections"
+            optionLabel="name"
+            placeholder="Select Test Package Selection"
+            display="chip"
+            fluid="true"
+            [maxSelectedLabels]="6"
+            [options]="testPackageSelectionOptions"
+          ></p-multiSelect>
+          <small class="italic text-gray-500 text-sm">
+            If not specified, the full Test Package will execute
+          </small>
+
+          }
+        </div>
+      </div>
+    </div>
+  </form>
+  <ng-template pTemplate="footer">
+    <button
+      id="submitButton"
+      pButton
+      [disabled]="editTestForm.invalid"
+      (click)="onSubmit()"
+    >
+      <span pButtonLabel>Submit</span>
+    </button>
+    <button
+      id="cancelButton"
+      pButton
+      class="p-button-outlined"
+      (click)="onCloseModal()"
+    >
+      <span pButtonLabel>Cancel</span>
+    </button>
+  </ng-template>
+</p-dialog>

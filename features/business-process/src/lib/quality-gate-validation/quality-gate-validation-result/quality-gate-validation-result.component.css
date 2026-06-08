@@ -1,0 +1,7 @@
+h3 {
+  display: flex;
+}
+
+mxflow-quality-gate-validation-status {
+  margin-left: 10px;
+}

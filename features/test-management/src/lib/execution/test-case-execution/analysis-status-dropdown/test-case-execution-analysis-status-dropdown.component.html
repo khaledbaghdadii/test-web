@@ -1,0 +1,45 @@
+<div class="flex items-center m-1">
+  <p class="m-1 text-l font-semibold">TC Analysis Status</p>
+  <p-select
+    class="m-1 w-36"
+    [options]="nextAnalysisStatusOptions"
+    [(ngModel)]="selectedStatus"
+    size="small"
+    [placeholder]="
+      selectedStatus
+        ? TestCaseExecutionAnalysisStatusDisplayValue[selectedStatus]
+        : 'Set status'
+    "
+    (onChange)="onStatusChange($event)"
+    [disabled]="disabled"
+    (onShow)="reloadAnalysisStatus()"
+  >
+    <ng-template pTemplate="item" let-item>
+      <div
+        pTooltip="{{ item.tooltip }}"
+        tooltipPosition="left"
+        data-testid="next-analysis-status"
+        class="flex grow pointer-events-auto"
+        (click)="preventClicksOnDisabled($event, item.disabled)"
+        (keydown)="preventClicksOnDisabled($event, item.disabled)"
+      >
+        {{ item.label }}
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="empty">
+      @if (isLoading) {
+      <i class="pi pi-spin pi-spinner"></i>
+      }
+    </ng-template>
+  </p-select>
+</div>
+
+<mxevolve-analysis-object-linking
+  [analysisObjectType]="AnalysisObjectType.FAILURE_REASON"
+  [isModalVisible]="isFailureReasonModalVisible"
+  (isModalVisibleChange)="onModalVisibilityChange($event)"
+  (analysisObjectLinksChanged)="onFailureReasonLinksChanged()"
+  [initiallySelectedTestCases]="testCaseExecution ? [testCaseExecution] : []"
+>
+</mxevolve-analysis-object-linking>

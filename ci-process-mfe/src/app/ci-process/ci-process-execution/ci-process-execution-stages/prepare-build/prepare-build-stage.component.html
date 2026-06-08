@@ -1,0 +1,35 @@
+@if (prepareBuildStage) {
+<mxevolve-card-container>
+  @if (prepareBuildStage.errorMessage!) {
+  <mxflow-error-alert
+    [errorMessage]="prepareBuildStage.errorMessage!"
+    [closeable]="false"
+  ></mxflow-error-alert>
+  } @else { @if (isStageSkipped) {
+  <mxflow-header-title>Prepare Build Environment</mxflow-header-title>
+  <mxflow-step-result>
+    <div result class="flex content-center gap-2">
+      <i
+        class="pi pi-chevron-circle-right items-center"
+        style="display: flex"
+      ></i>
+      <h4>Skipped</h4>
+    </div>
+  </mxflow-step-result>
+  } @else {
+  <mxflow-prepare-build-scenario
+    [processId]="ciProcessExecutionId"
+    [projectId]="projectId"
+    [scenarioId]="prepareBuildStage.latestScenarioExecutionId"
+    [isUserInterventionDisabled]="isUserInterventionDisabled"
+  ></mxflow-prepare-build-scenario>
+
+  @if (showDecision) {
+  <div class="mt-6">
+    <mxflow-prepare-build-environment-decision
+      [requester]="actionRequester"
+    ></mxflow-prepare-build-environment-decision>
+  </div>
+  } } }
+</mxevolve-card-container>
+}

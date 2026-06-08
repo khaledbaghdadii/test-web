@@ -1,0 +1,69 @@
+<div
+  class="flex justify-center items-center gap-3 flex-wrap"
+  data-testid="conflict-resolution-buttons"
+>
+  @if (showDeleteFile()) {
+  <p-button
+    data-testid="delete-file-button"
+    severity="danger"
+    [label]="deleteFileLabel()"
+    (onClick)="onDeleteFile()"
+  ></p-button>
+  } @if (showKeepBase()) {
+  <p-button
+    data-testid="keep-base-button"
+    label="Keep Base"
+    (onClick)="onKeepBase()"
+  ></p-button>
+  } @if (showKeepLocal()) {
+  <p-button
+    data-testid="keep-local-button"
+    label="Keep Local"
+    (onClick)="onKeepLocal()"
+  ></p-button>
+  } @if (showKeepRemote()) {
+  <p-button
+    data-testid="keep-remote-button"
+    label="Keep Remote"
+    (onClick)="onKeepRemote()"
+  ></p-button>
+  }
+</div>
+
+<p-dialog
+  [dismissableMask]="true"
+  [modal]="true"
+  [visible]="deleteConfirmationVisible()"
+  (visibleChange)="deleteConfirmationVisible.set($event)"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="w-[30rem]"
+>
+  <ng-template pTemplate="header">
+    <div class="flex text-lg font-bold">
+      <span class="pi pi-question-circle text-xl text-orange-400"></span>
+      <span class="ml-2">Delete Confirmation</span>
+    </div>
+  </ng-template>
+
+  <p>
+    Are you sure you want to delete the file
+    <strong>{{ filePath() }}</strong
+    >?
+  </p>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      (onClick)="onCancelDeleteFile()"
+      [outlined]="true"
+      label="Cancel"
+      data-testid="cancel-delete-button"
+    ></p-button>
+    <p-button
+      (onClick)="onConfirmDeleteFile()"
+      severity="danger"
+      label="Confirm"
+      data-testid="confirm-delete-button"
+    ></p-button>
+  </ng-template>
+</p-dialog>

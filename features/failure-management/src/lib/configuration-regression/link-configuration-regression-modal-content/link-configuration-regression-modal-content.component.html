@@ -1,0 +1,32 @@
+<div>
+  <div class="flex justify-between flex-wrap mb-2">
+    <div class="text-md text-gray-500 italic">
+      <p>Select one or more regressions causing your test(s) to fail</p>
+    </div>
+    <div>
+      <mxevolve-create-configuration-regression-button
+        [projectId]="projectId"
+        [buttonLabel]="'Create New'"
+        [submitCreationButtonLabel]="'Create and Link'"
+        (configurationRegressionCreated)="
+          onConfigurationRegressionCreated($event)
+        "
+        (configurationRegressionCreationModalClosed)="
+          onCreateConfigurationRegressionCancelled()
+        "
+        (configurationRegressionCreationModalOpened)="
+          showCreateConfigurationRegressionModal()
+        "
+      ></mxevolve-create-configuration-regression-button>
+    </div>
+  </div>
+  <mxevolve-configuration-regressions-selection-table
+    [projectId]="projectId"
+    [selectedRegressionIdsLoading]="selectedRegressionIdsLoading"
+    [initiallySelectedConfigurationRegressions]="initiallySelectedRegressions"
+    [refresh]="refresh$"
+    (selectedConfigurationRegressionsChange)="
+      onConfigurationRegressionSelectionChange($event)
+    "
+  ></mxevolve-configuration-regressions-selection-table>
+</div>

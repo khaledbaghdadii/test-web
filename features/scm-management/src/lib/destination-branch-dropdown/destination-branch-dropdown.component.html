@@ -1,0 +1,11 @@
+<mxevolve-single-select-dropdown
+  [stateProvider]="stateProvider"
+  [dataParams]="{ projectId: projectId(), repositoryId: repositoryId() }"
+  [config]="{
+    placeholder: 'Select Destination Branch',
+    lazyLoad: true,
+    showClear: true
+  }"
+  (errorEvent)="onError($event)"
+  (selectionChange)="onSelectionChange($event)"
+/>

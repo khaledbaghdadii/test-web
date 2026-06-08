@@ -1,0 +1,79 @@
+<mxevolve-stage-container>
+  <mxevolve-business-process-content-container
+    [collapsable]="true"
+    [collapsed]="!!validationResult()?.decision"
+    header="Summary"
+  >
+    @if (activeFilter(); as filter) {
+    <p-chip
+      headerExtra
+      [label]="filter.label"
+      [removable]="true"
+      (onRemove)="activeFilter.set(undefined)"
+    />
+    }
+    <mxevolve-scenario-runs-summary
+      class="col-span-12"
+      [contextId]="processId()"
+      subContextId="REGRESSION_TEST_PACKAGE"
+      [projectId]="projectId()"
+      [bpExecutionName]="processName()"
+      [externalFilter]="activeFilter()"
+      (filterClicked)="activeFilter.set($event ?? undefined)"
+    />
+  </mxevolve-business-process-content-container>
+
+  <mxevolve-business-process-content-container
+    [collapsable]="true"
+    [collapsed]="!!validationResult()?.decision"
+    header="Run Quality Gate"
+  >
+    <mxevolve-scenario-runs
+      class="col-span-12"
+      [projectId]="projectId()"
+      [contextId]="processId()"
+      subContextId="REGRESSION_TEST_PACKAGE"
+      [showEnvironmentDetails]="false"
+      [showEnvironmentLink]="true"
+      [showHistory]="false"
+      [detailsExpandedByDefault]="false"
+      [showBulkRerun]="true"
+      [filter]="activeFilter()"
+      [showTopBarActions]="true"
+      (scenarioChanged)="reloadExecution()"
+    >
+      <ng-template #topBar>
+        @if (referenceScenarioExecution.hasValue()) {
+        <p>
+          Below are the latest run results for each scenario,<br />executed
+          under MX Version
+          <b>{{ referenceScenarioExecution.value()!.mxVersion }}</b>
+        </p>
+        }
+      </ng-template>
+    </mxevolve-scenario-runs>
+  </mxevolve-business-process-content-container>
+
+  @if(validationResult()) {
+  <mxevolve-business-process-content-container>
+    <mxevolve-quality-gate-validation-banner
+      class="col-span-12"
+      [validationResult]="validationResult()!"
+    />
+  </mxevolve-business-process-content-container>
+  }
+
+  <mxevolve-business-process-content-container footer [clearBackground]="true">
+    <mxevolve-proceed-from-quality-gate-wizard
+      class="col-span-2 col-start-6"
+      [processId]="processId()"
+      [projectId]="projectId()"
+      [developmentId]="developmentId()"
+      [supportsResourceManagement]="supportsResourceManagement()"
+      [parentBranchName]="parentBranchName()"
+      [stageStatus]="stageStatus()"
+      [validationResult]="validationResult()"
+      [keptResourcesDecisionMade]="keptResourcesDecisionMade()"
+    ></mxevolve-proceed-from-quality-gate-wizard>
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>

@@ -1,0 +1,19 @@
+<div class="grid grid-cols-12 gap-6 grid-nogutter">
+  @if (!isLoading) { @for (project of projects; track project) {
+  <div class="col-span-3" [id]="project.id" (click)="onProjectSelect(project)">
+    <p-card
+      [header]="project.name"
+      styleClass="cursor-pointer hover:shadow-xl dark:hover:shadow-surface-950 hover:shadow-surface-250 duration-150"
+    >
+      {{ project.description }}
+    </p-card>
+  </div>
+  } } @else { @for (i of [1,2,3,4, 5]; track $index) {
+  <div class="col-span-3">
+    <p-card>
+      <ng-template #title> <p-skeleton width="70%"></p-skeleton></ng-template>
+      <p-skeleton height="4.5rem"></p-skeleton>
+    </p-card>
+  </div>
+  } }
+</div>

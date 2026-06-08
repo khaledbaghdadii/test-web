@@ -1,0 +1,5 @@
+@import 'libs/ui/utils/src/mixins';
+
+p-table {
+  @include table;
+}

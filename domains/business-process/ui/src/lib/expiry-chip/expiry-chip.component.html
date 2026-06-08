@@ -1,0 +1,8 @@
+@if (!isExpiryReached()) {
+<p-tag
+  [severity]="showExpiryWarning() ? 'danger' : 'secondary'"
+  [rounded]="true"
+>
+  <span class="text-sm">{{ expiryLabel() }}</span>
+</p-tag>
+}
