@@ -58,14 +58,11 @@
     </fieldset>
     } @if (visibility().name) {
     <div class="grid-2">
-      <div class="field flex flex-col gap-1">
-        <label
-          for="upgrade-execution-name"
-          [class.required]="
-            form().controls.name.hasValidator(Validators.required)
-          "
-          >Execution Name</label
-        >
+            <mxevolve-definition-input
+        inputId="upgrade-execution-name"
+        [control]="form().controls.name"
+        label="Execution Name"
+      >
         <input
           id="upgrade-execution-name"
           pInputText
@@ -73,7 +70,7 @@
           formControlName="name"
           placeholder="Enter an upgrade process execution name"
         />
-      </div>
+      </mxevolve-definition-input>
     </div>
     } @if (showMxGroup()) {
     <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
@@ -82,32 +79,25 @@
       </legend>
       <div class="grid-2">
         @if (visibility().factoryProduct) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-conversion-factory-product"
-            [class.required]="
-              form().controls.factoryProduct.hasValidator(Validators.required)
-            "
-            >Conversion Factory Product</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-conversion-factory-product"
+          [control]="form().controls.factoryProduct"
+          description="Select the factory product that you wish to validate your Quality Gate against"
+        >
           <mxevolve-factory-product-selector
             [projectId]="projectId()"
             inputId="upgrade-conversion-factory-product"
             [formControl]="form().controls.factoryProduct"
             (failureEvent)="showSelectorError($event)"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().parentMxArchivalBranch) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-parent-mx-archival-branch"
-            [class.required]="
-              form().controls.parentMxArchivalBranch.hasValidator(
-                Validators.required
-              )
-            "
-            >Parent MX Archival Branch</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-parent-mx-archival-branch"
+          [control]="form().controls.parentMxArchivalBranch"
+          label="Parent MX Archival Branch"
+          description="Enter the MX Archival Branch from where the selected MX Version was branched"
+        >
           <input
             id="upgrade-parent-mx-archival-branch"
             pInputText
@@ -115,16 +105,14 @@
             formControlName="parentMxArchivalBranch"
             placeholder="Enter Parent MX Archival Branch"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().upgradeJump) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-jump"
-            [class.required]="
-              form().controls.upgradeJump.hasValidator(Validators.required)
-            "
-            >Upgrade Jump</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-jump"
+          [control]="form().controls.upgradeJump"
+          label="Upgrade Jump"
+          description="Select the type of jump you want to launch"
+        >
           <p-select
             inputId="upgrade-jump"
             appendTo="body"
@@ -136,7 +124,7 @@
             formControlName="upgradeJump"
             placeholder="Select an upgrade jump"
           />
-        </div>
+        </mxevolve-definition-input>
         }
       </div>
     </fieldset>
@@ -146,34 +134,13 @@
         Configuration Parameters
       </legend>
       <div class="grid-2">
-        @if (visibility().repositoryId) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-repository"
-            [class.required]="
-              form().controls.repositoryId.hasValidator(Validators.required)
-            "
-            >Repository</label
-          >
-          <mxevolve-repository-selector
-            [projectId]="projectId()"
-            inputId="upgrade-repository"
-            [formControl]="form().controls.repositoryId"
-            (repositoryChanged)="onRepositoryChanged()"
-            (failureEvent)="showSelectorError($event)"
-          />
-        </div>
-        } @if (visibility().businessProcessQualityLevel) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-bp-quality-level"
-            [class.required]="
-              form().controls.businessProcessQualityLevel.hasValidator(
-                Validators.required
-              )
-            "
-            >BP Quality Level</label
-          >
+        @if (visibility().businessProcessQualityLevel) {
+        <mxevolve-definition-input
+          inputId="upgrade-bp-quality-level"
+          [control]="form().controls.businessProcessQualityLevel"
+          label="Business Process Quality Level"
+          description="Select the business process quality level"
+        >
           <p-select
             inputId="upgrade-bp-quality-level"
             appendTo="body"
@@ -185,17 +152,29 @@
             formControlName="businessProcessQualityLevel"
             placeholder="Select Quality Gate Level"
           />
-        </div>
+        </mxevolve-definition-input>
+        } @if (visibility().repositoryId) {
+        <mxevolve-definition-input
+          inputId="upgrade-repository"
+          [control]="form().controls.repositoryId"
+          label="Repository"
+          description="Select the Repository where the configuration is stored"
+        >
+          <mxevolve-repository-selector
+            [projectId]="projectId()"
+            inputId="upgrade-repository"
+            [formControl]="form().controls.repositoryId"
+            (repositoryChanged)="onRepositoryChanged()"
+            (failureEvent)="showSelectorError($event)"
+          />
+        </mxevolve-definition-input>
         } @if (visibility().createBranch && form().controls.repositoryId.value)
         {
-        <div class="field flex flex-col gap-1">
-          <span
-            class="font-medium"
-            [class.required]="
-              form().controls.createBranch.hasValidator(Validators.required)
-            "
-            >Create Branch</span
-          >
+        <mxevolve-definition-input
+          inputId="upgrade-create-branch"
+          [control]="form().controls.createBranch"
+          label="Create Branch?"
+        >
           <div class="flex flex-row gap-4 mt-1">
             <div class="flex flex-row items-center gap-1">
               <p-radioButton
@@ -214,41 +193,35 @@
               <label for="upgrade-create-branch-no">No</label>
             </div>
           </div>
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().configurationBranchName &&
         form().controls.createBranch.value !== null) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-config-branch"
-            [class.required]="
-              form().controls.configurationBranchName.hasValidator(
-                Validators.required
-              )
-            "
-            >Configuration Branch</label
-          >
+        <mxevolve-definition-input
+          inputId="upgrade-config-branch"
+          [control]="form().controls.configurationBranchName"
+          label="Configuration Branch Name"
+          description="Enter the Configuration Branch Name that you wish to use"
+          [showValidationErrors]="false"
+        >
           <mxevolve-branch-input
             [projectId]="projectId()"
             [repositoryId]="form().controls.repositoryId.value ?? ''"
-            [branchShouldExist]="false"
+            [branchShouldExist]="form().controls.createBranch.value !== true"
             inputId="upgrade-config-branch"
             [branchNameFormControl]="form().controls.configurationBranchName"
             [initialValue]="form().controls.configurationBranchName.value ?? ''"
             (initialInvalid)="showConfigBranchError()"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().configurationParentBranch &&
         form().controls.createBranch.value !== null) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-config-parent-branch"
-            [class.required]="
-              form().controls.configurationParentBranch.hasValidator(
-                Validators.required
-              )
-            "
-            >Configuration Parent Branch</label
-          >
+        <mxevolve-definition-input
+          inputId="upgrade-config-parent-branch"
+          [control]="form().controls.configurationParentBranch"
+          label="Configuration Parent Branch"
+          description="Enter the Parent Branch from where you want to create your branch"
+          [showValidationErrors]="false"
+        >
           <mxevolve-branch-input
             [projectId]="projectId()"
             [repositoryId]="form().controls.repositoryId.value ?? ''"
@@ -260,7 +233,7 @@
             "
             (initialInvalid)="showParentBranchError()"
           />
-        </div>
+        </mxevolve-definition-input>
         }
       </div>
     </fieldset>
@@ -271,16 +244,12 @@
       </legend>
       <div class="grid-2">
         @if (visibility().qualityGateExecutionInfraGroupId) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-quality-gate-infra-group"
-            [class.required]="
-              form().controls.qualityGateExecutionInfraGroupId.hasValidator(
-                Validators.required
-              )
-            "
-            >Quality Gate Execution Infra Group</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-quality-gate-infra-group"
+          [control]="form().controls.qualityGateExecutionInfraGroupId"
+          label="Quality Gate Execution Infra Group"
+          description="Select the Infra Group for the test(s) under &quot;Execute Quality Gate&quot; step"
+        >
           <mxevolve-business-process-infra-group-selector
             [projectId]="projectId()"
             infraGroupFormControlName="upgrade-quality-gate-infra-group"
@@ -288,18 +257,14 @@
               form().controls.qualityGateExecutionInfraGroupId
             "
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().binaryConversionInfraGroupId) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-binary-conversion-infra-group"
-            [class.required]="
-              form().controls.binaryConversionInfraGroupId.hasValidator(
-                Validators.required
-              )
-            "
-            >Binary Conversion Infra Group</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-binary-conversion-infra-group"
+          [control]="form().controls.binaryConversionInfraGroupId"
+          label="Binary Conversion Infra Group"
+          description="Select the Infra Group for the test under &quot;Convert Binary&quot; step"
+        >
           <mxevolve-business-process-infra-group-selector
             [projectId]="projectId()"
             infraGroupFormControlName="upgrade-binary-conversion-infra-group"
@@ -307,7 +272,7 @@
               form().controls.binaryConversionInfraGroupId
             "
           />
-        </div>
+        </mxevolve-definition-input>
         }
       </div>
     </fieldset>
@@ -316,39 +281,33 @@
       <legend class="text-[0.95rem] font-bold text-primary p-0">Tests</legend>
       <div class="grid-2">
         @if (visibility().testScenarioIds) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-quality-gate-test-scenarios"
-            [class.required]="
-              form().controls.testScenarioIds.hasValidator(Validators.required)
-            "
-            >Quality Gate Execution Test Scenarios</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-quality-gate-test-scenarios"
+          [control]="form().controls.testScenarioIds"
+          label="Quality Gate Execution Test Scenarios"
+          description="Select the collection of test scenarios that you wish to launch in the &quot;Execute Quality Gate&quot; step"
+        >
           <mxevolve-scenario-definition-multiselect-dropdown
             [projectId]="projectId()"
             inputId="upgrade-quality-gate-test-scenarios"
             [formControl]="form().controls.testScenarioIds"
             (failureEvent)="showSelectorError($event)"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().technicalUpgradeTestScenarioId) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-binary-conversion-scenario"
-            [class.required]="
-              form().controls.technicalUpgradeTestScenarioId.hasValidator(
-                Validators.required
-              )
-            "
-            >Binary Conversion Test Scenario</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-binary-conversion-scenario"
+          [control]="form().controls.technicalUpgradeTestScenarioId"
+          label="Binary Conversion Test Scenario"
+          description="Select the test scenario that you wish to launch in the &quot;Convert Binary&quot; step"
+        >
           <mxevolve-scenario-definition-dropdown
             [projectId]="projectId()"
             inputId="upgrade-binary-conversion-scenario"
             [formControl]="form().controls.technicalUpgradeTestScenarioId"
             (failureEvent)="showSelectorError($event)"
           />
-        </div>
+        </mxevolve-definition-input>
         }
       </div>
     </fieldset>
@@ -359,16 +318,12 @@
       </legend>
       <div class="grid-2">
         @if (visibility().referenceCommitId) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-reference-commit"
-            [class.required]="
-              form().controls.referenceCommitId.hasValidator(
-                Validators.required
-              )
-            "
-            >Reference Commit ID</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-reference-commit"
+          [control]="form().controls.referenceCommitId"
+          label="Reference Commit ID"
+          description="Select the commit ID of the reference environment"
+        >
           <input
             id="upgrade-reference-commit"
             pInputText
@@ -376,54 +331,41 @@
             formControlName="referenceCommitId"
             placeholder="Enter Reference Commit ID"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().referenceEnvironmentDefinitionId) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-reference-env-definition"
-            [class.required]="
-              form().controls.referenceEnvironmentDefinitionId.hasValidator(
-                Validators.required
-              )
-            "
-            >Reference Environment Definition</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-reference-env-definition"
+          [control]="form().controls.referenceEnvironmentDefinitionId"
+          label="Reference Environment Definition"
+          description="Select the environment definition for the reference environment"
+        >
           <mxevolve-environment-definition-selector
             [projectId]="projectId()"
             inputId="upgrade-reference-env-definition"
             [formControl]="form().controls.referenceEnvironmentDefinitionId"
             (failureEvent)="showSelectorError($event)"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().referenceFactoryProduct) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-reference-factory-product"
-            [class.required]="
-              form().controls.referenceFactoryProduct.hasValidator(
-                Validators.required
-              )
-            "
-            >Reference Factory Product</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-reference-factory-product"
+          [control]="form().controls.referenceFactoryProduct"
+          description="Select the factory product that you wish to use in your reference environment"
+        >
           <mxevolve-factory-product-selector
             [projectId]="projectId()"
             inputId="upgrade-reference-factory-product"
             [formControl]="form().controls.referenceFactoryProduct"
             (failureEvent)="showSelectorError($event)"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().referenceEnvironmentInfraGroupId) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="upgrade-reference-environment-infra-group"
-            [class.required]="
-              form().controls.referenceEnvironmentInfraGroupId.hasValidator(
-                Validators.required
-              )
-            "
-            >Reference Environment Infra Group</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-reference-environment-infra-group"
+          [control]="form().controls.referenceEnvironmentInfraGroupId"
+          label="Reference Environment Infra Group"
+          description="Select the Infra Group for the reference environment"
+        >
           <mxevolve-business-process-infra-group-selector
             [projectId]="projectId()"
             infraGroupFormControlName="upgrade-reference-environment-infra-group"
@@ -431,7 +373,7 @@
               form().controls.referenceEnvironmentInfraGroupId
             "
           />
-        </div>
+        </mxevolve-definition-input>
         }
       </div>
     </fieldset>
@@ -441,10 +383,12 @@
         Notifications
       </legend>
       <div class="grid-2">
-        <div class="field flex flex-col gap-1">
-          <label for="upgrade-notification-recipients"
-            >Expiry Date Notification Recipients</label
-          >
+                <mxevolve-definition-input
+          inputId="upgrade-notification-recipients"
+          [control]="form().controls.notificationsRecipients"
+          label="Expiry Date Notification Recipients"
+          description="Select the users who will receive email notifications as the business process approaches its expiry date"
+        >
           <mxevolve-notifications-recipients-input
             [projectId]="projectId()"
             inputId="upgrade-notification-recipients"
@@ -452,7 +396,7 @@
               form().controls.notificationsRecipients
             "
           />
-        </div>
+        </mxevolve-definition-input>
       </div>
     </fieldset>
     }

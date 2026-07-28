@@ -39,6 +39,12 @@ import {
 } from "@mxevolve/domains/scm/data-access";
 import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
 import {
+  AnalyticsTrackerService,
+  EventAction,
+  EventCategory,
+} from "@mxflow/core/analytics-tracker";
+import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
+import {
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
@@ -55,11 +61,11 @@ import {
 
 /** Legacy toast shown when the configuration branch already exists in the repository. */
 const CONFIGURATION_BRANCH_EXISTS =
-  "The branch name available in the BP definition or pre-filled in the pop-up already exists in the repository. Please update the definition or the pop-up with a unique name to create a new branch.";
+  "The branch name available in the Process Template or pre-filled in the pop-up already exists in the repository. Please update the Process Template or the pop-up with a unique name to create a new branch.";
 
 /** Legacy toast shown when the configuration parent branch does not exist. */
 const CONFIGURATION_PARENT_BRANCH_MISSING =
-  "The branch name available in the BP definition doesn't exist in the repository. Please check the name and try again with an existing branch.";
+  "The branch name available in the Process Template doesn't exist in the repository. Please check the name and try again with an existing branch.";
 
 /**
  * Build & Test definition executor rendered as Page 2 of the generic multi-page
@@ -88,6 +94,7 @@ const CONFIGURATION_PARENT_BRANCH_MISSING =
     ScenarioDefinitionDropdownComponent,
     RepositorySelectorComponent,
     BranchInputComponent,
+    DefinitionInputComponent,
   ],
   providers: [
     BuildAndTestProcessExecutorService,
@@ -112,6 +119,7 @@ export class BuildAndTestExecutorComponent {
   private readonly scenarioService = inject(ScenarioDefinitionService);
   private readonly infraGroupService = inject(InfraGroupService);
   private readonly branchService = inject(BranchService);
+  private readonly analyticsTracker = inject(AnalyticsTrackerService);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -229,6 +237,27 @@ export class BuildAndTestExecutorComponent {
 
   protected toggleDetails(): void {
     this.detailsExpanded.update((expanded) => !expanded);
+  }
+
+  /**
+   * Legacy `mxevolveUsageTracker` binding on the skip toggle (VAL-27132 REV-2),
+   * which was dropped in the migration. Reproduced here rather than importing
+   * the legacy `features/business-process` directive, matching how the rest of
+   * this executor reproduces legacy helpers; `AnalyticsTrackerService` itself is
+   * already used directly elsewhere in this library.
+   *
+   * Legacy read the label from the binding evaluated on the *previous* change
+   * detection pass, so it reported the state before the click. That inversion is
+   * not reproduced — the label reflects the state the user just selected.
+   */
+  protected trackSkipEnvironmentDeployment(): void {
+    this.analyticsTracker.trackEvent(
+      EventCategory.CHECKBOX,
+      EventAction.CLICK_CHECKBOX,
+      this.skipEnvironmentDeployment()
+        ? "CI Process - Prepare-Build Environment Skipped"
+        : "CI Process - Prepare-Build Environment Not Skipped"
+    );
   }
 
   /**

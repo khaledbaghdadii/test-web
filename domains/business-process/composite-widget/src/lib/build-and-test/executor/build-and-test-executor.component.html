@@ -29,14 +29,11 @@
 
     @if (visibility().name) {
     <div class="grid-2">
-      <div class="field flex flex-col gap-1">
-        <label
-          for="bt-execution-name"
-          [class.required]="
-            form().controls.name.hasValidator(Validators.required)
-          "
-          >Execution Name</label
-        >
+      <mxevolve-definition-input
+        inputId="bt-execution-name"
+        [control]="form().controls.name"
+        label="Execution Name"
+      >
         <input
           id="bt-execution-name"
           pInputText
@@ -44,7 +41,7 @@
           formControlName="name"
           placeholder="Enter a build and test process execution name"
         />
-      </div>
+      </mxevolve-definition-input>
     </div>
     } @if (showConfigurationGroup()) {
     <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
@@ -53,14 +50,12 @@
       </legend>
       <div class="grid-2">
         @if (visibility().repositoryId) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="bt-repository"
-            [class.required]="
-              form().controls.repositoryId.hasValidator(Validators.required)
-            "
-            >Repository</label
-          >
+        <mxevolve-definition-input
+          inputId="bt-repository"
+          [control]="form().controls.repositoryId"
+          label="Repository"
+          description="Select the Repository where the configuration is stored"
+        >
           <mxevolve-repository-selector
             [projectId]="projectId()"
             inputId="bt-repository"
@@ -68,19 +63,16 @@
             (repositoryChanged)="onRepositoryChanged()"
             (failureEvent)="showSelectorError($event)"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().configurationBranchName &&
         form().controls.repositoryId.value) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="bt-config-branch"
-            [class.required]="
-              form().controls.configurationBranchName.hasValidator(
-                Validators.required
-              )
-            "
-            >Configuration Branch Name</label
-          >
+        <mxevolve-definition-input
+          inputId="bt-config-branch"
+          [control]="form().controls.configurationBranchName"
+          label="Configuration Branch Name"
+          description="Enter the Configuration Branch Name that you wish to use"
+          [showValidationErrors]="false"
+        >
           <mxevolve-branch-input
             [projectId]="projectId()"
             [repositoryId]="form().controls.repositoryId.value ?? ''"
@@ -90,19 +82,16 @@
             [initialValue]="form().controls.configurationBranchName.value ?? ''"
             (initialInvalid)="showConfigBranchError()"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().configurationParentBranch &&
         form().controls.repositoryId.value) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="bt-config-parent-branch"
-            [class.required]="
-              form().controls.configurationParentBranch.hasValidator(
-                Validators.required
-              )
-            "
-            >Configuration Parent Branch</label
-          >
+        <mxevolve-definition-input
+          inputId="bt-config-parent-branch"
+          [control]="form().controls.configurationParentBranch"
+          label="Configuration Parent Branch"
+          description="Enter the Parent Branch from where you want to create your branch"
+          [showValidationErrors]="false"
+        >
           <mxevolve-branch-input
             [projectId]="projectId()"
             [repositoryId]="form().controls.repositoryId.value ?? ''"
@@ -114,7 +103,7 @@
             "
             (initialInvalid)="showParentBranchError()"
           />
-        </div>
+        </mxevolve-definition-input>
         }
       </div>
     </fieldset>
@@ -132,31 +121,27 @@
               inputId="bt-skip-environment"
               [binary]="true"
               formControlName="skipEnvironmentDeployment"
+              (onChange)="trackSkipEnvironmentDeployment()"
             />
             <label for="bt-skip-environment"
-              >Skip Build Environment Deployment</label
+              >Skip "Prepare Build Environment" step</label
             >
           </div>
         </div>
         @if (visibility().buildScenarioDefinitionId &&
         !skipEnvironmentDeployment()) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="bt-build-scenario"
-            [class.required]="
-              form().controls.buildScenarioDefinitionId.hasValidator(
-                Validators.required
-              )
-            "
-            >Build Scenario Definition</label
-          >
+        <mxevolve-definition-input
+          inputId="bt-build-scenario"
+          [control]="form().controls.buildScenarioDefinitionId"
+          label="Build Scenario"
+        >
           <mxevolve-scenario-definition-dropdown
             [projectId]="projectId()"
             inputId="bt-build-scenario"
             [formControl]="form().controls.buildScenarioDefinitionId"
             (failureEvent)="showSelectorError($event)"
           />
-        </div>
+        </mxevolve-definition-input>
         }
       </div>
     </fieldset>
@@ -171,11 +156,17 @@
       >
         User Stories
       </legend>
-      <mxevolve-user-story-input
-        [projectId]="projectId()"
-        [shouldValidate]="true"
-        [formControl]="form().controls.userStoryIds"
-      />
+      <mxevolve-definition-input
+        inputId="bt-user-story-ids"
+        [control]="form().controls.userStoryIds"
+        description="Enter the IDs of the stories you will be working on"
+      >
+        <mxevolve-user-story-input
+          [projectId]="projectId()"
+          [shouldValidate]="true"
+          [formControl]="form().controls.userStoryIds"
+        />
+      </mxevolve-definition-input>
     </fieldset>
     } @if (showInfrastructureGroup()) {
     <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
@@ -184,39 +175,31 @@
       </legend>
       <div class="grid-2">
         @if (visibility().buildEnvironmentInfraGroup) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="bt-build-environment-infra-group"
-            [class.required]="
-              form().controls.buildEnvironmentInfraGroup.hasValidator(
-                Validators.required
-              )
-            "
-            >Build Environment Infra Group</label
-          >
+        <mxevolve-definition-input
+          inputId="bt-build-environment-infra-group"
+          [control]="form().controls.buildEnvironmentInfraGroup"
+          label="Build Environment Infra Group"
+          description="Select the Infra Group for the build environment"
+        >
           <mxevolve-business-process-infra-group-selector
             [projectId]="projectId()"
             infraGroupFormControlName="bt-build-environment-infra-group"
             [infraGroupFormControl]="form().controls.buildEnvironmentInfraGroup"
           />
-        </div>
+        </mxevolve-definition-input>
         } @if (visibility().buildAndTestInfraGroup) {
-        <div class="field flex flex-col gap-1">
-          <label
-            for="bt-build-and-test-infra-group"
-            [class.required]="
-              form().controls.buildAndTestInfraGroup.hasValidator(
-                Validators.required
-              )
-            "
-            >Build and Test Infra Group</label
-          >
+        <mxevolve-definition-input
+          inputId="bt-build-and-test-infra-group"
+          [control]="form().controls.buildAndTestInfraGroup"
+          label="Build and Test Infra Group"
+          description='Select the Infra Group for the test(s) executed under "Build &amp; Test" step'
+        >
           <mxevolve-business-process-infra-group-selector
             [projectId]="projectId()"
             infraGroupFormControlName="bt-build-and-test-infra-group"
             [infraGroupFormControl]="form().controls.buildAndTestInfraGroup"
           />
-        </div>
+        </mxevolve-definition-input>
         }
       </div>
     </fieldset>
@@ -226,10 +209,12 @@
         Notifications
       </legend>
       <div class="grid-2">
-        <div class="field flex flex-col gap-1">
-          <label for="bt-notification-recipients"
-            >Expiry Date Notification Recipients</label
-          >
+        <mxevolve-definition-input
+          inputId="bt-notification-recipients"
+          [control]="form().controls.notificationsRecipients"
+          label="Expiry Date Notification Recipients"
+          description="Select the users who will receive email notifications as the business process approaches its expiry date"
+        >
           <mxevolve-notifications-recipients-input
             [projectId]="projectId()"
             inputId="bt-notification-recipients"
@@ -237,7 +222,7 @@
               form().controls.notificationsRecipients
             "
           />
-        </div>
+        </mxevolve-definition-input>
       </div>
     </fieldset>
     }

@@ -29,14 +29,11 @@
 
     <div class="grid-2">
       @if (visibility().name) {
-      <div class="field flex flex-col gap-1">
-        <label
-          for="backport-execution-name"
-          [class.required]="
-            form().controls.name.hasValidator(Validators.required)
-          "
-          >Execution Name</label
-        >
+      <mxevolve-definition-input
+        inputId="backport-execution-name"
+        [control]="form().controls.name"
+        label="Execution Name"
+      >
         <input
           id="backport-execution-name"
           pInputText
@@ -44,16 +41,14 @@
           formControlName="name"
           placeholder="Enter an on demand backport process execution name"
         />
-      </div>
+      </mxevolve-definition-input>
       } @if (visibility().pullRequestId) {
-      <div class="field flex flex-col gap-1">
-        <label
-          for="backport-pull-request-id"
-          [class.required]="
-            form().controls.pullRequestId.hasValidator(Validators.required)
-          "
-          >Pull Request Id</label
-        >
+      <mxevolve-definition-input
+        inputId="backport-pull-request-id"
+        [control]="form().controls.pullRequestId"
+        label="Pull Request Id"
+        description="Enter the 4‑digit pull request ID. This ID appears in the pull‑request URL and in the merge‑request list (e.g., 4402)."
+      >
         <input
           id="backport-pull-request-id"
           pInputText
@@ -61,7 +56,7 @@
           formControlName="pullRequestId"
           placeholder="Enter the pull request id"
         />
-      </div>
+      </mxevolve-definition-input>
       }
     </div>
     @if (visibility().userStoryIds) {
@@ -74,24 +69,27 @@
       >
         User Stories
       </legend>
-      <mxevolve-user-story-input
-        [projectId]="projectId()"
-        [shouldValidate]="false"
-        [formControl]="form().controls.userStoryIds"
-      />
+      <mxevolve-definition-input
+        inputId="backport-user-story-ids"
+        [control]="form().controls.userStoryIds"
+        description="Enter the IDs of the stories you will be working on"
+      >
+        <mxevolve-user-story-input
+          [projectId]="projectId()"
+          [shouldValidate]="false"
+          [formControl]="form().controls.userStoryIds"
+        />
+      </mxevolve-definition-input>
     </fieldset>
     }
 
     <div class="grid-2">
       @if (visibility().pullRequestTitle) {
-      <div class="field flex flex-col gap-1">
-        <label
-          for="backport-pull-request-title"
-          [class.required]="
-            form().controls.pullRequestTitle.hasValidator(Validators.required)
-          "
-          >Merge Request Title</label
-        >
+      <mxevolve-definition-input
+        inputId="backport-pull-request-title"
+        [control]="form().controls.pullRequestTitle"
+        label="Merge Request Title"
+      >
         <input
           id="backport-pull-request-title"
           pInputText
@@ -99,25 +97,21 @@
           formControlName="pullRequestTitle"
           placeholder="Enter the merge request title"
         />
-      </div>
+      </mxevolve-definition-input>
       } @if (visibility().pullRequestReviewers) {
-      <div class="field flex flex-col gap-1">
-        <label
-          for="backport-reviewers"
-          [class.required]="
-            form().controls.pullRequestReviewers.hasValidator(
-              Validators.required
-            )
-          "
-          >Reviewers</label
-        >
+      <mxevolve-definition-input
+        inputId="backport-reviewers"
+        [control]="form().controls.pullRequestReviewers"
+        label="Reviewers"
+        description="Enter the names of the reviewers that you wish to review your changes"
+      >
         <mxevolve-autocomplete-reviewers
           [projectId]="projectId()"
           [repositoryId]="repositoryId()"
           inputId="backport-reviewers"
           [reviewersFormControl]="form().controls.pullRequestReviewers"
         />
-      </div>
+      </mxevolve-definition-input>
       }
     </div>
 
@@ -127,10 +121,12 @@
         Notifications
       </legend>
       <div class="grid-2">
-        <div class="field flex flex-col gap-1">
-          <label for="backport-notification-recipients"
-            >Expiry Date Notification Recipients</label
-          >
+        <mxevolve-definition-input
+          inputId="backport-notification-recipients"
+          [control]="form().controls.notificationsRecipients"
+          label="Expiry Date Notification Recipients"
+          description="Select the users who will receive email notifications as the business process approaches its expiry date"
+        >
           <mxevolve-notifications-recipients-input
             [projectId]="projectId()"
             inputId="backport-notification-recipients"
@@ -138,7 +134,7 @@
               form().controls.notificationsRecipients
             "
           />
-        </div>
+        </mxevolve-definition-input>
       </div>
     </fieldset>
     }

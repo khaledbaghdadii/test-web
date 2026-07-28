@@ -49,6 +49,7 @@ import {
   ScenarioDefinitionMultiselectDropdownComponent,
 } from "@mxevolve/domains/test/widget";
 import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
+import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import {
   MxevolveIconComponent,
   ToastMessageService,
@@ -65,13 +66,21 @@ import {
   buildUpgradeExecutorForm,
 } from "./upgrade-executor.form";
 
-/** Legacy toast shown when the configuration branch already exists in the repository. */
-const CONFIGURATION_BRANCH_EXISTS =
-  "The branch name available in the BP definition or pre-filled in the pop-up already exists in the repository. Please update the definition or the pop-up with a unique name to create a new branch.";
+/**
+ * Legacy config-branch toast when the run is *not* creating a branch, so the
+ * branch was expected to already exist (VAL-27132 REV-6 — this variant was lost
+ * in the migration, leaving only the "already exists" one).
+ */
+const CONFIGURATION_BRANCH_MISSING =
+  "The branch name available in the Process Template doesn't exist in the repository. Please check the name and try again with an existing branch.";
 
-/** Legacy toast shown when the configuration parent branch does not exist. */
+/** Legacy config-branch toast when the branch is about to be created. */
+const CONFIGURATION_BRANCH_EXISTS =
+  "The branch name available in the Process Template already exists in the repository. Please update the Process Template with a unique name to create a new branch.";
+
+/** Legacy parent-branch toast — note "you entered", unlike every other variant. */
 const CONFIGURATION_PARENT_BRANCH_MISSING =
-  "The branch name available in the BP definition doesn't exist in the repository. Please check the name and try again with an existing branch.";
+  "The branch name you entered doesn't exist in the repository. Please check the name and try again with an existing branch.";
 
 /**
  * Upgrade definition executor rendered as Page 2 of the generic multi-page
@@ -107,6 +116,7 @@ const CONFIGURATION_PARENT_BRANCH_MISSING =
     BranchInputComponent,
     ScenarioDefinitionDropdownComponent,
     ScenarioDefinitionMultiselectDropdownComponent,
+    DefinitionInputComponent,
   ],
   providers: [
     UpgradeProcessDefinitionExecutorService,
@@ -343,9 +353,17 @@ export class UpgradeExecutorComponent {
     controls.configurationParentBranch.reset(null, { emitEvent: false });
   }
 
-  /** Legacy toast when the configuration branch already exists in the repo. */
+  /**
+   * Legacy `showConfigBranchError`: the message depends on which way the branch
+   * was supposed to go. Not creating a branch means it had to already exist;
+   * creating one means the name had to be free (VAL-27132 REV-6).
+   */
   protected showConfigBranchError(): void {
-    this.toast.showError(CONFIGURATION_BRANCH_EXISTS);
+    this.toast.showError(
+      this.form().controls.createBranch.value === false
+        ? CONFIGURATION_BRANCH_MISSING
+        : CONFIGURATION_BRANCH_EXISTS
+    );
   }
 
   /** Legacy toast when the configuration parent branch does not exist. */
@@ -428,11 +446,13 @@ export class UpgradeExecutorComponent {
             visible: this.visibility().configurationBranchName,
             repositoryId,
             // Legacy `[branchShouldExist]="createBranchFormControl.value !== true"`:
-            // when the run is not creating a branch, the configuration branch must
-            // already exist. The template still hardcodes `false` (divergence REV-5,
-            // out of scope here) but that only governs the *shown* field.
+            // when the run is not creating a branch, the configuration branch
+            // must already exist (REV-5).
             mustExist: controls.createBranch.value !== true,
-            message: CONFIGURATION_BRANCH_EXISTS,
+            message:
+              controls.createBranch.value === false
+                ? CONFIGURATION_BRANCH_MISSING
+                : CONFIGURATION_BRANCH_EXISTS,
           }),
           this.resolveHiddenBranch(controls.configurationParentBranch, {
             visible: this.visibility().configurationParentBranch,

@@ -30,6 +30,7 @@ import {
   UserStoryInputComponent,
 } from "@mxevolve/domains/business-process/widget";
 import { ReviewersAutoCompleteComponent } from "@mxevolve/domains/scm/widget";
+import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import {
   MergeConfigurationService,
   RepositoryService,
@@ -81,6 +82,7 @@ const MERGE_CONFIGURATION_PAGE_SIZE = 100;
     UserStoryInputComponent,
     NotificationsRecipientsInputComponent,
     ReviewersAutoCompleteComponent,
+    DefinitionInputComponent,
   ],
   providers: [
     BackportProcessExecutorService,
