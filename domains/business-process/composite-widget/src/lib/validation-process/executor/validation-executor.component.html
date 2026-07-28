@@ -112,6 +112,7 @@
             [projectId]="projectId()"
             inputId="validation-quality-gate-test-scenarios"
             [formControl]="form().controls.qualityGateScenarioDefinitionIds"
+            (failureEvent)="showSelectorError($event)"
           />
         </mxevolve-definition-input>
         } @if (visibility().nightlyRepusherEnabled) {

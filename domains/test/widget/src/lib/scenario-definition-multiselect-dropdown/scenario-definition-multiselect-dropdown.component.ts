@@ -5,6 +5,7 @@ import {
   forwardRef,
   inject,
   input,
+  output,
 } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
 import {
@@ -40,7 +41,7 @@ import {
       [inputId]="inputId()"
       [config]="{ placeholder: 'Select test scenarios', disabled: disabled() }"
       (selectionChange)="onSelectionChange($event)"
-      (errorEvent)="onError()"
+      (errorEvent)="onError($event)"
     />
   `,
   imports: [MxevolveMultiselectDropdownComponent],
@@ -61,6 +62,12 @@ export class ScenarioDefinitionMultiselectDropdownComponent
   readonly projectId = input.required<string>();
   readonly disabled = input(false);
   readonly inputId = input<string>();
+
+  /**
+   * Mirrors the single-select siblings so an executor can surface a failed
+   * fetch; previously the error was swallowed here entirely (VAL-27132 R3).
+   */
+  readonly failureEvent = output<string>();
 
   readonly stateProvider: MxEvolveDropdownState<
     ScenarioDefinitionApiResponse,
@@ -121,8 +128,8 @@ export class ScenarioDefinitionMultiselectDropdownComponent
     this.onTouched();
   }
 
-  onError(): void {
-    // Fetch errors surface through the shared dropdown; nothing extra to do.
+  onError(errorMessage: string): void {
+    this.failureEvent.emit(errorMessage);
   }
 
   private resolvePrefilledIds(
@@ -140,5 +147,14 @@ export class ScenarioDefinitionMultiselectDropdownComponent
       ids.includes(definition.id)
     );
     this.stateProvider.setSelectedItems(matches);
+
+    const resolved = new Set(matches.map((definition) => definition.id));
+    if (ids.some((id) => !resolved.has(id))) {
+      // Some pre-filled scenario definitions no longer exist. Previously they
+      // were dropped from the dropdown while the control kept claiming them;
+      // emit only what actually resolved so the form sees reality — and, when
+      // nothing resolves, so `required`/`minLength` can fire (VAL-27132 R3).
+      this.onChange([...resolved]);
+    }
   }
 }

@@ -64,6 +64,7 @@ import {
   checkPrefilledEntities,
   prefilledIds,
 } from "../../shared/dead-prefill";
+import { InputVisibilityStore } from "../../shared/input-visibility.store";
 import {
   ValidationExecutorForm,
   ValidationExecutorSeed,
@@ -125,6 +126,7 @@ interface ScopeVisibilitySnapshot {
     RepositoryService,
     ScenarioDefinitionService,
     InfraGroupService,
+    InputVisibilityStore,
   ],
 })
 export class ValidationExecutorComponent {
@@ -147,6 +149,7 @@ export class ValidationExecutorComponent {
   private readonly featureFlags = inject(FeatureFlagResolver);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly inputVisibility = inject(InputVisibilityStore);
 
   protected readonly executing = signal(false);
   protected readonly detailsExpanded = signal(false);
@@ -323,6 +326,10 @@ export class ValidationExecutorComponent {
   private wiredForm: ValidationExecutorForm | null = null;
 
   constructor() {
+    // Legacy handed each nested `definition-input` its own `[inputAccessMode]`;
+    // the nested groups here read the executor's map instead (W3, V1/V2).
+    this.inputVisibility.connect(this.visibility);
+
     effect(() => {
       const form = this.form();
       if (this.wiredForm !== form) {
@@ -337,6 +344,14 @@ export class ValidationExecutorComponent {
 
   protected toggleDetails(): void {
     this.detailsExpanded.update((expanded) => !expanded);
+  }
+
+  /**
+   * Surfaces a selector's fetch failure. These outputs existed but were bound by
+   * no executor, so a failed lookup was swallowed entirely (VAL-27132 R3).
+   */
+  protected showSelectorError(message: string): void {
+    this.toast.showError(message);
   }
 
   /**

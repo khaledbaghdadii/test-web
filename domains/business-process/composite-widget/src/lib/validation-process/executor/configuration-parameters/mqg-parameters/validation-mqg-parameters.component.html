@@ -1,3 +1,4 @@
+@if (inputVisibility.shows("createBranch")) {
 <fieldset class="field flex flex-col gap-1 border-none p-0 m-0">
   <legend
     class="font-medium p-0"
@@ -28,6 +29,7 @@
     </div>
   </div>
 </fieldset>
+}
 
 @if (createBranchFormControl().value === true) {
 <mxevolve-mqg-from-new-branch-parameters

@@ -3,7 +3,9 @@ import { FormControl, ReactiveFormsModule, Validators } from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { Select } from "primeng/select";
 import { RepositorySelectorComponent } from "@mxevolve/domains/scm/widget";
+import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
+import { injectInputVisibility } from "../../../shared/input-visibility.store";
 import { ValidationDqgParametersComponent } from "./dqg-parameters/validation-dqg-parameters.component";
 import { ValidationMqgParametersComponent } from "./mqg-parameters/validation-mqg-parameters.component";
 
@@ -53,6 +55,9 @@ export class ValidationConfigurationParametersComponent implements OnInit {
   readonly showRepository = input(true);
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toast = inject(ToastMessageService);
+  /** Executor-owned per-field visibility (VAL-27132 W3, findings V1/V2). */
+  protected readonly inputVisibility = injectInputVisibility();
 
   protected readonly Validators = Validators;
   protected readonly qualityLevelOptions = [
@@ -69,6 +74,14 @@ export class ValidationConfigurationParametersComponent implements OnInit {
       .subscribe((repositoryId) =>
         this.applyQualityLevelAvailability(repositoryId)
       );
+  }
+
+  /**
+   * Surfaces the repository selector's fetch failure, which was previously bound
+   * by nobody and therefore swallowed entirely (VAL-27132 R3).
+   */
+  protected showSelectorError(message: string): void {
+    this.toast.showError(message);
   }
 
   /** Legacy `clearQualityLevelSelection`: a repository change invalidates it. */

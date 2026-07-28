@@ -10,9 +10,11 @@
     [projectId]="projectId()"
     [formControl]="repositoryIdFormControl()"
     (repositoryChanged)="onRepositoryChanged()"
+    (failureEvent)="showSelectorError($event)"
   />
 </mxevolve-definition-input>
-} @if (businessProcessQualityLevelFormControl().enabled) {
+} @if (inputVisibility.shows("businessProcessQualityLevel") &&
+businessProcessQualityLevelFormControl().enabled) {
 <mxevolve-definition-input
   inputId="validation-bp-quality-level"
   [control]="businessProcessQualityLevelFormControl()"

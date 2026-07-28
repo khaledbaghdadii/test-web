@@ -66,6 +66,7 @@
             inputId="bt-repository"
             [formControl]="form().controls.repositoryId"
             (repositoryChanged)="onRepositoryChanged()"
+            (failureEvent)="showSelectorError($event)"
           />
         </div>
         } @if (visibility().configurationBranchName &&
@@ -153,6 +154,7 @@
             [projectId]="projectId()"
             inputId="bt-build-scenario"
             [formControl]="form().controls.buildScenarioDefinitionId"
+            (failureEvent)="showSelectorError($event)"
           />
         </div>
         }

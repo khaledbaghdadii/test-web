@@ -9,6 +9,7 @@ import {
 import { BranchInputComponent } from "@mxevolve/domains/scm/widget";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import { injectInputVisibility } from "../../../../shared/input-visibility.store";
 
 /**
  * DQG + "Create Branch = Yes" configuration parameters: a brand-new archival
@@ -31,6 +32,9 @@ import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
   ],
 })
 export class DqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
+  /** Executor-owned per-field visibility (VAL-27132 W3, finding V2). */
+  protected readonly inputVisibility = injectInputVisibility();
+
   readonly projectId = input.required<string>();
   readonly repositoryId = input.required<string>();
   readonly archivalBranchNameFormControl =

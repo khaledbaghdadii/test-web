@@ -94,6 +94,7 @@
             [projectId]="projectId()"
             inputId="upgrade-conversion-factory-product"
             [formControl]="form().controls.factoryProduct"
+            (failureEvent)="showSelectorError($event)"
           />
         </div>
         } @if (visibility().parentMxArchivalBranch) {
@@ -159,6 +160,7 @@
             inputId="upgrade-repository"
             [formControl]="form().controls.repositoryId"
             (repositoryChanged)="onRepositoryChanged()"
+            (failureEvent)="showSelectorError($event)"
           />
         </div>
         } @if (visibility().businessProcessQualityLevel) {
@@ -326,6 +328,7 @@
             [projectId]="projectId()"
             inputId="upgrade-quality-gate-test-scenarios"
             [formControl]="form().controls.testScenarioIds"
+            (failureEvent)="showSelectorError($event)"
           />
         </div>
         } @if (visibility().technicalUpgradeTestScenarioId) {
@@ -343,6 +346,7 @@
             [projectId]="projectId()"
             inputId="upgrade-binary-conversion-scenario"
             [formControl]="form().controls.technicalUpgradeTestScenarioId"
+            (failureEvent)="showSelectorError($event)"
           />
         </div>
         }
@@ -388,6 +392,7 @@
             [projectId]="projectId()"
             inputId="upgrade-reference-env-definition"
             [formControl]="form().controls.referenceEnvironmentDefinitionId"
+            (failureEvent)="showSelectorError($event)"
           />
         </div>
         } @if (visibility().referenceFactoryProduct) {
@@ -405,6 +410,7 @@
             [projectId]="projectId()"
             inputId="upgrade-reference-factory-product"
             [formControl]="form().controls.referenceFactoryProduct"
+            (failureEvent)="showSelectorError($event)"
           />
         </div>
         } @if (visibility().referenceEnvironmentInfraGroupId) {

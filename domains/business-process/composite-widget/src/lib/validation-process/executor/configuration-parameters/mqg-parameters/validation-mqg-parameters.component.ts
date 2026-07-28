@@ -1,8 +1,9 @@
-import { Component, OnDestroy, OnInit, input } from "@angular/core";
+import { Component, OnDestroy, OnInit, inject, input } from "@angular/core";
 import { FormControl, ReactiveFormsModule, Validators } from "@angular/forms";
 import { RadioButton } from "primeng/radiobutton";
 import { FinalProductFromExistingBranchComponent } from "../from-existing-branch/final-product-from-existing-branch.component";
 import { MqgFromNewBranchParametersComponent } from "./from-new-branch/mqg-from-new-branch-parameters.component";
+import { injectInputVisibility } from "../../../shared/input-visibility.store";
 
 /**
  * MQG configuration parameters: the "Create Branch?" decision and whichever
@@ -22,6 +23,9 @@ import { MqgFromNewBranchParametersComponent } from "./from-new-branch/mqg-from-
   ],
 })
 export class ValidationMqgParametersComponent implements OnInit, OnDestroy {
+  /** Executor-owned per-field visibility (VAL-27132 W3, finding V2). */
+  protected readonly inputVisibility = injectInputVisibility();
+
   readonly projectId = input.required<string>();
   readonly repositoryId = input.required<string>();
   readonly createBranchFormControl =

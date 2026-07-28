@@ -1,8 +1,10 @@
+@if (inputVisibility.shows("parentBranchName")) {
 <mxevolve-definition-input
   inputId="validation-parent-branch"
   [control]="parentBranchNameFormControl()"
   label="Parent Branch Name"
   description="Enter the Parent Branch from where you want to create your branch"
+  [showValidationErrors]="false"
 >
   <mxevolve-branch-input
     [projectId]="projectId()"
@@ -14,12 +16,15 @@
     (initialInvalid)="showParentBranchError()"
   />
 </mxevolve-definition-input>
+}
 
+@if (inputVisibility.shows("archivalBranchName")) {
 <mxevolve-definition-input
   inputId="validation-archival-branch"
   [control]="archivalBranchNameFormControl()"
   label="Archival Branch Name"
   description="Enter the name of the archival branch that you wish to use or create"
+  [showValidationErrors]="false"
 >
   <mxevolve-branch-input
     [projectId]="projectId()"
@@ -31,8 +36,10 @@
     (initialInvalid)="showArchivalBranchError()"
   />
 </mxevolve-definition-input>
+}
 
 @if (finalProductIdFormControl().enabled) {
+@if (inputVisibility.shows("finalProductId")) {
 <mxevolve-definition-input
   inputId="validation-final-product"
   [control]="finalProductIdFormControl()"
@@ -53,7 +60,9 @@
     (selectedFinalProductChange)="onFinalProductSelected($event)"
   />
 </mxevolve-definition-input>
+}
 
+@if (inputVisibility.shows("rtpCommitId")) {
 <mxevolve-definition-input
   inputId="validation-rtp-commit"
   [control]="rtpCommitIdFormControl()"
@@ -68,4 +77,5 @@
     [readonly]="true"
   />
 </mxevolve-definition-input>
+}
 }

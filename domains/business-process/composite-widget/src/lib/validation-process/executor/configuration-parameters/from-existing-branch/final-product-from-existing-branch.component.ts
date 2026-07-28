@@ -30,6 +30,7 @@ import {
   ToastMessageService,
   WarningAlertComponent,
 } from "@mxevolve/shared/ui/primitive";
+import { injectInputVisibility } from "../../../shared/input-visibility.store";
 
 /** Debounce applied before looking a typed archival branch up (legacy 500ms). */
 const BRANCH_DEBOUNCE_MS = 500;
@@ -97,6 +98,9 @@ const FAILURE_WARNINGS: Record<
 export class FinalProductFromExistingBranchComponent
   implements OnInit, OnDestroy
 {
+  /** Executor-owned per-field visibility (VAL-27132 W3, finding V2). */
+  protected readonly inputVisibility = injectInputVisibility();
+
   readonly projectId = input.required<string>();
   readonly repositoryId = input.required<string>();
   readonly archivalBranchNameFormControl =

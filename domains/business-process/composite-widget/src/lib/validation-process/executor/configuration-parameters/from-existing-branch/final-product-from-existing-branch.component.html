@@ -1,8 +1,10 @@
+@if (inputVisibility.shows("archivalBranchName")) {
 <mxevolve-definition-input
   inputId="validation-archival-branch"
   [control]="archivalBranchNameFormControl()"
   label="Archival Branch Name"
   description="Enter the name of the archival branch that you wish to use or create"
+  [showValidationErrors]="false"
 >
   <mxevolve-branch-input
     [projectId]="projectId()"
@@ -14,8 +16,10 @@
     (initialInvalid)="showArchivalBranchError()"
   />
 </mxevolve-definition-input>
+}
 
 @if (loading() || finalProductIdFormControl().enabled) {
+@if (inputVisibility.shows("configCommitId")) {
 <mxevolve-definition-input
   inputId="validation-final-product-readonly"
   [control]="finalProductIdFormControl()"
@@ -36,7 +40,9 @@
     }
   </div>
 </mxevolve-definition-input>
+}
 
+@if (inputVisibility.shows("rtpCommitId")) {
 <mxevolve-definition-input
   inputId="validation-rtp-commit"
   [control]="rtpCommitIdFormControl()"
@@ -56,6 +62,7 @@
     }
   </div>
 </mxevolve-definition-input>
+}
 } @if (warningMessage()) {
 <mxevolve-warning-alert [message]="warningMessage()" />
 }

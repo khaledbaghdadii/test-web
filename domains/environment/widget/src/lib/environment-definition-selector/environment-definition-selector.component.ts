@@ -137,5 +137,11 @@ export class EnvironmentDefinitionSelectorComponent
 
     const match = definitions.find((definition) => definition.id === id);
     this.stateProvider.setSelectedItem(match ?? null);
+    if (!match) {
+      // The pre-filled environment definition no longer exists. Report the miss
+      // to the form instead of leaving the control holding a dead id that still
+      // satisfies `Validators.required` (VAL-27132 R3).
+      this.onChange(null);
+    }
   }
 }

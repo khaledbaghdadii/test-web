@@ -253,6 +253,14 @@ export class BuildAndTestExecutorComponent {
   }
 
   /**
+   * Surfaces a selector's fetch failure. These outputs existed but were bound by
+   * no executor, so a failed lookup was swallowed entirely (VAL-27132 R3).
+   */
+  protected showSelectorError(message: string): void {
+    this.toast.showError(message);
+  }
+
+  /**
    * Resolves every value the definition pre-filled, whether or not its field is
    * shown (VAL-27132 W1). Legacy resolved these as a side effect of content
    * projection instantiating hidden fields; the new executor gates visibility

@@ -127,6 +127,12 @@ export class RepositorySelectorComponent implements ControlValueAccessor {
 
     const match = repositories.find((repository) => repository.id === id);
     this.stateProvider.setSelectedItem(match ?? null);
+    if (!match) {
+      // The pre-filled repository no longer exists. Report the miss to the form
+      // instead of leaving the control holding a dead id that still satisfies
+      // `Validators.required` and would be posted as-is (VAL-27132 R3).
+      this.onChange(null);
+    }
     this.hasEmittedInitial = true;
   }
 }

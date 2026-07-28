@@ -134,5 +134,11 @@ export class FactoryProductSelectorComponent implements ControlValueAccessor {
 
     const match = products.find((product) => product.id === id);
     this.stateProvider.setSelectedItem(match ?? null);
+    if (!match) {
+      // The pre-filled factory product no longer exists. Report the miss to the
+      // form instead of leaving the control holding a dead object that still
+      // satisfies `Validators.required` (VAL-27132 R3).
+      this.onChange(null);
+    }
   }
 }
