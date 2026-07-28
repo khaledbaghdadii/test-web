@@ -1,0 +1,24 @@
+{
+  "key": "VAL-27132",
+  "summary": "[UI/UX] Activities Landing Pages",
+  "type": "Epic",
+  "status": "Backlog",
+  "priority": "",
+  "assignee": "MOUZAYA Myriam",
+  "reporter": "MOUZAYA Myriam",
+  "labels": [],
+  "description": "<p>In this feature we are implementing new activity landing pages for each of the process (CI, Upgrade, Validaiton Process)</p>\n\n<p>In this wiki we are focusing on creating new Activity Landing Page for eahc processes.</p>\n\n<p>For each Activity type like Build And Test we will have a new route in the current navigation header we have like existing \"Business Processes\" , \"Tests\", \"Environments\" and add new ones at the beginnig called \"Business &amp; Test Activity\",, \"Validation Actiivty\", and \"Upgrade Activity\"</p>\n\n<p>On click of this page, we will see for each activity like \"Build &amp; Test\" the current executions of type \"Build &amp; Test\" in a 2 tables. One showing the active excutions with status pending_input or running, and other hidden under Show PRevious button that showe other statuses when clicked.</p>\n\n<p> </p>\n\n<p>Also as part of this page, users now we will be able to start a BP execution insead of relying on the existing page in the Available Processes where thety currently check the table of processes and click the run button\"</p>\n\n<p>This feature is not concerned about removing legacy pages, it is only about creating the new component and activity landing pages.</p>\n\n<p>We need to maintain same columns with their filters as existing tables. Including the My Build functionality which is equivalenbt to the existing \"MY Executions\" button.</p>\n\n<p> </p>\n\n<p>The cards in the screenshot below that shows \"Pending Input\", \"Running\", etc... are out of scope </p>\n\n<p><span class=\"image-wrap\" style=\"\"><img src=\"https://mxjira.murex.com/secure/attachment/1901569/1901569_image-2026-06-30-10-41-21-778.png\" style=\"border: 0px solid black\" /></span></p>\n\n<p> </p>\n\n<p>To start a new Execution/Build users click on the Build Button.</p>\n\n<p>A dialog is opened, showing a table with available processes and a run button. There is also a dropdown where users can filter the processes by the sub family.</p>\n\n<p><span class=\"image-wrap\" style=\"\"><img src=\"https://mxjira.murex.com/secure/attachment/1901575/1901575_image-2026-06-30-10-50-27-633.png\" style=\"border: 0px solid black\" /></span></p>\n\n<p>On click on run, in the same dialog we move to a new page inside it hsowing the inputs needed to runb the execution/build and a Build Button at the end. There is also a backj button to go back the available processes if needed.</p>\n\n<p><span class=\"image-wrap\" style=\"\"><img src=\"https://mxjira.murex.com/secure/attachment/1901576/1901576_image-2026-06-30-10-52-45-010.png\" style=\"border: 0px solid black\" /></span></p>\n\n<p> </p>\n\n<p>Confluence Document</p>\n\n<p><b>CI Process:</b> <a href=\"https://mxwiki.murex.com/confluence/spaces/MVF/pages/951319974/Build+And+Test+Runs+Screen\" class=\"external-link\" target=\"_blank\" rel=\"nofollow noopener\">Build And Test Runs Screen - MXevolve Studio VF - MXWIKI</a></p>",
+  "acceptance_criteria": null,
+  "components": [
+    "ATLANTIS"
+  ],
+  "fix_versions": [],
+  "parent_chain": [
+    {
+      "key": "VAL-27132",
+      "summary": "[UI/UX] Activities Landing Pages",
+      "type": "Epic",
+      "status": "Backlog"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "jira_id": "VAL-27132",
+  "phase": "implementation",
+  "branch": "feature/VAL-27132-activity-landing-pages",
+  "workspace": "C:\\Users\\kbaghdadi\\Murex Projects\\mxevolve\\clone2\\mxflow",
+  "started_at": "2026-06-30",
+  "selected_phases": [
+    "Plan",
+    "Implement"
+  ],
+  "feature_size": "Large",
+  "plan_model": "Opus",
+  "implement_model": "Opus",
+  "implement_selection": "all",
+  "last_completed_batch": 5,
+  "commit_frequency": "per-step",
+  "scope": "All 3 activities (Build&Test/CI, Validation, Upgrade)",
+  "testing_standard": "Unit tests MUST follow .github/skills/unit-testing/SKILL.md — assert behaviour via the rendered DOM (Angular Testing Library + userEvent), never component.x()/private signals. Applies to every batch (past remediation + future).",
+  "plan_approved": true,
+  "completed_phases": [
+    "planning",
+    "feature_architect",
+    "implementation"
+  ],
+  "jira_comment_id": "2911178",
+  "spec_pr_id": 11556,
+  "spec_pr_url": "https://stash.murex.com/projects/MXFLOW/repos/mxflow/pull-requests/11556"
+}

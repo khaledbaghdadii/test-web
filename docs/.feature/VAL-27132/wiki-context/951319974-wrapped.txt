@@ -1,0 +1,122 @@
+ Notes: Mapping between current code and the new UI BP Definition will be Process Template BP Execution,
+Business Process Execution, and Business Process â†’ Process Run Process Family, Process Type, Process Name
+â†’ Process Family Process Name â†’ Process Sub Family We need in the navigation above a new tab called Build
+And Testg Activity (base don current code we need to place it first before the Business Processes tab) first
+thjign after project name) Row 1: https://www.figma.com/design/8Z7emdDFkZapK3nmVP2HsA/MxEvolve?node-
+id=5162-181947&m=dev In Bold List of Build & Test runsÂ on the left, and on the right we have the My Builds
+filter (similar to exisitng my executios) and the Run Button to Run new CI Process Currenltly we call this
+endpoint wth the added ownerPhrase when selected, the ownerPhrase is the logged in userÂ https://mxevolve-
+dev.cd.murex.com/gateway/api/v1/projects/b9d73257-6872-4cd8-92ba-b74223c940e9/business-process/executions/ci-
+process?page=0&pageSize=10&ownerPhrase=mxflow-dev-admin&hidden=false&sort=startDate,desc The code currently
+lives here in the legacy compoennets web/libs/domains/business-process/feature/src/lib/build-and-test/build-
+and-test-executions/legacy/ci-process-executions We need to migrater to new way of writng code relying on ag
+grid singals, and new angular features and remove all code smells without breaking any existing
+funcntionality. The changes should just be visual by migraitng to ag grid and code wise to make it more
+readable. no fufnctionality whether ffilters, authorization, feature flags or anythignÂ else should be
+afffected. Also there's an issue ow each time, this is called https://mxevolve-
+dev.cd.murex.com/gateway/api/v1/projects/b9d73257-6872-4cd8-92ba-b74223c940e9/business-process/executions/ci-
+process I get 10 (page size) calls to this https://mxevolve-dev.cd.murex.com/gateway/api/v1/issue-
+tracking/projects/b9d73257-6872-4cd8-92ba-b74223c940e9/project-details most times it is same project id. We
+need to fix that In the new table it will be a bit different like the figma here MxEvolve â€“ Figma , We have
+Active Runs which only shows BPs (mainly Process since in this feature we are migrating CI Process only) with
+status running and pending Input. With Show History button that shows stuff with other sttauses. Note here the
+data is paginated from abckend with backend pagination. So maybe figma/screenshot doens't reflect it 100%.
+This is how it will look like when Show history is expanded MxEvolve â€“ Figma . The figma might contains
+filters and fields not in the cuyrrent table or misses some that are some. I want to migrate the same columns
+with the same order of columns and with any available filter to maintain it. For the Actions column I want it
+sticky. I have a repush BP button, check the existing available one here in legacy code Â
+web/apps/shell/src/app/global-operations/business-process-executions/global-ops-business-process-executions-
+table.component.html. The mxevolve-business-process-execution-repush-modal-opener needs to be copied into the
+new architecture and ruse it in the new component. For the abort button we already have one in the new
+architecture migrated to be reused web/libs/domains/business-process/composite-widget/src/lib/execution-abort-
+button We also call project details endpoints Check here the use of mxevolve-my-executions-toggle and migrate
+to new architecture web/libs/domains/business-process/feature/src/lib/validation-process/validation-process-
+executions/validation-process-executions-table/validation-process-executions-table.component.html Clicking on
+the Run Button will open this dialog MxEvolve â€“ Figma Thia dialog that shows Available Templates is
+equivalent the the available processes table compoennt we have with the filter preapplied to the Build & Test
+Process. This is the old service that needs to be migrated to new architecture with its tests and contratc
+tests under data-access library web/apps/shell/src/app/business-process/business-process-definition/business-
+process-definition-table/business-process-definition-table.component.ts This is the API endpoint called
+https://mxevolve-dev.cd.murex.com/gateway/api/v1/projects/b9d73257-6872-4cd8-92ba-b74223c940e9/business-
+process/definitions?extendable=false&executable=true Filtering is done on the UI side, here we filter by
+'Build & Test Process' (Make sure here backend in not paginated base don ym check and current code on uyi
+wirtten it is not) Select Sub-Activity in the screenshot call it it Select Sub Family For the Sub Activity
+Dropdown in the image callÂ Â its values are from the list of here hardcodedÂ "Configuration Build & Test" ,
+"RTP Enrichment" "RTP Build" "RTP Test Adaptation" "Technical Reseed" "On Demand Backport" On select form sub
+acitivty dropdown also filter Make table pagable with size 5Â The Run button is equivalent to the "Execute
+Action" (to be migrated from here to new architecture + new clean code web/apps/shell/src/app/business-
+process/business-process-definition/business-process-definition-execute-modal-opener/business-process-
+definition-execute-modal-opener.component.ts) Clicking on the Run will reuse the same dialog but open a new
+template inside of it (override the old, with a back button) Check FigmaÂ MxEvolve â€“ Figma The dialog with
+multiple views/templates and back could be a generic common components in libs/shared library Check this
+compoennt for reference web/libs/features/business-process/src/lib/build-and-test/build-and-test-process-
+definition-executor/build-and-test-definition-executor.component.ts If you notice, in the screenshots/Figma
+The Dialog Title is the name of the Template/ Busoness PRcess Definition (in old naming) Inside it, there is a
+panel with the {name of the template} Details, and clicking in the panel will open another view/template in
+the dialog component we have with detailsÂ Â In the body of the dialog: The user can add User Stories There is
+an input field for user input, the validation is hidden behind feature flag check
+web/libs/ui/inputs/src/lib/user-story-input/add-user-story-modal/add-user-story-modal.component.ts for
+reference on the logic of enabling the vlaidaiton on stories There is no search (the serach icon from
+screenshot is not needed) When a story is added, we show it like this MxEvolve â€“ Figma , the button is still
+shown on the same row Â Adding other stories will be it to the row under When Clicking on Run we should see
+all of the inputs and dialog should scroll horizontally to make them all appear (the screenshot shows
+additional settings ignore it) There are two formats for this form this web/libs/features/business-
+process/src/lib/build-and-test/build-and-test-process-definition-executor/build-and-test-definition-
+executor.component.ts and this web/libs/features/business-process/src/lib/backport/backport-definition-
+executor/backport-definition-executor.component.ts and they are used by this web/apps/shell/src/app/business-
+process/business-process-definition/business-process-definition-execute-modal-opener/business-process-
+definition-execute-modal-opener.component.htmlin the legacy mfe. We need to migrate these two with the new UI
+design based on what is shown in the screenshots, the screenshots may not be complete by they can show the
+design language so refer to the svcreenshots to build the rest It is important not to miss any fields on
+existing funcitronality we have when doing the migration Preferrably here they are still indiividual
+components for the two different inputs Also, the way these should be rendered whether the mxevolve-build-and-
+test-definition-executor or mxevolve-backport-definition-executor should not depend on viewchild like we
+currently have you should rely on new angular features like signals and so to do the migration Notice there is
+logic to see what inputs to view or not based on what is already prefilled in the business porcess definition
+These are done using intializeForm now and so on, I need to migrate into a clean code probably here
+input/output using signals can be used. To Decide whether to show a field or not and how to show there is now
+web/libs/features/business-process/src/lib/definition-input/definition-input.component.ts. We can see how
+web/libs/features/business-process/src/lib/definition-input/definition-input.component.ts works and see the
+different cases and for each field check the logic whether to display or not. The logic here lives in
+mxevolve-definitoin-input which is a generic compoennt and we pass input to it. We need to remove this and
+just check each field for each family or sub family the logic behind it and migrate it. Mainly each family can
+have its own component except build and test we need to differentiate only the backport sub family One thing
+noticed is that when the user is in the build part there is this arrow beside business definiton name when
+clicked it should show the prefilled input in the business process defintion (expand). So as we were saying
+when the user wants to do a "build" or execute a business definitoin, we show him the input based on a logic.
+Here I would like to show the prefilled fields, we do not have exact design so we should udr same design
+language we have been using in the new code and for the component I have a design for in this feature. To
+display Business Process Executionb details, we currenlt yhave a generic component
+web/libs/ui/inputs/src/lib/input-view-resolver/input-view-resolver.component.ts that takes a map and display
+fields. This is a legacy component and it was done for the sake of generalziization under the assumption that
+we might have veru dufferent Business process types/families but now we only have 3 families validAYION,
+UUGRADE, AND BUILD AND TEST, ANMD THE SUB FMAILIES ARE VERY SIMILAR ONLY BUILD AND TEST have a sub family that
+is backjport very different so it has its onw components. Based, on that, and based on the Create Business
+Process Definition for each component, I want to remove this generic legacy component use and probably for the
+Build And Test since now in this feature I wantÂ to migrate build and test have 2 versions with hardcoded
+fields for the normal build and tets and backport basded on the fields we have wehn creating a busioness
+process definition. Here we should also only show on expand the bp definiton that are prefilled, and the input
+down we are showing has the inputs that is not prefilled It is important after this migration, first to keep
+existing code, we are adding this as a new route Prefer to use minimal components and place them under the
+right domain in the new architecture Migrate The Table With Filters (use AG Grid for table) + My Builds filter
+(which is similar to current My Executions)Â 1.5sp Two TablesÂ ASctive runs show Running and Pending InputÂ BP
+Executions Clicking on show previous, shows the other BPs Paginated tables both (pagination is already in the
+backend) Default page size 5 for active 10 for inactive Maintain the same colum,ns we currently have Add
+actions bar column that include abort (already have it in new arhcitecture) + repush bp (not found in new
+arhcitecture copy same logic from legacy and place serivces and compoennt in their resppective place) 2sp
+Legacy Repush opener is here web/apps/shell/src/app/business-process/business-process-execution/business-
+process-execution-repush-modal-opener/business-process-execution-repush-modal-opener.component.ts Create a
+Generic Dialog ComponentÂ 2sp Â single modal dialog that can display more than one internal page/view without
+closing. the dialog opens normally on page 1 the user performs an action inside the dialog instead of closing
+the dialog or opening another modal, the dialog navigates internally to page 2 the user can then go back to
+page 1 the dialog remains the same dialog instance throughout The dialog can support multiple pages Dialog
+OneÂ 1.5sp Get Business Process Definitions (not backend paginated) Filter then by Build&Test Show theÂ Sub
+Family dropdown with filter Run button Dialog 2: Reviewers's dropdown + service from user managem,ent serviceÂ
+1sp (in backport inputs) Configuration branch input with the chekc if its valid 0.5sp Users to notify dropdown
+(same service as get users)Â Repository dropdown + its serviceÂ 0.5sp Scenario Definition InputÂ 0.5 Infra
+Group inputÂ 0.5sp Logic to detemrine what to display or notÂ 1.5sp Prepare skip environment 0.5sp User
+stories id with chekc if valid + feature flagÂ 1.5sp Panel for activity detailsÂ 2sp Run button with its
+serviceÂ 0.5sp All migrated services when called form compoennet should use rxJS resource over explicit
+subscribe when possible Error handling should be properly done, most times we are using toastMEssage showError
+to show an error. Iff existing code we are migrating has a special handling that showError doesn't make sense
+in we need to keep it the same
