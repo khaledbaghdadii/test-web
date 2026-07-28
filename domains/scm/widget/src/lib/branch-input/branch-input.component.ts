@@ -25,6 +25,15 @@ import {
 } from "@mxevolve/domains/scm/data-access";
 
 /**
+ * Shown when the branch-existence check itself fails — anything other than the
+ * 404 that legitimately means "this branch does not exist". Legacy interpolated
+ * the raw backend message here, including 500 bodies; a generic message replaces
+ * it (VAL-27132 divergence register KEEP-2).
+ */
+export const BRANCH_CHECK_FAILED_MESSAGE =
+  "Couldn't validate the branch. Please try again.";
+
+/**
  * New-architecture rebuild of the legacy
  * `web/libs/features/scm/src/lib/branch-input-component/branch-input.component.ts`.
  *
@@ -163,11 +172,10 @@ export class BranchInputComponent implements OnInit {
               : null
           );
         }
-        return of({
-          branchApiError: `Unable to validate branch: ${
-            err.message || "Unknown error"
-          }`,
-        });
+        // Legacy relayed the raw backend text here, which surfaced stack traces
+        // and 500 bodies to the user. Deliberately replaced with a generic
+        // message (VAL-27132 divergence register KEEP-2).
+        return of({ branchApiError: BRANCH_CHECK_FAILED_MESSAGE });
       })
     );
   }

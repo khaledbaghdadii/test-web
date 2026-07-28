@@ -2,6 +2,7 @@ import { AbstractControl, ValidatorFn } from "@angular/forms";
 import { Observable, forkJoin, of } from "rxjs";
 import { catchError, map } from "rxjs/operators";
 import { BranchDetailsError, BranchService, GetBranchDetailsRequest } from "@mxevolve/domains/scm/data-access";
+import { BRANCH_CHECK_FAILED_MESSAGE } from "@mxevolve/domains/scm/widget";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 
 /**
@@ -43,10 +44,11 @@ export const PREFILL_LOOKUP_FAILED = "Could not resolve a value pre-filled by th
 
 /**
  * Used when the branch-existence lookup itself fails, i.e. anything other than
- * the 404 that legitimately means "this branch does not exist". Deliberately
- * generic instead of relaying the backend text (divergence register KEEP-2).
+ * the 404 that legitimately means "this branch does not exist". Shared with
+ * `BranchInputComponent` so the hidden and shown paths report a branch check
+ * failure identically (divergence register KEEP-2).
  */
-export const BRANCH_CHECK_FAILED = "Couldn't validate the branch. Please try again.";
+export const BRANCH_CHECK_FAILED = BRANCH_CHECK_FAILED_MESSAGE;
 
 /** A pre-filled value that could not be resolved, and why. */
 export interface DeadPrefill {

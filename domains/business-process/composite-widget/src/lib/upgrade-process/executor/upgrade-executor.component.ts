@@ -15,7 +15,7 @@ import {
 } from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { EMPTY, Observable, forkJoin, of } from "rxjs";
-import { catchError, map, switchMap } from "rxjs/operators";
+import { catchError, filter, map, switchMap } from "rxjs/operators";
 import { InputText } from "primeng/inputtext";
 import { RadioButton } from "primeng/radiobutton";
 import { Select } from "primeng/select";
@@ -178,6 +178,7 @@ export class UpgradeExecutorComponent {
       if (this.wiredForm !== form) {
         this.wiredForm = form;
         this.wireCreateBranchCascade(form);
+        this.wireRepositoryClearedCascade(form);
         this.resolvePrefills(form);
       }
     });
@@ -511,6 +512,29 @@ export class UpgradeExecutorComponent {
    * Legacy cascade: changing the create-branch choice resets the configuration
    * and parent branches (they are re-validated against the new mode).
    */
+  /**
+   * Legacy watched `repositoryId.valueChanges.pipe(filter(v => !v))` and cleared
+   * the create-branch choice with both branches whenever the repository was
+   * *cleared* (VAL-27132 REV-9). `onRepositoryChanged()` covers only a genuine
+   * user re-selection — the selector suppresses its first emission and never
+   * emits at all when the value is cleared programmatically — so without this
+   * the branches kept pointing at a repository that was no longer chosen.
+   */
+  private wireRepositoryClearedCascade(form: UpgradeExecutorForm): void {
+    form.controls.repositoryId.valueChanges
+      .pipe(
+        filter((repositoryId) => !repositoryId),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => {
+        form.controls.createBranch.reset(null, { emitEvent: false });
+        form.controls.configurationBranchName.reset(null, { emitEvent: false });
+        form.controls.configurationParentBranch.reset(null, {
+          emitEvent: false,
+        });
+      });
+  }
+
   private wireCreateBranchCascade(form: UpgradeExecutorForm): void {
     form.controls.createBranch.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))

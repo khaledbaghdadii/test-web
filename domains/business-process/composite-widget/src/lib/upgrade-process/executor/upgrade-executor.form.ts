@@ -105,6 +105,18 @@ function factoryProductAttributes(): ValidatorFn {
  * - technicalUpgradeTestScenarioId: required
  * - notificationsRecipients: optional (no validators)
  */
+/**
+ * Legacy `if (businessProcessQualityLevelFormControl.value === "NA") reset()`
+ * (VAL-27132 REV-8). "NA" is a placeholder the definition can carry, not a real
+ * quality level, so legacy cleared it on init — before the nested
+ * `definition-input`s evaluated `shouldShow`, which is what made the field turn
+ * up as an empty, required, *visible* input. Seeding it away here reproduces
+ * that ordering, since the executor derives visibility from the seeded form.
+ */
+function qualityLevelSeed(provided: string | null): string | null {
+  return provided === "NA" ? null : provided;
+}
+
 export function buildUpgradeExecutorForm(
   providedInputs: readonly ProvidedInput[]
 ): UpgradeExecutorForm {
@@ -138,7 +150,7 @@ export function buildUpgradeExecutorForm(
       [Validators.required]
     ),
     businessProcessQualityLevel: new FormControl<string | null>(
-      providedValue(providedInputs, "businessProcessQualityLevel"),
+      qualityLevelSeed(providedValue(providedInputs, "businessProcessQualityLevel")),
       [Validators.required]
     ),
     createBranch: new FormControl<boolean | null>(
