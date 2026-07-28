@@ -1,0 +1,13 @@
+<div [formGroup]="customSkipEnvironmentForm" class="flex flex-col gap-8">
+  <div class="mr-4 flex gap-1">
+    <p-checkbox
+      id="skip-prepare-build-environment-checkbox"
+      formControlName="skipEnvironmentDeployment"
+      [binary]="true"
+      (onChange)="onSkipEnvironmentDeployment($event)"
+    />
+    <label for="skip-prepare-build-environment-checkbox" class="ml-2"
+      >Skip "Prepare Build Environment" step</label
+    >
+  </div>
+</div>

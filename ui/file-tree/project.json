@@ -1,0 +1,18 @@
+{
+  "name": "ui-file-tree",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/ui/file-tree/src",
+  "prefix": "mxevolve",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/ui/file-tree/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}
+

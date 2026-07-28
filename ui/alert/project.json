@@ -1,0 +1,17 @@
+{
+  "name": "ui-alert",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/ui/alert/src",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/ui/alert/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

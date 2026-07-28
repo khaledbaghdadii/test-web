@@ -1,0 +1,17 @@
+{
+  "name": "ui-container",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/ui/container/src",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/ui/container/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

@@ -1,0 +1,237 @@
+<div>
+  @switch (input.resourceType) { @case ('primitive') {
+  <div>
+    <div class="text-surface-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      {{ input.value }}
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('boolean') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value !== null) {
+    <div>
+      {{ input.value === "true" || input.value === true ? "Yes" : "No" }}
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('repository') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">Repository</div>
+    @if (input.value) {
+    <div>
+      @if (input.value | getRepositoryName | async; as repositoryName) {
+      {{ repositoryName }}
+      } @else {
+      <p-skeleton></p-skeleton>
+      }
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('testScenario') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      @if (input.value | getScenarioDefinitionNames | async; as
+      scenarioDefinitionNames) { @for (scenarioDefinitionName of
+      scenarioDefinitionNames; track scenarioDefinitionName) {
+      <p-tag styleClass="mr-1 mb-1">
+        {{ scenarioDefinitionName }}
+      </p-tag>
+      } } @else {
+      <p-skeleton></p-skeleton>
+      }
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('singleScenario') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      @if (input.value | getScenarioDefinitionName | async; as
+      scenarioDefinitionName) {
+      <div>
+        {{ scenarioDefinitionName }}
+      </div>
+      } @else {
+      <p-skeleton></p-skeleton>
+      }
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('gitReference') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      {{ input.value }}
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('mergeConfigurationId') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">Destination Branch</div>
+    @if (input.value | getDestinationBranchName | async; as destinationBranch) {
+    <div>
+      {{ destinationBranch }}
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  }@case ('build-environment') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">Build Scenario Definition</div>
+    @if (input.value) {
+    <div class="text-surface-900 dark:text-surface-0">
+      <div>
+        @if (input.value | getScenarioDefinitionName | async; as
+        scenarioDefinitionName) {
+        <div>
+          {{ scenarioDefinitionName }}
+        </div>
+        } @else {
+        <p-skeleton></p-skeleton>
+        }
+      </div>
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('environmentDefinition') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      @if (input.value | getEnvironmentDefinitionName | async; as
+      environmentDefinitionName) {
+      <div>
+        {{ environmentDefinitionName }}
+      </div>
+      } @else {
+      <p-skeleton></p-skeleton>
+      }
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('upgradeJump') {
+  <div>
+    <div class="text-surface-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      {{ input.value }}
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('infraGroupId') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      @if (input.value | getInfraGroupName | async; as infraGroupName) {
+      <div>
+        {{ infraGroupName }}
+      </div>
+      } @else {
+      <p-skeleton></p-skeleton>
+      }
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('factoryProduct') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      <mxevolve-factory-product-input-view
+        [input]="input"
+      ></mxevolve-factory-product-input-view>
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('businessProcessQualityLevel') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      {{ input.value }}
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('finalProductId') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      {{ input.value }}
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('rtpCommitId') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      {{ input.value }}
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('configCommitId') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value) {
+    <div>
+      {{ input.value }}
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } @case ('notificationsRecipients') {
+  <div>
+    <div class="text-gray-500 font-medium mb-2">{{ input.name }}</div>
+    @if (input.value?.length > 0) {
+    <div>
+      @for (recipient of input.value; track recipient) {
+      <p-tag styleClass="mr-1 mb-1">
+        {{ recipient }}
+      </p-tag>
+      }
+    </div>
+    } @else {
+    <div>-</div>
+    }
+  </div>
+  } }
+</div>

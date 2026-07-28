@@ -1,0 +1,16 @@
+<mxevolve-factory-product-input
+  [projectId]="projectId"
+  [requiredInput]="isRequired"
+  [factoryProductId]="factoryProductFormControl.value?.id"
+  [mxVersion]="factoryProductFormControl.value?.mxVersion"
+  [mxBuildId]="factoryProductFormControl.value?.mxBuildId"
+  [bipVersion]="factoryProductFormControl.value?.bipVersion"
+  [bipBuildId]="factoryProductFormControl.value?.bipBuildId"
+  (factoryProductIdChange)="onFactoryProductIdChange($event)"
+  (mxVersionChange)="onMxVersionChange($event)"
+  (mxBuildIdChange)="onMxBuildIdChange($event)"
+  (bipVersionChange)="onBipVersionChange($event)"
+  (bipBuildIdChange)="onBipBuildIdChange($event)"
+  [attr.aria-describedby]="factoryProductFormControl + '-help'"
+>
+</mxevolve-factory-product-input>

@@ -1,0 +1,17 @@
+{
+  "name": "vertical-timeline",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/vertical-timeline/src",
+  "projectType": "library",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/ui/vertical-timeline/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

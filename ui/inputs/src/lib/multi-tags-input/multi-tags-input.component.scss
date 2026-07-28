@@ -1,0 +1,44 @@
+.multi-tags-input-wrapper {
+  position: relative;
+}
+
+.clear-tags-btn {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  color: var(--p-surface-400);
+}
+
+.p-chip {
+  font-size: x-small !important;
+}
+
+.p-autocomplete-input-multiple {
+  display: flex;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  white-space: nowrap;
+  align-items: center;
+  height: 100%;
+  min-height: 2.6rem !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #9ca3af #f1f5f9 !important;
+  padding-right: 2rem !important;
+}
+
+.p-autocomplete-input-multiple input {
+  caret-color: black !important;
+  color: black !important;
+  min-width: 100px !important;
+  flex-shrink: 0 !important;
+}
+
+.app-dark .p-autocomplete-input-multiple input {
+  caret-color: white !important;
+  color: white !important;
+}

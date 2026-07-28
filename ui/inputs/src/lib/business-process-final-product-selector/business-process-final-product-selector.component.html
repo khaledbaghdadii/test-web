@@ -1,0 +1,23 @@
+<mxevolve-final-product-dropdown-input
+  [style.display]="dataReady ? 'flex' : 'none'"
+  [projectId]="projectId"
+  [branchFilter]="originBranchName"
+  [labelMode]="finalProductDropdownLabelMode"
+  [validationLevel]="[businessProcessQualityLevel]"
+  (selectedFinalProductChange)="handleSelectedFinalProduct($event)"
+  (dataReadyChange)="handleDataReadinessChange($event)"
+  [id]="finalProductSelectionFormControlName"
+  [attr.aria-describedby]="finalProductSelectionFormControlName + '-help'"
+  [dropdownDefaultSelectionMode]="DropdownDefaultSelectionMode.CUSTOM"
+  [customFinalProductId]="customFinalProductId"
+  [repositoryId]="repositoryId"
+></mxevolve-final-product-dropdown-input>
+<p-select
+  [style.display]="dataReady ? 'none' : 'flex'"
+  [attr.aria-describedby]="finalProductSelectionFormControlName + '-help'"
+  [showClear]="true"
+  placeholder="Select a Final Product"
+  styleClass="w-full"
+  [loading]="true"
+  [id]="finalProductSelectionFormControlName"
+></p-select>

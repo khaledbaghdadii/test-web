@@ -1,0 +1,17 @@
+{
+  "name": "ui-collapsible-message",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/ui/collapsible-message/src",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/ui/collapsible-message/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

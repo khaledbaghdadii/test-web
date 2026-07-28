@@ -1,0 +1,10 @@
+//UI/UX Customization
+p-splitbutton.w-full-splitbutton {
+  .p-splitbutton {
+    @apply w-full;
+    
+    .p-splitbutton-button.p-button {
+      @apply w-full;
+    }
+  }
+}

@@ -1,0 +1,55 @@
+<div #quillEditorContainer class="quill-editor-container">
+  <div #quillEditorToolbar class="quill-editor-toolbar">
+    <span class="ql-formats">
+      <select class="ql-header">
+        <option value="1">Heading</option>
+        <option value="2">Subheading</option>
+        <option selected>Normal</option>
+      </select>
+    </span>
+    <span class="ql-formats">
+      <button class="ql-bold" aria-label="Bold" type="button"></button>
+      <button class="ql-italic" aria-label="Italic" type="button"></button>
+      <button
+        class="ql-underline"
+        aria-label="Underline"
+        type="button"
+      ></button>
+    </span>
+    <span class="ql-formats">
+      <button class="ql-link" aria-label="Insert Link" type="button"></button>
+    </span>
+    <span class="ql-formats">
+      <button
+        class="ql-clean"
+        aria-label="Remove Styles"
+        type="button"
+      ></button>
+    </span>
+  </div>
+  <div
+    #quillEditorContent
+    [ngClass]="['quill-editor-content']"
+    (click)="quill.focus()"
+  ></div>
+</div>
+<div class="flex flex-row m-1 items-center">
+  @if (charLimitReached) {
+  <div
+    class="col-span-4 flex-col text-red-500 ml-2"
+    data-test-id="charLimitReached"
+  >
+    Character Limit Reached!
+  </div>
+  }
+</div>
+<div class="flex flex-row m-1 items-center">
+  @if (lineLimitWarningVisible) {
+  <div
+    class="col-span-4 flex-col text-red-500 ml-2"
+    data-test-id="lineLimitReached"
+  >
+    Line Limit Reached!
+  </div>
+  }
+</div>

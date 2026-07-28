@@ -1,0 +1,67 @@
+<p-select
+  #selectRef
+  [inputId]="inputId()"
+  appendTo="body"
+  [size]="mergedConfig().size"
+  [showClear]="mergedConfig().showClear"
+  [filter]="!mergedConfig().lazyLoad && mergedConfig().filter"
+  [ngModel]="stateProvider().selectedItem()"
+  (ngModelChange)="stateProvider().selectedItem.set($event)"
+  [options]="stateProvider().dropdownOptions()"
+  optionLabel="label"
+  optionValue="value"
+  [loading]="stateProvider().loading()"
+  [loadingIcon]="'pi pi-spinner pi-spin'"
+  [virtualScroll]="mergedConfig().lazyLoad || mergedConfig().virtualScroll"
+  [virtualScrollItemSize]="mergedConfig().virtualScrollItemSize"
+  [lazy]="mergedConfig().lazyLoad"
+  (onLazyLoad)="onScroll($event)"
+  [scrollHeight]="scrollHeight()"
+  [virtualScrollOptions]="
+    mergedConfig().lazyLoad
+      ? {
+          autoSize: false,
+          step: mergedConfig().virtualScrollStep
+        }
+      : undefined
+  "
+  (onBlur)="onTouched()"
+  (onShow)="onPanelShow()"
+  class="w-full"
+  [disabled]="mergedConfig().disabled"
+  (onChange)="onItemSelected($event.value)"
+  (onClear)="onClear()"
+  [placeholder]="mergedConfig().placeholder"
+  [filterPlaceholder]="mergedConfig().filterPlaceholder"
+  (onFilter)="onFilter($event.filter)"
+>
+  @if (mergedConfig().lazyLoad) {
+  <ng-template pTemplate="header">
+    <p-iconfield class="p-fluid w-full">
+      <p-inputicon class="pi pi-search" />
+      <input
+        type="text"
+        [ngModel]="stateProvider().searchKey()"
+        pInputText
+        placeholder="Search"
+        (ngModelChange)="onFilter($event)"
+        (click)="$event.stopPropagation()"
+        class="w-full"
+      />
+      @if (stateProvider().searchKey()) {
+      <p-inputicon
+        class="pi pi-times cursor-pointer"
+        (click)="onFilterCleared($event)"
+        (keydown)="onFilterCleared($event)"
+      ></p-inputicon>
+      }
+    </p-iconfield>
+  </ng-template>
+  }
+
+  <ng-template let-option pTemplate="item">
+    <span [pTooltip]="option.tooltip" tooltipPosition="right">
+      {{ option.label }}
+    </span>
+  </ng-template>
+</p-select>

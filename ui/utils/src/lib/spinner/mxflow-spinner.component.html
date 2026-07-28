@@ -1,0 +1,20 @@
+<div
+  class="spinner-parent"
+  [className]="styleClass"
+  [class.full-height]="fullHeight"
+  [class.h-full]="fullHeight"
+>
+  @if (isLoading) {
+  <div class="spinner-overlay">
+    <p-progressSpinner styleClass="w-12 h-12"></p-progressSpinner>
+  </div>
+  }
+  <div
+    [className]="styleClass"
+    [class.spinner-content]="isLoading"
+    [class.full-height]="fullHeight"
+    [class.h-full]="fullHeight"
+  >
+    <ng-content></ng-content>
+  </div>
+</div>

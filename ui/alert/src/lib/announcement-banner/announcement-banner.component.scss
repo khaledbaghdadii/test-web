@@ -1,0 +1,27 @@
+.announcement-content {
+  font-family: sans-serif;
+  background-color: #000047;
+  color: #fff;
+  word-break: break-word;
+  display: flex;
+  justify-content: center;
+}
+
+.announcement-content-dark:where([class~="app-dark"], [class~="app-dark"] *
+)
+{
+  --tw-bg-opacity: 1;
+  background-color: #3B82F629;
+}
+
+.announcement-content h1 {
+  font-size: 2rem;
+}
+
+.announcement-content h2 {
+  font-size: 1.5rem;
+}
+
+.announcement-content a {
+  text-decoration: underline;
+}

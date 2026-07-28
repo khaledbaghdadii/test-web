@@ -1,0 +1,34 @@
+<p-card
+  [styleClass]="
+    (isClickable
+      ? 'cursor-pointer hover:shadow-xl dark:hover:shadow-surface-950 hover:shadow-surface-250 duration-150 '
+      : '') + (selected ? 'ring-2 ring-primary' : '')
+  "
+  (click)="onClick()"
+>
+  @if (!loading) { @if (!error) {
+  <div class="flex justify-content-between justify-between align-middle">
+    @if (value) {
+    <h3 class="text-xl text-primary font-bold">{{ value }}</h3>
+    } @if (tooltip) {
+    <fa-icon [icon]="infoIcon" class="text-xl" [pTooltip]="tooltip"></fa-icon>
+    }
+  </div>
+  } @if (description) {
+  <p class="font-medium">{{ description }}</p>
+  @if (error) {
+  <div class="pt-2">
+    <mxflow-error-alert
+      [closeable]="false"
+      [errorMessage]="error"
+    ></mxflow-error-alert>
+  </div>
+  } } } @else {
+  <div class="mt-1">
+    <p-skeleton width="30%"></p-skeleton>
+  </div>
+  <div class="mt-2 mb-1">
+    <p-skeleton width="90%"></p-skeleton>
+  </div>
+  }
+</p-card>

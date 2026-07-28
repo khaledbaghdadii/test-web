@@ -1,0 +1,46 @@
+@if (!isVertical()) { @for (item of (listOfItems() ?? []) | slice : 0 :
+nbOfItemsToShow(); track $index) {
+<p-tag class="mr-1">
+  @if (getItemRouterLink()) {
+  <a
+    class="hover:underline"
+    [routerLink]="getItemRouterLink()!(item)"
+    (click)="$event.stopPropagation()"
+    >{{ item }}</a
+  >
+  } @else {
+  {{ item }}
+  }
+</p-tag>
+} } @if (isVertical()) { @for (item of (listOfItems() ?? []) | slice : 0 :
+nbOfItemsToShow(); track $index) {
+<div class="mb-1">
+  <p-tag>
+    @if (getItemRouterLink()) {
+    <a
+      class="hover:underline"
+      [routerLink]="getItemRouterLink()!(item)"
+      (click)="$event.stopPropagation()"
+      >{{ item }}</a
+    >
+    } @else {
+    {{ item }}
+    }
+  </p-tag>
+</div>
+} } @if (listOfItems()?.length; as nbOfItems) {
+<span class="show-more-less">
+  @if (nbOfItems > nbOfItemsToShow()) {
+  <span (click)="showAllItems($event)">
+    <span class="show-more-less-text"> Show More </span>
+    <span class="show-more-less-text">
+      {{ text() }}
+    </span>
+  </span>
+  } @if (nbOfItemsToShow() > defaultNbOfItemsToShow()) {
+  <span (click)="showLessItems($event)" class="show-more-less-text">
+    Show Less
+  </span>
+  }
+</span>
+}

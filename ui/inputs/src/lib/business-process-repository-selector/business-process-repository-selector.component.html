@@ -1,0 +1,29 @@
+@if(options$ | async; as optionFields) {
+<div>
+  <p-select
+    [attr.aria-describedby]="repositoryIdFormControlName + '-help'"
+    [options]="optionFields"
+    [showClear]="true"
+    (onChange)="repositoryChanged.emit()"
+    appendTo="body"
+    [formControl]="repositoryIdFormControl"
+    placeholder="Select Repository"
+    styleClass="w-full"
+    optionLabel="name"
+    optionValue="value"
+    [id]="repositoryIdFormControlName"
+  ></p-select>
+</div>
+} @else {
+<div>
+  <p-select
+    [attr.aria-describedby]="repositoryIdFormControlName + '-help'"
+    [showClear]="true"
+    appendTo="body"
+    placeholder="Select Repository"
+    styleClass="w-full"
+    [loading]="true"
+    [id]="repositoryIdFormControlName"
+  ></p-select>
+</div>
+}

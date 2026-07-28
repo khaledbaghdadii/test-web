@@ -1,0 +1,12 @@
+<p-panel>
+  <ng-template #header>
+    <h3 class="text-lg font-semibold flex mr-2">
+      <span>Step Result:</span>
+      <span class="flex ml-2 content-center gap-2">
+        <ng-content select="[result]"></ng-content>
+      </span>
+    </h3>
+  </ng-template>
+
+  <ng-content select="[additional-info]"></ng-content>
+</p-panel>

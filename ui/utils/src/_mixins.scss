@@ -1,0 +1,11 @@
+@mixin table {
+  p-skeleton {
+    height: 1.5rem;
+    display: block;
+  }
+  th,
+  td {
+    max-width: 16rem;
+    min-width: 16rem;
+  }
+}

@@ -1,0 +1,51 @@
+<div
+  class="bg-surface-0 dark:bg-surface-950 h-screen px-6 py-20 md:px-12 lg:px-20"
+>
+  <div class="mt-20">
+    <div
+      style="
+        background: radial-gradient(
+          50% 109137.91% at 50% 50%,
+          rgba(233, 30, 99, 0.1) 0%,
+          rgba(254, 244, 247, 0) 100%
+        );
+      "
+      class="text-center"
+    >
+      <span class="bg-white text-pink-500 font-bold text-2xl inline-block px-4"
+        >403</span
+      >
+    </div>
+    <div
+      class="mt-4 mb-8 font-bold text-6xl text-surface-900 dark:text-surface-0 text-center"
+    >
+      Unauthorized
+    </div>
+    <p
+      class="text-surface-700 dark:text-surface-100 text-3xl mt-0 mb-12 text-center"
+    >
+      Sorry, you are not authorized to access this page.
+    </p>
+    <div class="text-center">
+      <button
+        type="button"
+        pButton
+        pRipple
+        class="p-button-text mr-2"
+        label="Go Back"
+        icon="pi pi-arrow-left"
+        (click)="navigateBack()"
+        data-testid="go-back-button"
+      ></button>
+      <button
+        type="button"
+        pButton
+        pRipple
+        label="Home"
+        icon="pi pi-home"
+        (click)="navigateHome()"
+        data-testid="navigate-home-button"
+      ></button>
+    </div>
+  </div>
+</div>

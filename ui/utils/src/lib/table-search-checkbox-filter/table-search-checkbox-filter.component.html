@@ -1,0 +1,15 @@
+<p-multiSelect
+  [(ngModel)]="selected"
+  [options]="options"
+  [showToggleAll]="false"
+  (onChange)="onProjectSelected()"
+  optionLabel="label"
+  optionValue="value"
+  [filter]="true"
+  [placeholder]="placeholder"
+  [showClear]="true"
+  (onClear)="onClear()"
+  class="min-w-full max-w-80"
+  styleClass="min-w-full max-w-80"
+>
+</p-multiSelect>

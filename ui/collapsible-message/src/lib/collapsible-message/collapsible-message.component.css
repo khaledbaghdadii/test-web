@@ -1,0 +1,12 @@
+.formatted-message {
+  white-space: break-spaces;
+}
+
+.limit-text-height {
+  height: 1.5715rem;
+  overflow: hidden;
+}
+
+.hide {
+  display: none;
+}

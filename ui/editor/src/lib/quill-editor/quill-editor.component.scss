@@ -1,0 +1,132 @@
+$minEditorHeight: 20rem;
+$maxEditorHeight: 60vh;
+$borderColor: #dee2e6;
+
+.quill-editor-container .quill-editor-toolbar {
+  background: #f8f9fa;
+  border-top-right-radius: 6px;
+  border-top-left-radius: 6px;
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow {
+  border: 1px solid $borderColor;
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-stroke {
+  stroke: var(--text-color-secondary);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-fill {
+  fill: var(--text-color-secondary);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker .ql-picker-label {
+  border: 0 none;
+  color: var(--text-color-secondary);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker .ql-picker-label:hover {
+  color: var(--text-color);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker .ql-picker-label:hover .ql-stroke {
+  stroke: var(--text-color);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker .ql-picker-label:hover .ql-fill {
+  fill: var(--text-color);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label {
+  color: var(--text-color);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label .ql-stroke {
+  stroke: var(--text-color);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label .ql-fill {
+  fill: #574949;
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  border: 0 none;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  padding: 0.75rem 0;
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options .ql-picker-item {
+  color: var(--text-color);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options .ql-picker-item:hover {
+  color: var(--text-color);
+}
+
+.quill-editor-container .quill-editor-toolbar.ql-snow .ql-picker.ql-expanded:not(.ql-icon-picker) .ql-picker-item {
+  padding: 0.75rem 1.25rem;
+}
+
+.quill-editor-container .quill-editor-content .ql-editor {
+  min-height: $minEditorHeight;
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button:hover,
+.quill-editor-container .ql-snow.ql-toolbar button:focus {
+  color: var(--text-color);
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button:hover .ql-stroke,
+.quill-editor-container .ql-snow.ql-toolbar button:focus .ql-stroke {
+  stroke: var(--text-color);
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button:hover .ql-fill,
+.quill-editor-container .ql-snow.ql-toolbar button:focus .ql-fill {
+  fill: var(--text-color);
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active,
+.quill-editor-container .ql-snow.ql-toolbar .ql-picker-label.ql-active,
+.quill-editor-container .ql-snow.ql-toolbar .ql-picker-item.ql-selected {
+  color: var(--primary-color);
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active .ql-stroke,
+.quill-editor-container .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke,
+.quill-editor-container .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-stroke {
+  stroke: var(--primary-color);
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active .ql-fill,
+.quill-editor-container .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-fill,
+.quill-editor-container .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-fill {
+  fill: var(--primary-color);
+}
+
+.quill-editor-container .ql-snow.ql-toolbar button.ql-active .ql-picker-label,
+.quill-editor-container .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-picker-label,
+.quill-editor-container .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-picker-label {
+  color: var(--primary-color);
+}
+
+.quill-editor-container .quill-editor-content.readonly {
+  color: var(--text-color);
+  border-radius: 6px;
+}
+
+.quill-editor-container .quill-editor-content.scrollable,
+.quill-editor-container .quill-editor-content.scrollable .ql-editor {
+  max-height: $maxEditorHeight;
+  overflow-y: scroll;
+}
+
+.quill-editor-container .quill-editor-content {
+  min-height: $minEditorHeight;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 6px;
+  border: 1px solid $borderColor;
+}
+
+

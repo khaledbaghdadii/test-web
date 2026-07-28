@@ -1,0 +1,11 @@
+.show-more-less {
+  cursor: pointer;
+}
+
+.show-more-less-text {
+  display: inline-block;
+  transform: translateY(0.4em);
+  font-size: smaller;
+  color: var(--blue-400);
+  margin: 0px 0.1em;
+}

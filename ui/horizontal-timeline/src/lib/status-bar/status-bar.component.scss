@@ -1,0 +1,112 @@
+@import "libs/ui/utils/src/global-variables";
+
+a {
+  color: unset;
+}
+
+.stage-selected {
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.stage:hover:not(.stage-disabled) {
+  color: $mxevolve-primary !important;
+  cursor: pointer;
+}
+
+.stage-selected h4 {
+  color: unset;
+}
+
+.stage-disabled,
+.stage-disabled h4 {
+  color: rgb(192, 192, 192);
+  cursor: not-allowed !important;
+}
+
+.stage-description {
+  width: max-content;
+}
+
+.execution-dashboard-row {
+  display: flex;
+  justify-content: stretch;
+  margin-top: 30px;
+}
+
+.timeline-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  margin-top: 8px;
+}
+
+nz-timeline {
+  flex: 1;
+}
+
+nz-timeline h4 {
+  margin-bottom: 0;
+}
+
+.stage-dot {
+  font-size: 24px;
+}
+
+.circle-border {
+  border: 2.3px solid;
+  border-radius: 50%;
+  font-size: 24px;
+}
+
+.failed-stage-title {
+  color: $mxevolve-error;
+}
+
+.timeline {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: row;
+  margin-top: 0.5rem;
+}
+
+.timeline-item {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  flex: 1;
+}
+
+.timeline-item:last-child {
+  flex: 0.5 !important;
+}
+
+.timeline-item:first-child {
+  flex: 0.5 !important;
+}
+
+.timeline-item-icon {
+  font-size: 26px;
+}
+
+.timeline-item-line {
+  height: 2px;
+  width: 100%;
+}
+
+.timeline-item-separator {
+  flex: 0;
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+}
+
+.timeline-item-content {
+  text-align: center;
+  padding: 0.5rem 0 0 0;
+}
+
+.background-color-unset {
+  background-color: unset;
+}

@@ -1,0 +1,12 @@
+<p>
+  {{
+    isExpanded || text.length <= maxLength
+      ? text
+      : (text | slice : 0 : maxLength) + "..."
+  }}
+  @if (text.length > maxLength) {
+  <a class="text-blue-400 cursor-pointer text-sm" (click)="toggle($event)">
+    {{ isExpanded ? "See Less" : "See More" }}
+  </a>
+  }
+</p>

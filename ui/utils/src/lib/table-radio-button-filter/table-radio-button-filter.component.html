@@ -1,0 +1,24 @@
+@for (option of options; track option) {
+<div class="field-checkbox">
+  <p-radioButton
+    name="radio-button-filter"
+    [inputId]="option.value + '-option'"
+    [value]="option.value"
+    (onClick)="onSelect()"
+    [(ngModel)]="selected"
+  >
+  </p-radioButton>
+  <label [for]="option.value + '-option'" class="ml-2">{{ option.text }}</label>
+</div>
+}
+<p-divider></p-divider>
+<div class="flex justify-end">
+  <div class="flex w-6/12">
+    <p-button
+      label="Clear"
+      [outlined]="true"
+      class="w-full"
+      (onClick)="clearSelectedStatuses()"
+    ></p-button>
+  </div>
+</div>

@@ -1,0 +1,16 @@
+{
+  "name": "sanitized-editor",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/sanitized-editor/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/ui/sanitized-editor/jest.config.ts"
+      }
+    }
+  }
+}

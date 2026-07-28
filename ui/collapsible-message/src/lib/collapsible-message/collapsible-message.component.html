@@ -1,0 +1,12 @@
+<div [ngClass]="{ 'limit-text-height': isCollapsed }">
+  <span class="formatted-message">{{ message }}</span>
+  <ng-content></ng-content>
+</div>
+<a
+  class="text-blue-400 cursor-pointer"
+  type="button"
+  (click)="toggleExpansion()"
+  [ngClass]="{ hide: !showReadMore() }"
+>
+  {{ isCollapsed ? "Show more..." : "Hide" }}
+</a>

@@ -1,0 +1,50 @@
+/* --------------------------------------------------------------------------------------------------------------------
+
+******************************************************************
+* Border Customization:
+* Add stroke to the tables 1px width with 8px radius for all 4 corners.
+* With a stroke of 2px between header and content cell
+******************************************************************/
+
+.p-datatable-thead > tr > th {
+  border-width: var(--p-datatable-header-cell-border-width);
+}
+
+.p-datatable-table {
+  border-width: 1px;
+  border-radius: 8px;
+}
+
+.p-datatable-table > thead > tr:first-child > th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.p-datatable-table > thead > tr:first-child > th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.p-datatable-table > tbody > tr:last-child > td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+.p-datatable-table > tbody > tr:last-child > td:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+.p-datatable-table > tbody > tr:last-child > td {
+  border-bottom: none; // Remove bottom border from the last row
+}
+
+/* --------------------------------------------------------------------------------------------------------------------
+
+******************************************************************
+* Table Header Customization
+* Align text in header titles to top
+******************************************************************/
+
+// TODO: When root font size is set to 16px, remove the below code to set datatable header font size to 16px (default)
+.p-datatable-thead > tr > th {
+  font-size: 1.125rem;
+  @apply align-text-top;
+  @apply truncate;
+}

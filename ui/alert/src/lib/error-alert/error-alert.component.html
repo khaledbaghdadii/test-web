@@ -1,0 +1,26 @@
+<p-message severity="error" [closable]="closeable" (close)="afterClose()">
+  <div class="flex flex-col gap-2">
+    <div class="flex items-center justify-between">
+      <div class="font-medium">{{ errorMessage }}</div>
+      @if (errorDetails) {
+      <p-button
+        [text]="true"
+        variant="text"
+        severity="danger"
+        size="small"
+        [icon]="isExpanded ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"
+        [label]="isExpanded ? 'Hide failure details' : 'View failure details'"
+        (onClick)="toggleDetails()"
+        class="!p-0 text-sm ml-2 flex-shrink-0 font-light"
+      />
+      }
+    </div>
+    @if (isExpanded && errorDetails) {
+    <div
+      class="font-medium whitespace-pre-wrap break-words max-h-48 overflow-y-auto pl-2"
+    >
+      {{ errorDetails }}
+    </div>
+    }
+  </div>
+</p-message>

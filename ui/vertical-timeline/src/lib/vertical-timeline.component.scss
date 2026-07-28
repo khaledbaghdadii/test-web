@@ -1,0 +1,28 @@
+@import 'libs/ui/utils/src/global-variables';
+
+.custom-marker {
+    display: flex;
+    width: 1rem;
+    height: 1rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    align-self: flex-start;
+
+}
+
+.stage-passed {
+  border: 2px solid $mxevolve-success;
+}
+
+.stage-failed {
+  border: 2px solid $mxevolve-error;
+}
+
+.stage-running {
+  border: 2px solid $mxevolve-primary;
+}
+
+::ng-deep .p-timeline-event-opposite {
+  display: none;
+}

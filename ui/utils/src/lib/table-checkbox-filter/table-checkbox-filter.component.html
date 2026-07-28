@@ -1,0 +1,31 @@
+@if (isLoading) {
+<div>
+  <p-skeleton></p-skeleton>
+</div>
+} @if (!isLoading) {
+<div>
+  @for (option of options; track option) {
+  <div
+    class="field-checkbox mt-1 {{ limitWidth ? 'max-w-64 truncate' : '' }}"
+    [pTooltip]="limitWidth ? option.text : undefined"
+    [tooltipPosition]="limitWidth ? 'top' : undefined"
+  >
+    <p-checkbox
+      name="group"
+      [value]="option.value"
+      (onChange)="onSelect()"
+      [(ngModel)]="selected"
+    >
+    </p-checkbox>
+    <label for="ny" class="ml-2">{{ option.text }}</label>
+  </div>
+  }
+  <div class="flex justify-end mt-4">
+    <p-button
+      label="Clear"
+      [outlined]="true"
+      (onClick)="clearSelectedStatuses()"
+    ></p-button>
+  </div>
+</div>
+}

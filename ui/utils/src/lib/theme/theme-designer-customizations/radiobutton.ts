@@ -1,0 +1,50 @@
+import type { RadioButtonDesignTokens } from "@primeuix/themes/types/radiobutton";
+
+export default {
+  root: {
+    width: "1.5rem",
+    height: "1.5rem",
+    background: "{form.field.background}",
+    checkedBackground: "{primary.color}",
+    checkedHoverBackground: "{primary.hover.color}",
+    disabledBackground: "{form.field.disabled.background}",
+    filledBackground: "{form.field.filled.background}",
+    borderColor: "{form.field.border.color}",
+    hoverBorderColor: "{form.field.hover.border.color}",
+    focusBorderColor: "{form.field.border.color}",
+    checkedBorderColor: "{primary.color}",
+    checkedHoverBorderColor: "{primary.hover.color}",
+    checkedFocusBorderColor: "{primary.color}",
+    checkedDisabledBorderColor: "{form.field.border.color}",
+    invalidBorderColor: "{form.field.invalid.border.color}",
+    shadow: "{form.field.shadow}",
+    focusRing: {
+      width: "{focus.ring.width}",
+      style: "{focus.ring.style}",
+      color: "{focus.ring.color}",
+      offset: "{focus.ring.offset}",
+      shadow: "{focus.ring.shadow}",
+    },
+    transitionDuration: "{form.field.transition.duration}",
+    sm: {
+      width: "1.0rem",
+      height: "1.0rem",
+    },
+    lg: {
+      width: "1.5rem",
+      height: "1.5rem",
+    },
+  },
+  icon: {
+    size: "1.0rem",
+    checkedColor: "{primary.contrast.color}",
+    checkedHoverColor: "{primary.contrast.color}",
+    disabledColor: "{form.field.disabled.color}",
+    sm: {
+      size: "1.0rem",
+    },
+    lg: {
+      size: "1.5rem",
+    },
+  },
+} satisfies RadioButtonDesignTokens;

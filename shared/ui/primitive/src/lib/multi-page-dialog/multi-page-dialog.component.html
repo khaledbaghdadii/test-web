@@ -1,0 +1,30 @@
+<p-dialog
+  [(visible)]="visible"
+  [class]="dialogClass()"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="false"
+  (visibleChange)="onVisibleChange($event)"
+>
+  <ng-template pTemplate="header">
+    <div class="flex flex-row items-center gap-x-[8px]">
+      @if (canGoBack()) {
+      <button
+        type="button"
+        class="flex items-center cursor-pointer bg-transparent border-none p-0"
+        aria-label="Back"
+        (click)="back()"
+      >
+        <mxevolve-icon name="chevron_left" size="md" />
+      </button>
+      }
+      <span class="font-semibold text-lg">{{
+        header() ?? activePage()?.title()
+      }}</span>
+    </div>
+  </ng-template>
+
+  @if (activePage(); as page) {
+  <ng-container [ngTemplateOutlet]="page.tpl" />
+  }
+</p-dialog>

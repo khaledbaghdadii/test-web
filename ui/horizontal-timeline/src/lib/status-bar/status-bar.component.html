@@ -1,0 +1,86 @@
+@if (!isLoading) {
+<div class="timeline">
+  @for (stage of stages; track stage; let i = $index) {
+  <div
+    class="timeline-item"
+    (click)="selectStage(stage)"
+    [ngClass]="getStageClasses(stage)"
+    [pTooltip]="stage.startDate ? startEndDate : undefined"
+    tooltipPosition="top"
+  >
+    <div class="timeline-item-separator">
+      <div
+        class="timeline-item-line bg-surface-500"
+        [ngClass]="{ 'background-color-unset': i === 0 }"
+      ></div>
+      <div
+        [attr.data-testid]="
+          stage.status === 'PASSED'
+            ? 'status_bar_passed'
+            : 'status_bar_not_passed'
+        "
+        class="timeline-item-icon"
+      >
+        <mxevolve-status-icon [status]="stage.status"></mxevolve-status-icon>
+      </div>
+      <div
+        class="timeline-item-line bg-surface-500"
+        [ngClass]="{ 'background-color-unset': i === stages.length - 1 }"
+      ></div>
+    </div>
+    <div
+      class="timeline-item-content"
+      [ngClass]="{ 'failed-stage-title': isStageFailed(stage.status) }"
+    >
+      {{ stage.name }}
+    </div>
+    <ng-template #startEndDate>
+      @if (stage.startDate) {
+      <span>
+        <em>Started at: </em>{{ stage.startDate | date : "medium" }}<br />
+      </span>
+      } @if (stage.endDate) {
+      <span> <em>Ended at: </em>{{ stage.endDate | date : "medium" }} </span>
+      }
+    </ng-template>
+  </div>
+  }
+</div>
+} @else {
+<div class="flex flex-col">
+  <div class="timeline">
+    @for (stage of [].constructor(numberOfStages); track stage; let i = $index)
+    {
+    <div class="timeline-item">
+      <div class="timeline-item-separator">
+        <div
+          class="timeline-item-line"
+          [ngClass]="{ 'background-color-unset': i === 0 }"
+        ></div>
+        <div class="timeline-item-icon">
+          <i class="text-3xl pi pi-spin pi-spinner"></i>
+        </div>
+        <div
+          class="timeline-item-line"
+          [ngClass]="{ 'background-color-unset': i === numberOfStages - 1 }"
+        ></div>
+      </div>
+    </div>
+    }
+  </div>
+  <div class="flex flex-row grow">
+    @for (stage of [].constructor(numberOfStages); track stage; let i = $index)
+    {
+    <div class="timeline-item">
+      <div class="timeline-item-separator">
+        <div class="timeline-item-line background-color-unset"></div>
+        <div class="mt-2">
+          <p-skeleton width="40px" height="10px"></p-skeleton>
+        </div>
+        <div class="timeline-item-line background-color-unset"></div>
+      </div>
+    </div>
+    }
+  </div>
+</div>
+}

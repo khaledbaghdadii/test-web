@@ -1,0 +1,27 @@
+@if (options$ | async; as optionFields) {
+<div>
+  <p-select
+    [attr.aria-describedby]="environmentDefinitionFormControlName + '-help'"
+    [options]="optionFields"
+    [showClear]="true"
+    [formControl]="environmentDefinitionFormControl"
+    placeholder="Select Environment Definition"
+    styleClass="w-full"
+    optionLabel="name"
+    optionValue="value"
+    [id]="environmentDefinitionFormControlName"
+  ></p-select>
+</div>
+} @else {
+<div>
+  <p-select
+    [attr.aria-describedby]="environmentDefinitionFormControlName + '-help'"
+    [showClear]="true"
+    placeholder="Select Environment Definition"
+    styleClass="w-full"
+    [loading]="true"
+    [id]="environmentDefinitionFormControlName"
+  ></p-select>
+</div>
+
+}

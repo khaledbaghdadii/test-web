@@ -1,0 +1,14 @@
+<p-datePicker
+  (onSelect)="selectRange()"
+  [(ngModel)]="selectedRange"
+  selectionMode="range"
+  [readonlyInput]="true"
+  [inline]="true"
+>
+</p-datePicker>
+<p-divider></p-divider>
+<div class="flex justify-start gap-1">
+  <p-button label="Today" (onClick)="setDateToToday()"></p-button>
+  <p-button label="Past Week" (onClick)="setDateToPastWeek()"></p-button>
+  <p-button label="Clear" [outlined]="true" (onClick)="reset()"></p-button>
+</div>

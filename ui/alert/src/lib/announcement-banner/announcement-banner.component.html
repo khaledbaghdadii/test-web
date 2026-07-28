@@ -1,0 +1,13 @@
+@if (htmlAnnouncementHTML) {
+<div class="p-5 announcement-content announcement-content-dark">
+  @if (showWarning) {
+  <div class="flex items-center">
+    <i class="pi pi-exclamation-triangle text-yellow-500 mr-7 text-5xl"></i>
+    <div class="flex-1" [innerHTML]="htmlAnnouncementHTML"></div>
+    <i class="pi pi-exclamation-triangle text-yellow-500 ml-7 text-5xl"></i>
+  </div>
+  } @if (!showWarning) {
+  <div [innerHTML]="htmlAnnouncementHTML"></div>
+  }
+</div>
+}

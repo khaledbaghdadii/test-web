@@ -1,0 +1,32 @@
+<div
+  class="bg-surface-0 dark:bg-surface-950 h-screen px-6 py-20 md:px-12 lg:px-20"
+>
+  <div class="mt-20">
+    <div
+      class="mt-4 mb-8 font-bold text-6xl text-surface-900 dark:text-surface-0 text-center"
+    >
+      Page Under Construction
+    </div>
+    <div class="text-center">
+      <button
+        type="button"
+        pButton
+        pRipple
+        class="p-button-text mr-2"
+        label="Go Back"
+        icon="pi pi-arrow-left"
+        (click)="navigateBack()"
+        data-testid="go-back-button"
+      ></button>
+      <button
+        type="button"
+        pButton
+        pRipple
+        label="Home"
+        icon="pi pi-home"
+        (click)="navigateHome()"
+        data-testid="navigate-home-button"
+      ></button>
+    </div>
+  </div>
+</div>

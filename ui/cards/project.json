@@ -1,0 +1,17 @@
+{
+  "name": "cards",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/cards/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/ui/cards/jest.config.ts"
+      }
+    }
+  }
+}

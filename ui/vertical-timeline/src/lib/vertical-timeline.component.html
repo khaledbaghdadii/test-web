@@ -1,0 +1,11 @@
+<p-timeline [value]="stages">
+  <ng-template pTemplate="marker" let-stage>
+    <span
+      class="custom-marker"
+      [ngClass]="getStageSeparatorStyleClass(stage.status)"
+    ></span>
+  </ng-template>
+  <ng-template pTemplate="content" let-stage>
+    {{ stage.name }}
+  </ng-template>
+</p-timeline>

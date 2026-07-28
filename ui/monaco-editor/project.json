@@ -1,0 +1,16 @@
+{
+  "name": "ui-monaco-editor",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/monaco-editor/src",
+  "prefix": "mxevolve",
+  "projectType": "library",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/ui/monaco-editor/jest.config.ts"
+      }
+    }
+  }
+}

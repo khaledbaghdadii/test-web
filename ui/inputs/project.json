@@ -1,0 +1,16 @@
+{
+  "name": "ui-inputs",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/inputs/src",
+  "projectType": "library",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/ui/inputs/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

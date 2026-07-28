@@ -1,0 +1,57 @@
+@if (loading()) {
+<div class="flex flex-col gap-2 p-3" data-testid="git-file-tree-skeleton">
+  <p-skeleton width="70%" height="1.25rem" />
+  <p-skeleton width="85%" height="1.25rem" />
+  <p-skeleton width="60%" height="1.25rem" />
+  <p-skeleton width="78%" height="1.25rem" />
+  <p-skeleton width="66%" height="1.25rem" />
+</div>
+} @else {
+<p-tree
+  [value]="treeNodes()"
+  [selectionMode]="selectionMode()"
+  [(selection)]="selection"
+  (onNodeSelect)="onNodeSelect($event)"
+  (onNodeExpand)="onNodeExpand($event)"
+  (onNodeCollapse)="onNodeCollapse($event)"
+  class="w-full"
+>
+  <ng-template pTemplate="togglericon" let-expanded let-loading="loading">
+    @if (loading) {
+    <i
+      class="pi pi-spin pi-spinner"
+      data-testid="directory-toggler-loading-indicator"
+    ></i>
+    } @else {
+    <i
+      class="pi"
+      [class.pi-chevron-right]="!expanded"
+      [class.pi-chevron-down]="expanded"
+    ></i>
+    }
+  </ng-template>
+
+  <ng-template let-node pTemplate="default">
+    <span
+      [class]="
+        'inline-flex align-items-center justify-content-center gap-2 text-sm ' +
+        (getNodeClass(node) || '')
+      "
+    >
+      <span class="inline-flex align-items-center font-medium">{{
+        node.label
+      }}</span>
+      @if (hasVisibleStatus(node)) {
+      <p-tag
+        [value]="getStatusIndicator(node.data?.gitStatus)"
+        [severity]="getStatusSeverity(node.data?.gitStatus)"
+        [rounded]="false"
+        class="inline-flex align-items-center justify-content-center w-5 min-w-5 h-5 p-0 font-mono font-bold text-xs line-height-1 text-center"
+        [title]="getStatusLabel(node.data?.gitStatus)"
+        data-testid="git-status-badge"
+      />
+      }
+    </span>
+  </ng-template>
+</p-tree>
+}

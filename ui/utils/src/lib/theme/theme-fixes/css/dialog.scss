@@ -1,0 +1,16 @@
+.p-dialog-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.p-dialog-header {
+  @apply p-[24px] pb-[16px];
+}
+
+.p-dialog-content {
+  @apply p-[24px] pt-0;
+}
+
+.p-dialog-footer {
+  @apply p-[24px] pt-0;
+}

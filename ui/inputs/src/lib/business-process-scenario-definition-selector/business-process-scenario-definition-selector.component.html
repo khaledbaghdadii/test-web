@@ -1,0 +1,13 @@
+@if (multiValue) {
+<mxevolve-scenario-definition-multi-selector
+  [projectId]="projectId"
+  [formControl]="testScenarioFormControl"
+  [clearArchived]="clearArchived"
+/>
+} @else {
+<mxevolve-scenario-definition-single-selector
+  [projectId]="projectId"
+  [formControl]="testScenarioFormControl"
+  [clearArchived]="clearArchived"
+/>
+}

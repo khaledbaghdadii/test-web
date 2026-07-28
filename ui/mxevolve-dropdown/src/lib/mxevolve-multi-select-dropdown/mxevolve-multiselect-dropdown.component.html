@@ -1,0 +1,53 @@
+<p-multiSelect
+  #multiSelectRef
+  [inputId]="inputId()"
+  [appendTo]="mergedConfig.appendTo"
+  [showClear]="mergedConfig.showClear"
+  [filter]="false"
+  [ngModel]="stateProvider().selectedItems()"
+  (ngModelChange)="stateProvider().selectedItems.set($event)"
+  [options]="stateProvider().dropdownOptions()"
+  optionLabel="label"
+  optionValue="value"
+  [loading]="stateProvider().loading()"
+  [loadingIcon]="'pi pi-spinner pi-spin'"
+  [virtualScroll]="true"
+  (onBlur)="onTouched()"
+  class="w-full"
+  [virtualScrollItemSize]="mergedConfig.virtualScrollItemSize"
+  [virtualScrollOptions]="{
+    lazy: true,
+    step: mergedConfig.virtualScrollStep,
+    onLazyLoad: onScroll.bind(this)
+  }"
+  [disabled]="mergedConfig.disabled"
+  [selectionLimit]="mergedConfig.selectionLimit"
+  [maxSelectedLabels]="mergedConfig.maxSelectedLabels"
+  [selectedItemsLabel]="'{0} items selected'"
+  [panelStyle]="mergedConfig.panelStyle"
+  (onChange)="onItemsSelected($event.value)"
+  (onClear)="onClear()"
+  [placeholder]="mergedConfig.placeholder"
+>
+  <ng-template pTemplate="filter">
+    <p-iconfield class="p-fluid w-full">
+      <p-inputicon class="pi pi-search" />
+      <input
+        type="text"
+        [ngModel]="stateProvider().searchKey()"
+        pInputText
+        placeholder="Search"
+        (ngModelChange)="onFilter($event)"
+        (click)="$event.stopPropagation()"
+        class="w-full"
+      />
+      @if (stateProvider().searchKey()) {
+      <p-inputicon
+        class="pi pi-times cursor-pointer"
+        (click)="onFilterCleared($event)"
+        (keydown)="onFilterCleared($event)"
+      ></p-inputicon>
+      }
+    </p-iconfield>
+  </ng-template>
+</p-multiSelect>

@@ -1,0 +1,17 @@
+{
+  "name": "ui-input-provider",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "libs/ui/input-provider/src",
+  "prefix": "mxevolve",
+  "tags": ["type:legacy"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "jestConfig": "libs/ui/input-provider/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}

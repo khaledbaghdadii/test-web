@@ -1,0 +1,25 @@
+<div class="multi-tags-input-wrapper">
+  <p-autoComplete
+    #autoComp
+    [ngModel]="tags"
+    (ngModelChange)="onTagsChange($event)"
+    [multiple]="true"
+    [typeahead]="false"
+    addOnBlur="true"
+    [placeholder]="placeholder"
+    class="w-full"
+    [disabled]="disabled"
+    [showClear]="false"
+  ></p-autoComplete>
+
+  @if (tags.length > 0 && !disabled) {
+  <button
+    type="button"
+    class="clear-tags-btn"
+    (click)="clearAll()"
+    aria-label="Clear all tags"
+  >
+    <i class="pi pi-times"></i>
+  </button>
+  }
+</div>

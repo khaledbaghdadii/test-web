@@ -1,0 +1,67 @@
+<p-button icon="pi pi-plus" [text]="true" (onClick)="show()"></p-button>
+
+<p-dialog
+  header="Add User Story"
+  [(visible)]="isModalVisible"
+  [modal]="true"
+  [style]="{ width: '40vw' }"
+  (onHide)="cancel()"
+>
+  <div [formGroup]="form" class="flex flex-col gap-2 px-8">
+    <div class="flex flex-col gap-2">
+      <label for="id">
+        Enter the ID of your User Story <span class="text-red-500">*</span>
+      </label>
+      @if(isValidationEnabled && shouldValidate) {
+      <small>
+        A valid issue ID must belong to the correct Jira project, be of type
+        Story or Test Case Definition, and have a status of Ready, In Progress,
+        Merged to Master, or Done.
+      </small>
+      }
+      <input
+        pInputText
+        id="id"
+        formControlName="id"
+        type="text"
+        [ngClass]="{
+          'ng-invalid ng-dirty': isFieldInvalid('id')
+        }"
+        placeholder="Enter Story ID"
+        (input)="clearErrorMessage()"
+      />
+      @if(validationErrorMessage) {
+      <small class="text-red-500 block">{{ validationErrorMessage }}</small>
+      }
+      <ng-template
+        [ngTemplateOutlet]="errorTipTemplate"
+        [ngTemplateOutletContext]="{ $implicit: form.get('id') }"
+      ></ng-template>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Create"
+      (onClick)="addUserStoryID()"
+      [disabled]="!form.valid || validationErrorMessage"
+      [loading]="isLoading"
+    >
+    </p-button>
+    <p-button (onClick)="cancel()" [outlined]="true">Cancel</p-button>
+  </ng-template>
+</p-dialog>
+
+<ng-template #errorTipTemplate let-control>
+  <div class="h-4">
+    @if (control.invalid && (control.dirty || control.touched)) {
+    <div class="flex gap-1">
+      @if (control.hasError('required')) {
+      <small class="text-red-500 block">Field is required</small>
+      } @if (control.hasError('idAlreadyExists')) {
+      <small class="text-red-500 block">ID already exists</small>
+      }
+    </div>
+    }
+  </div>
+</ng-template>
