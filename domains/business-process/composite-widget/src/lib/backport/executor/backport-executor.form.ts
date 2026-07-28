@@ -21,6 +21,16 @@ export interface BackportExecutorFormControls {
   pullRequestTitle: FormControl<string | null>;
   pullRequestReviewers: FormControl<Reviewer[] | null>;
   notificationsRecipients: FormControl<string[] | null>;
+  /**
+   * Pre-filled by the definition and never rendered as an editable field, but
+   * held as real controls (decision D3) so eager prefill resolution can mark
+   * them invalid when they point at something that no longer exists. Previously
+   * these were read straight off `providedInputs` at submit time, so a stale id
+   * was posted with nothing to stop it.
+   */
+  repositoryId: FormControl<string | null>;
+  mergeConfigurationId: FormControl<string | null>;
+  buildAndTestInfraGroup: FormControl<string | null>;
 }
 
 export type BackportExecutorForm = FormGroup<BackportExecutorFormControls>;
@@ -67,6 +77,18 @@ export function buildBackportExecutorForm(
     ),
     notificationsRecipients: new FormControl<string[] | null>(
       providedValue<string[]>(providedInputs, "notificationsRecipients")
+    ),
+    repositoryId: new FormControl<string | null>(
+      providedValue(providedInputs, "repositoryId"),
+      requiredSelectable
+    ),
+    mergeConfigurationId: new FormControl<string | null>(
+      providedValue(providedInputs, "mergeConfigurationId"),
+      requiredSelectable
+    ),
+    buildAndTestInfraGroup: new FormControl<string | null>(
+      providedValue(providedInputs, "buildAndTestInfraGroup"),
+      requiredSelectable
     ),
   });
 }

@@ -221,7 +221,9 @@
         label="Run"
         class="col-start-3 col-span-2"
         styleClass="w-full justify-center"
-        [disabled]="form().invalid || form().pending || executing()"
+        [disabled]="
+          form().invalid || form().pending || executing() || resolvingPrefill()
+        "
         [loading]="executing()"
       />
     </div>

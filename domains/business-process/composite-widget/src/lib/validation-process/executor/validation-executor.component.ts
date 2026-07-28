@@ -8,9 +8,21 @@ import {
   output,
   signal,
 } from "@angular/core";
-import { ReactiveFormsModule, Validators } from "@angular/forms";
+import {
+  AbstractControl,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { EMPTY, combineLatest, from, of, startWith } from "rxjs";
+import {
+  EMPTY,
+  Observable,
+  combineLatest,
+  forkJoin,
+  from,
+  of,
+  startWith,
+} from "rxjs";
 import { catchError, map, switchMap } from "rxjs/operators";
 import { InputText } from "primeng/inputtext";
 import { RadioButton } from "primeng/radiobutton";
@@ -21,7 +33,14 @@ import {
   ExecuteValidationProcessRequest,
   ValidationProcessExecutorService,
 } from "@mxevolve/domains/business-process/data-access";
-import { DevelopmentService } from "@mxevolve/domains/scm/data-access";
+import {
+  BranchService,
+  DevelopmentService,
+  RepositoryService,
+} from "@mxevolve/domains/scm/data-access";
+import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
+import { FinalProductApiService } from "@mxevolve/domains/artifact/data-access";
 import {
   isValidationScopeStartCommitVisible,
   shouldShowInForm,
@@ -41,10 +60,23 @@ import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui"
 import { ScopeStartCommitInputComponent } from "../scope-start-commit-input/scope-start-commit-input.component";
 import { ValidationConfigurationParametersComponent } from "./configuration-parameters/validation-configuration-parameters.component";
 import {
+  checkPrefilledBranch,
+  checkPrefilledEntities,
+  prefilledIds,
+} from "../../shared/dead-prefill";
+import {
   ValidationExecutorForm,
   ValidationExecutorSeed,
   buildValidationExecutorForm,
 } from "./validation-executor.form";
+
+/** Legacy toast shown when a branch expected to exist is missing from the repository. */
+const BRANCH_MISSING =
+  "The branch name available in the Process Template doesn't exist in the repository. Please check the name and try again with an existing branch.";
+
+/** Legacy toast shown when a branch about to be created already exists. */
+const BRANCH_ALREADY_EXISTS =
+  "The branch name available in the Process Template already exists in the repository. Please update the Process Template with a unique name to create a new branch.";
 
 /** Feature flag gating the conditional `validationScopeStartCommitId` field. */
 const ARCHIVAL_FEATURE_FLAG = "jira-user-story-archival";
@@ -88,7 +120,12 @@ interface ScopeVisibilitySnapshot {
     ValidationConfigurationParametersComponent,
     ScopeStartCommitInputComponent,
   ],
-  providers: [ValidationProcessExecutorService],
+  providers: [
+    ValidationProcessExecutorService,
+    RepositoryService,
+    ScenarioDefinitionService,
+    InfraGroupService,
+  ],
 })
 export class ValidationExecutorComponent {
   readonly projectId = input.required<string>();
@@ -102,12 +139,19 @@ export class ValidationExecutorComponent {
 
   private readonly executorService = inject(ValidationProcessExecutorService);
   private readonly developmentService = inject(DevelopmentService);
+  private readonly repositoryService = inject(RepositoryService);
+  private readonly scenarioService = inject(ScenarioDefinitionService);
+  private readonly infraGroupService = inject(InfraGroupService);
+  private readonly finalProductService = inject(FinalProductApiService);
+  private readonly branchService = inject(BranchService);
   private readonly featureFlags = inject(FeatureFlagResolver);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly executing = signal(false);
   protected readonly detailsExpanded = signal(false);
+  /** True while the pre-filled values are being resolved (W1); blocks submission. */
+  protected readonly resolvingPrefill = signal(false);
 
   /** Exposed for the template's `[class.required]` label bindings (legacy parity). */
   protected readonly Validators = Validators;
@@ -284,6 +328,7 @@ export class ValidationExecutorComponent {
       if (this.wiredForm !== form) {
         this.wiredForm = form;
         this.wireScopeVisibility(form);
+        this.resolvePrefills(form);
       }
       this.applyMqgCreateBranchValidators(form);
       this.applyScopeValidators(form, this.showScopeStartCommit());
@@ -292,6 +337,132 @@ export class ValidationExecutorComponent {
 
   protected toggleDetails(): void {
     this.detailsExpanded.update((expanded) => !expanded);
+  }
+
+  /**
+   * Resolves every value the definition pre-filled, whether or not its field is
+   * shown (VAL-27132 W1).
+   */
+  private resolvePrefills(form: ValidationExecutorForm): void {
+    const projectId = this.projectId();
+    const controls = form.controls;
+    this.resolvingPrefill.set(true);
+    forkJoin([
+      this.resolveRepositoryThenBranches(form),
+      this.resolveEntity(controls.qualityGateInfraGroupId, (id) =>
+        this.infraGroupService.getGroup(projectId, id)
+      ),
+      this.resolveEntity(controls.qualityGateScenarioDefinitionIds, (id) =>
+        this.scenarioService.getScenarioDefinitionById(id, projectId)
+      ),
+      this.resolveEntity(controls.finalProductId, (id) =>
+        this.finalProductService.getFinalProductById(projectId, id)
+      ),
+    ])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.resolvingPrefill.set(false));
+  }
+
+  /**
+   * A branch is only meaningful against a repository that still resolves, so the
+   * archival and parent branches wait for the repository lookup and are skipped
+   * when it comes back dead.
+   */
+  private resolveRepositoryThenBranches(
+    form: ValidationExecutorForm
+  ): Observable<void> {
+    const controls = form.controls;
+    return this.resolveEntity(controls.repositoryId, (id) =>
+      this.repositoryService.getRepository(this.projectId(), id)
+    ).pipe(
+      switchMap(() => {
+        const repositoryId = controls.repositoryId.value;
+        if (!repositoryId || controls.repositoryId.invalid) {
+          return of(undefined);
+        }
+        const shown = this.renderedBranchFields(form);
+        // Legacy `[branchShouldExist]`: a branch about to be created must NOT
+        // exist yet, otherwise it must already be there.
+        const creating = controls.createBranch.value === true;
+        return forkJoin([
+          this.resolveHiddenBranch(controls.parentBranchName, {
+            visible: shown.parentBranchName,
+            repositoryId,
+            mustExist: true,
+            message: BRANCH_MISSING,
+          }),
+          this.resolveHiddenBranch(controls.archivalBranchName, {
+            visible: shown.archivalBranchName,
+            repositoryId,
+            mustExist: !creating,
+            message: creating ? BRANCH_ALREADY_EXISTS : BRANCH_MISSING,
+          }),
+        ]).pipe(map(() => undefined));
+      })
+    );
+  }
+
+  /**
+   * Whether each branch field is actually rendered. Both live inside the MQG/DQG
+   * configuration sub-forms, so the parent branch only appears on the MQG
+   * create-branch path, while the archival branch appears on either quality
+   * level once the create-branch choice has been made.
+   */
+  private renderedBranchFields(form: ValidationExecutorForm): {
+    parentBranchName: boolean;
+    archivalBranchName: boolean;
+  } {
+    const controls = form.controls;
+    const level = controls.businessProcessQualityLevel.value;
+    const createBranch = controls.createBranch.value;
+    const group = this.showConfigurationGroup();
+    return {
+      parentBranchName: group && level === "MQG" && createBranch === true,
+      archivalBranchName:
+        group && (level === "MQG" || level === "DQG") && createBranch !== null,
+    };
+  }
+
+  private resolveEntity(
+    control: AbstractControl,
+    lookup: (id: string) => Observable<unknown>
+  ): Observable<void> {
+    return checkPrefilledEntities(
+      control,
+      prefilledIds(control.value),
+      lookup,
+      this.toast
+    );
+  }
+
+  /**
+   * A *shown* branch field is already validated by `mxevolve-branch-input`, which
+   * raises the same toast through `initialInvalid`; only the hidden case needs
+   * resolving here.
+   */
+  private resolveHiddenBranch(
+    control: AbstractControl,
+    options: {
+      visible: boolean;
+      repositoryId: string;
+      mustExist: boolean;
+      message: string;
+    }
+  ): Observable<void> {
+    if (options.visible) {
+      return of(undefined);
+    }
+    return checkPrefilledBranch(
+      control,
+      this.branchService,
+      {
+        projectId: this.projectId(),
+        repositoryId: options.repositoryId,
+        branchName: (control.value as string | null) ?? "",
+      },
+      { mustExist: options.mustExist, message: options.message },
+      this.toast
+    );
   }
 
   protected build(): void {

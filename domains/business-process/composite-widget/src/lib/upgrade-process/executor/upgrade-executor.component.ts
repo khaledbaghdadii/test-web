@@ -8,10 +8,14 @@ import {
   output,
   signal,
 } from "@angular/core";
-import { ReactiveFormsModule, Validators } from "@angular/forms";
+import {
+  AbstractControl,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { EMPTY } from "rxjs";
-import { catchError } from "rxjs/operators";
+import { EMPTY, Observable, forkJoin, of } from "rxjs";
+import { catchError, map, switchMap } from "rxjs/operators";
 import { InputText } from "primeng/inputtext";
 import { RadioButton } from "primeng/radiobutton";
 import { Select } from "primeng/select";
@@ -28,25 +32,46 @@ import {
   UpgradePrefilledInputsComponent,
 } from "@mxevolve/domains/business-process/widget";
 import { FactoryProductSelectorComponent } from "@mxevolve/domains/artifact/widget";
+import { FactoryProductApiService } from "@mxevolve/domains/artifact/data-access";
 import { EnvironmentDefinitionSelectorComponent } from "@mxevolve/domains/environment/widget";
+import { EnvironmentDefinitionService } from "@mxevolve/domains/environment/data-access";
 import {
   RepositorySelectorComponent,
   BranchInputComponent,
 } from "@mxevolve/domains/scm/widget";
 import {
+  BranchService,
+  RepositoryService,
+} from "@mxevolve/domains/scm/data-access";
+import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import {
   ScenarioDefinitionDropdownComponent,
   ScenarioDefinitionMultiselectDropdownComponent,
 } from "@mxevolve/domains/test/widget";
+import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
 import {
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
+import {
+  checkPrefilledBranch,
+  checkPrefilledEntities,
+  prefilledIds,
+} from "../../shared/dead-prefill";
 import {
   UpgradeExecutorForm,
   UpgradeExecutorSeed,
   UpgradeFactoryProductValue,
   buildUpgradeExecutorForm,
 } from "./upgrade-executor.form";
+
+/** Legacy toast shown when the configuration branch already exists in the repository. */
+const CONFIGURATION_BRANCH_EXISTS =
+  "The branch name available in the BP definition or pre-filled in the pop-up already exists in the repository. Please update the definition or the pop-up with a unique name to create a new branch.";
+
+/** Legacy toast shown when the configuration parent branch does not exist. */
+const CONFIGURATION_PARENT_BRANCH_MISSING =
+  "The branch name available in the BP definition doesn't exist in the repository. Please check the name and try again with an existing branch.";
 
 /**
  * Upgrade definition executor rendered as Page 2 of the generic multi-page
@@ -83,7 +108,13 @@ import {
     ScenarioDefinitionDropdownComponent,
     ScenarioDefinitionMultiselectDropdownComponent,
   ],
-  providers: [UpgradeProcessDefinitionExecutorService],
+  providers: [
+    UpgradeProcessDefinitionExecutorService,
+    RepositoryService,
+    ScenarioDefinitionService,
+    EnvironmentDefinitionService,
+    InfraGroupService,
+  ],
 })
 export class UpgradeExecutorComponent {
   readonly projectId = input.required<string>();
@@ -98,11 +129,21 @@ export class UpgradeExecutorComponent {
   private readonly executorService = inject(
     UpgradeProcessDefinitionExecutorService
   );
+  private readonly repositoryService = inject(RepositoryService);
+  private readonly scenarioService = inject(ScenarioDefinitionService);
+  private readonly environmentDefinitionService = inject(
+    EnvironmentDefinitionService
+  );
+  private readonly factoryProductService = inject(FactoryProductApiService);
+  private readonly infraGroupService = inject(InfraGroupService);
+  private readonly branchService = inject(BranchService);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly executing = signal(false);
   protected readonly detailsExpanded = signal(false);
+  /** True while the pre-filled values are being resolved (W1); blocks submission. */
+  protected readonly resolvingPrefill = signal(false);
 
   /** Exposed for the template's `[class.required]` label bindings (legacy parity). */
   protected readonly Validators = Validators;
@@ -127,6 +168,7 @@ export class UpgradeExecutorComponent {
       if (this.wiredForm !== form) {
         this.wiredForm = form;
         this.wireCreateBranchCascade(form);
+        this.resolvePrefills(form);
       }
     });
   }
@@ -303,15 +345,137 @@ export class UpgradeExecutorComponent {
 
   /** Legacy toast when the configuration branch already exists in the repo. */
   protected showConfigBranchError(): void {
-    this.toast.showError(
-      "The branch name available in the BP definition or pre-filled in the pop-up already exists in the repository. Please update the definition or the pop-up with a unique name to create a new branch."
-    );
+    this.toast.showError(CONFIGURATION_BRANCH_EXISTS);
   }
 
   /** Legacy toast when the configuration parent branch does not exist. */
   protected showParentBranchError(): void {
-    this.toast.showError(
-      "The branch name available in the BP definition doesn't exist in the repository. Please check the name and try again with an existing branch."
+    this.toast.showError(CONFIGURATION_PARENT_BRANCH_MISSING);
+  }
+
+  /**
+   * Resolves every value the definition pre-filled, whether or not its field is
+   * shown (VAL-27132 W1). Upgrade carries the largest pre-filled set: both
+   * factory products, the repository, both scenario fields, the reference
+   * environment definition, three infra groups and the two configuration
+   * branches.
+   */
+  private resolvePrefills(form: UpgradeExecutorForm): void {
+    const projectId = this.projectId();
+    const controls = form.controls;
+    this.resolvingPrefill.set(true);
+    forkJoin([
+      this.resolveRepositoryThenBranches(form),
+      this.resolveEntity(controls.factoryProduct, (id) =>
+        this.factoryProductService.getFactoryProductById(projectId, id)
+      ),
+      this.resolveEntity(controls.referenceFactoryProduct, (id) =>
+        this.factoryProductService.getFactoryProductById(projectId, id)
+      ),
+      this.resolveEntity(controls.testScenarioIds, (id) =>
+        this.scenarioService.getScenarioDefinitionById(id, projectId)
+      ),
+      this.resolveEntity(controls.technicalUpgradeTestScenarioId, (id) =>
+        this.scenarioService.getScenarioDefinitionById(id, projectId)
+      ),
+      this.resolveEntity(controls.referenceEnvironmentDefinitionId, (id) =>
+        this.environmentDefinitionService.getEnvironmentDefinitionById(
+          projectId,
+          id
+        )
+      ),
+      this.resolveEntity(controls.qualityGateExecutionInfraGroupId, (id) =>
+        this.infraGroupService.getGroup(projectId, id)
+      ),
+      this.resolveEntity(controls.binaryConversionInfraGroupId, (id) =>
+        this.infraGroupService.getGroup(projectId, id)
+      ),
+      this.resolveEntity(controls.referenceEnvironmentInfraGroupId, (id) =>
+        this.infraGroupService.getGroup(projectId, id)
+      ),
+    ])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.resolvingPrefill.set(false));
+  }
+
+  /**
+   * A branch is only meaningful against a repository that still resolves, so the
+   * two configuration branches wait for the repository lookup and are skipped
+   * when it comes back dead.
+   */
+  private resolveRepositoryThenBranches(
+    form: UpgradeExecutorForm
+  ): Observable<void> {
+    const controls = form.controls;
+    return this.resolveEntity(controls.repositoryId, (id) =>
+      this.repositoryService.getRepository(this.projectId(), id)
+    ).pipe(
+      switchMap(() => {
+        const repositoryId = controls.repositoryId.value;
+        if (!repositoryId || controls.repositoryId.invalid) {
+          return of(undefined);
+        }
+        return forkJoin([
+          this.resolveHiddenBranch(controls.configurationBranchName, {
+            visible: this.visibility().configurationBranchName,
+            repositoryId,
+            // Legacy `[branchShouldExist]="createBranchFormControl.value !== true"`:
+            // when the run is not creating a branch, the configuration branch must
+            // already exist. The template still hardcodes `false` (divergence REV-5,
+            // out of scope here) but that only governs the *shown* field.
+            mustExist: controls.createBranch.value !== true,
+            message: CONFIGURATION_BRANCH_EXISTS,
+          }),
+          this.resolveHiddenBranch(controls.configurationParentBranch, {
+            visible: this.visibility().configurationParentBranch,
+            repositoryId,
+            mustExist: true,
+            message: CONFIGURATION_PARENT_BRANCH_MISSING,
+          }),
+        ]).pipe(map(() => undefined));
+      })
+    );
+  }
+
+  private resolveEntity(
+    control: AbstractControl,
+    lookup: (id: string) => Observable<unknown>
+  ): Observable<void> {
+    return checkPrefilledEntities(
+      control,
+      prefilledIds(control.value),
+      lookup,
+      this.toast
+    );
+  }
+
+  /**
+   * A *shown* branch field is already validated by `mxevolve-branch-input`, which
+   * raises the same toast through `initialInvalid`; only the hidden case needs
+   * resolving here.
+   */
+  private resolveHiddenBranch(
+    control: AbstractControl,
+    options: {
+      visible: boolean;
+      repositoryId: string;
+      mustExist: boolean;
+      message: string;
+    }
+  ): Observable<void> {
+    if (options.visible) {
+      return of(undefined);
+    }
+    return checkPrefilledBranch(
+      control,
+      this.branchService,
+      {
+        projectId: this.projectId(),
+        repositoryId: options.repositoryId,
+        branchName: (control.value as string | null) ?? "",
+      },
+      { mustExist: options.mustExist, message: options.message },
+      this.toast
     );
   }
 
