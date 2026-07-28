@@ -11,9 +11,11 @@ export interface HeadScenarioRunViewModel {
   readonly numberOfImpacts: number;
   readonly numberOfRegressions: number;
   readonly numberOfIncidents: number;
+  readonly numberOfFailureReasons: number;
   readonly impactIds: readonly string[];
   readonly regressionIds: readonly string[];
   readonly incidentIds: readonly string[];
+  readonly failureReasonIds: readonly string[];
   readonly startDate: string;
   readonly endDate?: string;
   readonly commitId: string;

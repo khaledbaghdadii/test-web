@@ -9,12 +9,19 @@ import {
   IServerSideDatasource,
   IServerSideGetRowsParams,
 } from "ag-grid-enterprise";
+import { DialogService } from "primeng/dynamicdialog";
+import { ScenarioExecutionService } from "@mxflow/test-management/execution";
+import { catchError, map, of, switchMap } from "rxjs";
 import { CommitIdCellRendererComponent } from "../commit-id-cell-renderer/commit-id-cell-renderer.component";
+import { CommitTestExecutionsCellRendererComponent } from "../commit-test-executions-cell-renderer/commit-test-executions-cell-renderer.component";
+import { CommitTestExecutionRow } from "../commit-test-executions-dialog/commit-test-executions-dialog.component";
 import {
+  BlankLoadingCellRendererComponent,
   DateCellRendererComponent,
   TableLoadingOverlayComponent,
   TableNoRowsOverlayComponent,
 } from "@mxevolve/shared/ui/table";
+import { TestExecutionsByCommitIdService } from "../test-executions-by-commit-id/test-executions-by-commit-id.service";
 
 const PAGE_SIZE = 5;
 
@@ -22,7 +29,12 @@ const PAGE_SIZE = 5;
   selector: "mxevolve-paginated-commits-difference",
   standalone: true,
   imports: [AgGridAngular],
-  providers: [CommitsService],
+  providers: [
+    CommitsService,
+    DialogService,
+    ScenarioExecutionService,
+    TestExecutionsByCommitIdService,
+  ],
   template: `
     <ag-grid-angular
       class="w-full"
@@ -36,6 +48,7 @@ const PAGE_SIZE = 5;
       [noRowsOverlayComponent]="noRowsOverlayComponent"
       [noRowsOverlayComponentParams]="noRowsOverlayParams()"
       [loadingOverlayComponent]="loadingOverlayComponent"
+      [loadingCellRenderer]="blankLoadingCellRenderer"
       [domLayout]="'autoHeight'"
       (gridReady)="onGridReady($event)"
     />
@@ -49,6 +62,9 @@ export class PaginatedCommitsDifferenceComponent {
   readonly noRowsMessage = input<string>("No commits found");
 
   private readonly commitsService = inject(CommitsService);
+  private readonly testExecutionsByCommitIdService = inject(
+    TestExecutionsByCommitIdService
+  );
   private readonly toastMessageService = inject(ToastMessageService);
   private gridApi: GridApi | undefined;
 
@@ -56,6 +72,7 @@ export class PaginatedCommitsDifferenceComponent {
   readonly pageSizeOptions = [5, 10, 20, 50, 100];
 
   readonly noRowsOverlayComponent = TableNoRowsOverlayComponent;
+  readonly blankLoadingCellRenderer = BlankLoadingCellRendererComponent;
   readonly noRowsOverlayParams = computed(() => ({
     message: this.noRowsMessage(),
   }));
@@ -91,6 +108,12 @@ export class PaginatedCommitsDifferenceComponent {
       minWidth: 180,
       cellRenderer: DateCellRendererComponent,
       sort: "desc",
+    },
+    {
+      headerName: "Test Runs",
+      minWidth: 200,
+      sortable: false,
+      cellRenderer: CommitTestExecutionsCellRendererComponent,
     },
   ];
 
@@ -134,11 +157,15 @@ export class PaginatedCommitsDifferenceComponent {
     destination: string
   ): IServerSideDatasource {
     const commitsService = this.commitsService;
+    const testExecutionsByCommitIdService =
+      this.testExecutionsByCommitIdService;
     const toastMessageService = this.toastMessageService;
     return {
       getRows(params: IServerSideGetRowsParams): void {
         const startRow = params.request.startRow ?? 0;
         const page = Math.floor(startRow / PAGE_SIZE);
+
+        params.api.setGridOption("loading", true);
 
         commitsService
           .getPaginatedCommitDifferences({
@@ -149,18 +176,55 @@ export class PaginatedCommitsDifferenceComponent {
             page,
             size: PAGE_SIZE,
           })
+          .pipe(
+            switchMap((response) => {
+              const commitIds = response.content.map((commit) => commit.id);
+              if (commitIds.length === 0) {
+                return of({
+                  response,
+                  executionsByCommitId: {} as Record<
+                    string,
+                    CommitTestExecutionRow[]
+                  >,
+                });
+              }
+
+              return testExecutionsByCommitIdService
+                .getExecutionsGroupedByCommitId(projectId, commitIds)
+                .pipe(
+                  catchError(() =>
+                    of({} as Record<string, CommitTestExecutionRow[]>)
+                  ),
+                  map((executionsByCommitId) => ({
+                    response,
+                    executionsByCommitId,
+                  }))
+                );
+            })
+          )
           .subscribe({
-            next: (response) => {
+            next: ({ response, executionsByCommitId }) => {
+              const enrichedRows = response.content.map((commit) => ({
+                ...commit,
+                executions: executionsByCommitId[commit.id] ?? [],
+              }));
               const lastRow = response.last
                 ? startRow + response.content.length
                 : undefined;
               params.success({
-                rowData: response.content,
+                rowData: enrichedRows,
                 rowCount: lastRow,
               });
+              params.api.setGridOption("loading", false);
+              if (startRow === 0 && enrichedRows.length === 0) {
+                params.api.showNoRowsOverlay();
+              } else {
+                params.api.hideOverlay();
+              }
             },
             error: () => {
               toastMessageService.showError("Couldn't fetch commits");
+              params.api.setGridOption("loading", false);
               params.fail();
             },
           });

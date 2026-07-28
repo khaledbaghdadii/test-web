@@ -1,0 +1,37 @@
+@if (breadcrumb.hasValue()) {
+<p-breadcrumb [home]="home()" [model]="breadcrumbItems()">
+  <ng-template #item let-item>
+    @if (item.data?.dropdown) {
+
+    <p-tieredmenu #menu [model]="item.items" [popup]="true" appendTo="body" />
+
+    <a
+      class="p-breadcrumb-item-link cursor-pointer"
+      (click)="menu.toggle($event)"
+    >
+      {{ item.label }}
+      <mxevolve-icon name="keyboard_arrow_down"></mxevolve-icon>
+    </a>
+
+    } @else if (item.disabled) {
+
+    <span class="p-breadcrumb-item-link" aria-disabled="true">
+      {{ item.label }}
+    </span>
+
+    } @else if (!item.routerLink) {
+
+    <span class="p-breadcrumb-item-link font-semibold" aria-current="page">
+      {{ item.label }}
+    </span>
+
+    } @else {
+
+    <a [routerLink]="item.routerLink" class="p-breadcrumb-item-link">
+      {{ item.label }}
+    </a>
+
+    }
+  </ng-template>
+</p-breadcrumb>
+}

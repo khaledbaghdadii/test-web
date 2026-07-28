@@ -1,0 +1,26 @@
+<p-button
+  *showElementIfAuthorized="{
+    action: 'clean',
+    resource: 'environment',
+    package: 'environment',
+    attributes: {},
+    projectId: projectId()
+  }"
+  [rounded]="true"
+  [text]="true"
+  severity="info"
+  ariaLabel="Clean environment"
+  pTooltip="Clean environment"
+  tooltipPosition="top"
+  (onClick)="handleCleanClicked()"
+  [loading]="loading()"
+>
+  <mxevolve-icon name="cleaning_services" />
+</p-button>
+
+<p-confirmDialog appendTo="self">
+  <ng-template #footer>
+    <p-button label="Cancel" severity="secondary" (onClick)="rejectClean()" />
+    <p-button label="Confirm" (onClick)="confirmClean()" />
+  </ng-template>
+</p-confirmDialog>

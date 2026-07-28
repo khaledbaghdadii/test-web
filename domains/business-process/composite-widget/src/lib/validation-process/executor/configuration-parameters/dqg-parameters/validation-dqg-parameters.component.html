@@ -1,0 +1,51 @@
+<fieldset class="field flex flex-col gap-1 border-none p-0 m-0">
+  <legend
+    class="font-medium p-0"
+    [class.required]="
+      createBranchFormControl().hasValidator(Validators.required)
+    "
+  >
+    Create Branch?
+  </legend>
+  <div class="flex flex-row gap-4 mt-1">
+    <div class="flex flex-row items-center gap-1">
+      <p-radioButton
+        inputId="doCreateBranch"
+        name="createBranch"
+        [formControl]="createBranchFormControl()"
+        [value]="true"
+      />
+      <label for="doCreateBranch">Yes</label>
+    </div>
+    <div class="flex flex-row items-center gap-1">
+      <p-radioButton
+        inputId="doNotCreateBranch"
+        name="createBranch"
+        [formControl]="createBranchFormControl()"
+        [value]="false"
+      />
+      <label for="doNotCreateBranch">No</label>
+    </div>
+  </div>
+</fieldset>
+
+@if (createBranchFormControl().value === true) {
+<mxevolve-dqg-from-new-branch-parameters
+  [projectId]="projectId()"
+  [repositoryId]="repositoryId()"
+  [archivalBranchNameFormControl]="archivalBranchNameFormControl()"
+  [finalProductIdFormControl]="finalProductIdFormControl()"
+  [configCommitIdFormControl]="configCommitIdFormControl()"
+  [rtpCommitIdFormControl]="rtpCommitIdFormControl()"
+/>
+} @else if (createBranchFormControl().value === false) {
+<mxevolve-final-product-from-existing-branch
+  [projectId]="projectId()"
+  [repositoryId]="repositoryId()"
+  [archivalBranchNameFormControl]="archivalBranchNameFormControl()"
+  [finalProductIdFormControl]="finalProductIdFormControl()"
+  [configCommitIdFormControl]="configCommitIdFormControl()"
+  [rtpCommitIdFormControl]="rtpCommitIdFormControl()"
+  [preselectedFinalProductId]="preselectedFinalProductId()"
+/>
+}

@@ -5,6 +5,17 @@
   >
     <div class="col-span-12 md:col-span-6 p-4">
       <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        ID
+      </div>
+      <div
+        class="text-surface-900 dark:text-surface-0"
+        data-testid="binary-impact-object-id"
+      >
+        {{ binaryImpact?.objectId || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
         Title
       </div>
       <div class="text-surface-900 dark:text-surface-0">
@@ -41,6 +52,18 @@
       </div>
       <div class="text-surface-900 dark:text-surface-0">
         {{ binaryImpact?.mxVersion || "-" }}
+      </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Affected Versions
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        {{
+          binaryImpact?.affectedVersions?.length
+            ? binaryImpact?.affectedVersions
+            : "-"
+        }}
       </div>
     </div>
     <div class="col-span-12 md:col-span-6 p-4">
@@ -189,6 +212,14 @@
   <div
     class="grid grid-cols-12 gap-4 grid-nogutter border-t border-surface pt-2"
   >
+    <div class="col-span-12 md:col-span-6 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        ID
+      </div>
+      <div class="text-surface-900 dark:text-surface-0">
+        <p-skeleton></p-skeleton>
+      </div>
+    </div>
     <div class="col-span-12 md:col-span-6 p-4">
       <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
         Title

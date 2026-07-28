@@ -87,11 +87,19 @@
       </div>
 
       <div class="col-span-10 col-start-2 flex flex-col gap-2">
-        <label for="incidentId" class="block">Incident</label>
+        <label for="incidentId" class="block"
+          >Incident <span class="text-red-500">*</span></label
+        >
         <mxevolve-incident-input
           id="incidentId"
           formControlName="incidentId"
         ></mxevolve-incident-input>
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: createBinaryRegressionForm.controls.incidentId
+          }"
+        ></ng-template>
       </div>
 
       <div class="col-span-10 col-start-2 flex flex-col gap-2">

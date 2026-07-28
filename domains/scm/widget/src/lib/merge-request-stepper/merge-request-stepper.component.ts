@@ -1,23 +1,30 @@
-import { Component, computed, inject, input } from "@angular/core";
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+} from "@angular/core";
 import { DatePipe } from "@angular/common";
 import { rxResource } from "@angular/core/rxjs-interop";
 import {
+  StepComponent,
   StepDefinition,
   StepperComponent,
-  StepComponent,
   StepStatus,
 } from "@mxevolve/shared/ui/primitive";
 import {
-  ReviewStageDetailsComponent,
   ReviewStageData,
+  ReviewStageDetailsComponent,
 } from "../review-stage-details/review-stage-details.component";
 import {
-  UnderValidationStageDetailsComponent,
   UnderValidationStageData,
+  UnderValidationStageDetailsComponent,
 } from "../under-validation-stage-details/under-validation-stage-details.component";
 import {
-  MergeStageDetailsComponent,
   MergeStageData,
+  MergeStageDetailsComponent,
 } from "../merge-stage-details/merge-stage-details.component";
 import {
   MergeRequestService,
@@ -25,7 +32,9 @@ import {
   MergeRequestStateTransition,
 } from "@mxevolve/domains/scm/data-access";
 import { ToastMessageService } from "@mxflow/ui/alert";
+import { FinalProductDetailsComponent } from "@mxevolve/domains/artifact/widget";
 import { ProgressSpinner } from "primeng/progressspinner";
+import { Divider } from "primeng/divider";
 import { catchError, of } from "rxjs";
 
 export interface MergeStepStatuses {
@@ -43,7 +52,9 @@ export interface MergeStepStatuses {
     ReviewStageDetailsComponent,
     UnderValidationStageDetailsComponent,
     MergeStageDetailsComponent,
+    FinalProductDetailsComponent,
     ProgressSpinner,
+    Divider,
   ],
   providers: [MergeRequestService, DatePipe],
   templateUrl: "./merge-request-stepper.component.html",
@@ -55,10 +66,25 @@ export class MergeRequestStepperComponent {
   readonly statuses = input<MergeStepStatuses>();
   readonly mergeRequestId = input<string>();
   readonly projectId = input<string>();
+  readonly showFinalProduct = input(false);
+  readonly finalProductId = input<string>();
+  readonly finalProductPublishingFailed = input(false);
+
+  readonly finalProductFetchError = output<string>();
+  readonly isReOpenable = output<boolean>();
 
   private readonly mergeRequestService = inject(MergeRequestService);
   private readonly toastMessageService = inject(ToastMessageService);
   private readonly datePipe = inject(DatePipe);
+
+  constructor() {
+    effect(() => {
+      const mr = this.mergeRequestResource.value();
+      if (mr !== undefined) {
+        this.isReOpenable.emit(mr.isReOpenable ?? false);
+      }
+    });
+  }
 
   readonly mergeRequestResource = rxResource({
     params: () => {

@@ -22,10 +22,10 @@ export interface BuildAndTestProcessExecution {
   readonly source: BuildAndTestSource;
   readonly status: ExecutionStatus;
   readonly input: BuildAndTestProcessExecutionInput;
-  readonly createBranchStage: BuildAndTestProcessStage;
-  readonly prepareBuildStage: BuildAndTestProcessStage;
-  readonly buildAndTestStage: BuildAndTestProcessStage;
-  readonly integrateChangesStage: BuildAndTestProcessStage;
+  readonly createBranchStage: CreateBranchStage;
+  readonly prepareBuildStage: PrepareBuildStage;
+  readonly buildAndTestStage: BuildAndTestStage;
+  readonly integrateChangesStage: IntegrateChangesStage;
 }
 
 export interface BuildAndTestProcessExecutionInput {
@@ -43,27 +43,38 @@ export interface BuildAndTestProcessBuildEnvironmentInput {
   readonly scenarioDefinitionId: string;
 }
 
-export interface BuildAndTestProcessStage extends Stage {
-  readonly route: string;
+export interface CreateBranchStage extends Stage {
+  readonly branchName?: string;
+  readonly createBranch?: boolean;
+  readonly repositoryId?: string;
   readonly developmentId?: string;
-  // Latest deploy scenario for the stage (populated on prepareBuildStage). The
-  // build/test environment id is resolved indirectly from this scenario, mirroring
-  // the legacy `getScenarioExecution(...).environmentId` lookup.
+}
+
+export interface PrepareBuildStage extends Stage {
+  readonly requester?: string;
+  // Latest deploy scenario for the stage. The build/test environment id is
+  // resolved indirectly from this scenario, mirroring the legacy
+  // `getScenarioExecution(...).environmentId` lookup.
   readonly latestScenarioExecutionId?: string;
-  // Build & Test stage-specific fields (additive — populated only on buildAndTestStage).
+}
+
+export interface BuildAndTestStage extends Stage {
+  readonly requester?: string;
+  readonly scenarioExecutionGroup?: string;
+  readonly technicalReseedExecutionGroupId?: string;
   readonly readyForBuildAndTest?: boolean;
   readonly cherryPickRunning?: boolean;
   readonly cherryPickFailed?: boolean;
-  readonly technicalReseedExecutionGroupId?: string;
-  readonly scenarioExecutionGroup?: string;
-  // Integrate Changes stage-specific fields (populated only on integrateChangesStage).
+}
+
+export interface IntegrateChangesStage extends Stage {
   readonly latestMergeJobId?: string;
+  readonly finalProductPublishing?: FinalProductPublishing;
   readonly requester?: string;
   readonly backportRequested?: boolean;
-  readonly willPublishFinalProduct?: boolean;
-  readonly finalProductPublishing?: FinalProductPublishing;
   readonly backportStopRequester?: string;
   readonly canStopBackport?: boolean;
+  readonly willPublishFinalProduct?: boolean;
   readonly backportExecutions?: string[];
   readonly failedBackportDefinitions?: string[];
   readonly backports?: BuildAndTestBackport[];

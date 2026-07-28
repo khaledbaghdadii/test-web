@@ -2,7 +2,7 @@
   [header]="dialogHeader()"
   [modal]="true"
   [(visible)]="isModalVisible"
-  [style]="{ width: '60vw' }"
+  [style]="{ width: '90vw' }"
   (onHide)="hideModal()"
 >
   <ng-template #header>
@@ -74,7 +74,7 @@
         data-testid="analysis-object-selection-step-panel"
       >
         <ng-template #content let-activateCallback="activateCallback">
-          @switch (analysisObjectType) { @case
+          @if (stepperPanelValue() === 2) { @switch (analysisObjectType) { @case
           (AnalysisObjectType.BINARY_IMPACT) {
           <mxevolve-link-binary-impact-modal-content
             [projectId]="projectId()"
@@ -86,6 +86,7 @@
             [selectedImpactIdsLoading]="analysisObjectLinksLoading()"
             [initiallySelectedImpacts]="initialAnalysisObjectsSelectionState()"
             [createImpactLink]="createAnalysisObjectLink"
+            [previouslyLinkedFilter]="previouslyLinkedFilter()"
             (selectedBinaryImpactsChange)="
               onAnalysisObjectSelectionChange($event)
             "
@@ -148,6 +149,7 @@
             [initiallySelectedIncidents]="
               initialAnalysisObjectsSelectionState()
             "
+            [previouslyLinkedFilter]="previouslyLinkedFilter()"
             [selectedIncidentIdsLoading]="analysisObjectLinksLoading()"
             (selectedIncidentsChange)="onAnalysisObjectSelectionChange($event)"
             [createIncidentLink]="createCandidateAnalysisObjectLinks"
@@ -162,7 +164,7 @@
               onAnalysisObjectSelectionChange($event)
             "
           ></mxevolve-link-failure-reason-modal-content>
-          } }
+          } } }
           <div class="flex pt-6 justify-between">
             <p-button
               label="Back"

@@ -21,6 +21,7 @@ const mockToastService = {
 
 const mockScenarioRunService = {
   bulkRerun: jest.fn(),
+  bulkRerunFromFinalProduct: jest.fn(),
 };
 
 const MOCK_IMPORTS = [
@@ -64,6 +65,10 @@ async function renderComponent(
   inputs: Partial<{
     projectId: string;
     panels: ScenarioRunsPanelViewModel[];
+    allowOfficialRerun: boolean;
+    initialFinalProductId: string;
+    branch: string;
+    defaultRerunMode: "official" | "unofficial";
   }> = {}
 ) {
   return render(BulkRerunScenariosComponent, {
@@ -333,6 +338,192 @@ describe("BulkRerunScenariosComponent", () => {
       });
 
       expect(emitSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("new inputs passed to rerun dialog", () => {
+    it("passes allowOfficialRerun to the RerunDialogComponent", async () => {
+      const { fixture } = await renderComponent({ allowOfficialRerun: true });
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(rerunDialog, "allowOfficialRerun")).toBe(true);
+    });
+
+    it("passes false for allowOfficialRerun by default", async () => {
+      const { fixture } = await renderComponent();
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(rerunDialog, "allowOfficialRerun")).toBe(false);
+    });
+
+    it("passes initialFinalProductId to the RerunDialogComponent", async () => {
+      const { fixture } = await renderComponent({
+        initialFinalProductId: "fp-init-123",
+      });
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(rerunDialog, "initialFinalProductId")).toBe(
+        "fp-init-123"
+      );
+    });
+
+    it("passes branch to the RerunDialogComponent", async () => {
+      const { fixture } = await renderComponent({ branch: "main" });
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(rerunDialog, "branch")).toBe("main");
+    });
+
+    it("passes defaultRerunMode to the RerunDialogComponent", async () => {
+      const { fixture } = await renderComponent({
+        defaultRerunMode: "official",
+      });
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(rerunDialog, "defaultRerunMode")).toBe("official");
+    });
+
+    it("passes unofficial for defaultRerunMode by default", async () => {
+      const { fixture } = await renderComponent();
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(rerunDialog, "defaultRerunMode")).toBe("unofficial");
+    });
+  });
+
+  describe("official bulk rerun", () => {
+    it("calls bulkRerunFromFinalProduct when official mode rerun is requested", async () => {
+      mockScenarioRunService.bulkRerunFromFinalProduct.mockReturnValue(
+        of({ successfulRepushes: [], failedRepushes: [] })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Bulk Rerun" }));
+      const table = ngMocks.find(fixture, MultiSelectScenarioRunTableComponent);
+      ngMocks.output(table, "selectedScenarioRunIds").emit(["run-head-001"]);
+      fixture.detectChanges();
+      await user.click(screen.getByRole("button", { name: "Re-run" }));
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      ngMocks.output(rerunDialog, "rerunRequested").emit({
+        mode: "official",
+        finalProductId: "fp-final-123",
+        rtpCommitId: "rtp-abc",
+        stopServices: true,
+      });
+
+      expect(
+        mockScenarioRunService.bulkRerunFromFinalProduct
+      ).toHaveBeenCalledWith("project-123", {
+        finalProductId: "fp-final-123",
+        rtpCommitId: "rtp-abc",
+        scenariosToBeRepushed: ["run-head-001"],
+      });
+    });
+
+    it("shows success toast after official bulk rerun succeeds", async () => {
+      mockScenarioRunService.bulkRerunFromFinalProduct.mockReturnValue(
+        of({ successfulRepushes: [], failedRepushes: [] })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Bulk Rerun" }));
+      const table = ngMocks.find(fixture, MultiSelectScenarioRunTableComponent);
+      ngMocks.output(table, "selectedScenarioRunIds").emit(["run-head-001"]);
+      fixture.detectChanges();
+      await user.click(screen.getByRole("button", { name: "Re-run" }));
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      ngMocks.output(rerunDialog, "rerunRequested").emit({
+        mode: "official",
+        finalProductId: "fp-final-123",
+        rtpCommitId: "rtp-abc",
+        stopServices: true,
+      });
+
+      expect(mockToastService.showSuccess).toHaveBeenCalledWith(
+        "Bulk rerun successfully submitted."
+      );
+    });
+
+    it("shows error toast when official bulk rerun fails", async () => {
+      mockScenarioRunService.bulkRerunFromFinalProduct.mockReturnValue(
+        throwError(() => new Error("Server error"))
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Bulk Rerun" }));
+      const table = ngMocks.find(fixture, MultiSelectScenarioRunTableComponent);
+      ngMocks.output(table, "selectedScenarioRunIds").emit(["run-head-001"]);
+      fixture.detectChanges();
+      await user.click(screen.getByRole("button", { name: "Re-run" }));
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      ngMocks.output(rerunDialog, "rerunRequested").emit({
+        mode: "official",
+        finalProductId: "fp-final-123",
+        rtpCommitId: "rtp-abc",
+        stopServices: true,
+      });
+
+      expect(mockToastService.showError).toHaveBeenCalledWith(
+        "Failed to submit bulk rerun."
+      );
+    });
+  });
+
+  describe("preFilledFactoryProductId", () => {
+    it("passes the shared factory product ID to the rerun dialog when all selected runs share the same factory product", async () => {
+      const panelWithFp: ScenarioRunsPanelViewModel = {
+        ...MOCK_PANEL,
+        head: {
+          ...MOCK_PANEL.head,
+          id: "run-2",
+          factoryProductId: "fp-shared",
+        },
+      };
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent({
+        panels: [MOCK_PANEL, panelWithFp],
+      });
+
+      await user.click(screen.getByRole("button", { name: "Bulk Rerun" }));
+      const table = ngMocks.find(fixture, MultiSelectScenarioRunTableComponent);
+      ngMocks
+        .output(table, "selectedScenarioRunIds")
+        .emit(["run-head-001", "run-2"]);
+      fixture.detectChanges();
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(rerunDialog, "factoryProductId")).toBeUndefined();
+    });
+
+    it("passes undefined factory product ID when selected runs have different factory products", async () => {
+      const panelWithDifferentFp: ScenarioRunsPanelViewModel = {
+        ...MOCK_PANEL,
+        head: {
+          ...MOCK_PANEL.head,
+          id: "run-2",
+          factoryProductId: "fp-different",
+        },
+      };
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent({
+        panels: [MOCK_PANEL, panelWithDifferentFp],
+      });
+
+      await user.click(screen.getByRole("button", { name: "Bulk Rerun" }));
+      const table = ngMocks.find(fixture, MultiSelectScenarioRunTableComponent);
+      ngMocks
+        .output(table, "selectedScenarioRunIds")
+        .emit(["run-head-001", "run-2"]);
+      fixture.detectChanges();
+
+      const rerunDialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(rerunDialog, "factoryProductId")).toBeUndefined();
     });
   });
 });

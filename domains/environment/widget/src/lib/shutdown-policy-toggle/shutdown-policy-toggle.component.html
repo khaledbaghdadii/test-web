@@ -1,0 +1,20 @@
+@if (actionsAllowed()) {
+<div class="flex items-center h-full content-end">
+  <div class="h-full content-center">
+    <p-toggleswitch
+      [ngModel]="exclude()"
+      (ngModelChange)="exclude.set($event)"
+      (onChange)="updateState()"
+      class="self-center"
+      ariaLabel="Include in WRP"
+      [pTooltip]="exclude() | toggleTooltip"
+      tooltipPosition="top"
+    />
+  </div>
+  @if (exclude()) {
+  <p class="font-medium mx-2">Excluded from WRP</p>
+  } @else {
+  <p class="font-medium mx-2">Included in WRP</p>
+  }
+</div>
+}

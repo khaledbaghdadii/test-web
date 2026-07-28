@@ -1,5 +1,5 @@
 import { FinalProductDropdownStateService } from "./final-product-dropdown-state.service";
-import { EMPTY, of, throwError } from "rxjs";
+import { EMPTY, of, Subject, throwError } from "rxjs";
 import { fakeAsync, TestBed, tick, waitForAsync } from "@angular/core/testing";
 import { FinalProductDropdownOption } from "./final-product-dropdown-option.model";
 import { FinalProductService } from "../final-product.service";
@@ -183,6 +183,7 @@ describe("FinalProductDropdownStateService", () => {
       getBranchDetails: jest.fn(() =>
         of({ latestCommitId: "test-head-commit-id" })
       ),
+      getCommitsInfo: jest.fn(() => of([])),
     } as unknown as jest.Mocked<ScmService>;
 
     TestBed.configureTestingModule({
@@ -770,6 +771,271 @@ describe("FinalProductDropdownStateService", () => {
       ]);
     }));
 
+    it("should enrich the dropdown label with the short commit id and truncated message when repositoryId is provided", fakeAsync(() => {
+      const finalProductsPage: FinalProducts = {
+        content: [FIRST_FINAL_PRODUCT],
+        number: 0,
+        size: 1,
+        last: true,
+        totalElements: 1,
+        totalPages: 1,
+      };
+      finalProductService.getFinalProducts.mockReturnValue(
+        of(finalProductsPage)
+      );
+      scmService.getCommitsInfo.mockReturnValue(
+        of([
+          {
+            id: FIRST_FINAL_PRODUCT.configurationCommitId,
+            displayId: "shortId",
+            message: "short message",
+          },
+        ])
+      );
+
+      initializeSubjects();
+      service.setRepositoryId("test-repo-id");
+      setSearchKeySubject(COMMIT_ID);
+      tick(DEBOUNCE_TIME);
+
+      expect(service.newFinalProductDropdownOptions()).toEqual([
+        {
+          label: "shortId short message",
+          value: FIRST_FINAL_PRODUCT,
+        },
+      ]);
+    }));
+
+    it("should truncate the commit message with '...' when it exceeds the max length", fakeAsync(() => {
+      const LONG_MESSAGE =
+        "this is a very long commit message that should be truncated at some point";
+      const finalProductsPage: FinalProducts = {
+        content: [FIRST_FINAL_PRODUCT],
+        number: 0,
+        size: 1,
+        last: true,
+        totalElements: 1,
+        totalPages: 1,
+      };
+      finalProductService.getFinalProducts.mockReturnValue(
+        of(finalProductsPage)
+      );
+      scmService.getCommitsInfo.mockReturnValue(
+        of([
+          {
+            id: FIRST_FINAL_PRODUCT.configurationCommitId,
+            displayId: "shortId",
+            message: LONG_MESSAGE,
+          },
+        ])
+      );
+
+      initializeSubjects();
+      service.setRepositoryId("test-repo-id");
+      setSearchKeySubject(COMMIT_ID);
+      tick(DEBOUNCE_TIME);
+
+      expect(service.newFinalProductDropdownOptions()).toEqual([
+        {
+          label: `shortId ${LONG_MESSAGE.slice(0, 60)}...`,
+          value: FIRST_FINAL_PRODUCT,
+        },
+      ]);
+    }));
+
+    it("should show the short id only when the commit message is empty", fakeAsync(() => {
+      const finalProductsPage: FinalProducts = {
+        content: [FIRST_FINAL_PRODUCT],
+        number: 0,
+        size: 1,
+        last: true,
+        totalElements: 1,
+        totalPages: 1,
+      };
+      finalProductService.getFinalProducts.mockReturnValue(
+        of(finalProductsPage)
+      );
+      scmService.getCommitsInfo.mockReturnValue(
+        of([
+          {
+            id: FIRST_FINAL_PRODUCT.configurationCommitId,
+            displayId: "shortId",
+            message: "",
+          },
+        ])
+      );
+
+      initializeSubjects();
+      service.setRepositoryId("test-repo-id");
+      setSearchKeySubject(COMMIT_ID);
+      tick(DEBOUNCE_TIME);
+
+      expect(service.newFinalProductDropdownOptions()).toEqual([
+        {
+          label: "shortId",
+          value: FIRST_FINAL_PRODUCT,
+        },
+      ]);
+    }));
+
+    it("should fall back to the full commit id when the commit is not found in the SCM response", fakeAsync(() => {
+      const finalProductsPage: FinalProducts = {
+        content: [FIRST_FINAL_PRODUCT],
+        number: 0,
+        size: 1,
+        last: true,
+        totalElements: 1,
+        totalPages: 1,
+      };
+      finalProductService.getFinalProducts.mockReturnValue(
+        of(finalProductsPage)
+      );
+      scmService.getCommitsInfo.mockReturnValue(of([]));
+
+      initializeSubjects();
+      service.setRepositoryId("test-repo-id");
+      setSearchKeySubject(COMMIT_ID);
+      tick(DEBOUNCE_TIME);
+
+      expect(service.newFinalProductDropdownOptions()).toEqual([
+        {
+          label: FIRST_FINAL_PRODUCT.configurationCommitId,
+          value: FIRST_FINAL_PRODUCT,
+        },
+      ]);
+    }));
+
+    it("should fall back to the full commit id when the SCM commits info call fails", fakeAsync(() => {
+      const finalProductsPage: FinalProducts = {
+        content: [FIRST_FINAL_PRODUCT],
+        number: 0,
+        size: 1,
+        last: true,
+        totalElements: 1,
+        totalPages: 1,
+      };
+      finalProductService.getFinalProducts.mockReturnValue(
+        of(finalProductsPage)
+      );
+      scmService.getCommitsInfo.mockReturnValue(
+        throwError(() => new Error("scm failure"))
+      );
+
+      initializeSubjects();
+      service.setRepositoryId("test-repo-id");
+      setSearchKeySubject(COMMIT_ID);
+      tick(DEBOUNCE_TIME);
+
+      expect(service.newFinalProductDropdownOptions()).toEqual([
+        {
+          label: FIRST_FINAL_PRODUCT.configurationCommitId,
+          value: FIRST_FINAL_PRODUCT,
+        },
+      ]);
+    }));
+
+    it("should not call the SCM commits info endpoint when repositoryId is not provided", fakeAsync(() => {
+      initializeSubjects();
+      setSearchKeySubject(COMMIT_ID);
+      tick(DEBOUNCE_TIME);
+
+      expect(scmService.getCommitsInfo).not.toHaveBeenCalled();
+      expect(service.newFinalProductDropdownOptions()).toEqual([
+        {
+          label: FIRST_FINAL_PRODUCT.configurationCommitId,
+          value: FIRST_FINAL_PRODUCT,
+        },
+      ]);
+    }));
+
+    it("should shorten the message further for HEAD commit entries", fakeAsync(() => {
+      const HEAD_COMMIT_ID = "test-head-commit-id";
+      const finalProductWithHeadCommit = {
+        ...FIRST_FINAL_PRODUCT,
+        configurationCommitId: HEAD_COMMIT_ID,
+      } as FinalProduct;
+      const finalProductsPage: FinalProducts = {
+        content: [finalProductWithHeadCommit],
+        number: 0,
+        size: 1,
+        last: true,
+        totalElements: 1,
+        totalPages: 1,
+      };
+      const HEAD_MESSAGE =
+        "this message is definitely longer than twenty chars";
+
+      scmService.getBranchDetails.mockReturnValue(
+        of({ latestCommitId: HEAD_COMMIT_ID })
+      );
+      finalProductService.getFinalProducts.mockReturnValue(
+        of(finalProductsPage)
+      );
+      scmService.getCommitsInfo.mockReturnValue(
+        of([
+          {
+            id: HEAD_COMMIT_ID,
+            displayId: "shortHeadId",
+            message: HEAD_MESSAGE,
+          },
+        ])
+      );
+
+      initializeSubjects();
+      service.setRepositoryId("test-repo-id");
+      service.setBranchCriteria(BRANCH);
+      setSearchKeySubject(COMMIT_ID);
+      tick(DEBOUNCE_TIME);
+
+      expect(service.newFinalProductDropdownOptions()).toEqual([
+        {
+          label: `HEAD-shortHeadId ${HEAD_MESSAGE.slice(0, 40)}...`,
+          value: finalProductWithHeadCommit,
+        },
+      ]);
+    }));
+
+    it("should not re-fetch commit info for commit ids already present in the cache", fakeAsync(() => {
+      scmService.getCommitsInfo.mockReturnValue(
+        of([
+          {
+            id: FIRST_FINAL_PRODUCT.configurationCommitId,
+            displayId: "shortId",
+            message: "message",
+          },
+        ])
+      );
+
+      initializeSubjects();
+      service.setRepositoryId("test-repo-id");
+      setSearchKeySubject(COMMIT_ID);
+      tick(DEBOUNCE_TIME);
+
+      expect(scmService.getCommitsInfo).toHaveBeenCalledTimes(1);
+
+      finalProductService.getFinalProducts.mockReturnValue(
+        of(SECOND_FINAL_PRODUCT_PAGE)
+      );
+      scmService.getCommitsInfo.mockReturnValue(
+        of([
+          {
+            id: SECOND_FINAL_PRODUCT.configurationCommitId,
+            displayId: "secondShortId",
+            message: "second message",
+          },
+        ])
+      );
+      setPageIndexSubject(1);
+      tick();
+
+      expect(scmService.getCommitsInfo).toHaveBeenCalledTimes(2);
+      expect(scmService.getCommitsInfo).toHaveBeenLastCalledWith({
+        projectId: PROJECT_ID,
+        repositoryId: "test-repo-id",
+        commitIds: [SECOND_FINAL_PRODUCT.configurationCommitId],
+      });
+    }));
+
     it("should compute isLastPage from the finalProductsPage signal", fakeAsync(() => {
       initializeSubjects();
       setSearchKeySubject(COMMIT_ID);
@@ -782,6 +1048,140 @@ describe("FinalProductDropdownStateService", () => {
       setPageIndexSubject(1);
       expect(service.isLastPage()).toBeTruthy();
     }));
+
+    describe("blocking the dropdown while commits info is loading", () => {
+      it("should initialize isLoadingCommitsInfo to false", () => {
+        expect(service.isLoadingCommitsInfo()).toBeFalsy();
+      });
+
+      it("should set isLoadingCommitsInfo to true while fetching commits info and false once resolved", fakeAsync(() => {
+        const commitsInfoSubject = new Subject<
+          { id: string; displayId: string; message: string }[]
+        >();
+        scmService.getCommitsInfo.mockReturnValue(
+          commitsInfoSubject.asObservable()
+        );
+
+        initializeSubjects();
+        service.setRepositoryId("test-repo-id");
+        setSearchKeySubject(COMMIT_ID);
+        tick(DEBOUNCE_TIME);
+
+        expect(service.isLoadingCommitsInfo()).toBeTruthy();
+
+        commitsInfoSubject.next([
+          {
+            id: FIRST_FINAL_PRODUCT.configurationCommitId,
+            displayId: "shortId",
+            message: "message",
+          },
+        ]);
+        commitsInfoSubject.complete();
+
+        expect(service.isLoadingCommitsInfo()).toBeFalsy();
+      }));
+
+      it("should keep displaying the previous stable options with full commit ids while commits info is loading", fakeAsync(() => {
+        const commitsInfoSubject = new Subject<
+          { id: string; displayId: string; message: string }[]
+        >();
+        scmService.getCommitsInfo.mockReturnValue(
+          commitsInfoSubject.asObservable()
+        );
+
+        initializeSubjects();
+        service.setRepositoryId("test-repo-id");
+        setSearchKeySubject(COMMIT_ID);
+        tick(DEBOUNCE_TIME);
+
+        expect(service.isLoadingCommitsInfo()).toBeTruthy();
+        expect(service.finalProductDropdownOptions()).toEqual([]);
+
+        commitsInfoSubject.next([
+          {
+            id: FIRST_FINAL_PRODUCT.configurationCommitId,
+            displayId: "shortId",
+            message: "message",
+          },
+        ]);
+        commitsInfoSubject.complete();
+
+        expect(service.isLoadingCommitsInfo()).toBeFalsy();
+        expect(service.finalProductDropdownOptions()).toEqual([
+          {
+            label: "shortId message",
+            value: FIRST_FINAL_PRODUCT,
+          },
+        ]);
+      }));
+
+      it("should fall back to the full commit id once loading completes when the commit is not returned by the API", fakeAsync(() => {
+        const commitsInfoSubject = new Subject<
+          { id: string; displayId: string; message: string }[]
+        >();
+        scmService.getCommitsInfo.mockReturnValue(
+          commitsInfoSubject.asObservable()
+        );
+
+        initializeSubjects();
+        service.setRepositoryId("test-repo-id");
+        setSearchKeySubject(COMMIT_ID);
+        tick(DEBOUNCE_TIME);
+
+        expect(service.finalProductDropdownOptions()).toEqual([]);
+
+        commitsInfoSubject.next([]);
+        commitsInfoSubject.complete();
+
+        expect(service.isLoadingCommitsInfo()).toBeFalsy();
+        expect(service.finalProductDropdownOptions()).toEqual([
+          {
+            label: FIRST_FINAL_PRODUCT.configurationCommitId,
+            value: FIRST_FINAL_PRODUCT,
+          },
+        ]);
+      }));
+
+      it("should keep the dropdown blocked with the previous options when the commits info call fails", fakeAsync(() => {
+        const commitsInfoSubject = new Subject<
+          { id: string; displayId: string; message: string }[]
+        >();
+        scmService.getCommitsInfo.mockReturnValue(
+          commitsInfoSubject.asObservable()
+        );
+
+        initializeSubjects();
+        service.setRepositoryId("test-repo-id");
+        setSearchKeySubject(COMMIT_ID);
+        tick(DEBOUNCE_TIME);
+
+        expect(service.isLoadingCommitsInfo()).toBeTruthy();
+
+        commitsInfoSubject.error(new Error("scm failure"));
+
+        expect(service.isLoadingCommitsInfo()).toBeFalsy();
+        expect(service.finalProductDropdownOptions()).toEqual([
+          {
+            label: FIRST_FINAL_PRODUCT.configurationCommitId,
+            value: FIRST_FINAL_PRODUCT,
+          },
+        ]);
+      }));
+
+      it("should not block the dropdown when repositoryId is not provided", fakeAsync(() => {
+        initializeSubjects();
+        setSearchKeySubject(COMMIT_ID);
+        tick(DEBOUNCE_TIME);
+
+        expect(service.isLoadingCommitsInfo()).toBeFalsy();
+        expect(service.finalProductDropdownOptions()).toEqual([
+          {
+            label: FIRST_FINAL_PRODUCT.configurationCommitId,
+            value: FIRST_FINAL_PRODUCT,
+          },
+        ]);
+      }));
+    });
 
     it("should initialize searchKey criteria subject to undefined", () => {
       service["searchKeySubject"].subscribe((searchKey: string | undefined) =>

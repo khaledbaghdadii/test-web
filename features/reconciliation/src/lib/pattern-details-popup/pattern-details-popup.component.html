@@ -1,0 +1,26 @@
+<p-dialog
+  [header]="
+    patternDetails?.id && patternDetails?.title
+      ? patternDetails?.id + ' - ' + patternDetails?.title
+      : ''
+  "
+  [visible]="visible"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [draggable]="false"
+  [maximizable]="true"
+  [style]="
+    maximized
+      ? { minWidth: '100vw', minHeight: '100vh' }
+      : { width: '50vw', minHeight: '53vh' }
+  "
+  (onMaximize)="toggleMaximized()"
+  appendTo="body"
+>
+  <mxevolve-pattern-details
+    [patternInstanceId]="patternInstanceId"
+    [projectId]="projectId"
+    (detailsLoaded)="onDetailsLoaded($event)"
+    (rootCauseClicked)="rootCauseClicked.emit($event)"
+  ></mxevolve-pattern-details>
+</p-dialog>

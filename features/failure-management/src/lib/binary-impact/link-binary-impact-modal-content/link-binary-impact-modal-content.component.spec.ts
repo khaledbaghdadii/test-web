@@ -1,5 +1,6 @@
 import { ToastMessageService } from "@mxflow/ui/alert";
 import { LinkBinaryImpactModalContentComponent } from "./link-binary-impact-modal-content.component";
+import { BinaryImpactsSelectionTableComponent } from "../binary-impacts-selection-table/binary-impacts-selection-table.component";
 import {
   MockBuilder,
   MockedComponentFixture,
@@ -13,6 +14,7 @@ import { of, Subject, throwError } from "rxjs";
 import {
   AnalysisObjectSelectionState,
   AnalysisObjectSelectionType,
+  AnalysisObjectType,
   BinaryImpactLinkingStateService,
 } from "@mxflow/features/analysis-objects";
 import {
@@ -26,6 +28,7 @@ import {
   ValidationScopeSetterComponent,
 } from "@mxflow/features/validation-management";
 import { DomTestUtils } from "@mxevolve/testing";
+import { PreviouslyLinkedDetectionToggleComponent } from "@mxevolve/domains/test/widget";
 
 const WARNING_MESSAGE = "Warning message";
 const PROJECT_ID = "projectId";
@@ -161,6 +164,55 @@ describe("LinkBinaryImpactModalContentComponent", () => {
   describe("show impacts with no defects", () => {
     it("should default show impacts with no defects signal to false", () => {
       expect(component.showImpactsWithoutDefects()).toBeFalsy();
+    });
+  });
+
+  describe("show previously linked impacts", () => {
+    const getSelectionTable = () =>
+      fixture.debugElement.query(
+        By.css('[data-testid="binary-impact-selection-table"]')
+      ).componentInstance as BinaryImpactsSelectionTableComponent;
+
+    it("should default show previously linked impacts signal to false", () => {
+      expect(component.showPreviouslyLinkedImpacts()).toBeFalsy();
+    });
+
+    it("should pass the binary impact type to the previously linked toggle", () => {
+      const toggle = ngMocks.find(
+        fixture,
+        PreviouslyLinkedDetectionToggleComponent
+      );
+
+      expect(ngMocks.input(toggle, "analysisObjectType")).toBe(
+        AnalysisObjectType.BINARY_IMPACT
+      );
+    });
+
+    it("should forward undefined filter values to the selection table when the toggle is off", () => {
+      component.previouslyLinkedFilter = {
+        testCaseExternalIds: ["ext1"],
+        scenarioDefinitionId: "scenarioDefinitionId",
+      };
+      component.showPreviouslyLinkedImpacts.set(false);
+      fixture.detectChanges();
+
+      const selectionTable = getSelectionTable();
+      expect(selectionTable.previouslyLinkedFilter).toBeUndefined();
+    });
+
+    it("should forward the filter values to the selection table when the toggle is on", () => {
+      component.previouslyLinkedFilter = {
+        testCaseExternalIds: ["ext1"],
+        scenarioDefinitionId: "scenarioDefinitionId",
+      };
+      component.showPreviouslyLinkedImpacts.set(true);
+      fixture.detectChanges();
+
+      const selectionTable = getSelectionTable();
+      expect(selectionTable.previouslyLinkedFilter).toEqual({
+        testCaseExternalIds: ["ext1"],
+        scenarioDefinitionId: "scenarioDefinitionId",
+      });
     });
   });
 

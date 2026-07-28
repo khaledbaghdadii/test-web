@@ -1,0 +1,79 @@
+<mxevolve-multi-page-dialog
+  [dialogClass]="dialogClass()"
+  [header]="selected()?.name"
+  (pageChange)="onPageChange($event)"
+>
+  <ng-template
+    mxevolveMultiPageDialogPage="templates"
+    title="Build & Test Available Templates"
+  >
+    <div class="flex flex-col gap-4">
+      <mxevolve-templates-sub-family-filter
+        [options]="subFamilyOptions()"
+        [searchTerm]="searchTerm()"
+        (subFamilyChange)="onSubFamilyChange($event)"
+        (searchChange)="onSearch($event)"
+      />
+
+      <p-table
+        [value]="templates()"
+        [paginator]="true"
+        [rows]="pageSize"
+        [loading]="loading()"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Description</th>
+            <th scope="col" class="w-1"></th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-definition>
+          <tr>
+            <td>
+              <mxevolve-definition-details-link
+                [projectId]="projectId()"
+                [definition]="definition"
+              />
+            </td>
+            <td>{{ definition.description }}</td>
+            <td class="p-1 text-right">
+              <p-button
+                label="Run"
+                [outlined]="true"
+                [ariaLabel]="'Run ' + definition.name"
+                (onClick)="run(definition)"
+              >
+                <ng-template #icon>
+                  <mxevolve-icon name="play_circle" size="sm" />
+                </ng-template>
+              </p-button>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="3" class="py-4 text-center">No templates available</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </ng-template>
+
+  <ng-template mxevolveMultiPageDialogPage="executor">
+    @if (selected(); as definition) { @if (isBackportSelected()) {
+    <mxevolve-backport-executor
+      [projectId]="projectId()"
+      [definition]="definition"
+      (created)="onExecutorCreated($event)"
+    />
+    } @else {
+    <mxevolve-build-and-test-executor
+      [projectId]="projectId()"
+      [definition]="definition"
+      [initialValues]="executorSeed()"
+      (created)="onExecutorCreated($event)"
+    />
+    } }
+  </ng-template>
+</mxevolve-multi-page-dialog>

@@ -1,8 +1,9 @@
-import { Component, input } from "@angular/core";
+import { Component, input, output } from "@angular/core";
 import {
   FixIssuesComponent,
   RetryMergeRequestComponent,
 } from "@mxevolve/domains/business-process/composite-widget";
+import { FinalProductDetailsComponent } from "@mxevolve/domains/artifact/widget";
 import { MergeRequestStepperComponent } from "@mxevolve/domains/scm/widget";
 import { StageStatus } from "@mxevolve/domains/business-process/util";
 import {
@@ -17,6 +18,7 @@ import {
     MergeRequestStepperComponent,
     RetryMergeRequestComponent,
     FixIssuesComponent,
+    FinalProductDetailsComponent,
     BusinessProcessContentContainerComponent,
     StageContainerComponent,
   ],
@@ -32,4 +34,6 @@ export class IntegrateChangesStageComponent {
   readonly stageStatus = input.required<StageStatus>();
   readonly supportsResourceManagement = input.required<boolean>();
   readonly parentBranchName = input.required<string>();
+  readonly finalProductId = input<string>();
+  readonly fetchError = output<string>();
 }

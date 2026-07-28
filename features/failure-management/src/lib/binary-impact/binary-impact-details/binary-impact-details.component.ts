@@ -68,18 +68,16 @@ export class BinaryImpactDetailsComponent implements OnInit, OnDestroy {
   }
 
   fetchBinaryImpactDetails() {
-    this.binaryImpactService
-      .getById(this.projectId, this.binaryImpactId)
-      .subscribe({
-        next: (binaryImpact) => {
-          this.binaryImpact = binaryImpact;
-          this.isLoading = false;
-        },
-        error: (error) => {
-          this.errorMessageEmitter.emit(error);
-          this.isLoading = false;
-        },
-      });
+    this.binaryImpactService.getById(this.binaryImpactId).subscribe({
+      next: (binaryImpact) => {
+        this.binaryImpact = binaryImpact;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.errorMessageEmitter.emit(error);
+        this.isLoading = false;
+      },
+    });
   }
 
   setUpgradeImpact(upgradeImpact: UpgradeImpact) {

@@ -17,6 +17,7 @@
     >
       <ng-template #header>
         <tr>
+          <th pResizableColumn id="table-id-header">ID</th>
           <th pResizableColumn id="table-title-header">Title</th>
           <th pResizableColumn id="table-title-header">Type</th>
           <th pResizableColumn id="table-title-header"></th>
@@ -24,6 +25,18 @@
       </ng-template>
       <ng-template #body let-testUnitLink>
         <tr>
+          <td class="truncate">
+            @if (testUnitLink.analysisObjectType ===
+            AnalysisObjectType.BINARY_IMPACT) {
+            <mxevolve-binary-impact-id-link
+              [binaryImpactId]="testUnitLink.analysisObjectId"
+              [readableId]="testUnitLink.analysisObjectReadableId"
+              [projectId]="testUnitLink.projectId"
+            ></mxevolve-binary-impact-id-link>
+            } @else {
+            <span>-</span>
+            }
+          </td>
           <td class="truncate">
             <a
               [pTooltip]="testUnitLink.analysisObjectTitle"
@@ -51,6 +64,7 @@
       <ng-template #loadingbody>
         @for(i of Array(5); track i) {
         <tr>
+          <td><p-skeleton /></td>
           <td><p-skeleton /></td>
           <td><p-skeleton /></td>
           <td><p-skeleton /></td>

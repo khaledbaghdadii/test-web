@@ -41,6 +41,7 @@ export class ConfigurationComponentSelectorComponent
 {
   @Input() projectId: string;
   @Input() required: boolean;
+  @Input() applyGridLayout = false;
   @Input() mxVersion: string;
   @Input() mxBuildId: string;
   @Input() bipVersion?: string;

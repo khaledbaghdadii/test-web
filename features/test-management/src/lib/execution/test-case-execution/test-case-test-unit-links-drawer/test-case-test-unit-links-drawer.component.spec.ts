@@ -194,6 +194,7 @@ describe("TestCaseTestUnitLinksDrawerComponent", () => {
           analysisObjectId: "ao-1",
           analysisObjectType: AnalysisObjectType.BINARY_REGRESSION,
           analysisObjectTitle: "Binary Regression Title",
+          analysisObjectReadableId: "BR-001",
           analysisObjectLink: "mocked-link",
           scenarioExecutionId: "se-1",
         },
@@ -279,6 +280,7 @@ describe("TestCaseTestUnitLinksDrawerComponent", () => {
           analysisObjectId: "incident-1",
           analysisObjectType: AnalysisObjectType.INCIDENT,
           analysisObjectTitle: "INC-001 - Incident Title",
+          analysisObjectReadableId: "INC-001",
           analysisObjectLink: "",
           scenarioExecutionId: "se-1",
         },
@@ -287,10 +289,43 @@ describe("TestCaseTestUnitLinksDrawerComponent", () => {
           analysisObjectId: "br-1",
           analysisObjectType: AnalysisObjectType.BINARY_REGRESSION,
           analysisObjectTitle: "Binary Regression Title",
+          analysisObjectReadableId: undefined,
           analysisObjectLink: "mocked-link",
           scenarioExecutionId: "se-2",
         },
       ]);
+    });
+  });
+
+  describe("ID column", () => {
+    it("should render the binary impact id link for BINARY_IMPACT rows", () => {
+      const testCaseExecution = { externalId: "ext-123" } as TestCaseExecution;
+      const binaryImpactLink: TestUnitAnalysisObjectLink = {
+        projectId: "project-1",
+        scenarioExecutionId: "se-1",
+        testCaseExecution: { id: "tce-1", externalId: "ext-123" },
+        analysisObject: {
+          id: "bi-1",
+          type: AnalysisObjectType.BINARY_IMPACT,
+          title: "Binary Impact Title",
+          readableId: "PROJECT-BIMP-1",
+        },
+        testUnitId: "tu-1",
+      };
+
+      const linksMap = new Map<string, TestUnitAnalysisObjectLink[]>();
+      linksMap.set("ext-123", [binaryImpactLink]);
+      testCaseTestUnitAnalysisObjectLinksMap.set(linksMap);
+
+      const fixture = MockRender(TestCaseTestUnitLinksDrawerComponent, {
+        visible: true,
+        testCaseExecution,
+      });
+      fixture.detectChanges();
+
+      expect(
+        fixture.debugElement.query(By.css("mxevolve-binary-impact-id-link"))
+      ).toBeTruthy();
     });
   });
 

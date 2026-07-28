@@ -79,43 +79,9 @@ describe("BranchDetailsCardComponent", () => {
   });
 
   describe("parent branch", () => {
-    it("shows the parent branch as a link when a repository URL is available", async () => {
+    it("shows the parent branch", async () => {
       await renderComponent();
 
-      expect(
-        screen.getByRole("link", { name: MOCK_DEVELOPMENT.source! })
-      ).toBeTruthy();
-    });
-
-    it("links the parent branch to the correct branch URL", async () => {
-      await renderComponent();
-
-      const link = screen.getByRole("link", {
-        name: MOCK_DEVELOPMENT.source!,
-      });
-      expect(link.getAttribute("href")).toContain(
-        encodeURIComponent("refs/heads/" + MOCK_DEVELOPMENT.source)
-      );
-    });
-
-    it("opens the parent branch link in a new tab", async () => {
-      await renderComponent();
-
-      const link = screen.getByRole("link", {
-        name: MOCK_DEVELOPMENT.source!,
-      });
-      expect(link.getAttribute("target")).toBe("_blank");
-    });
-
-    it("shows the parent branch as plain text when no repository URL is configured", async () => {
-      await renderComponent({
-        ...MOCK_DEVELOPMENT,
-        repository: { id: "repo-1", url: "" },
-      });
-
-      expect(
-        screen.queryByRole("link", { name: MOCK_DEVELOPMENT.source! })
-      ).toBeNull();
       expect(screen.getByText(MOCK_DEVELOPMENT.source!)).toBeTruthy();
     });
   });

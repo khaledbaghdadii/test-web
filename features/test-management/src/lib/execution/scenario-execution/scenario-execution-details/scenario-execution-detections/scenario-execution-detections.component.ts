@@ -36,6 +36,7 @@ import {
 } from "rxjs";
 import { AnalysisObjectLink } from "../../../analysis-object-link/analysis-object-link";
 import { AnalysisObjectType } from "@mxflow/features/analysis-objects";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 @Component({
   selector: "mxevolve-scenario-execution-detections",
@@ -47,10 +48,17 @@ export class ScenarioExecutionDetectionsComponent implements OnDestroy {
   private configurationRegressionService = inject(
     ConfigurationRegressionService
   );
-  private binaryRegressionService = inject(BinaryRegressionDataService);
-  private binaryImpactService = inject(BinaryImpactService);
-  private toastMessageService = inject(ToastMessageService);
-  private failureReasonsDataService = inject(FailureReasonsDataService);
+  private readonly binaryRegressionService = inject(
+    BinaryRegressionDataService
+  );
+  private readonly binaryImpactService = inject(BinaryImpactService);
+  private readonly toastMessageService = inject(ToastMessageService);
+  private readonly failureReasonsDataService = inject(
+    FailureReasonsDataService
+  );
+  private readonly analyticsTrackerService = inject(
+    TestManagementAnalyticsTrackerService
+  );
 
   stateService = inject(ScenarioExecutionStateManagementService);
   projectId = this.stateService.projectId;
@@ -414,6 +422,7 @@ export class ScenarioExecutionDetectionsComponent implements OnDestroy {
     this.selectedAnalysisObjectId = analysisObjectId;
     this.selectedAnalysisObjectType = analysisObjectType;
     this.isUnlinkModalVisible = true;
+    this.analyticsTrackerService.trackUnlinkAnalysisObject(analysisObjectType);
   }
 
   private displayErrorMessage(errorMessage: string) {

@@ -1,4 +1,3 @@
-import { Location } from "@angular/common";
 import { Component, computed, inject, OnDestroy, OnInit } from "@angular/core";
 import { ActivatedRoute, Params, Router } from "@angular/router";
 import { AuthorizationService } from "@mxflow/core/auth";
@@ -41,7 +40,6 @@ export class ScenarioExecutionDetailsComponent implements OnInit, OnDestroy {
   private readonly scenarioExecutionService = inject(ScenarioExecutionService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly location = inject(Location);
   private readonly toastMessageService = inject(ToastMessageService);
   private readonly validationScopeService = inject(ValidationScopeService);
   private readonly authorizationService = inject(AuthorizationService);
@@ -256,10 +254,6 @@ export class ScenarioExecutionDetailsComponent implements OnInit, OnDestroy {
     this.stateService.setComment(this.fetchedComment);
   }
 
-  back() {
-    this.location.back();
-  }
-
   detectionTabClick() {
     this.isDetectionsSelected = true;
   }
@@ -358,46 +352,46 @@ export class ScenarioExecutionDetailsComponent implements OnInit, OnDestroy {
       );
   }
 
-  handleKeptExecutionToggled(id: string) {
+  handleKeepExecutionToggled(id: string) {
     const scenarioExecutionCandidate = this.scenarioExecutionHistory().find(
       (value) => value.id === id
     );
 
     if (scenarioExecutionCandidate && this.selectedScenarioExecution()) {
       const currScenarioExecution = this.selectedScenarioExecution();
-      this.toggleKeptExecutionForScenarioInScenarioExecutionsHistory(
+      this.toggleKeepExecutionForScenarioInScenarioExecutionsHistory(
         scenarioExecutionCandidate,
-        !scenarioExecutionCandidate.keptExecution
+        !scenarioExecutionCandidate.keepExecution
       );
-      this.toggleKeptExecutionForScenarioExecutionIfCurrentlyViewed(
+      this.toggleKeepExecutionForScenarioExecutionIfCurrentlyViewed(
         scenarioExecutionCandidate.id,
         currScenarioExecution.id,
-        !currScenarioExecution.keptExecution
+        !currScenarioExecution.keepExecution
       );
 
       this.scenarioExecutionService
-        .toggleKeptExecutionFlag(
+        .toggleKeepExecutionFlag(
           this.projectId(),
           scenarioExecutionCandidate.id,
-          !scenarioExecutionCandidate.keptExecution
+          !scenarioExecutionCandidate.keepExecution
         )
         .subscribe({
           next: () => {
             this.toastMessageService.showSuccess(
-              this.getKeptExecutionMessage(
-                !scenarioExecutionCandidate.keptExecution
-              )
+              !scenarioExecutionCandidate.keepExecution
+                ? this.getExecutionMarkedAsKeptMessage()
+                : this.getExecutionMarkedAsNotKeptMessage()
             );
           },
           error: (error) => {
-            this.toggleKeptExecutionForScenarioInScenarioExecutionsHistory(
+            this.toggleKeepExecutionForScenarioInScenarioExecutionsHistory(
               scenarioExecutionCandidate,
-              scenarioExecutionCandidate.keptExecution
+              scenarioExecutionCandidate.keepExecution
             );
-            this.toggleKeptExecutionForScenarioExecutionIfCurrentlyViewed(
+            this.toggleKeepExecutionForScenarioExecutionIfCurrentlyViewed(
               scenarioExecutionCandidate.id,
               currScenarioExecution.id,
-              currScenarioExecution.keptExecution
+              currScenarioExecution.keepExecution
             );
             this.toastMessageService.showError(error);
           },
@@ -405,29 +399,31 @@ export class ScenarioExecutionDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  private toggleKeptExecutionForScenarioExecutionIfCurrentlyViewed(
+  private toggleKeepExecutionForScenarioExecutionIfCurrentlyViewed(
     scenarioExecutionCandidateId: string,
     currScenarioExecutionId: string,
-    keptExecution: boolean
+    keepExecution: boolean
   ) {
     if (scenarioExecutionCandidateId === currScenarioExecutionId) {
-      this.stateService.setKeptExecution(keptExecution);
+      this.stateService.setKeepExecution(keepExecution);
     }
   }
 
-  private toggleKeptExecutionForScenarioInScenarioExecutionsHistory(
+  private toggleKeepExecutionForScenarioInScenarioExecutionsHistory(
     scenarioExecutionCandidate: TestUnitScenarioExecutionModel,
-    keptExecution: boolean
+    keepExecution: boolean
   ) {
-    this.stateService.setKeptExecutionForTestUnitScenarioExecution(
+    this.stateService.setKeepExecutionForTestUnitScenarioExecution(
       scenarioExecutionCandidate.id,
-      keptExecution
+      keepExecution
     );
   }
 
-  private getKeptExecutionMessage(keptExecution: boolean): string {
-    return keptExecution
-      ? "The execution has been marked as kept."
-      : "The execution has been marked as not kept.";
+  private getExecutionMarkedAsKeptMessage(): string {
+    return "The execution has been marked as kept.";
+  }
+
+  private getExecutionMarkedAsNotKeptMessage(): string {
+    return "The execution has been marked as not kept.";
   }
 }

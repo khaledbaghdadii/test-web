@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { KeepServicesCheckboxComponent } from "./keep-services-checkbox.component";
 import { By } from "@angular/platform-browser";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 describe("KeepServicesCheckboxComponent", () => {
   let component: KeepServicesCheckboxComponent;

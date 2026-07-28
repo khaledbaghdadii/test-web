@@ -23,6 +23,7 @@ const MOCK_EXECUTION: UpgradeProcessExecution = {
   processName: "Continuous RTP Greening",
   description: "Short business process description",
   projectId: "project-123",
+  owner: "owner-1",
   input: {
     factoryProductId: "MX.3",
     mxVersion: "3.1.64",
@@ -63,7 +64,7 @@ describe("ActivityRunDetailsComponent", () => {
     it("renders the section heading", async () => {
       await renderComponent();
 
-      expect(screen.getByText("Activity Run Details")).toBeTruthy();
+      expect(screen.getByText("Run Details")).toBeTruthy();
     });
 
     it("displays the template name", async () => {
@@ -78,6 +79,21 @@ describe("ActivityRunDetailsComponent", () => {
       expect(
         screen.getByText("Upgrade Process / Continuous RTP Greening")
       ).toBeTruthy();
+    });
+
+    it("displays the owner", async () => {
+      await renderComponent();
+
+      expect(screen.getByText("Process Run owner")).toBeTruthy();
+      expect(screen.getByText("owner-1")).toBeTruthy();
+    });
+
+    it("shows a dash when the owner is empty", async () => {
+      await renderComponent({
+        execution: { ...MOCK_EXECUTION, owner: "" },
+      });
+
+      expect(screen.getAllByText("-").length).toBeGreaterThanOrEqual(1);
     });
 
     it("displays the upgrade jump", async () => {
@@ -98,6 +114,15 @@ describe("ActivityRunDetailsComponent", () => {
       expect(
         screen.getByText("Short business process description")
       ).toBeTruthy();
+    });
+
+    it("renders the process run owner as the last general detail", async () => {
+      await renderComponent();
+
+      const generalDetails = screen.getByText("Run Details").nextElementSibling;
+      expect(generalDetails?.lastElementChild).toBe(
+        screen.getByText("Process Run owner").parentElement
+      );
     });
 
     it("shows a dash when description is blank", async () => {

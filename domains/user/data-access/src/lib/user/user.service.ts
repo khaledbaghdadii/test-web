@@ -1,8 +1,8 @@
 import { HttpClient } from "@angular/common/http";
 import { inject, Injectable } from "@angular/core";
 import { GATEWAY_CONFIG, GatewayConfig } from "@mxevolve/shared/core/config";
-import { forkJoin, Observable, of } from "rxjs";
-import type { UserApiResponse } from "./user-api-model";
+import { catchError, forkJoin, Observable, of, throwError } from "rxjs";
+import type { UserApiResponse, UserPageResponse } from "./user-api-model";
 
 @Injectable()
 export class UserService {
@@ -21,5 +21,30 @@ export class UserService {
         )
       )
     );
+  }
+
+  /**
+   * Resolves prefilled notification recipients back to user objects.
+   * Migrated from the business-process new-arch `ProjectUsersFetcherService`
+   * (itself migrated verbatim from the legacy
+   * `web/libs/features/user-management/src/lib/project-users-fetcher-service/project-users-fetcher.service.ts`),
+   * consolidated here alongside the other user lookup (VAL-27132 follow-up
+   * cleanup). Note this hits a different provider (`user-management-service`)
+   * than {@link fetchByIds} (`project-definition-service`).
+   */
+  fetchUsersByEmails(
+    projectId: string,
+    emails: string[]
+  ): Observable<UserPageResponse> {
+    return this.http
+      .get<UserPageResponse>(
+        `${this.config.gatewayUrl}user-management/projects/${projectId}/users`,
+        {
+          params: {
+            userEmails: emails,
+          },
+        }
+      )
+      .pipe(catchError((error) => throwError(() => new Error(error.error))));
   }
 }

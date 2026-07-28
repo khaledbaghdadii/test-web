@@ -10,6 +10,7 @@ import {
 import { delay, of, throwError } from "rxjs";
 import { UpdateReference, UpdateReferenceStatus } from "../update-reference";
 import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { provideRouter } from "@angular/router";
 
 const configurationImpactUrl1 = "config/impact1/url";
 const configurationImpactId1 = "configurationImpactId1";
@@ -39,18 +40,22 @@ const configurationImpacts = [
 const binaryImpactId1 = "binary impact id 1";
 const upgradeImpactId1 = "upgradeImpactId1";
 const upgradeImpactLink1 = "upgrade impact link 1";
+const binaryImpactObjectId1 = "PROJECT-BIMP-1";
 
 const binaryImpactId2 = "binary impact id 2";
 const upgradeImpactId2 = "upgradeImpactId2";
 const upgradeImpactLink2 = "upgrade impact link 2";
+const binaryImpactObjectId2 = "PROJECT-BIMP-2";
 
 const binaryImpactId3 = "binary impact id 3";
 const upgradeImpactId3 = "upgradeImpactId3";
 const upgradeImpactLink3 = "upgrade impact link 3";
+const binaryImpactObjectId3 = "PROJECT-BIMP-3";
 
 const binaryImpacts = [
   {
     id: binaryImpactId1,
+    objectId: binaryImpactObjectId1,
     upgradeImpact: {
       externalIssue: {
         id: upgradeImpactId1,
@@ -60,6 +65,7 @@ const binaryImpacts = [
   },
   {
     id: binaryImpactId2,
+    objectId: binaryImpactObjectId2,
     upgradeImpact: {
       externalIssue: {
         id: upgradeImpactId2,
@@ -69,6 +75,7 @@ const binaryImpacts = [
   },
   {
     id: binaryImpactId3,
+    objectId: binaryImpactObjectId3,
     upgradeImpact: {
       externalIssue: {
         id: upgradeImpactId3,
@@ -103,15 +110,17 @@ const updateReferenceRow = {
   commitMessage: commitMessage1,
   status: UpdateReferenceStatus.PASSED,
   commitId: commitId1,
+  linkedBinaryImpacts: [
+    {
+      binaryImpactId: binaryImpactId1,
+      readableId: binaryImpactObjectId1,
+    },
+    {
+      binaryImpactId: binaryImpactId2,
+      readableId: binaryImpactObjectId2,
+    },
+  ],
   linkedImpacts: [
-    {
-      displayText: upgradeImpactId1,
-      link: upgradeImpactLink1,
-    },
-    {
-      displayText: upgradeImpactId2,
-      link: upgradeImpactLink2,
-    },
     {
       displayText: configurationImpactTitle1,
       link: configurationImpactUrl1,
@@ -143,11 +152,13 @@ const updateReferenceRow2 = {
   commitMessage: commitMessage2,
   status: UpdateReferenceStatus.FAILED,
   commitId: commitId2,
-  linkedImpacts: [
+  linkedBinaryImpacts: [
     {
-      displayText: upgradeImpactId3,
-      link: upgradeImpactLink3,
+      binaryImpactId: binaryImpactId3,
+      readableId: binaryImpactObjectId3,
     },
+  ],
+  linkedImpacts: [
     {
       displayText: configurationImpactTitle3,
       link: configurationImpactUrl3,
@@ -195,6 +206,7 @@ describe("UpdateReferenceTableComponent", () => {
     } as unknown as DetectionUriBuilderPipe;
     TestBed.configureTestingModule({
       imports: [UpdateReferenceTableComponent],
+      providers: [provideRouter([])],
     }).overrideComponent(UpdateReferenceTableComponent, {
       set: {
         providers: [
@@ -321,6 +333,7 @@ describe("UpdateReferenceTableComponent", () => {
       expect(component.updateReferences).toEqual([
         {
           ...updateReferenceRow,
+          linkedBinaryImpacts: [],
           linkedImpacts: [
             {
               displayText: configurationImpactTitle1,
@@ -373,15 +386,9 @@ describe("UpdateReferenceTableComponent", () => {
         binaryImpactId2,
       ]);
     });
-    it("should return only one upgrade impact if both binary impacts linked inherit the same upgrade impact", () => {
+    it("should list each linked binary impact by its human-readable id", () => {
       binaryImpactService.fetchByIds = jest.fn(() =>
-        of([
-          binaryImpacts[0],
-          {
-            ...binaryImpacts[1],
-            upgradeImpact: binaryImpacts[0].upgradeImpact,
-          },
-        ] as unknown[] as LiteBinaryImpact[])
+        of([binaryImpacts[0], binaryImpacts[1]] as LiteBinaryImpact[])
       );
       configImpactService.fetchByIds = jest.fn(() => of([]));
       updateReferenceService.fetch = jest.fn(() =>
@@ -397,14 +404,22 @@ describe("UpdateReferenceTableComponent", () => {
       expect(component.updateReferences).toEqual([
         {
           ...updateReferenceRow,
-          linkedImpacts: [
-            { displayText: upgradeImpactId1, link: upgradeImpactLink1 },
+          linkedBinaryImpacts: [
+            {
+              binaryImpactId: binaryImpactId1,
+              readableId: binaryImpactObjectId1,
+            },
+            {
+              binaryImpactId: binaryImpactId2,
+              readableId: binaryImpactObjectId2,
+            },
           ],
+          linkedImpacts: [],
         },
       ]);
     });
 
-    it("should return update references without any binary impacts linked in case the binary impact does not inherit an upgrade impact", () => {
+    it("should list the linked binary impact by its readable id even when it does not inherit an upgrade impact", () => {
       binaryImpactService.fetchByIds = jest.fn(() =>
         of([
           {
@@ -427,6 +442,12 @@ describe("UpdateReferenceTableComponent", () => {
       expect(component.updateReferences).toEqual([
         {
           ...updateReferenceRow,
+          linkedBinaryImpacts: [
+            {
+              binaryImpactId: binaryImpactId1,
+              readableId: binaryImpactObjectId1,
+            },
+          ],
           linkedImpacts: [],
         },
       ]);
@@ -454,9 +475,13 @@ describe("UpdateReferenceTableComponent", () => {
       expect(component.updateReferences).toEqual([
         {
           ...updateReferenceRow,
-          linkedImpacts: [
-            { displayText: upgradeImpactId1, link: upgradeImpactLink1 },
+          linkedBinaryImpacts: [
+            {
+              binaryImpactId: binaryImpactId1,
+              readableId: binaryImpactObjectId1,
+            },
           ],
+          linkedImpacts: [],
         },
       ]);
     });
@@ -485,7 +510,7 @@ describe("UpdateReferenceTableComponent", () => {
     );
     component.ngOnInit();
     expect(component.updateReferences).toEqual([
-      { ...updateReferenceRow, linkedImpacts: [] },
+      { ...updateReferenceRow, linkedBinaryImpacts: [], linkedImpacts: [] },
       updateReferenceRow2,
     ]);
   });
@@ -498,10 +523,10 @@ describe("UpdateReferenceTableComponent", () => {
         "#update-reference-table-linked-impacts"
       );
       expect(linkedImpacts[0].textContent).toContain(
-        `${upgradeImpactId1} , ${upgradeImpactId2} , ${configurationImpactTitle1} , ${configurationImpactTitle2}`
+        `${binaryImpactObjectId1}, ${binaryImpactObjectId2} , ${configurationImpactTitle1} , ${configurationImpactTitle2}`
       );
       expect(linkedImpacts[1].textContent).toContain(
-        `${upgradeImpactId3} , ${configurationImpactTitle3}`
+        `${binaryImpactObjectId3} , ${configurationImpactTitle3}`
       );
     });
     it("should show a dash if commit id is not defined", () => {

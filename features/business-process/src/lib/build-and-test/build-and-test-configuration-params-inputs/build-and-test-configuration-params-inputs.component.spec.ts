@@ -112,7 +112,7 @@ describe("BuildAndTestConfigurationParamsInputsComponent", () => {
     archivalBranchInputComponent.initialInvalid.emit();
 
     expect(toastService.showError).toHaveBeenCalledWith(
-      "The branch name available in the BP definition or pre-filled in the pop-up already exists in the repository. Please update the definition or the pop-up with a unique name to create a new branch."
+      "The branch name available in the Process Template or pre-filled in the pop-up already exists in the repository. Please update the Process Template or the pop-up with a unique name to create a new branch."
     );
   });
 
@@ -151,7 +151,7 @@ describe("BuildAndTestConfigurationParamsInputsComponent", () => {
     parentBranchInputComponent.initialInvalid.emit();
 
     expect(toastService.showError).toHaveBeenCalledWith(
-      "The branch name available in the BP definition doesn't exist in the repository. Please check the name and try again with an existing branch."
+      "The branch name available in the Process Template doesn't exist in the repository. Please check the name and try again with an existing branch."
     );
   });
 });

@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   EventEmitter,
   inject,
   Input,
@@ -28,6 +29,10 @@ import {
   ScenarioExecution,
   TestExecution,
 } from "../../scenario-execution/scenario-execution";
+import {
+  PreviouslyLinkedFilter,
+  ScenarioExecutionHousekeepingStatus,
+} from "@mxevolve/domains/test/model";
 
 import { ReportingModule } from "@mxtest/reporting";
 import { CardContainerModule } from "@mxflow/ui/container";
@@ -148,10 +153,21 @@ export class TestExecutionWebEngineReportComponent
   isUpdateReferenceModalVisible = false;
   commitId: string;
   repoId: string;
-  testCaseExecution: TestCaseExecution | undefined;
+  scenarioDefinitionId = signal<string | undefined>(undefined);
+  testCaseExecution = signal<TestCaseExecution | undefined>(undefined);
+
+  previouslyLinkedFilter = computed<PreviouslyLinkedFilter>(() => {
+    const testCaseExecution = this.testCaseExecution();
+    return {
+      testCaseExternalIds: testCaseExecution
+        ? [testCaseExecution.externalId]
+        : [],
+      scenarioDefinitionId: this.scenarioDefinitionId(),
+    };
+  });
+
   protected isTransferToReconModalVisible: WritableSignal<boolean> =
     signal(false);
-
   ngOnInit(): void {
     this.isLoading = true;
     this.stateService.setCurrentlyViewedTestExecutionId(this.testExecutionId);
@@ -171,6 +187,7 @@ export class TestExecutionWebEngineReportComponent
         concatMap(([scenarioExecution, environment, repositories]) => {
           this.testDirectory = environment.tests[0].directory;
           this.repoId = repositories[0].id;
+          this.scenarioDefinitionId.set(scenarioExecution.scenarioDefinitionId);
           return this.resolveReportParamsForRequestedTestExecution(
             scenarioExecution
           );
@@ -309,9 +326,11 @@ export class TestExecutionWebEngineReportComponent
       return {
         label: "Update reference",
         nodeType: RunNodeType[assertionType],
-        enabled: this.launchedHousekeeping(scenarioExecution)
-          ? () => false
-          : this.updateReferenceEnabledCallback(),
+        enabled:
+          this.launchedHousekeeping(scenarioExecution) ||
+          !scenarioExecution.branch
+            ? () => false
+            : this.updateReferenceEnabledCallback(),
         onClick: (
           nodeId: string,
           details?: RunNodeTypeDetails[typeof assertionType]
@@ -443,7 +462,10 @@ export class TestExecutionWebEngineReportComponent
   }
 
   private launchedHousekeeping(scenario: ScenarioExecution) {
-    return scenario.cleaningStatus !== "NOT_LAUNCHED";
+    return (
+      scenario.cleaningStatus !==
+      ScenarioExecutionHousekeepingStatus.NOT_LAUNCHED
+    );
   }
 
   ngOnDestroy() {
@@ -457,14 +479,16 @@ export class TestExecutionWebEngineReportComponent
   onSelectTreeNodeChange(): OnNodeSelectionChange {
     return {
       action: (nodeData: ReportingTreeNodeData) => {
-        this.testCaseExecution = undefined;
+        this.testCaseExecution.set(undefined);
         if (nodeData.testCases.length > 0) {
-          this.testCaseExecution = this.toTestCaseExecution(
-            nodeData.testCases[nodeData.testCases.length - 1].uuid
+          this.testCaseExecution.set(
+            this.toTestCaseExecution(
+              nodeData.testCases[nodeData.testCases.length - 1].uuid
+            )
           );
         }
         this.stateService.setWebReportCurrentlyViewedTestCaseExecution(
-          this.testCaseExecution
+          this.testCaseExecution()
         );
         this.stateService.setWebReportSelectedTestCaseExecutions(
           nodeData.testCases

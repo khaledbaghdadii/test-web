@@ -1,4 +1,4 @@
-import { Injectable, inject } from "@angular/core";
+import { inject, Injectable } from "@angular/core";
 import { catchError, map, Observable, throwError } from "rxjs";
 import { APP_CONFIG, AppConfig } from "@mxflow/config";
 import {
@@ -32,15 +32,15 @@ import { RepushScenarioExecutionFromFinalProductRequest } from "./request/repush
 import { RepushScenarioExecutionFromFinalProductApiRequest } from "./request/repush-scenario-execution-from-final-product-api-request";
 import { BulkRepushFromFinalProductRequest } from "./request/bulk-repush-from-final-product-request";
 import { RunDetails } from "@mxtest/reporting-data-models";
-import { UpdateKeptExecutionApiRequest } from "./request/update-kept-execution-api-request";
+import { UpdateKeepExecutionApiRequest } from "./request/update-keep-execution-api-request";
 import { ScenarioAnalysisStatus } from "./scenario-analysis-status/scenario-analysis-status";
 import { AnalysisStatusEligibility } from "./scenario-analysis-status/analysis-status-eligibility";
-
 export interface BulkRepushFromFinalProductApiRequest {
   finalProductId: string;
   rtpCommitId?: string;
   testScenarioExecutions: string[];
 }
+
 @Injectable()
 export class ScenarioExecutionService {
   private readonly http = inject(HttpClient);
@@ -68,11 +68,11 @@ export class ScenarioExecutionService {
     return `${this.apiUrl}projects/${request.projectId}/test-execution-manager/scenario-executions/assignee`;
   }
 
-  private getToggleKeptExecutionFlagUri(
+  private getToggleKeepExecutionFlagUri(
     projectId: string,
     scenarioExecutionId: string
   ) {
-    return `${this.apiUrl}projects/${projectId}/test-execution-manager/scenario-executions/${scenarioExecutionId}/kept-execution`;
+    return `${this.apiUrl}projects/${projectId}/test-execution-manager/scenario-executions/${scenarioExecutionId}/keep-execution`;
   }
 
   updateComment(
@@ -133,7 +133,8 @@ export class ScenarioExecutionService {
     contextId?: string,
     subContextId?: string,
     statuses?: string[],
-    scenarioExecutionIds?: string[]
+    scenarioExecutionIds?: string[],
+    commitIds?: string[]
   ): Observable<ScenarioExecution[]> {
     let url = this.getScenarioExecutionsBaseUrl(projectId) + `?`;
     if (contextId) url += `&contextId=${contextId}`;
@@ -141,6 +142,7 @@ export class ScenarioExecutionService {
     if (statuses) url += `&statuses=${statuses}`;
     if (scenarioExecutionIds)
       url += `&scenarioExecutionIds=${scenarioExecutionIds}`;
+    if (commitIds) url += `&commitIds=${commitIds}`;
 
     return this.http.get<ScenarioExecutionApiModel[]>(url).pipe(
       map((apiModels) => this.toScenarioExecutions(apiModels)),
@@ -326,23 +328,23 @@ export class ScenarioExecutionService {
       .pipe(catchError((error) => throwError(() => new Error(error.error))));
   }
 
-  toggleKeptExecutionFlag(
+  toggleKeepExecutionFlag(
     projectId: string,
     scenarioExecutionId: string,
-    keptExecution: boolean
+    keepExecution: boolean
   ): Observable<void> {
     return this.http
       .put<void>(
-        this.getToggleKeptExecutionFlagUri(projectId, scenarioExecutionId),
-        this.toUpdateKeptExecutionApiRequest(keptExecution)
+        this.getToggleKeepExecutionFlagUri(projectId, scenarioExecutionId),
+        this.toUpdateKeepExecutionApiRequest(keepExecution)
       )
       .pipe(catchError((error) => throwError(() => new Error(error.message))));
   }
 
-  private toUpdateKeptExecutionApiRequest(keptExecution: boolean) {
+  private toUpdateKeepExecutionApiRequest(keepExecution: boolean) {
     return {
-      keptExecution: keptExecution,
-    } as UpdateKeptExecutionApiRequest;
+      keepExecution: keepExecution,
+    } as UpdateKeepExecutionApiRequest;
   }
 
   private toBulkRepushFromFinalProductApiRequest(
@@ -431,11 +433,12 @@ export class ScenarioExecutionService {
         : undefined,
       rtpCommitId: apiModel.rtpCommitId,
       finalProductId: apiModel.finalProductId,
-      keptExecution: apiModel.keptExecution,
+      keepExecution: apiModel.keepExecution,
       supportReconActivities: apiModel.supportReconActivities,
       qualityLevel: apiModel.qualityLevel,
       businessProcesses: apiModel.businessProcesses,
       project: apiModel.project,
+      testUnitHead: apiModel.testUnitHead,
     };
   }
 

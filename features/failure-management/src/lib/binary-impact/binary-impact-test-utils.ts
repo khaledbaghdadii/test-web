@@ -77,6 +77,7 @@ export class BinaryImpactTestUtils {
       propagationPattern: uuidv5("propagationPattern", seed),
       propagationQuery: uuidv5("propagationQuery", seed),
       id: uuidv5("id", seed),
+      objectId: uuidv5("objectId", seed),
       owner: uuidv5("owner", seed),
       title: uuidv5("title", seed),
       projectId: uuidv5("projectId", seed),
@@ -131,6 +132,7 @@ export class BinaryImpactTestUtils {
           name: uuidv5("cbpmL3L4Name", seed),
         },
       ],
+      affectedVersions: [uuidv5("affectedVersion", seed)],
       ...overrides,
     };
   }

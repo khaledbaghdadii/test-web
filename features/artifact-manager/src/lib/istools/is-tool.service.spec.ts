@@ -153,6 +153,61 @@ describe("ArtifactIsToolsService", () => {
     req.flush(mockIsToolsPage);
   });
 
+  it("should include archived param when provided", () => {
+    const mockIsToolsPage: IsToolsPage = {
+      content: [MOCK_IS_TOOL],
+      totalPages: 1,
+      totalElements: 1,
+      size: MOCK_PAGE_SIZE,
+      number: MOCK_PAGE_INDEX,
+      last: true,
+    };
+
+    const filters: FetchIsToolsFilter = {
+      pageSize: MOCK_PAGE_SIZE,
+      pageIndex: MOCK_PAGE_INDEX,
+      type: MOCK_ISTOOL_TYPE,
+      archived: false,
+    };
+
+    service.getAllIsTools(filters).subscribe((res) => {
+      expect(res).toEqual(mockIsToolsPage);
+    });
+
+    const req = httpMock.expectOne(
+      `${MOCK_GATEWAY_URL}artifact-management/is-tools?page=${MOCK_PAGE_INDEX}&size=${MOCK_PAGE_SIZE}&type=${MOCK_ISTOOL_TYPE}&searchKey=&archived=false&sort=createdOn%2Cdesc`
+    );
+    expect(req.request.method).toBe("GET");
+    req.flush(mockIsToolsPage);
+  });
+
+  it("should not include archived param when not provided", () => {
+    const mockIsToolsPage: IsToolsPage = {
+      content: [MOCK_IS_TOOL],
+      totalPages: 1,
+      totalElements: 1,
+      size: MOCK_PAGE_SIZE,
+      number: MOCK_PAGE_INDEX,
+      last: true,
+    };
+
+    const filters: FetchIsToolsFilter = {
+      pageSize: MOCK_PAGE_SIZE,
+      pageIndex: MOCK_PAGE_INDEX,
+      type: MOCK_ISTOOL_TYPE,
+    };
+
+    service.getAllIsTools(filters).subscribe((res) => {
+      expect(res).toEqual(mockIsToolsPage);
+    });
+
+    const req = httpMock.expectOne(
+      `${MOCK_GATEWAY_URL}artifact-management/is-tools?page=${MOCK_PAGE_INDEX}&size=${MOCK_PAGE_SIZE}&type=${MOCK_ISTOOL_TYPE}&searchKey=&sort=createdOn%2Cdesc`
+    );
+    expect(req.request.method).toBe("GET");
+    req.flush(mockIsToolsPage);
+  });
+
   it("should handle errors from getAllIsTools", () => {
     const filters: FetchIsToolsFilter = {
       pageSize: MOCK_PAGE_SIZE,

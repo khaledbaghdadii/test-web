@@ -1,0 +1,53 @@
+<mxevolve-definition-input
+  inputId="validation-archival-branch"
+  [control]="archivalBranchNameFormControl()"
+  label="Archival Branch Name"
+  description="Enter the name of the archival branch that you wish to use or create"
+>
+  <mxevolve-branch-input
+    [projectId]="projectId()"
+    [repositoryId]="repositoryId()"
+    [branchShouldExist]="false"
+    inputId="validation-archival-branch"
+    [branchNameFormControl]="archivalBranchNameFormControl()"
+    [initialValue]="archivalBranchNameInitialValue"
+    (initialInvalid)="showArchivalBranchError()"
+  />
+</mxevolve-definition-input>
+
+@if (finalProductIdFormControl().enabled) {
+<mxevolve-definition-input
+  inputId="validation-final-product-tag"
+  [control]="finalProductIdFormControl()"
+  label="Final Product (represented by Tag-Commit ID)"
+  description="Select the final product that you wish to use in your validation"
+  tooltip="A final product is the client config and the tooling used to validate it. It will be packaged and shipped to the client when it reaches the right quality level."
+>
+  <mxevolve-final-product-dropdown
+    inputId="validation-final-product-tag"
+    [projectId]="projectId()"
+    [labelMode]="FinalProductLabelMode.TAG_COMMIT_ID"
+    [validationLevelFilter]="validationLevelFilter"
+    [formControl]="finalProductIdFormControl()"
+    [stateFilter]="[FinalProductState.AVAILABLE]"
+    [fetchParent]="false"
+    sort="createdOn,desc"
+    (selectedFinalProductChange)="onFinalProductSelected($event)"
+  />
+</mxevolve-definition-input>
+} @if (rtpCommitIdFormControl().value) {
+<mxevolve-definition-input
+  inputId="validation-rtp-commit"
+  [control]="rtpCommitIdFormControl()"
+  label="RTP Commit ID"
+  description="Select the RTP commit from which you want to take your branch"
+>
+  <input
+    id="validation-rtp-commit"
+    pInputText
+    class="w-full bg-gray-100 text-gray-500 cursor-not-allowed"
+    [formControl]="rtpCommitIdFormControl()"
+    [readonly]="true"
+  />
+</mxevolve-definition-input>
+}

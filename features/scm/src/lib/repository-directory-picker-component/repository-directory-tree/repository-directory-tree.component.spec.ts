@@ -1,114 +1,241 @@
 import { RepositoryDirectoryTreeComponent } from "./repository-directory-tree.component";
 import { RepositoryDirectoryTreeInput } from "./repository-directory-tree-input";
-import { of } from "rxjs";
+import { of, throwError } from "rxjs";
 import { TreeNode } from "primeng/api";
+import { DynamicDialogConfig, DynamicDialogRef } from "primeng/dynamicdialog";
 import { ToastMessageService } from "@mxflow/ui/alert";
+import { TestBed } from "@angular/core/testing";
 import {
   DescribeRepositoryResponse,
   RepoItemType,
 } from "../../describe-repository/describe-repository-response";
 
-describe("Repository Directory Tree Component Test", () => {
-  const dynamicDialogRef: any = {
-    close: jest.fn(),
-    destroy: jest.fn(),
-  };
-  let dynamicDialogConfig: any = {
-    data: getRepositoryDirectoryTreeInput(),
-  };
-  const toastMessageService: ToastMessageService = {
-    showError: jest.fn(),
-  } as unknown as ToastMessageService;
+type MockDynamicDialogRef = jest.Mocked<
+  Pick<DynamicDialogRef, "close" | "destroy">
+>;
 
-  let repositoryDirectoryTreeComponent: RepositoryDirectoryTreeComponent;
+describe("Repository Directory Tree Component Test", () => {
+  let dynamicDialogRef: MockDynamicDialogRef;
+  let toastMessageService: ToastMessageService;
 
   beforeEach(() => {
-    repositoryDirectoryTreeComponent = new RepositoryDirectoryTreeComponent(
-      dynamicDialogRef,
-      dynamicDialogConfig,
-      toastMessageService
-    );
+    dynamicDialogRef = {
+      close: jest.fn(),
+      destroy: jest.fn(),
+    } as unknown as MockDynamicDialogRef;
+    toastMessageService = {
+      showError: jest.fn(),
+    } as unknown as ToastMessageService;
   });
 
-  it("should create the tree node from the directories and files correctly", () => {
-    repositoryDirectoryTreeComponent.ngOnInit();
+  function createComponent(
+    input?: Partial<RepositoryDirectoryTreeInput>
+  ): RepositoryDirectoryTreeComponent {
+    TestBed.configureTestingModule({
+      providers: [
+        RepositoryDirectoryTreeComponent,
+        { provide: DynamicDialogRef, useValue: dynamicDialogRef },
+        { provide: DynamicDialogConfig, useValue: { data: input } },
+        { provide: ToastMessageService, useValue: toastMessageService },
+      ],
+    });
+    const component = TestBed.inject(RepositoryDirectoryTreeComponent);
+    if (input) {
+      component.input = input as RepositoryDirectoryTreeInput;
+    }
+    return component;
+  }
 
-    expect(repositoryDirectoryTreeComponent.directoriesTreeNode).toEqual(
-      getTreeNodesWithFiles()
+  function initComponent(
+    input: Partial<RepositoryDirectoryTreeInput>
+  ): RepositoryDirectoryTreeComponent {
+    const component = createComponent(input);
+    component.ngOnInit();
+    return component;
+  }
+
+  it("should not build any nodes when no input is provided", () => {
+    const component = initComponent(
+      undefined as unknown as RepositoryDirectoryTreeInput
     );
+
+    expect(component.directoriesTreeNode).toBeUndefined();
   });
 
-  it("should create the tree node from the directories correctly if should read files is false", () => {
-    dynamicDialogConfig = {
-      data: {
-        directories: of(getDescribeRepositoryResponse()),
-        preSelectedDirectory: "",
-      },
-    };
-    repositoryDirectoryTreeComponent = new RepositoryDirectoryTreeComponent(
-      dynamicDialogRef,
-      dynamicDialogConfig,
-      toastMessageService
-    );
-    repositoryDirectoryTreeComponent.ngOnInit();
+  it("should build directory and file nodes when reading files", () => {
+    const component = initComponent(getRepositoryDirectoryTreeInput());
 
-    expect(repositoryDirectoryTreeComponent.directoriesTreeNode).toStrictEqual(
+    expect(component.directoriesTreeNode).toEqual(getTreeNodesWithFiles());
+  });
+
+  it("should build only directory nodes when not reading files", () => {
+    const component = initComponent({
+      directories: of(getDescribeRepositoryResponse()),
+      preSelectedDirectory: "",
+    });
+
+    expect(component.directoriesTreeNode).toStrictEqual(
       getTreeNodesWithoutFiles()
     );
   });
 
-  it("should pre select the correct directory and expand needed directories", () => {
-    dynamicDialogConfig = {
-      data: getRepositoryDirectoryTreeInputWithPreSelect(),
-    };
-    repositoryDirectoryTreeComponent = new RepositoryDirectoryTreeComponent(
-      dynamicDialogRef,
-      dynamicDialogConfig,
-      toastMessageService
+  it("should pre select and expand the pre selected directory", () => {
+    const component = initComponent(
+      getRepositoryDirectoryTreeInputWithPreSelect()
     );
-    repositoryDirectoryTreeComponent.ngOnInit();
 
-    expect(repositoryDirectoryTreeComponent.directoriesTreeNode).toStrictEqual(
-      getTreeNodesExpanded()
-    );
-    expect(repositoryDirectoryTreeComponent.selectedDirectory).toEqual(
-      getSelectedRepository()
-    );
+    expect(component.directoriesTreeNode).toStrictEqual(getTreeNodesExpanded());
+    expect(component.selectedDirectory).toEqual(getSelectedRepository());
   });
 
-  it("should not expand a directory if the pre selected name starts with its name", () => {
-    dynamicDialogConfig = {
-      data: getRepositoryDirectoryTreeInputWithPreSelectAndSimilarNames(),
-    };
-    repositoryDirectoryTreeComponent = new RepositoryDirectoryTreeComponent(
-      dynamicDialogRef,
-      dynamicDialogConfig,
-      toastMessageService
+  it("should not expand a directory whose name only prefixes the pre selected name", () => {
+    const component = initComponent(
+      getRepositoryDirectoryTreeInputWithPreSelectAndSimilarNames()
     );
-    repositoryDirectoryTreeComponent.ngOnInit();
 
-    expect(repositoryDirectoryTreeComponent.directoriesTreeNode).toStrictEqual(
+    expect(component.directoriesTreeNode).toStrictEqual(
       getTreeNodesWithSimilarNames()
     );
-    expect(repositoryDirectoryTreeComponent.selectedDirectory).toEqual(
-      getAnotherSelectedRepository()
-    );
+    expect(component.selectedDirectory).toEqual(getAnotherSelectedRepository());
   });
 
-  it("should close the reference with correct selected item on select", () => {
-    repositoryDirectoryTreeComponent.selectedDirectory = {
-      data: "directory",
-    };
-    repositoryDirectoryTreeComponent.select();
+  it("should pre select and expand the pre selected file in single selection mode", () => {
+    const component = initComponent({
+      directories: of(getDescribeRepositoryResponse()),
+      failureMessageProvider: () => "",
+      shouldReadFiles: true,
+      multiSelection: false,
+      preSelectedDirectory: "dir1/file1",
+    });
+
+    expect(component.directoriesTreeNode[0].expanded).toBe(true);
+    expect(component.directoriesTreeNode[1].expanded).toBe(false);
+    expect(component.directoriesTreeNode[2].expanded).toBe(false);
+    expect(component.selectedDirectory.data).toEqual("dir1/file1");
+  });
+
+  it("should pre select and expand all pre selected files in multi selection mode", () => {
+    const component = initComponent({
+      directories: of(getDescribeRepositoryResponse()),
+      failureMessageProvider: () => "",
+      shouldReadFiles: true,
+      multiSelection: true,
+      preSelectedFiles: ["dir1/file1", "dir3/file3"],
+    });
+
+    expect(component.directoriesTreeNode[0].expanded).toBe(true);
+    expect(component.directoriesTreeNode[1].expanded).toBe(false);
+    expect(component.directoriesTreeNode[2].expanded).toBe(true);
+    expect(
+      (component.selectedDirectory as TreeNode[]).map((node) => node.data)
+    ).toEqual(["dir1/file1", "dir3/file3"]);
+  });
+
+  it("should show an error and close the dialog when loading directories fails", () => {
+    initComponent({
+      directories: throwError(() => new Error("boom")),
+      failureMessageProvider: () => "failure message",
+    });
+
+    expect(toastMessageService.showError).toHaveBeenCalledWith(
+      "failure message",
+      "Failed to load repository content."
+    );
+    expect(dynamicDialogRef.destroy).toHaveBeenCalled();
+  });
+
+  it("should close with the selected directory data in single selection mode", () => {
+    const component = createComponent();
+    component.selectedDirectory = { data: "directory" };
+
+    component.select();
 
     expect(dynamicDialogRef.close).toHaveBeenCalledWith("directory");
   });
 
-  it("should destroy the reference on close", () => {
-    repositoryDirectoryTreeComponent.close();
+  it("should close with undefined in single selection mode when nothing is selected", () => {
+    const component = createComponent();
+    component.selectedDirectory = undefined;
+
+    component.select();
+
+    expect(dynamicDialogRef.close).toHaveBeenCalledWith(undefined);
+  });
+
+  it("should destroy the dialog reference on close", () => {
+    const component = createComponent();
+
+    component.close();
 
     expect(dynamicDialogRef.destroy).toHaveBeenCalled();
   });
+
+  it("should keep only matching files and their parent directory when filtering by filename", () => {
+    const component = initComponent({
+      directories: of(getDescribeRepositoryResponse()),
+      preSelectedDirectory: "",
+      failureMessageProvider: () => "",
+      shouldReadFiles: true,
+      fileNameFilter: "file1",
+    });
+
+    expect(component.directoriesTreeNode).toStrictEqual(
+      getTreeNodesFilteredByFileName()
+    );
+  });
+
+  it("should keep nested directories that contain a matching file when filtering by filename", () => {
+    const component = initComponent({
+      directories: of(getNestedDescribeRepositoryResponse()),
+      preSelectedDirectory: "",
+      failureMessageProvider: () => "",
+      shouldReadFiles: true,
+      fileNameFilter: "target.json",
+    });
+
+    expect(component.directoriesTreeNode).toStrictEqual(
+      getNestedTreeNodesFilteredByFileName()
+    );
+  });
+
+  it("should close with the selected items data in multi selection mode", () => {
+    const component = createComponent({ multiSelection: true });
+    component.selectedDirectory = [
+      { data: "dir1/file1" },
+      { data: "dir2/file2" },
+    ];
+
+    component.select();
+
+    expect(dynamicDialogRef.close).toHaveBeenCalledWith([
+      "dir1/file1",
+      "dir2/file2",
+    ]);
+  });
+
+  it("should close with an empty array in multi selection mode when nothing is selected", () => {
+    const component = createComponent({ multiSelection: true });
+    component.selectedDirectory = undefined;
+
+    component.select();
+
+    expect(dynamicDialogRef.close).toHaveBeenCalledWith([]);
+  });
+
+  it.each<[string, TreeNode | TreeNode[] | undefined, boolean]>([
+    ["an empty array", [], true],
+    ["a populated array", [{ data: "dir1/file1" }], false],
+    ["undefined", undefined, true],
+    ["a single selected directory", { data: "dir1" }, false],
+  ])(
+    "should evaluate isDirectoryNotSelected for %s",
+    (_caseName, selection, expected) => {
+      const component = createComponent();
+      component.selectedDirectory = selection;
+
+      expect(component.isDirectoryNotSelected()).toBe(expected);
+    }
+  );
 });
 
 function getRepositoryDirectoryTreeInput(): RepositoryDirectoryTreeInput {
@@ -455,4 +582,103 @@ function getAnotherSelectedRepository(): TreeNode {
     children: [],
     selectable: true,
   };
+}
+
+function getNestedDescribeRepositoryResponse(): DescribeRepositoryResponse {
+  return {
+    repositoryItems: [
+      {
+        parentPath: "",
+        name: "dirA",
+        children: [
+          {
+            parentPath: "dirA",
+            name: "subA",
+            children: [
+              {
+                parentPath: "dirA/subA",
+                name: "target.json",
+                type: RepoItemType.FILE,
+              },
+            ],
+            type: RepoItemType.DIRECTORY,
+          },
+        ],
+        type: RepoItemType.DIRECTORY,
+      },
+      {
+        parentPath: "",
+        name: "dirB",
+        children: [
+          {
+            parentPath: "dirB",
+            name: "other.json",
+            type: RepoItemType.FILE,
+          },
+        ],
+        type: RepoItemType.DIRECTORY,
+      },
+    ],
+  };
+}
+
+function getTreeNodesFilteredByFileName(): TreeNode[] {
+  return [
+    {
+      label: "dir1",
+      data: "dir1",
+      key: "dir1",
+      expanded: false,
+      expandedIcon: "pi pi-folder-open",
+      collapsedIcon: "pi pi-folder",
+      children: [
+        {
+          label: "file1",
+          data: "dir1/file1",
+          key: "dir1/file1",
+          collapsedIcon: "pi pi-file",
+          children: undefined,
+          leaf: true,
+          selectable: true,
+        },
+      ],
+      selectable: false,
+    },
+  ];
+}
+
+function getNestedTreeNodesFilteredByFileName(): TreeNode[] {
+  return [
+    {
+      label: "dirA",
+      data: "dirA",
+      key: "dirA",
+      expanded: false,
+      expandedIcon: "pi pi-folder-open",
+      collapsedIcon: "pi pi-folder",
+      children: [
+        {
+          label: "subA",
+          data: "dirA/subA",
+          key: "dirA/subA",
+          expanded: false,
+          expandedIcon: "pi pi-folder-open",
+          collapsedIcon: "pi pi-folder",
+          children: [
+            {
+              label: "target.json",
+              data: "dirA/subA/target.json",
+              key: "dirA/subA/target.json",
+              collapsedIcon: "pi pi-file",
+              children: undefined,
+              leaf: true,
+              selectable: true,
+            },
+          ],
+          selectable: false,
+        },
+      ],
+      selectable: false,
+    },
+  ];
 }

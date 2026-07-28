@@ -7,6 +7,7 @@ import { BranchDetailsComponent } from "./branch-details.component";
 import type { BranchCreationDetails } from "@mxevolve/domains/business-process/util";
 import { DevelopmentDetailsComponent } from "@mxevolve/domains/scm/composite-widget";
 import {
+  CommitsService,
   Development,
   MergeRequestService,
   MergeRequestState,
@@ -22,6 +23,10 @@ const MOCK_IMPORTS = [
 
 const mockMergeRequestService = {
   getFilteredMergeRequests: jest.fn(),
+};
+
+const mockCommitsService = {
+  getCommitDifferences: jest.fn(),
 };
 
 const MOCK_DEVELOPMENT: Development = {
@@ -52,7 +57,6 @@ async function renderComponent(
     processId: string;
     branchCreation: BranchCreationDetails;
     development: Development;
-    commitsBehindCount: number;
   }> = {}
 ) {
   return render(BranchDetailsComponent, {
@@ -60,6 +64,7 @@ async function renderComponent(
     componentImports: MOCK_IMPORTS,
     componentProviders: [
       { provide: MergeRequestService, useValue: mockMergeRequestService },
+      { provide: CommitsService, useValue: mockCommitsService },
     ],
   });
 }
@@ -316,22 +321,10 @@ describe("BranchDetailsComponent", () => {
   });
 
   describe("commits behind warning", () => {
-    it("passes commitsBehindCount to development-details-widget", async () => {
-      const { fixture } = await renderComponent({
-        branchCreation: { developmentId: "dev-1", failed: false },
-        development: MOCK_DEVELOPMENT,
-        commitsBehindCount: 3,
-      });
-
-      const devDetails = ngMocks.find(fixture, DevelopmentDetailsComponent);
-      expect(ngMocks.input(devDetails, "commitsBehindCount")).toBe(3);
-    });
-
     it("does not render development-details-widget when development is not loaded", async () => {
       await renderComponent({
         branchCreation: { developmentId: "dev-1", failed: false },
         development: undefined,
-        commitsBehindCount: 3,
       });
 
       expect(

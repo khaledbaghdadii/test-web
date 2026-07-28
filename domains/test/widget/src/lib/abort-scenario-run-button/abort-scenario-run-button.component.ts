@@ -10,13 +10,16 @@ import { Button } from "primeng/button";
 import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { ConfirmationService } from "primeng/api";
 import { TooltipModule } from "primeng/tooltip";
-import { ScenarioRunService } from "@mxevolve/domains/test/data-access";
+import {
+  ScenarioRunService,
+  TestManagementAnalyticsTrackerService,
+} from "@mxevolve/domains/test/data-access";
 import { ScenarioRunStatus } from "@mxevolve/domains/test/model";
 import {
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
-import { AbortScenarioRunAnalyticsTrackerService } from "./abort-scenario-run-analytics-tracker.service";
+
 @Component({
   selector: "mxevolve-abort-scenario-run-button",
   standalone: true,
@@ -72,9 +75,9 @@ export class AbortScenarioRunButtonComponent {
   private readonly scenarioRunService = inject(ScenarioRunService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly toastMessageService = inject(ToastMessageService);
-private readonly analyticsTrackerService = inject(
-  AbortScenarioRunAnalyticsTrackerService
-);
+  private readonly analyticsTrackerService = inject(
+    TestManagementAnalyticsTrackerService
+  );
 
   handleAbortClicked() {
     this.confirmationService.confirm({

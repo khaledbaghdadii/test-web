@@ -8,6 +8,8 @@ import { ProjectService } from "./project.service";
 import { Project } from "./project";
 import { ProjectResponse } from "./response/project-response";
 import { FeatureToggleResponse } from "./response/feature-toggle-response";
+import { CrmProjectResponse } from "./response/crm-project-response";
+import { CrmProject } from "./crm-project";
 
 const MOCK_GATEWAY_URL = "https://mock-gateway-url.com/";
 const PROJECT_ID1 = "PROJECT_ID1";
@@ -48,6 +50,18 @@ const FEATURE_ID = "FEATURE_ID";
 const FEATURE_TOGGLE_RESPONSE: FeatureToggleResponse = {
   id: FEATURE_ID,
   toggledOn: true,
+};
+const CRM_PROJECT_RESPONSE: CrmProjectResponse = {
+  id: "CRM_PROJECT_ID",
+  projectId: PROJECT_ID1,
+  externalId: "EXT-1",
+  name: "CRM Project 1",
+};
+const CRM_PROJECT: CrmProject = {
+  id: "CRM_PROJECT_ID",
+  projectId: PROJECT_ID1,
+  externalId: "EXT-1",
+  name: "CRM Project 1",
 };
 
 describe("Service: ProjectService", () => {
@@ -224,6 +238,37 @@ describe("Service: ProjectService", () => {
           PROJECT_ID1 +
           "/feature-toggles/" +
           FEATURE_ID
+      );
+      expect(request.request.method).toBe("GET");
+      request.flush("Error", {
+        status: 500,
+        statusText: "Server Error",
+      });
+    });
+  });
+
+  describe("Get CRM projects", () => {
+    it("should get CRM projects for a project", () => {
+      service.getCrmProjects(PROJECT_ID1).subscribe((result) => {
+        expect(result).toEqual([CRM_PROJECT]);
+      });
+
+      const request = httpMock.expectOne(
+        MOCK_GATEWAY_URL + "projects/" + PROJECT_ID1 + "/crm-projects"
+      );
+      expect(request.request.method).toBe("GET");
+      request.flush([CRM_PROJECT_RESPONSE]);
+    });
+
+    it("should handle errors from get CRM projects", () => {
+      service.getCrmProjects(PROJECT_ID1).subscribe({
+        error: (error) => {
+          expect(error.status).toBe(500);
+        },
+      });
+
+      const request = httpMock.expectOne(
+        MOCK_GATEWAY_URL + "projects/" + PROJECT_ID1 + "/crm-projects"
       );
       expect(request.request.method).toBe("GET");
       request.flush("Error", {

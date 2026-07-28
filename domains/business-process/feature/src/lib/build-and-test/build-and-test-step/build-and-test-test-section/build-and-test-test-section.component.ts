@@ -1,14 +1,14 @@
 import { Component, computed, inject, input } from "@angular/core";
 import { BuildAndTestProcessStateUpdaterService } from "@mxevolve/domains/business-process/data-access";
 import { BusinessProcessContentContainerComponent } from "@mxevolve/domains/business-process/ui";
-import { ScenarioRunsComponent } from "@mxevolve/domains/test/widget";
 import {
-  ConfigAuditButtonComponent,
-  EnvironmentStatusPanelComponent,
-} from "@mxevolve/domains/environment/widget";
+  RunScenarioComponent,
+  ScenarioRunsComponent,
+  SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE,
+  MXCodeConfigurationAudit,
+} from "@mxevolve/domains/test/widget";
+import { Development } from "@mxevolve/domains/scm/data-access";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
-import { SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE } from "../scenario-execution-group-permission-warning-message";
-import { BuildAndTestRunTpkComponent } from "./build-and-test-run-tpk.component";
 
 const BUILD_AND_TEST_SUB_CONTEXT_ID = "BUILD_AND_TEST";
 
@@ -16,8 +16,8 @@ const BUILD_AND_TEST_SUB_CONTEXT_ID = "BUILD_AND_TEST";
  * Test panel of the Build & Test step.
  *
  * Mirrors upgrade-process convert-binary-stage: wraps the shared
- * `mxevolve-scenario-runs` widget (TPK Results) and restores the legacy
- * Select/Run TPK action row.
+ * `mxevolve-scenario-runs` widget (Scenario Results) and restores the legacy
+ * Select/Run Scenario action row.
  *
  * When an environment id is available, the shared environment status bar is
  * shown with the Config Audit split-button projected into its [extraActions]
@@ -34,9 +34,7 @@ const BUILD_AND_TEST_SUB_CONTEXT_ID = "BUILD_AND_TEST";
   imports: [
     BusinessProcessContentContainerComponent,
     ScenarioRunsComponent,
-    ConfigAuditButtonComponent,
-    EnvironmentStatusPanelComponent,
-    BuildAndTestRunTpkComponent,
+    RunScenarioComponent,
   ],
   providers: [BuildAndTestProcessStateUpdaterService, ToastMessageService],
   host: {
@@ -46,27 +44,37 @@ const BUILD_AND_TEST_SUB_CONTEXT_ID = "BUILD_AND_TEST";
 export class BuildAndTestTestSectionComponent {
   readonly projectId = input.required<string>();
   readonly processId = input.required<string>();
-  /** Optional until the test environment id is threaded through the model. */
-  readonly environmentId = input<string>();
-  readonly branchName = input<string>();
+  readonly development = input<Development>();
   readonly executionGroupId = input<string>();
   readonly machineGroupId = input<string>();
 
-  private readonly stateUpdater = inject(BuildAndTestProcessStateUpdaterService);
+  private readonly stateUpdater = inject(
+    BuildAndTestProcessStateUpdaterService
+  );
   private readonly toastMessageService = inject(ToastMessageService);
 
   readonly subContextId = BUILD_AND_TEST_SUB_CONTEXT_ID;
   readonly warningMessageMap =
     SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE;
-  readonly canRunTpk = computed(
+  readonly branchName = computed(() => this.development()?.name);
+  readonly canRunScenario = computed(
     () => !!this.branchName() && !!this.executionGroupId()
+  );
+
+  readonly resolveMXConfigurationAuditSettings = computed(
+    (): MXCodeConfigurationAudit | undefined => {
+      const commitId = this.development()?.parentCommitId;
+      return commitId
+        ? { enabled: true, baselineCommit: commitId }
+        : { enabled: false };
+    }
   );
 
   reloadExecution(): void {
     this.stateUpdater.reloadProcessDetails(this.processId(), this.projectId());
   }
 
-  handleRunTpkError(errorMessage: string): void {
+  handleRunScenarioError(errorMessage: string): void {
     this.toastMessageService.showError(errorMessage);
   }
 }

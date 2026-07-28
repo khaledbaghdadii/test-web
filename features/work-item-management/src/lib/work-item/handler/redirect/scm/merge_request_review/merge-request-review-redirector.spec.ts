@@ -1,26 +1,54 @@
 import { TestBed } from "@angular/core/testing";
 import { MergeRequestReviewRedirector } from "./merge-request-review-redirector";
-import { WorkItemRedirectionRegistryService } from "../../../../services/work-item-redirection-registry/work-item-redirection-registry.service";
-import { WorkItem } from "@mxflow/features/work-item-management";
+import {
+  WorkItemRedirectionRegistryService,
+  WorkItem,
+} from "@mxflow/features/work-item-management";
+import { IntegrateChangesUriFactoryService } from "@mxflow/features/business-process";
 
 describe("MergeRequestReviewRedirector", () => {
   let redirector: MergeRequestReviewRedirector;
-  let mockRegistry: jest.Mocked<WorkItemRedirectionRegistryService>;
   let windowOpenSpy: jest.SpyInstance;
 
-  beforeEach(async () => {
-    mockRegistry = {
-      registerHandler: jest.fn(),
-    } as unknown as jest.Mocked<WorkItemRedirectionRegistryService>;
+  const mockWorkItemRedirectionRegistryService = {
+    registerHandler: jest.fn(),
+  };
+
+  const mockIntegrateChangesUriFactoryService = {
+    constructIntegrateChangesUri: jest.fn(),
+  };
+
+  function createWorkItem(overrides: Partial<WorkItem> = {}): WorkItem {
+    return {
+      projectId: "proj1",
+      businessProcesses: [],
+      metadata: {},
+      ...overrides,
+    } as WorkItem;
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    mockIntegrateChangesUriFactoryService.constructIntegrateChangesUri.mockReturnValue(
+      null
+    );
 
     windowOpenSpy = jest.spyOn(window, "open").mockImplementation(() => null);
 
-    await TestBed.configureTestingModule({
+    TestBed.configureTestingModule({
       providers: [
-        { provide: WorkItemRedirectionRegistryService, useValue: mockRegistry },
         MergeRequestReviewRedirector,
+        {
+          provide: WorkItemRedirectionRegistryService,
+          useValue: mockWorkItemRedirectionRegistryService,
+        },
+        {
+          provide: IntegrateChangesUriFactoryService,
+          useValue: mockIntegrateChangesUriFactoryService,
+        },
       ],
-    }).compileComponents();
+    });
 
     redirector = TestBed.inject(MergeRequestReviewRedirector);
   });
@@ -30,81 +58,76 @@ describe("MergeRequestReviewRedirector", () => {
   });
 
   it("should register with registry service", () => {
-    expect(mockRegistry.registerHandler).toHaveBeenCalledWith(
-      "scm",
-      "merge_request_review",
-      redirector
+    expect(
+      mockWorkItemRedirectionRegistryService.registerHandler
+    ).toHaveBeenCalledWith("scm", "merge_request_review", redirector);
+  });
+
+  it.each([
+    [
+      "bp1",
+      "user-story-build-and-test",
+      "/app/proj1/business-process/build-and-test-processes/execution/bp1/integrate-changes",
+    ],
+    [
+      "bp2",
+      "master-validation",
+      "/app/proj1/business-process/validation-processes/execution/bp2/integrate-fixes",
+    ],
+    [
+      "bp3",
+      "binary-upgrade",
+      "/app/proj1/business-process/upgrade-processes/execution/bp3?step=merge",
+    ],
+  ])(
+    "should open constructed redirect url",
+    (businessProcessId, familyId, constructedUrl) => {
+      mockIntegrateChangesUriFactoryService.constructIntegrateChangesUri.mockReturnValue(
+        constructedUrl
+      );
+
+      const workItem = createWorkItem({
+        businessProcesses: [{ id: businessProcessId, familyId }],
+      });
+
+      redirector.redirect(workItem);
+
+      expect(
+        mockIntegrateChangesUriFactoryService.constructIntegrateChangesUri
+      ).toHaveBeenCalledWith(businessProcessId, familyId, "proj1");
+      expect(windowOpenSpy).toHaveBeenCalledWith(constructedUrl, "_blank");
+    }
+  );
+
+  it("should not redirect when family id is unsupported", () => {
+    mockIntegrateChangesUriFactoryService.constructIntegrateChangesUri.mockReturnValue(
+      null
     );
-  });
 
-  it("should redirect when metadata pullRequestUrl exists", () => {
-    const workItem: WorkItem = {
-      metadata: {
-        pullRequestUrl: "https://gitlab.example.com/project/merge_requests/123",
-      },
-    } as unknown as WorkItem;
+    const workItem = createWorkItem({
+      businessProcesses: [{ id: "bp4", familyId: "unknown-family" }],
+    });
 
     redirector.redirect(workItem);
 
-    expect(windowOpenSpy).toHaveBeenCalledWith(
-      "https://gitlab.example.com/project/merge_requests/123",
-      "_blank"
-    );
-  });
-
-  it("should not redirect when metadata is undefined", () => {
-    const workItem: WorkItem = {} as WorkItem;
-
-    redirector.redirect(workItem);
-
+    expect(
+      mockIntegrateChangesUriFactoryService.constructIntegrateChangesUri
+    ).toHaveBeenCalledWith("bp4", "unknown-family", "proj1");
     expect(windowOpenSpy).not.toHaveBeenCalled();
   });
 
-  it("should not redirect when metadata exists but pullRequestUrl is undefined", () => {
-    const workItem: WorkItem = {
-      metadata: {
-        otherProperty: "value",
-      },
-    } as unknown as WorkItem;
+  it("should not redirect when familyId is undefined", () => {
+    const workItem = createWorkItem({
+      businessProcesses: [
+        { id: "bp6" } as WorkItem["businessProcesses"][number],
+      ],
+    });
 
     redirector.redirect(workItem);
 
-    expect(windowOpenSpy).not.toHaveBeenCalled();
-  });
-
-  it("should not redirect when pullRequestUrl is not a string", () => {
-    const workItem: WorkItem = {
-      metadata: {
-        pullRequestUrl: 123,
-      },
-    } as unknown as WorkItem;
-
-    redirector.redirect(workItem);
-
-    expect(windowOpenSpy).not.toHaveBeenCalled();
-  });
-
-  it("should not redirect when pullRequestUrl is null", () => {
-    const workItem: WorkItem = {
-      metadata: {
-        pullRequestUrl: null,
-      },
-    } as unknown as WorkItem;
-
-    redirector.redirect(workItem);
-
-    expect(windowOpenSpy).not.toHaveBeenCalled();
-  });
-
-  it("should not redirect when pullRequestUrl is empty string", () => {
-    const workItem: WorkItem = {
-      metadata: {
-        pullRequestUrl: "",
-      },
-    } as unknown as WorkItem;
-
-    redirector.redirect(workItem);
-
+    expect(
+      mockIntegrateChangesUriFactoryService.constructIntegrateChangesUri
+    ).not.toHaveBeenCalled();
     expect(windowOpenSpy).not.toHaveBeenCalled();
   });
 });

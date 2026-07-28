@@ -4,29 +4,31 @@ import {
   EventEmitter,
   inject,
   Input,
+  OnChanges,
   Output,
+  SimpleChanges,
   ViewChild,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { RouterModule } from "@angular/router";
 import {
   BinaryUpgradeExecutionsQueryRequest,
-  BinaryUpgradeExecutionSummary,
   BinaryUpgradeExecutionsTableQuery,
+  BinaryUpgradeExecutionSummary,
 } from "@mxevolve/domains/business-process/data-access";
 import {
   BusinessProcessDefinition,
   BusinessProcessDefinitionFilterResolverService,
-  businessProcessExecutionStatusFilters,
-  BusinessProcessType,
-  officialityFilters,
-  businessProcessQualityLevelFilters,
-  MyExecutionsToggleComponent,
-  BusinessProcessOfficialStatusComponent,
-  BusinessProcessExecutionStatusComponent,
-  BusinessProcessNameToFilterListPipe,
   BusinessProcessDefinitionToFilterListModule,
+  BusinessProcessExecutionStatusComponent,
+  businessProcessExecutionStatusFilters,
+  BusinessProcessNameToFilterListPipe,
+  BusinessProcessOfficialStatusComponent,
+  businessProcessQualityLevelFilters,
+  BusinessProcessType,
   BusinessProcessUriFactoryPipeModule,
+  MyExecutionsToggleComponent,
+  officialityFilters,
 } from "@mxflow/features/business-process";
 import { DaysCountPipe, DurationPipeModule } from "@mxflow/pipe";
 import { HeaderTitleModule } from "@mxflow/ui/header";
@@ -37,7 +39,6 @@ import {
 } from "@mxflow/ui/utils";
 import { SkeletonModule } from "primeng/skeleton";
 import { Table, TableLazyLoadEvent, TableModule } from "primeng/table";
-import { ToggleSwitch } from "primeng/toggleswitch";
 import { TooltipModule } from "primeng/tooltip";
 
 @Component({
@@ -61,13 +62,12 @@ import { TooltipModule } from "primeng/tooltip";
     BusinessProcessOfficialStatusComponent,
     DaysCountPipe,
     FormsModule,
-    ToggleSwitch,
     MyExecutionsToggleComponent,
     RouterModule,
   ],
   providers: [BusinessProcessDefinitionFilterResolverService],
 })
-export class BinaryUpgradeExecutionsTableComponent {
+export class BinaryUpgradeExecutionsTableComponent implements OnChanges {
   businessProcessType = BusinessProcessType.BINARY_UPGRADE;
   @Input() executions: BinaryUpgradeExecutionSummary[] = [];
   @Input() projectId = "";
@@ -99,6 +99,17 @@ export class BinaryUpgradeExecutionsTableComponent {
     pageSize: this.numberOfRows,
     page: 0,
   };
+
+  ngOnChanges(changes: SimpleChanges): void {
+    const projectIdChange = changes["projectId"];
+    if (
+      projectIdChange &&
+      !projectIdChange.firstChange &&
+      projectIdChange.previousValue !== projectIdChange.currentValue
+    ) {
+      Promise.resolve().then(() => this.table?.reset());
+    }
+  }
 
   handleTableQueryParamsChange(event: TableLazyLoadEvent) {
     this.executions = [];

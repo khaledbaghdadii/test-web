@@ -1,0 +1,76 @@
+<p-button
+  styleClass="w-full"
+  label="Reopen Merge Request"
+  [disabled]="actionsDisabled() || loading()"
+  [loading]="loading() && !areMergeRequestDetailsEditable()"
+  (onClick)="onReopenButtonClick()"
+/>
+
+@if (areMergeRequestDetailsEditable()) {
+<p-dialog
+  header="Reopen Merge Request"
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [modal]="true"
+  class="dialog-cols-4"
+  (onHide)="closeDialog()"
+>
+  @if (dialogVisible()) {
+  <form [formGroup]="form" class="grid-4">
+    <div class="col-span-2">
+      <p>Merge Request Name <span class="text-red-500">*</span></p>
+      <input
+        pInputText
+        type="text"
+        id="reopen-title"
+        aria-label="Merge Request Name"
+        class="w-full"
+        placeholder="Enter a title for your merge request"
+        formControlName="mergeRequestTitle"
+      />
+      @if (form.controls.mergeRequestTitle.invalid &&
+      form.controls.mergeRequestTitle.touched) {
+      <small class="text-red-500">Field is required</small>
+      }
+    </div>
+
+    <div class="col-span-2">
+      <p>Destination Branch</p>
+      <input
+        pInputText
+        type="text"
+        id="reopen-destination-branch"
+        aria-label="Destination Branch"
+        class="w-full"
+        [value]="destinationBranch() ?? ''"
+        disabled
+      />
+    </div>
+
+    <div class="col-span-4">
+      <p>Reviewers Names</p>
+      <mxevolve-autocomplete-reviewers
+        [projectId]="projectId()"
+        [sourceDevelopmentId]="developmentId() ?? ''"
+        [reviewersFormControl]="form.controls.reviewers"
+        [repositoryId]="repositoryId()"
+      />
+    </div>
+  </form>
+  }
+
+  <ng-template #footer>
+    <div class="grid-4">
+      <p-button
+        class="col-start-2 col-span-2"
+        styleClass="w-full"
+        label="Send"
+        id="reopenButton"
+        [disabled]="form.invalid || loading()"
+        [loading]="loading()"
+        (onClick)="onDialogReopen()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>
+}

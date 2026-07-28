@@ -202,29 +202,30 @@
     @if (!testUnit()?.disableKeepExecution) {
     <div class="col-span-4 p-4">
       <div
-        id="kept-execution-section"
+        id="keep-execution-section"
         class="text-surface-500 dark:text-surface-300 font-medium mb-2"
       >
-        Kept Execution
+        Keep Execution
       </div>
       @if (isLoading) {
       <p-skeleton class="mb-1 h-8"></p-skeleton>
       } @else {
       <div class="text-surface-400 dark:text-surface-400 italic mt-2">
         <div class="mb-2">
-          <mxevolve-kept-execution-toggle
+          <mxevolve-keep-execution-toggle
             id="keep-execution-section"
-            [keptExecution]="selectedScenarioExecution().keptExecution"
+            [keepExecution]="selectedScenarioExecution().keepExecution"
             [cleaningStatus]="selectedScenarioExecution().cleaningStatus"
             [isFailed]="selectedScenarioExecution().isFailed"
+            [isTestUnitHead]="selectedScenarioExecution().testUnitHead"
             [disableKeepExecution]="testUnit()?.disableKeepExecution || false"
             [showTooltip]="true"
-            (keptExecutionToggled)="toggleKeptExecutionFlag()"
-          ></mxevolve-kept-execution-toggle>
+            (keepExecutionToggled)="toggleKeepExecutionFlag()"
+          ></mxevolve-keep-execution-toggle>
         </div>
         <div class="mb-2">
           {{
-            selectedScenarioExecution().keptExecution
+            selectedScenarioExecution().keepExecution
               ? "This execution will be kept until the process is closed."
               : "This execution will be housekept."
           }}
@@ -345,6 +346,20 @@
         <mxevolve-scenario-analysis-status
           [status]="selectedScenarioExecution().analysisStatus"
         ></mxevolve-scenario-analysis-status>
+      </div>
+      }
+    </div>
+    <div class="col-span-4 p-4">
+      <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
+        Cleaning Status
+      </div>
+      @if (isLoading) {
+      <p-skeleton class="mb-1 h-8"></p-skeleton>
+      } @else {
+      <div class="text-surface-900 dark:text-surface-0">
+        <mxevolve-scenario-execution-housekeeping-status
+          [status]="selectedScenarioExecution().cleaningStatus"
+        ></mxevolve-scenario-execution-housekeeping-status>
       </div>
       }
     </div>

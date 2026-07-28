@@ -1,0 +1,61 @@
+<mxevolve-definition-input
+  inputId="validation-archival-branch"
+  [control]="archivalBranchNameFormControl()"
+  label="Archival Branch Name"
+  description="Enter the name of the archival branch that you wish to use or create"
+>
+  <mxevolve-branch-input
+    [projectId]="projectId()"
+    [repositoryId]="repositoryId()"
+    [branchShouldExist]="true"
+    inputId="validation-archival-branch"
+    [branchNameFormControl]="archivalBranchNameFormControl()"
+    [initialValue]="archivalBranchNameInitialValue"
+    (initialInvalid)="showArchivalBranchError()"
+  />
+</mxevolve-definition-input>
+
+@if (loading() || finalProductIdFormControl().enabled) {
+<mxevolve-definition-input
+  inputId="validation-final-product-readonly"
+  [control]="finalProductIdFormControl()"
+  label="Final Product (represented by a Commit ID)"
+  description="Select the final product that you wish to use in your validation"
+  tooltip="A final product is the client config and the tooling used to validate it. It will be packaged and shipped to the client when it reaches the right quality level."
+>
+  <div class="flex flex-row items-center gap-2">
+    <input
+      id="validation-final-product-readonly"
+      pInputText
+      class="w-full bg-gray-100 text-gray-500 cursor-not-allowed"
+      [formControl]="configCommitIdFormControl()"
+      [readonly]="true"
+    />
+    @if (loading()) {
+    <i class="pi pi-spin pi-spinner" role="status" aria-label="Loading"></i>
+    }
+  </div>
+</mxevolve-definition-input>
+
+<mxevolve-definition-input
+  inputId="validation-rtp-commit"
+  [control]="rtpCommitIdFormControl()"
+  label="RTP Commit ID"
+  description="Select the RTP commit from which you want to take your branch"
+>
+  <div class="flex flex-row items-center gap-2">
+    <input
+      id="validation-rtp-commit"
+      pInputText
+      class="w-full bg-gray-100 text-gray-500 cursor-not-allowed"
+      [formControl]="rtpCommitIdFormControl()"
+      [readonly]="true"
+    />
+    @if (loading()) {
+    <i class="pi pi-spin pi-spinner" role="status" aria-label="Loading"></i>
+    }
+  </div>
+</mxevolve-definition-input>
+} @if (warningMessage()) {
+<mxevolve-warning-alert [message]="warningMessage()" />
+}

@@ -1,0 +1,56 @@
+@if (isNa()) {
+<p-message
+  severity="info"
+  [closable]="false"
+  text="If any user stories are linked to this process, their updates will appear here. Please refresh the page as live updates are not available."
+/>
+} @else {
+<div class="flex items-center gap-3 mb-3">
+  <span class="text-muted-color">User Story Status</span>
+  <p-tag [severity]="isFailed() ? 'danger' : isUnderway() ? 'warn' : 'success'">
+    <span class="flex items-center gap-1 text-sm">
+      <mxevolve-icon
+        [name]="
+          isFailed()
+            ? 'cancel'
+            : isUnderway()
+            ? 'progress_activity'
+            : 'check_circle'
+        "
+        [spin]="isUnderway()"
+        size="sm"
+      />
+      <span>{{
+        isFailed()
+          ? "Failed. Please update issues manually"
+          : isUnderway()
+          ? "Underway"
+          : "Done"
+      }}</span>
+    </span>
+  </p-tag>
+</div>
+
+@if (isUnderway()) {
+<p-message
+  class="block mb-3"
+  severity="info"
+  [closable]="false"
+  text="User story archival update is in progress. Please refresh the page to view the latest status."
+/>
+}
+
+<ag-grid-angular
+  class="ag-theme-alpine col-span-12"
+  [rowData]="rowData()"
+  [columnDefs]="columnDefs()"
+  [defaultColDef]="defaultColDef"
+  [domLayout]="'autoHeight'"
+  [pagination]="rowData().length > 10"
+  [paginationPageSize]="10"
+  [paginationPageSizeSelector]="[10, 25, 50]"
+  [loadingOverlayComponent]="loadingOverlayComponent"
+  [noRowsOverlayComponent]="tableNoRowsOverlayComponent"
+  [noRowsOverlayComponentParams]="noRowsOverlayComponentParams"
+/>
+}

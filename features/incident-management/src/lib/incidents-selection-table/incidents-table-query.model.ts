@@ -1,6 +1,6 @@
 export interface IncidentsTableQuery extends Record<string, unknown> {
   page: number;
-  size: number;
+  pageSize: number;
   sort?: string;
   titlePhrase?: string;
   statuses?: string[];

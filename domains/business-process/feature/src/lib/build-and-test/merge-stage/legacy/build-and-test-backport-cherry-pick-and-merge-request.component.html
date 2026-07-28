@@ -14,8 +14,8 @@
   [repositoryId]="repositoryId()"
   [backport]="backport()"
 />
-} @case (CherryPickStatus.COMMITS_CHERRY_PICKED) {
-@if (backport().mergeDevelopmentState.latestMergeJobId) {
+} @case (CherryPickStatus.COMMITS_CHERRY_PICKED) { @if
+(backport().mergeDevelopmentState.latestMergeJobId) {
 <mxevolve-merge-request-stepper
   [projectId]="projectId()"
   [mergeRequestId]="backport().mergeDevelopmentState.latestMergeJobId"

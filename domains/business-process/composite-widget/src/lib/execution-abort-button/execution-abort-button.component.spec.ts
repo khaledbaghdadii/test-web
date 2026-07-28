@@ -75,6 +75,17 @@ describe("ExecutionAbortButtonComponent", () => {
     mockAbortService.abort.mockReturnValue(of(void 0));
   });
 
+  // The confirm dialog now uses appendTo="body" so it escapes AG Grid's
+  // transformed row containers (see execution-abort-button.component.html);
+  // that also means it's rendered outside the test fixture's root node, so
+  // @testing-library/angular's automatic fixture cleanup doesn't remove it.
+  // Clean it up manually to keep each test's DOM isolated.
+  afterEach(() => {
+    document
+      .querySelectorAll(".p-confirmdialog, .p-dialog-mask")
+      .forEach((el) => el.remove());
+  });
+
   describe("abort button", () => {
     it("renders the abort button", async () => {
       await renderComponent();

@@ -1,135 +1,14 @@
-import { provideNoopAnimations } from "@angular/platform-browser/animations";
-import { render, screen, waitFor } from "@testing-library/angular";
-import userEvent from "@testing-library/user-event";
-import { MockComponent } from "ng-mocks";
-import { of, throwError } from "rxjs";
-import { ToastMessageService } from "@mxflow/ui/alert";
+import { render } from "@testing-library/angular";
+import { MockComponent, ngMocks } from "ng-mocks";
 import { BusinessProcessContentContainerComponent } from "@mxevolve/domains/business-process/ui";
-import {
-  EnvironmentDefinitionStatus,
-  EnvironmentService,
-  TechnicalReseedExecutionGroupStatus,
-  TechnicalReseedService,
-  TechnicalReseedStatus,
-} from "@mxevolve/domains/environment/data-access";
-import {
-  FinalProduct,
-  FinalProductService,
-  FinalProductState,
-} from "@mxevolve/domains/artifact/data-access";
-import {
-  CommitIdDisplayComponent,
-  DateDisplayComponent,
-  MxevolveIconComponent,
-  MxevolveIllustrationComponent,
-} from "@mxevolve/shared/ui/primitive";
+import { TechnicalReseedSectionComponent } from "@mxevolve/domains/environment/widget";
 import { BuildAndTestTechnicalReseedSectionComponent } from "./build-and-test-technical-reseed-section.component";
 
-const FINAL_PRODUCT: FinalProduct = {
-  id: "final-product-001",
-  projectId: "project-001",
-  branch: "release/branch",
-  repositoryId: "repo-001",
-  tag: "FP-1",
-  clientConfigurations: [],
-  environmentDefinitionId: "env-def-001",
-  version: "1",
-  configurationCommitId: "commit-001",
-  state: FinalProductState.AVAILABLE,
-  mxBundles: [],
-  isTools: [],
-  createdOn: "2026-06-01T10:00:00Z",
-  syncRequests: [],
-  validationLevel: "MQG",
-};
-
-const mockTechnicalReseedService = {
-  getExecutionGroupDetails: jest.fn(),
-  launchTechnicalReseed: jest.fn(),
-};
-
-const mockEnvironmentService = {
-  getEnvironmentDefinitions: jest.fn(),
-};
-
-const mockFinalProductService = {
-  getFinalProducts: jest.fn(),
-};
-
-const mockToastMessageService = {
-  showSuccess: jest.fn(),
-  showError: jest.fn(),
-};
-
-function mockExecutionGroup(launchesAllowed = true) {
-  return {
-    executionGroupId: "reseed-group-001",
-    status: TechnicalReseedExecutionGroupStatus.ENABLED,
-    launchesAllowed,
-    reason: launchesAllowed ? undefined : "Launches disabled",
-    technicalReseedOperations: [
-      {
-        id: "operation-older",
-        status: TechnicalReseedStatus.PASSED,
-        branch: "release/branch",
-        sourceCommit: "commit-older",
-        validationLevel: "MQG",
-        maintenanceLevel: "Full",
-        environmentDefinitionId: "env-def-001",
-        dumpIds: ["dump-1", "dump-2"],
-        environmentId: "env-001",
-        createdOn: "2026-06-01T10:00:00Z",
-      },
-      {
-        id: "operation-newer",
-        status: TechnicalReseedStatus.FAILED,
-        branch: "release/branch",
-        sourceCommit: "commit-newer",
-        validationLevel: "DQG",
-        maintenanceLevel: "Custom",
-        environmentDefinitionId: "env-def-001",
-        dumpIds: ["dump-3"],
-        createdOn: "2026-06-02T10:00:00Z",
-        resultMessage: "failed because of a backend error",
-      },
-    ],
-  };
-}
-
-async function renderComponent(launchesAllowed = true) {
-  mockTechnicalReseedService.getExecutionGroupDetails.mockReturnValue(
-    of(mockExecutionGroup(launchesAllowed))
-  );
-  mockEnvironmentService.getEnvironmentDefinitions.mockReturnValue(
-    of([
-      {
-        id: "env-def-001",
-        name: "Small",
-        status: EnvironmentDefinitionStatus.ACTIVE,
-      },
-    ])
-  );
-  mockFinalProductService.getFinalProducts.mockReturnValue(
-    of({
-      content: [FINAL_PRODUCT],
-      totalPages: 1,
-      totalElements: 1,
-      size: 50,
-      number: 0,
-      last: true,
-    })
-  );
-  mockTechnicalReseedService.launchTechnicalReseed.mockReturnValue(
-    of({ requestId: "request-001" })
-  );
-
+async function renderComponent() {
   return render(BuildAndTestTechnicalReseedSectionComponent, {
     imports: [
       MockComponent(BusinessProcessContentContainerComponent),
-      MockComponent(CommitIdDisplayComponent),
-      MockComponent(DateDisplayComponent),
-      MockComponent(MxevolveIconComponent),
-      MockComponent(MxevolveIllustrationComponent),
+      MockComponent(TechnicalReseedSectionComponent),
     ],
     inputs: {
       projectId: "project-001",
@@ -137,120 +16,38 @@ async function renderComponent(launchesAllowed = true) {
       infraGroup: "infra-group-001",
       targetBranch: "feature/temp-branch",
     },
-    providers: [provideNoopAnimations()],
-    componentProviders: [
-      { provide: TechnicalReseedService, useValue: mockTechnicalReseedService },
-      { provide: EnvironmentService, useValue: mockEnvironmentService },
-      { provide: FinalProductService, useValue: mockFinalProductService },
-      { provide: ToastMessageService, useValue: mockToastMessageService },
-    ],
   });
 }
 
 describe("BuildAndTestTechnicalReseedSectionComponent", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it("loads technical reseed execution group details from the legacy endpoint service", async () => {
+  it("wraps the technical reseed section in a business process content container", async () => {
     await renderComponent();
 
-    await waitFor(() =>
-      expect(
-        mockTechnicalReseedService.getExecutionGroupDetails
-      ).toHaveBeenCalledWith("project-001", "reseed-group-001")
-    );
+    const container = ngMocks.find(BusinessProcessContentContainerComponent);
+
+    expect(ngMocks.input(container, "header")).toBe("Technical Reseed");
+    expect(ngMocks.input(container, "collapsable")).toBe(true);
   });
 
-  it("sorts operations by created date descending and numbers them newest first", async () => {
+  it("forwards the build-and-test inputs to the technical reseed section", async () => {
     await renderComponent();
 
-    await waitFor(() => expect(screen.getByText("Technical Reseed 2")));
-    const newer = screen.getByText("Technical Reseed 2");
-    const older = screen.getByText("Technical Reseed 1");
+    const section = ngMocks.find(TechnicalReseedSectionComponent);
 
-    expect(newer.compareDocumentPosition(older)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
-    );
+    expect(ngMocks.input(section, "projectId")).toBe("project-001");
+    expect(ngMocks.input(section, "executionGroupId")).toBe("reseed-group-001");
+    expect(ngMocks.input(section, "infraGroup")).toBe("infra-group-001");
+    expect(ngMocks.input(section, "targetBranch")).toBe("feature/temp-branch");
   });
 
-  it("keeps operation details collapsed by default", async () => {
-    await renderComponent();
-
-    await waitFor(() => expect(screen.getByText("Technical Reseed 2")));
-
-    expect(screen.queryByText("Commit Id")).toBeNull();
-  });
-
-  it("expands operation details when the operation row is clicked", async () => {
-    const user = userEvent.setup();
-    await renderComponent();
-
-    await waitFor(() => expect(screen.getByText("Technical Reseed 2")));
-    await user.click(screen.getByText("Technical Reseed 2"));
-
-    expect(screen.getByText("Commit Id")).toBeTruthy();
-    expect(screen.getByText("Small")).toBeTruthy();
-  });
-
-  it("disables launch when the execution group does not allow launches", async () => {
-    const { fixture } = await renderComponent(false);
-
-    await waitFor(() => expect(fixture.componentInstance.launchDisabled()).toBe(true));
-    expect(fixture.componentInstance.launchTooltip()).toBe("Launches disabled");
-  });
-
-  it("launches technical reseed with the legacy request body", async () => {
+  it("re-emits reloadRequested from the technical reseed section", async () => {
     const { fixture } = await renderComponent();
     const launchedSpy = jest.fn();
-    fixture.componentInstance.operationLaunched.subscribe(launchedSpy);
+    fixture.componentInstance.reloadRequested.subscribe(launchedSpy);
 
-    await waitFor(() => expect(fixture.componentInstance.finalProductOptions().length).toBe(1));
+    const section = ngMocks.find(TechnicalReseedSectionComponent);
+    ngMocks.output(section, "reloadRequested").emit();
 
-    fixture.componentInstance.launchForm.setValue({
-      finalProduct: FINAL_PRODUCT,
-      environmentDefinitionId: "env-def-001",
-      maintenanceConfiguration: { full: true },
-    });
-    fixture.componentInstance.launchTechnicalReseed();
-
-    expect(mockTechnicalReseedService.launchTechnicalReseed).toHaveBeenCalledWith(
-      "project-001",
-      "reseed-group-001",
-      {
-        branch: "release/branch",
-        configurationCommitId: "commit-001",
-        validationLevel: "MQG",
-        environmentDefinitionId: "env-def-001",
-        maintenanceConfiguration: { full: true },
-        infraGroupId: "infra-group-001",
-        targetBranch: "feature/temp-branch",
-      }
-    );
-    expect(mockToastMessageService.showSuccess).toHaveBeenCalledWith(
-      "Technical reseed operation launched successfully."
-    );
     expect(launchedSpy).toHaveBeenCalled();
-  });
-
-  it("shows an error toast when launching fails", async () => {
-    const { fixture } = await renderComponent();
-    mockTechnicalReseedService.launchTechnicalReseed.mockReturnValue(
-      throwError(() => new Error("launch failed"))
-    );
-
-    await waitFor(() => expect(fixture.componentInstance.finalProductOptions().length).toBe(1));
-
-    fixture.componentInstance.launchForm.setValue({
-      finalProduct: FINAL_PRODUCT,
-      environmentDefinitionId: "env-def-001",
-      maintenanceConfiguration: { full: false },
-    });
-    fixture.componentInstance.launchTechnicalReseed();
-
-    expect(mockToastMessageService.showError).toHaveBeenCalledWith(
-      "launch failed",
-      "Failed to launch technical reseed operation"
-    );
   });
 });

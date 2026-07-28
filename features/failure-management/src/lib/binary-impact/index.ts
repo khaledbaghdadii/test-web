@@ -10,3 +10,5 @@ export * from "./link-binary-impact-modal-content/link-binary-impact-modal-conte
 export * from "./create-binary-impact-button/create-binary-impact-button.component";
 export * from "./binary-impact-integration-status/binary-impact-integration-status";
 export * from "./binary-impact-integration-status/binary-impact-integration-status.component";
+export * from "./binary-impact-id-link/binary-impact-id-link.component";
+export * from "./binary-impact-id-links/binary-impact-id-links.component";

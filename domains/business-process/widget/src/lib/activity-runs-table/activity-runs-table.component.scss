@@ -1,0 +1,12 @@
+.activity-runs-table {
+  &__header:empty {
+    display: none;
+  }
+
+  // Keep the pinned-right Actions column visible while the grid scrolls
+  // horizontally and give it a subtle separating shadow.
+  ::ng-deep .ag-pinned-right-cols-container,
+  ::ng-deep .ag-pinned-right-header {
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.08);
+  }
+}

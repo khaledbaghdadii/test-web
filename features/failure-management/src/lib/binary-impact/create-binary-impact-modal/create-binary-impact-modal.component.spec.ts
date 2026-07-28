@@ -17,9 +17,21 @@ import { DialogModule } from "primeng/dialog";
 import { UpgradeImpactInputComponent } from "../../upgrade-impact/upgrade-impact-input/upgrade-impact-input.component";
 import { QuillEditorComponent } from "@mxflow/ui/editor";
 import { ButtonModule } from "primeng/button";
+import { SkeletonModule } from "primeng/skeleton";
 import { ClientImpactNoteSingleSelectDropdownComponent } from "../../client-impact-note/client-impact-note-single-select-dropdown/client-impact-note-single-select-dropdown.component";
 import { ClientImpactNoteMultiSelectDropdownComponent } from "@mxflow/features/failure-management";
 import { IncidentInputComponent } from "@mxflow/features/incident-management";
+import { VersionsMultiselectDropdownComponent } from "@mxevolve/domains/test/widget";
+import {
+  ClientImpactNoteAffectedVersionsConfigApiModel,
+  ClientImpactNoteService,
+  VersionType,
+  VersionValidationResult,
+  VersionValidationService,
+} from "@mxevolve/domains/test/data-access";
+import { UpgradeImpact } from "../../upgrade-impact/model/upgrade-impact.model";
+import { FormsModule, ReactiveFormsModule } from "@angular/forms";
+import { DomTestUtils } from "@mxevolve/testing";
 
 const projectId = "projectId";
 const uploadAttachmentResult = {
@@ -30,6 +42,10 @@ const FILLED_FORM_VALUES = {
   title: "Test Title",
   description: "Test Description",
   mxVersion: "Test Mx Version",
+  affectedVersions: [
+    { id: "v1", name: "version1" },
+    { id: "v2", name: "version2" },
+  ],
   upgradeImpactId: "upgradeImpactId",
   identificationPattern: "identificationPattern",
   propagationPattern: "propagationPattern",
@@ -46,17 +62,21 @@ const FILLED_FORM_VALUES = {
   impactedOutputs: "impactedOutputs",
   incidentId: "incidentId",
 };
+const AFFECTED_VERSION_NAMES = ["version1", "version2"];
 describe("CreateBinaryImpactModalComponent", () => {
   let component: CreateBinaryImpactModalComponent;
   let fixture: ComponentFixture<CreateBinaryImpactModalComponent>;
   let toastMessageService: ToastMessageService;
   let attachmentService: AttachmentService;
   let binaryImpactService: BinaryImpactService;
+  let clientImpactNoteService: ClientImpactNoteService;
+  let versionValidationService: VersionValidationService;
 
   beforeEach(() => {
     toastMessageService = {
       showError: jest.fn(),
       showSuccess: jest.fn(),
+      showWarning: jest.fn(),
     } as unknown as ToastMessageService;
 
     attachmentService = {
@@ -68,6 +88,27 @@ describe("CreateBinaryImpactModalComponent", () => {
         of({ id: BinaryImpactTestUtils.BINARY_IMPACT_ID })
       ),
     } as unknown as BinaryImpactService;
+
+    clientImpactNoteService = {
+      fetchAllowedVersionsConfiguration: jest.fn(() =>
+        of<ClientImpactNoteAffectedVersionsConfigApiModel>({
+          allowedVersionTypes: [VersionType.RELEASE_EFFECTIVE],
+          allowedInactive: true,
+        })
+      ),
+    } as unknown as ClientImpactNoteService;
+
+    versionValidationService = {
+      validateVersions: jest.fn(() =>
+        of<VersionValidationResult>({
+          validVersions: [
+            { id: "1.0", name: "1.0" },
+            { id: "2.0", name: "2.0" },
+          ],
+          invalidVersions: [],
+        })
+      ),
+    } as unknown as VersionValidationService;
 
     jest.useFakeTimers();
     TestBed.configureTestingModule({
@@ -82,11 +123,15 @@ describe("CreateBinaryImpactModalComponent", () => {
             AttachmentUploaderComponent,
             ClientImpactNoteSingleSelectDropdownComponent,
             ClientImpactNoteMultiSelectDropdownComponent,
-            IncidentInputComponent
+            IncidentInputComponent,
+            VersionsMultiselectDropdownComponent
           ),
           DialogModule,
           MandatoryFieldModule,
           ButtonModule,
+          SkeletonModule,
+          ReactiveFormsModule,
+          FormsModule,
         ],
         providers: [
           {
@@ -101,6 +146,14 @@ describe("CreateBinaryImpactModalComponent", () => {
             provide: BinaryImpactService,
             useValue: binaryImpactService,
           },
+          {
+            provide: ClientImpactNoteService,
+            useValue: clientImpactNoteService,
+          },
+          {
+            provide: VersionValidationService,
+            useValue: versionValidationService,
+          },
         ],
       },
     });
@@ -111,6 +164,80 @@ describe("CreateBinaryImpactModalComponent", () => {
 
   it("should create", () => {
     expect(component).toBeTruthy();
+  });
+
+  describe("affected versions dropdown params", () => {
+    it("should restrict the dropdown to active versions when inactive versions are not allowed", () => {
+      const fetchAllowedVersionsConfigurationSpy = jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(
+          of<ClientImpactNoteAffectedVersionsConfigApiModel>({
+            allowedVersionTypes: [VersionType.RELEASE_EFFECTIVE],
+            allowedInactive: false,
+          })
+        );
+
+      fixture.detectChanges();
+
+      expect(fetchAllowedVersionsConfigurationSpy).toHaveBeenCalled();
+      expect(component.affectedVersionsDropdownParams).toEqual({
+        versionTypes: [VersionType.RELEASE_EFFECTIVE],
+        active: true,
+      });
+    });
+
+    it("should allow inactive versions in the dropdown when inactive versions are allowed", () => {
+      const fetchAllowedVersionsConfigurationSpy = jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(
+          of<ClientImpactNoteAffectedVersionsConfigApiModel>({
+            allowedVersionTypes: [VersionType.RELEASE_EFFECTIVE],
+            allowedInactive: true,
+          })
+        );
+
+      fixture.detectChanges();
+
+      expect(fetchAllowedVersionsConfigurationSpy).toHaveBeenCalled();
+      expect(component.affectedVersionsDropdownParams).toEqual({
+        versionTypes: [VersionType.RELEASE_EFFECTIVE],
+        active: undefined,
+      });
+    });
+
+    it("should show an error message when loading the configuration fails", () => {
+      const errorMessage = "Error occurred";
+      jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(throwError(() => new Error(errorMessage)));
+
+      fixture.detectChanges();
+
+      expect(toastMessageService.showError).toHaveBeenCalledWith(errorMessage);
+    });
+
+    it("should not show the affected versions dropdown when the form is loading", () => {
+      jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(
+          new Subject<ClientImpactNoteAffectedVersionsConfigApiModel>()
+        );
+      component.isVisible = true;
+
+      const affectedVersionsDropdown = getElementByTestId(
+        "affected-versions-dropdown"
+      );
+      expect(affectedVersionsDropdown.isRendered()).toBeFalsy();
+    });
+
+    it("should show the affected versions dropdown when the form is not loading", () => {
+      component.isVisible = true;
+
+      const affectedVersionsDropdown = getElementByTestId(
+        "affected-versions-dropdown"
+      );
+      expect(affectedVersionsDropdown.isRendered()).toBeTruthy();
+    });
   });
 
   describe("onSubmitCreateBinaryImpact", () => {
@@ -127,6 +254,7 @@ describe("CreateBinaryImpactModalComponent", () => {
         projectId,
         {
           ...FILLED_FORM_VALUES,
+          affectedVersions: AFFECTED_VERSION_NAMES,
           attachmentIds: [
             BinaryImpactTestUtils.ATTACHMENT_1.attachmentId,
             BinaryImpactTestUtils.ATTACHMENT_2.attachmentId,
@@ -159,6 +287,7 @@ describe("CreateBinaryImpactModalComponent", () => {
         projectId,
         {
           ...mockFormValues,
+          affectedVersions: AFFECTED_VERSION_NAMES,
           attachmentIds: [
             BinaryImpactTestUtils.ATTACHMENT_1.attachmentId,
             BinaryImpactTestUtils.ATTACHMENT_2.attachmentId,
@@ -201,7 +330,7 @@ describe("CreateBinaryImpactModalComponent", () => {
 
       component.onFormSubmission();
 
-      expect(component.isLoading).toBe(false);
+      expect(component.isCreateBinaryImpactLoading).toBe(false);
     });
 
     it("should set is binary impact created to true on creating binary impact successfully", () => {
@@ -232,7 +361,95 @@ describe("CreateBinaryImpactModalComponent", () => {
 
       component.onFormSubmission();
 
-      expect(component.isLoading).toBe(false);
+      expect(component.isCreateBinaryImpactLoading).toBe(false);
+    });
+
+    it("should clear the prefilled affected versions after a successful creation", () => {
+      component.prefilledAffectedVersions = [{ id: "v1", name: "version1" }];
+      component.createBinaryImpactForm.setValue(FILLED_FORM_VALUES);
+
+      component.onFormSubmission();
+
+      expect(component.prefilledAffectedVersions).toBeUndefined();
+    });
+  });
+
+  describe("onUpgradeImpactSelected", () => {
+    it("should prefill the affected versions with the valid versions", () => {
+      component.affectedVersionsDropdownParams = {
+        versionTypes: [VersionType.RELEASE_EFFECTIVE],
+        active: true,
+      };
+
+      component.onUpgradeImpactSelected({
+        introducedInReleaseVersion: ["1.0", "2.0"],
+      } as UpgradeImpact);
+
+      expect(component.prefilledAffectedVersions).toEqual([
+        { id: "1.0", name: "1.0" },
+        { id: "2.0", name: "2.0" },
+      ]);
+    });
+
+    it("should show an error message when validating versions fails", () => {
+      component.affectedVersionsDropdownParams = {
+        versionTypes: [VersionType.RELEASE_EFFECTIVE],
+        active: true,
+      };
+
+      jest
+        .spyOn(versionValidationService, "validateVersions")
+        .mockReturnValue(throwError(() => new Error("Error occurred")));
+
+      component.onUpgradeImpactSelected({
+        introducedInReleaseVersion: ["1.0"],
+      } as UpgradeImpact);
+
+      expect(toastMessageService.showError).toHaveBeenCalledWith(
+        "Error occurred"
+      );
+    });
+
+    it("should show a warning with the invalid versions", () => {
+      component.affectedVersionsDropdownParams = {
+        versionTypes: [VersionType.RELEASE_EFFECTIVE],
+        active: true,
+      };
+
+      jest.spyOn(versionValidationService, "validateVersions").mockReturnValue(
+        of<VersionValidationResult>({
+          validVersions: [{ id: "1.0", name: "1.0" }],
+          invalidVersions: ["2.0"],
+        })
+      );
+
+      component.onUpgradeImpactSelected({
+        introducedInReleaseVersion: ["1.0", "2.0"],
+      } as UpgradeImpact);
+
+      expect(toastMessageService.showWarning).toHaveBeenCalledWith(
+        "Invalid affected versions: 2.0."
+      );
+    });
+
+    it("should not show warning when all versions are valid", () => {
+      component.affectedVersionsDropdownParams = {
+        versionTypes: [VersionType.RELEASE_EFFECTIVE],
+        active: true,
+      };
+
+      jest.spyOn(versionValidationService, "validateVersions").mockReturnValue(
+        of<VersionValidationResult>({
+          validVersions: [{ id: "1.0", name: "1.0" }],
+          invalidVersions: [],
+        })
+      );
+
+      component.onUpgradeImpactSelected({
+        introducedInReleaseVersion: ["1.0"],
+      } as UpgradeImpact);
+
+      expect(toastMessageService.showWarning).not.toHaveBeenCalled();
     });
   });
 
@@ -242,10 +459,11 @@ describe("CreateBinaryImpactModalComponent", () => {
       component["isBinaryImpactCreated"] = false;
       component.onCancel();
 
-      expect(component.createBinaryImpactForm.value).toEqual({
+      expect(component.createBinaryImpactForm.getRawValue()).toEqual({
         title: null,
         description: null,
         mxVersion: null,
+        affectedVersions: null,
         upgradeImpactId: null,
         identificationPattern: null,
         propagationPattern: null,
@@ -269,10 +487,11 @@ describe("CreateBinaryImpactModalComponent", () => {
       component["isBinaryImpactCreated"] = true;
       component.onCancel();
 
-      expect(component.createBinaryImpactForm.value).toEqual({
+      expect(component.createBinaryImpactForm.getRawValue()).toEqual({
         title: null,
         description: null,
         mxVersion: null,
+        affectedVersions: null,
         upgradeImpactId: null,
         identificationPattern: null,
         propagationPattern: null,
@@ -310,6 +529,13 @@ describe("CreateBinaryImpactModalComponent", () => {
 
       expect(emitSpy).toHaveBeenCalled();
     });
+
+    it("should reset prefilled affected versions to undefined", () => {
+      component.prefilledAffectedVersions = [{ id: "v1", name: "version1" }];
+      component.onCancel();
+
+      expect(component.prefilledAffectedVersions).toBeUndefined();
+    });
   });
 
   it("should set initial mxVersion value if available when showing link modal", () => {
@@ -326,8 +552,53 @@ describe("CreateBinaryImpactModalComponent", () => {
     ).toEqual(null);
   });
 
-  it("should handle error occured in upgrade impact input", () => {
-    component.handleErrorOccured("errorMessage");
+  it("should disable the upgrade impact input since it is not editable", () => {
+    expect(
+      component.createBinaryImpactForm.controls.upgradeImpactId.disabled
+    ).toEqual(true);
+  });
+
+  describe("upon opening the modal", () => {
+    it("should set initial description value", () => {
+      component.initialDescription = "Prefilled description";
+      component.isVisible = true;
+
+      expect(
+        component.createBinaryImpactForm.controls.description.value
+      ).toEqual("Prefilled description");
+    });
+
+    it("should set initial upgrade impact id value", () => {
+      component.upgradeImpactId = "prefilledUpgradeImpactId";
+      component.isVisible = true;
+
+      expect(
+        component.createBinaryImpactForm.controls.upgradeImpactId.value
+      ).toEqual("prefilledUpgradeImpactId");
+    });
+
+    it("should set initial attachments value", () => {
+      component.initialAttachments = [
+        BinaryImpactTestUtils.ATTACHMENT_1,
+        BinaryImpactTestUtils.ATTACHMENT_2,
+      ];
+      component.isVisible = true;
+
+      expect(component.attachments).toEqual([
+        BinaryImpactTestUtils.ATTACHMENT_1,
+        BinaryImpactTestUtils.ATTACHMENT_2,
+      ]);
+    });
+
+    it("should default attachments to an empty array when no initialAttachments are given", () => {
+      component.isVisible = true;
+
+      expect(component.attachments).toEqual([]);
+    });
+  });
+
+  it("should handle error occurred in upgrade impact input", () => {
+    component.handleErrorOccurred("errorMessage");
 
     expect(toastMessageService.showError).toHaveBeenCalledWith("errorMessage");
   });
@@ -506,6 +777,13 @@ describe("CreateBinaryImpactModalComponent", () => {
       ]);
     });
   });
+
+  function getElementByTestId(testId: string) {
+    return DomTestUtils.getElementByTestId<
+      CreateBinaryImpactModalComponent,
+      HTMLElement
+    >(fixture, testId);
+  }
 });
 
 function uploadInDifferentContext(

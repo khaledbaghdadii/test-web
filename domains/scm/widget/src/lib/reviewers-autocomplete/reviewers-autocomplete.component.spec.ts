@@ -101,8 +101,8 @@ describe("Reviewers AutoComplete Component", () => {
     fixture = TestBed.createComponent(ReviewersAutoCompleteComponent);
     component = fixture.componentInstance;
 
-    component.projectId = projectId;
-    component.sourceDevelopmentId = DEVELOPMENT.id;
+    fixture.componentRef.setInput("projectId", projectId);
+    fixture.componentRef.setInput("sourceDevelopmentId", DEVELOPMENT.id);
     component.reviewersFormControl = new FormControl();
     component.destinationBranchFormControl = new FormControl({
       branchName: destinationBranch,
@@ -205,6 +205,54 @@ describe("Reviewers AutoComplete Component", () => {
     }));
   });
 
+  describe("repositoryId input", () => {
+    it("should set repository id on state service directly when repositoryId is provided, without fetching default reviewers", () => {
+      const newFixture = TestBed.createComponent(
+        ReviewersAutoCompleteComponent
+      );
+      const newComponent = newFixture.componentInstance;
+
+      jest.clearAllMocks();
+
+      newFixture.componentRef.setInput("projectId", projectId);
+      newFixture.componentRef.setInput("sourceDevelopmentId", DEVELOPMENT.id);
+      newComponent.reviewersFormControl = new FormControl();
+      newComponent.destinationBranchFormControl =
+        undefined as unknown as FormControl;
+      newFixture.componentRef.setInput(
+        "repositoryId",
+        DEVELOPMENT.repository.id
+      );
+
+      newComponent.ngOnInit();
+      newFixture.detectChanges();
+
+      expect(sendForReviewStateService.setRepositoryId).toHaveBeenCalledWith(
+        DEVELOPMENT.repository.id
+      );
+      expect(reviewersService.getDefaultReviewers).not.toHaveBeenCalled();
+      expect(developmentService.getDevelopment).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getMatchingReviewers keeps suggestions in sync", () => {
+    it("should update listOfReviewerSuggestions whenever reviewerSuggestions changes", () => {
+      sendForReviewStateService.reviewerSuggestions.set([REVIEWER]);
+      fixture.detectChanges();
+
+      expect(component.listOfReviewerSuggestions).toEqual([REVIEWER]);
+    });
+
+    it("should reflect an empty result set instead of hanging", () => {
+      sendForReviewStateService.reviewerSuggestions.set([REVIEWER]);
+      fixture.detectChanges();
+      sendForReviewStateService.reviewerSuggestions.set([]);
+      fixture.detectChanges();
+
+      expect(component.listOfReviewerSuggestions).toEqual([]);
+    });
+  });
+
   describe("Getting default reviewers", () => {
     it("should not show default reviewers warning message before fetching them", () => {
       expect(component.showReviewersWarningMessage).toBeFalsy();
@@ -256,8 +304,8 @@ describe("Reviewers AutoComplete Component", () => {
 
       jest.clearAllMocks();
 
-      newComponent.projectId = projectId;
-      newComponent.sourceDevelopmentId = DEVELOPMENT.id;
+      newFixture.componentRef.setInput("projectId", projectId);
+      newFixture.componentRef.setInput("sourceDevelopmentId", DEVELOPMENT.id);
       newComponent.reviewersFormControl = new FormControl();
       newComponent.destinationBranchFormControl =
         undefined as unknown as FormControl;

@@ -8,11 +8,10 @@ import { GATEWAY_CONFIG } from "@mxevolve/shared/core/config";
 import { EnvironmentService } from "./environment.service";
 import { firstValueFrom } from "rxjs";
 import {
-  EnvironmentPageApiModel,
   EnvironmentApiModel,
+  EnvironmentPageApiModel,
 } from "./environment-api-model";
 import { EnvironmentStatus } from "@mxevolve/domains/environment/util";
-import { EnvironmentDefinitionStatus } from "../environment-definition/environment-definition";
 
 const GATEWAY_URL = "https://api.test.com/";
 
@@ -97,10 +96,24 @@ describe("EnvironmentService", () => {
         mxVersion: "9.24",
         mxBuildId: "9.24.1.12345",
         commitId: "abc123",
+        configurationIdentifier: {
+          branch: "main",
+          revision: "abc123",
+        },
         bundles: [{ id: "CORE", branch: "9.24", version: "9.24.1.12345" }],
         isTools: [{ name: "mxtestweb" }],
         outputsDirectoryUri: undefined,
-        databases: [{ name: "db-001", mxDbTypes: ["financial"] }],
+        databases: [
+          {
+            name: "db-001",
+            mxDbTypes: ["financial"],
+            allocation: {
+              name: "dbserver",
+              port: "3306",
+              machine: { name: "host1" },
+            },
+          },
+        ],
       },
     ]);
   });
@@ -175,7 +188,15 @@ describe("EnvironmentService", () => {
     );
     expect(result.isTools).toEqual([{ name: "mxtestweb" }]);
     expect(result.databases).toEqual([
-      { name: "db-fin", mxDbTypes: ["financial", "reporting"] },
+      {
+        name: "db-fin",
+        allocation: {
+          name: "dbserver",
+          port: "3306",
+          machine: { name: "host1" },
+        },
+        mxDbTypes: ["financial", "reporting"],
+      },
     ]);
   });
 
@@ -197,68 +218,96 @@ describe("EnvironmentService", () => {
     expect(result).toBeInstanceOf(Error);
   });
 
-  it("should fetch active environment definitions by default", async () => {
+  it("should fetch MX client details for an environment", async () => {
+    const mxClientDetails = {
+      environmentId: "env-001",
+      host: "host-1",
+      port: 8443,
+      clientJar: { type: "JAR", name: "client.jar", uri: "uri-jar" },
+      clientPackage: { type: "ZIP", name: "client.zip", uri: "uri-zip" },
+    };
+
     const resultPromise = firstValueFrom(
-      service.getEnvironmentDefinitions("proj-001")
+      service.getMXClientDetails("proj-001", "env-001")
     );
 
     const request = httpController.expectOne(
-      (req) =>
-        req.url ===
-          `${GATEWAY_URL}projects/proj-001/environments/definitions` &&
-        req.params.get("includeInactive") === "false"
+      `${GATEWAY_URL}projects/proj-001/environments/env-001/mxclient-details`
     );
     expect(request.request.method).toBe("GET");
-    request.flush([
-      {
-        id: "env-def-001",
-        name: "Small",
-        status: EnvironmentDefinitionStatus.ACTIVE,
-      },
-    ]);
+    request.flush(mxClientDetails);
 
-    await expect(resultPromise).resolves.toEqual([
-      {
-        id: "env-def-001",
-        name: "Small",
-        status: EnvironmentDefinitionStatus.ACTIVE,
-      },
+    expect(await resultPromise).toEqual(mxClientDetails);
+  });
+
+  it("should not wrap MX client details errors so consumers can read the status", async () => {
+    const resultPromise = firstValueFrom(
+      service.getMXClientDetails("proj-001", "env-001")
+    ).catch((error) => error);
+
+    httpController
+      .expectOne(
+        `${GATEWAY_URL}projects/proj-001/environments/env-001/mxclient-details`
+      )
+      .flush("Bad request", { status: 400, statusText: "Bad Request" });
+
+    const error = await resultPromise;
+    expect(error.status).toBe(400);
+  });
+
+  it("should return empty array when no ids are provided to fetchByProjectAndEnvironmentIds", async () => {
+    const result = await firstValueFrom(
+      service.fetchByProjectAndEnvironmentIds("proj-001", [])
+    );
+
+    expect(result).toEqual([]);
+  });
+
+  it("should fetch each environment via the per-id endpoint", async () => {
+    const buildApiModel = (id: string): EnvironmentApiModel => ({
+      id,
+      projectId: "proj-001",
+      status: "READY",
+      createdOn: "2026-03-01T10:00:00Z",
+      databases: [],
+    });
+
+    const resultPromise = firstValueFrom(
+      service.fetchByProjectAndEnvironmentIds("proj-001", [
+        "env-001",
+        "env-002",
+      ])
+    );
+
+    httpController
+      .expectOne(`${GATEWAY_URL}projects/proj-001/environments/env-001`)
+      .flush(buildApiModel("env-001"));
+    httpController
+      .expectOne(`${GATEWAY_URL}projects/proj-001/environments/env-002`)
+      .flush(buildApiModel("env-002"));
+
+    const result = await resultPromise;
+
+    expect(result.map((environment) => environment.id)).toEqual([
+      "env-001",
+      "env-002",
     ]);
   });
 
-  it("should include inactive environment definitions when requested", async () => {
-    service.getEnvironmentDefinitions("proj-001", true).subscribe();
-
-    const request = httpController.expectOne(
-      (req) =>
-        req.url ===
-          `${GATEWAY_URL}projects/proj-001/environments/definitions` &&
-        req.params.get("includeInactive") === "true"
-    );
-
-    expect(request.request.method).toBe("GET");
-    request.flush([]);
-  });
-
-  it("should fetch environment definition by id", async () => {
+  it("should propagate errors from fetchByProjectAndEnvironmentIds", async () => {
     const resultPromise = firstValueFrom(
-      service.getEnvironmentDefinitionById("proj-001", "env-def-001")
-    );
+      service.fetchByProjectAndEnvironmentIds("proj-001", ["env-001"])
+    ).catch((error) => error);
 
-    const request = httpController.expectOne(
-      `${GATEWAY_URL}projects/proj-001/environments/definitions/env-def-001`
-    );
-    expect(request.request.method).toBe("GET");
-    request.flush({
-      id: "env-def-001",
-      name: "Small",
-      status: EnvironmentDefinitionStatus.ACTIVE,
-    });
+    httpController
+      .expectOne(`${GATEWAY_URL}projects/proj-001/environments/env-001`)
+      .flush("Server error", {
+        status: 500,
+        statusText: "Internal Server Error",
+      });
 
-    await expect(resultPromise).resolves.toEqual({
-      id: "env-def-001",
-      name: "Small",
-      status: EnvironmentDefinitionStatus.ACTIVE,
-    });
+    const error = await resultPromise;
+
+    expect(error).toBeInstanceOf(Error);
   });
 });

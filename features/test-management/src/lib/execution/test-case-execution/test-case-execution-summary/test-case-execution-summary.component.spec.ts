@@ -122,7 +122,8 @@ const configurationImpactType = AnalysisObjectType.CONFIGURATION_IMPACT;
 
 const LITE_BINARY_IMPACT_1 = {
   id: binaryImpactId,
-  title: "title1",
+  objectId: "PROJECT-BIMP-1",
+  title: "title11",
   owner: "owner",
   mxVersion: "mxVersion",
   projectId: "projectId",
@@ -136,6 +137,7 @@ const LITE_BINARY_IMPACT_1 = {
 };
 const LITE_BINARY_IMPACT_2 = {
   id: binaryImpactId2,
+  objectId: "PROJECT-BIMP-2",
   title: "title2",
   owner: "owner",
   mxVersion: "mxVersion",
@@ -1370,18 +1372,18 @@ describe("Test Case Executions Summary", () => {
   });
 
   describe("getLinkedImpactsTitles", () => {
-    it("should be displayed as a tooltip on the linked impacts column", () => {
+    it("should be displayed as a tooltip on the linked impacts column combining config titles and binary objectIds", () => {
       ngMocks
         .findInstances(ShowElementIfAuthorizedDirective)
         .forEach((authDirective) =>
           ngMocks.render(authDirective, authDirective)
         );
       const expectedLinkedImpactsTitles = [
-        LITE_BINARY_IMPACT_1.title,
         getConfigurationImpact().title,
+        LITE_BINARY_IMPACT_1.objectId,
       ].join(", ");
 
-      expect(getTooltipTextByTestId(fixture, "linked-impacts-display")).toEqual(
+      expect(getTooltipTextByTestId(fixture, "linked-impacts-data")).toEqual(
         expectedLinkedImpactsTitles
       );
     });
@@ -1820,11 +1822,20 @@ describe("Test Case Executions Summary", () => {
         authMockSetup(fixture);
       });
 
-      it("should filter impacts column when text filter is applied", fakeAsync(() => {
+      it("should filter impacts column by configuration impact title", fakeAsync(() => {
         applyTextFilterByTestId(
           fixture,
           "linked-impacts-header-filter",
           "title1"
+        );
+        expect(getTableHarness().getRowsCount()).toBe(1);
+      }));
+
+      it("should filter impacts column by binary impact object id", fakeAsync(() => {
+        applyTextFilterByTestId(
+          fixture,
+          "linked-impacts-header-filter",
+          "PROJECT-BIMP-1"
         );
         expect(getTableHarness().getRowsCount()).toBe(1);
       }));
@@ -1995,7 +2006,9 @@ describe("Test Case Executions Summary", () => {
     getBackButtonHarness().click();
     expect(router.navigate).toHaveBeenCalledWith(
       [`/app/${projectId}/test/execution/details/${scenarioExecutionId}`],
-      { replaceUrl: true }
+      {
+        replaceUrl: true,
+      }
     );
   });
 

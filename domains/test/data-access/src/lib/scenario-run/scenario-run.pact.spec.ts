@@ -7,10 +7,32 @@ import { ScenarioRunService } from "./scenario-run.service";
 import { ScenarioDefinitionService } from "../scenario-definition/scenario-definition.service";
 import { TestDefinitionService } from "../test-definition/test-definition.service";
 import { TestUnitService } from "../test-unit/test-unit.service";
+import { eachLike } from "@pact-foundation/pact/src/dsl/matchers";
 
-const PROJECT_ID = "project_1";
 const SCENARIO_RUN_ID = "scenarioRunId";
-
+const EXECUTION_GROUP_ID = "executionGroupId";
+const PROJECT_ID = "project_1";
+const CONTEXT_ID = "processExecutionId";
+const ASSIGNEE = "shaker";
+const SCENARIO_EXECUTION_ID = "scenarioExecutionId";
+const COMMENT = "comment";
+const ANALYSIS_STATUS = "Passed";
+const BRANCH = "branch";
+const MX_VERSION = "mxVersio";
+const MX_BUILD_ID = "mxBuildId";
+const COMMIT_ID = "commitId";
+const FACTORY_PRODUCT_ID = "FACTORY_PRODUCT_ID";
+const SUB_CONTEXT_ID = "subContextId";
+const STATUS = "STATUS";
+const RTP_COMMIT_ID = "rtpCommitId";
+const FINAL_PRODUCT_ID = "finalProductId";
+const REFERENCE_FACTORY_PRODUCT_ID = "referenceFactoryProductId";
+const SCENARIO_DEFINITION_NAME = "SCENARIO_DEFINITION_NAME";
+const START_DATE = "2023-07-28T14:35:22.123Z";
+const END_DATE = "2023-07-28T15:35:22.123Z";
+const TEST_UNIT_ID = "testUnitId";
+const QUALITY_LEVEL = "MQG";
+const CLEAN_IF_PASSED = true;
 describe("scenario run service contract tests", () => {
   const provider = new Pact({
     consumer: "web-test",
@@ -45,6 +67,53 @@ describe("scenario run service contract tests", () => {
     await provider.finalize();
   });
 
+  test("validate contract for housekeeping scenario execution happy path", async () => {
+    await provider.addInteraction({
+      state: "a valid state to clean a scenario execution",
+      uponReceiving: "a request to housekeep a scenario execution",
+      withRequest: {
+        method: "DELETE",
+        path: `/projects/${PROJECT_ID}/test-execution-manager/scenario-executions/${SCENARIO_EXECUTION_ID}`,
+      },
+      willRespondWith: {
+        status: 200,
+      },
+    });
+
+    expect(
+      await lastValueFrom(
+        scenarioRunService
+          .housekeepScenarioExecution(PROJECT_ID, SCENARIO_EXECUTION_ID)
+          .pipe(catchError((error) => of(error.message)))
+      )
+    ).toBeNull();
+  });
+
+  test("validate contract for housekeeping when scenario already cleaned", async () => {
+    await provider.addInteraction({
+      state: "scenario already cleaned",
+      uponReceiving:
+        "a request to housekeep a scenario execution that is already cleaned",
+      withRequest: {
+        method: "DELETE",
+        path: `/projects/${PROJECT_ID}/test-execution-manager/scenario-executions/${SCENARIO_EXECUTION_ID}`,
+      },
+      willRespondWith: {
+        status: 409,
+        headers: {
+          "Content-Type": "text/plain;charset=UTF-8",
+        },
+      },
+    });
+
+    expect(
+      await lastValueFrom(
+        scenarioRunService
+          .housekeepScenarioExecution(PROJECT_ID, SCENARIO_EXECUTION_ID)
+          .pipe(catchError((error) => of(error.message)))
+      )
+    ).toBeTruthy();
+  });
   test("validate contract for aborting a non existing scenario run", async () => {
     await provider.addInteraction({
       state: "abort scenario execution by id that does not exist",
@@ -160,8 +229,8 @@ describe("scenario run service contract tests", () => {
 
   test("validate contract for fetching a scenario run by id", async () => {
     await provider.addInteraction({
-      state: "scenario execution exists by id",
-      uponReceiving: "a request to fetch a scenario run by id",
+      state: "Scenario execution exists",
+      uponReceiving: "a request to get the scenario",
       withRequest: {
         method: "GET",
         path: `/projects/${PROJECT_ID}/test-execution-manager/scenario-executions/${SCENARIO_RUN_ID}`,
@@ -172,8 +241,80 @@ describe("scenario run service contract tests", () => {
           "Content-Type": "application/json",
         },
         body: {
-          id: Matchers.string(SCENARIO_RUN_ID),
-          mxVersion: Matchers.string("3.1.65"),
+          analysisStatus: Matchers.string(ANALYSIS_STATUS),
+          assignee: Matchers.string(ASSIGNEE),
+          mxBuildId: Matchers.string(MX_BUILD_ID),
+          mxVersion: Matchers.string(MX_VERSION),
+          factoryProductId: Matchers.string(FACTORY_PRODUCT_ID),
+          name: Matchers.string(SCENARIO_DEFINITION_NAME),
+          contextId: Matchers.string(CONTEXT_ID),
+          scenarioDefinitionId: Matchers.string(SCENARIO_DEFINITION_ID),
+          id: Matchers.string(SCENARIO_EXECUTION_ID),
+          testUnitId: Matchers.string(TEST_UNIT_ID),
+          startDate: Matchers.iso8601DateTimeWithMillis(START_DATE),
+          endDate: Matchers.iso8601DateTimeWithMillis(END_DATE),
+          status: Matchers.string(STATUS),
+          terminationMessage: Matchers.string("terminationMessage"),
+          logFileUrl: Matchers.string("logFileUrl"),
+          subContextId: Matchers.string(SUB_CONTEXT_ID),
+          envInfo: {
+            environmentId: Matchers.string("environmentId"),
+            status: Matchers.string("DEPLOYED"),
+          },
+          commitId: Matchers.string(COMMIT_ID),
+          branch: Matchers.string(BRANCH),
+          failed: Matchers.boolean(true),
+          testExecutions: eachLike({
+            testPackageName: Matchers.string("testPackageName"),
+            testSelectionNames: Matchers.eachLike(
+              Matchers.string("testSelectionName")
+            ),
+            testPackageDefinitionId: Matchers.string("testPackageDefinitionId"),
+            report: {
+              completeReportUrl: Matchers.string("completeReportUrl"),
+              performanceReportUrl: Matchers.string("performanceReportUrl"),
+              hardwareMonitoringReportUrl: Matchers.string(
+                "hardwareMonitoringReportUrl"
+              ),
+              url: Matchers.string("url"),
+              uploading: Matchers.boolean(true),
+            },
+            testPackageRunLocation: Matchers.string("testPackageRunLocation"),
+            testExecutionStatus: Matchers.string("testExecutionStatus"),
+            startDate: Matchers.iso8601DateTimeWithMillis(START_DATE),
+            endDate: Matchers.iso8601DateTimeWithMillis(END_DATE),
+            nameUponExecution: Matchers.string("nameUponExecution"),
+            executionEnded: Matchers.boolean(true),
+            executionMode: Matchers.string("web"),
+          }),
+          comment: Matchers.string(COMMENT),
+          repushable: Matchers.boolean(true),
+          executionGroupId: Matchers.string(EXECUTION_GROUP_ID),
+          fullMaintenance: Matchers.boolean(true),
+          validation: {
+            scope: {
+              referenceFactoryProductId: Matchers.string(
+                "referenceFactoryProductId"
+              ),
+              requestedFactoryProductId: Matchers.string(
+                "requestedFactoryProductId"
+              ),
+            },
+            jumpType: Matchers.string("long"),
+          },
+          cleaningStatus: Matchers.string("CLEANED"),
+          rtpCommitId: Matchers.string(RTP_COMMIT_ID),
+          finalProductId: Matchers.string(FINAL_PRODUCT_ID),
+          keepExecution: Matchers.boolean(true),
+          businessProcesses: eachLike({
+            id: Matchers.string("businessProcessId"),
+            name: Matchers.string("businessProcessName"),
+          }),
+          project: {
+            id: Matchers.string(PROJECT_ID),
+            name: Matchers.string("projectName"),
+          },
+          qualityLevel: Matchers.string(QUALITY_LEVEL),
         },
       },
     });
@@ -189,7 +330,7 @@ describe("scenario run service contract tests", () => {
     const executionGroupId = "executionGroupId";
 
     await provider.addInteraction({
-      state: "a user is running a scenario execution",
+      state: "a user wants to start a scenario execution",
       uponReceiving: "a request to run a scenario execution",
       withRequest: {
         method: "POST",
@@ -210,6 +351,15 @@ describe("scenario run service contract tests", () => {
           stopServices: Matchers.boolean(true),
           validationScopeEnabled: Matchers.boolean(false),
           incidentEnabled: Matchers.boolean(false),
+          qualityLevel: Matchers.string(QUALITY_LEVEL),
+          referenceFactoryProductId: Matchers.string(
+            REFERENCE_FACTORY_PRODUCT_ID
+          ),
+          cleanIfPassed: Matchers.boolean(CLEAN_IF_PASSED),
+          commitId: "abc123",
+          configurationAuditing: {
+            enabled: false,
+          },
         },
       },
       willRespondWith: {
@@ -228,7 +378,6 @@ describe("scenario run service contract tests", () => {
         scenarioDefinitionId: "scenario-definition-1",
         subContextId: "BUILD_AND_TEST",
         branchName: "feature/temp-branch",
-        commitId: null,
         executionGroupId,
         machineGroupId: "infra-group-1",
         disableKeepExecution: true,
@@ -237,6 +386,13 @@ describe("scenario run service contract tests", () => {
         stopServices: true,
         validationScopeEnabled: false,
         incidentEnabled: false,
+        qualityLevel: QUALITY_LEVEL,
+        referenceFactoryProductId: REFERENCE_FACTORY_PRODUCT_ID,
+        cleanIfPassed: CLEAN_IF_PASSED,
+        commitId: "abc123",
+        configurationAuditing: {
+          enabled: false,
+        },
       })
     );
 
@@ -247,7 +403,7 @@ describe("scenario run service contract tests", () => {
     const executionGroupId = "executionGroupId";
 
     await provider.addInteraction({
-      state: "scenario executions are allowed",
+      state: "scenario executions are allowed under a certain execution group",
       uponReceiving: "a request to check if scenario execution is allowed",
       withRequest: {
         method: "GET",
@@ -260,8 +416,8 @@ describe("scenario run service contract tests", () => {
         },
         body: {
           actionAllowed: Matchers.boolean(true),
-          rejectionReasons: [],
-          warnings: [],
+          rejectionReasons: ["LIMIT_REACHED"],
+          warnings: ["SHOULD_HOUSKEEP_BEFORE_NEXT_LAUNCH"],
         },
       },
     });
@@ -380,6 +536,88 @@ describe("scenario run service contract tests", () => {
     const result = await lastValueFrom(
       scenarioRunService.bulkRerun(PROJECT_ID, {
         factoryProductId: "fp-1",
+        scenariosToBeRepushed: ["scenario-run-1"],
+      })
+    );
+
+    expect(result.successfulRepushes).toBeDefined();
+    expect(result.failedRepushes).toBeDefined();
+  });
+
+  test("validate contract for official single rerun from final product", async () => {
+    const finalProductId = "final-product-1";
+    const rtpCommitId = "rtp-commit-123";
+
+    await provider.addInteraction({
+      state: "a user is repushing a scenario execution from final product",
+      uponReceiving: "a request to rerun a scenario from a final product",
+      withRequest: {
+        method: "POST",
+        path: `/projects/${PROJECT_ID}/test-execution-manager/scenario-executions/${SCENARIO_RUN_ID}/repush-from-final-product`,
+        body: {
+          finalProductId: Matchers.string(finalProductId),
+          rtpCommitId: Matchers.string(rtpCommitId),
+        },
+      },
+      willRespondWith: {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+        body: {
+          testExecutionId: Matchers.string("new-scenario-run-1"),
+        },
+      },
+    });
+
+    const result = await lastValueFrom(
+      scenarioRunService.rerunScenarioFromFinalProduct(
+        PROJECT_ID,
+        SCENARIO_RUN_ID,
+        {
+          finalProductId,
+          rtpCommitId,
+        }
+      )
+    );
+
+    expect(result.testExecutionId).toBeDefined();
+  });
+
+  test("validate contract for official bulk rerun from final product", async () => {
+    const finalProductId = "final-product-1";
+    const rtpCommitId = "rtp-commit-123";
+
+    await provider.addInteraction({
+      state:
+        "a user is repushing a bulk of scenario executions from final product",
+      uponReceiving: "a request to bulk rerun scenarios from a final product",
+      withRequest: {
+        method: "POST",
+        path: `/projects/${PROJECT_ID}/test-execution-manager/scenario-executions/bulk-repush-from-final-product`,
+        body: {
+          finalProductId: Matchers.string(finalProductId),
+          rtpCommitId: Matchers.string(rtpCommitId),
+          scenariosToBeRepushed: Matchers.eachLike(
+            Matchers.string("scenario-run-1")
+          ),
+        },
+      },
+      willRespondWith: {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+        body: {
+          successfulRepushes: Matchers.eachLike({
+            originalScenarioExecutionId: Matchers.string("scenario-run-1"),
+            repushedScenarioExecutionId: Matchers.string("new-scenario-run-1"),
+          }),
+          failedRepushes: Matchers.eachLike(Matchers.string("scenario-run-2")),
+        },
+      },
+    });
+
+    const result = await lastValueFrom(
+      scenarioRunService.bulkRerunFromFinalProduct(PROJECT_ID, {
+        finalProductId,
+        rtpCommitId,
         scenariosToBeRepushed: ["scenario-run-1"],
       })
     );
@@ -576,6 +814,69 @@ describe("scenario run service contract tests", () => {
     expect(result[0].linkedIncidents[0].id).toBeTruthy();
     expect(result[0].linkedIncidents[0].status).toBeTruthy();
   });
+
+  test("should run a scenario with configuration auditing", async () => {
+    const BASELINE_COMMIT = "abc123";
+    const executionGroupId = "executionGroupId";
+
+    await provider.addInteraction({
+      state: "a user wants to start a scenario execution",
+      uponReceiving:
+        "a request to execute a test scenario with configuration auditing",
+      withRequest: {
+        method: "POST",
+        path: `/projects/${PROJECT_ID}/test-execution-manager/scenario-executions/execute`,
+        body: {
+          scenarioDefinitionId: Matchers.string("scenario-definition-1"),
+          subContextId: Matchers.string("BUILD_AND_TEST"),
+          branchName: Matchers.string("feature/temp-branch"),
+          fullMaintenance: Matchers.boolean(false),
+          executionGroupId: Matchers.string(executionGroupId),
+          machineGroupId: Matchers.string("infra-group-1"),
+          disableKeepExecution: Matchers.boolean(true),
+          disableConfigurationEditor: Matchers.boolean(false),
+          supportReconActivities: Matchers.boolean(false),
+          stopServices: Matchers.boolean(true),
+          validationScopeEnabled: Matchers.boolean(false),
+          incidentEnabled: Matchers.boolean(false),
+          configurationAuditing: {
+            enabled: Matchers.boolean(true),
+            baselineCommit: Matchers.string(BASELINE_COMMIT),
+          },
+          commitId: "abc123",
+        },
+      },
+      willRespondWith: {
+        status: 200,
+        body: {
+          testExecutionId: Matchers.string("test-execution-1"),
+        },
+      },
+    });
+
+    const result = await lastValueFrom(
+      scenarioRunService.runScenario(PROJECT_ID, {
+        scenarioDefinitionId: "scenario-definition-1",
+        subContextId: "BUILD_AND_TEST",
+        branchName: "feature/temp-branch",
+        executionGroupId,
+        machineGroupId: "infra-group-1",
+        disableKeepExecution: true,
+        disableConfigurationEditor: false,
+        supportReconActivities: false,
+        stopServices: true,
+        validationScopeEnabled: false,
+        incidentEnabled: false,
+        configurationAuditing: {
+          enabled: true,
+          baselineCommit: BASELINE_COMMIT,
+        },
+        commitId: "abc123",
+      })
+    );
+
+    expect(result.testExecutionId).toBeTruthy();
+  });
 });
 
 const SCENARIO_DEFINITION_PROJECT_ID = "projectId";
@@ -748,7 +1049,7 @@ describe("TestUnitService contract tests", () => {
       mxVersion: Matchers.string("3.1.64"),
       mxBuildId: Matchers.string("build-1"),
       factoryProductId: Matchers.string(""),
-      keptExecution: Matchers.boolean(false),
+      keepExecution: Matchers.boolean(false),
       environment: {
         environmentId: Matchers.string("env-1"),
         status: Matchers.string("CREATED"),

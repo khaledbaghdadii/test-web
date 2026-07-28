@@ -153,6 +153,7 @@ export class MergeConfigurationDefinitionService {
       runFullMaintenance: request.runFullMaintenance,
       automergeBulkSize: request.automergeBulkSize,
       deltaConfigImportEnabled: request.deltaConfigImportEnabled,
+      mxLintEnabled: request.mxLintEnabled,
       infraResourceSettings: {
         infraGroupId: request.infraResourceSettings.infraGroupId,
         projectId,
@@ -174,6 +175,7 @@ export class MergeConfigurationDefinitionService {
       runFullMaintenance: request.runFullMaintenance,
       automergeBulkSize: request.automergeBulkSize,
       deltaConfigImportEnabled: request.deltaConfigImportEnabled,
+      mxLintEnabled: request.mxLintEnabled,
       infraResourceSettings: {
         infraGroupId: request.infraResourceSettings.infraGroupId,
         projectId,

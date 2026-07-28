@@ -1,15 +1,14 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { inject, Injectable } from "@angular/core";
 import { GATEWAY_CONFIG, GatewayConfig } from "@mxevolve/shared/core/config";
-import { catchError, map, Observable, of, throwError } from "rxjs";
+import { catchError, forkJoin, map, Observable, of, throwError } from "rxjs";
 import {
-  EnvironmentPageApiModel,
   EnvironmentApiModel,
+  EnvironmentPageApiModel,
 } from "./environment-api-model";
 import { Environment } from "./environment";
-import { toEnvironments, toEnvironment } from "./environment-mapper";
+import { toEnvironment, toEnvironments } from "./environment-mapper";
 import { MXClientDetails } from "../mx-client-details/mx-client-details";
-import { EnvironmentDefinition } from "../environment-definition/environment-definition";
 
 @Injectable()
 export class EnvironmentService {
@@ -51,40 +50,19 @@ export class EnvironmentService {
       );
   }
 
-  getEnvironmentDefinitions(
+  fetchByProjectAndEnvironmentIds(
     projectId: string,
-    includeInactive = false
-  ): Observable<EnvironmentDefinition[]> {
-    const params = new HttpParams().set(
-      "includeInactive",
-      includeInactive.toString()
+    environmentIds: string[]
+  ): Observable<Environment[]> {
+    if (environmentIds.length === 0) {
+      return of([]);
+    }
+
+    return forkJoin(
+      environmentIds.map((environmentId) =>
+        this.fetchByProjectAndEnvironmentId(projectId, environmentId)
+      )
     );
-
-    return this.http
-      .get<EnvironmentDefinition[]>(
-        `${this.config.gatewayUrl}projects/${projectId}/environments/definitions`,
-        { params }
-      )
-      .pipe(
-        catchError((error) =>
-          throwError(() => new Error(error.error?.message ?? error.message))
-        )
-      );
-  }
-
-  getEnvironmentDefinitionById(
-    projectId: string,
-    environmentDefinitionId: string
-  ): Observable<EnvironmentDefinition> {
-    return this.http
-      .get<EnvironmentDefinition>(
-        `${this.config.gatewayUrl}projects/${projectId}/environments/definitions/${environmentDefinitionId}`
-      )
-      .pipe(
-        catchError((error) =>
-          throwError(() => new Error(error.error?.message ?? error.message))
-        )
-      );
   }
 
   getMXClientDetails(

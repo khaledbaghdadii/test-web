@@ -13,7 +13,7 @@ import { DisableAbortPipe } from "./disable-abort.pipe";
 import { CUSTOM_ELEMENTS_SCHEMA } from "@angular/core";
 import { Toast } from "primeng/toast";
 import { ConfirmPopupModule } from "primeng/confirmpopup";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 const PROJECT_ID = "test-project";
 const SCENARIO_EXECUTION_ID = "test-execution";

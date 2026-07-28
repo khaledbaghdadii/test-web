@@ -9,7 +9,7 @@ import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
   standalone: true,
   imports: [Button, TooltipModule, MxevolveIconComponent, RouterLink],
   template: `
-    <a [routerLink]="environmentLink()">
+    <a [routerLink]="environmentLink()" target="_blank">
       <p-button
         [rounded]="true"
         [text]="true"

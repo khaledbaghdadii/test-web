@@ -20,6 +20,7 @@ export class FactoryProductInputComponent implements OnInit, OnDestroy {
 
   @Input({ required: true }) projectId: string;
   @Input() requiredInput: boolean;
+  @Input() applyGridLayout = false;
   @Input() factoryProductId?: string;
   @Input() mxVersion?: string;
   @Input() mxBuildId?: string;

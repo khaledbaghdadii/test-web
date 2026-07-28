@@ -17,6 +17,7 @@ import {
   EnvironmentStatusDisplayComponent,
   EnvironmentDetailsLinkComponent,
 } from "@mxevolve/domains/environment/ui";
+import { EnvironmentStatus } from "@mxevolve/domains/environment/util";
 import { EnvironmentStatusPanelData } from "./environment-status-panel-data";
 import { ConfigureMxTestButtonComponent } from "../configure-mxtest-button/configure-mxtest-button.component";
 import { ConnectToDatabaseButtonComponent } from "../connect-to-database-button/connect-to-database-button.component";
@@ -30,6 +31,7 @@ import {
 } from "@mxevolve/domains/environment/data-access";
 import { EnvironmentStatusPanelFacade } from "./environment-status-panel-facade";
 import { Divider } from "primeng/divider";
+import { EnvironmentConfigAuditStatusButtonComponent } from "../environment-config-audit-status-button/environment-config-audit-status-button.component";
 
 @Component({
   selector: "mxevolve-environment-status-panel",
@@ -47,6 +49,7 @@ import { Divider } from "primeng/divider";
     ConnectApplicativeButtonComponent,
     OpenClientButtonComponent,
     OpenConfigEditorButtonComponent,
+    EnvironmentConfigAuditStatusButtonComponent,
   ],
   providers: [
     EnvironmentStatusPanelFacade,
@@ -59,10 +62,26 @@ export class EnvironmentStatusPanelComponent {
   readonly projectId = input.required<string>();
   readonly environmentId = input.required<string>();
   readonly showOpenConfigEditorAction = input(false);
+  /**
+   * When false, hides the deployment details row (Deployment Start Date,
+   * Deployment End Date, Deployment Duration, Termination Message) while
+   * keeping the environment status/actions row always visible. Defaults to
+   * true so existing consumers keep showing the full panel.
+   */
+  readonly showDeploymentDetails = input(true);
 
   private readonly facade = inject(EnvironmentStatusPanelFacade);
 
   readonly environmentPanelError = output<Error>();
+
+  /**
+   * Emitted once the loaded environment reaches the CLEANED status. Consumers
+   * can react to a cleaned environment (e.g. hide the panel) without this
+   * component owning that presentation decision.
+   */
+  readonly environmentCleaned = output<void>();
+
+  private hasEmittedCleaned = false;
 
   readonly TERMINATION_MESSAGE_TRUNCATION_LENGTH = 80;
 
@@ -107,6 +126,17 @@ export class EnvironmentStatusPanelComponent {
     effect(() => {
       if (this.panelData.status() === "error") {
         this.environmentPanelError.emit(this.panelData.error() as Error);
+      }
+    });
+
+    effect(() => {
+      if (
+        !this.hasEmittedCleaned &&
+        this.panelData.hasValue() &&
+        this.panelData.value().status === EnvironmentStatus.CLEANED
+      ) {
+        this.hasEmittedCleaned = true;
+        this.environmentCleaned.emit();
       }
     });
   }

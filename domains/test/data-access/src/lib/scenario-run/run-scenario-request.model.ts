@@ -1,7 +1,7 @@
 export interface RunScenarioRequest {
   readonly scenarioDefinitionId: string;
-  readonly subContextId: string;
-  readonly branchName: string;
+  readonly subContextId?: string;
+  readonly branchName?: string;
   readonly commitId: string | null;
   readonly executionGroupId?: string | null;
   readonly machineGroupId?: string;
@@ -12,6 +12,12 @@ export interface RunScenarioRequest {
   readonly validationScopeEnabled?: boolean;
   readonly incidentEnabled?: boolean;
   readonly qualityLevel?: string;
+  readonly configurationAuditing?: {
+    enabled: boolean;
+    baselineCommit?: string;
+  };
+  readonly referenceFactoryProductId?: string;
+  readonly cleanIfPassed?: boolean;
 }
 
 export interface RunScenarioResponse {

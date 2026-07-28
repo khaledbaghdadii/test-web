@@ -45,6 +45,7 @@ const MOCK_API_RESPONSE: ScenarioRunApiResponse = {
       status: "Open",
       assignee: "user-1",
       reporter: "user-2",
+      creationDate: "creationDate",
       externalIssue: {
         id: "ext-1",
         origin: "jira",
@@ -260,7 +261,7 @@ describe("ScenarioRunService", () => {
           scenarioDefinitionId: "scenario-definition-1",
           subContextId: "BUILD_AND_TEST",
           branchName: "feature/temp-branch",
-          commitId: null,
+          commitId: "abc123",
           executionGroupId: EXECUTION_GROUP_ID,
           machineGroupId: "infra-group-1",
           disableKeepExecution: true,
@@ -270,6 +271,11 @@ describe("ScenarioRunService", () => {
           validationScopeEnabled: false,
           incidentEnabled: false,
           qualityLevel: "MQG",
+          referenceFactoryProductId: "reference-factory-product-1",
+          cleanIfPassed: true,
+          configurationAuditing: {
+            enabled: false,
+          },
         })
       );
 
@@ -289,7 +295,66 @@ describe("ScenarioRunService", () => {
         validationScopeEnabled: false,
         incidentEnabled: false,
         qualityLevel: "MQG",
+        referenceFactoryProductId: "reference-factory-product-1",
+        cleanIfPassed: true,
+        commitId: "abc123",
+        configurationAuditing: {
+          enabled: false,
+        },
       });
+      request.flush({ testExecutionId: "test-execution-1" });
+
+      expect(await resultPromise).toEqual({
+        testExecutionId: "test-execution-1",
+      });
+    });
+
+    it("should include audit configuration in the request body when provided", async () => {
+      const resultPromise = firstValueFrom(
+        service.runScenario(PROJECT_ID, {
+          scenarioDefinitionId: "scenario-definition-1",
+          subContextId: "BUILD_AND_TEST",
+          branchName: "feature/temp-branch",
+          commitId: null,
+          executionGroupId: EXECUTION_GROUP_ID,
+          machineGroupId: "infra-group-1",
+          disableKeepExecution: true,
+          stopServices: true,
+          disableConfigurationEditor: false,
+          supportReconActivities: false,
+          validationScopeEnabled: false,
+          incidentEnabled: false,
+          configurationAuditing: { enabled: true, baselineCommit: "abc123" },
+        })
+      );
+
+      const request = httpController.expectOne(EXECUTE_URL);
+      expect(request.request.method).toBe("POST");
+      expect(request.request.body).toEqual(
+        expect.objectContaining({
+          configurationAuditing: { enabled: true, baselineCommit: "abc123" },
+        })
+      );
+      request.flush({ testExecutionId: "test-execution-1" });
+
+      expect(await resultPromise).toEqual({
+        testExecutionId: "test-execution-1",
+      });
+    });
+
+    it("set audit configuration to undefined in the request body when not provided", async () => {
+      const resultPromise = firstValueFrom(
+        service.runScenario(PROJECT_ID, {
+          scenarioDefinitionId: "scenario-definition-1",
+          subContextId: "BUILD_AND_TEST",
+          branchName: "feature/temp-branch",
+          commitId: null,
+          stopServices: true,
+        })
+      );
+
+      const request = httpController.expectOne(EXECUTE_URL);
+      expect(request.request.body.configurationAuditing).toBeUndefined();
       request.flush({ testExecutionId: "test-execution-1" });
 
       expect(await resultPromise).toEqual({
@@ -713,6 +778,405 @@ describe("ScenarioRunService", () => {
         .flush("Not found", { status: 404, statusText: "Not Found" });
 
       await expect(resultPromise).rejects.toThrow("Not found");
+    });
+  });
+
+  describe("rerunScenarioFromFinalProduct", () => {
+    const REPUSH_FINAL_URL = `${BASE_URL}/${SCENARIO_RUN_ID}/repush-from-final-product`;
+    const BASE_REQUEST = {
+      finalProductId: "fp-final-123",
+      rtpCommitId: "rtp-abc123",
+    };
+
+    it("posts to the repush-from-final-product endpoint", () => {
+      service
+        .rerunScenarioFromFinalProduct(
+          PROJECT_ID,
+          SCENARIO_RUN_ID,
+          BASE_REQUEST
+        )
+        .subscribe();
+
+      const request = httpController.expectOne(REPUSH_FINAL_URL);
+      expect(request.request.method).toBe("POST");
+      request.flush({ testExecutionId: "exec-1" });
+    });
+
+    it("sends the final product ID in the body", () => {
+      service
+        .rerunScenarioFromFinalProduct(
+          PROJECT_ID,
+          SCENARIO_RUN_ID,
+          BASE_REQUEST
+        )
+        .subscribe();
+
+      const request = httpController.expectOne(REPUSH_FINAL_URL);
+      expect(request.request.body.finalProductId).toBe("fp-final-123");
+      request.flush({ testExecutionId: "exec-1" });
+    });
+
+    it("sends the RTP commit ID in the body", () => {
+      service
+        .rerunScenarioFromFinalProduct(
+          PROJECT_ID,
+          SCENARIO_RUN_ID,
+          BASE_REQUEST
+        )
+        .subscribe();
+
+      const request = httpController.expectOne(REPUSH_FINAL_URL);
+      expect(request.request.body.rtpCommitId).toBe("rtp-abc123");
+      request.flush({ testExecutionId: "exec-1" });
+    });
+
+    it("trims whitespace from finalProductId", () => {
+      service
+        .rerunScenarioFromFinalProduct(PROJECT_ID, SCENARIO_RUN_ID, {
+          ...BASE_REQUEST,
+          finalProductId: "  fp-final-123  ",
+        })
+        .subscribe();
+
+      const request = httpController.expectOne(REPUSH_FINAL_URL);
+      expect(request.request.body.finalProductId).toBe("fp-final-123");
+      request.flush({ testExecutionId: "exec-1" });
+    });
+
+    it("trims whitespace from rtpCommitId", () => {
+      service
+        .rerunScenarioFromFinalProduct(PROJECT_ID, SCENARIO_RUN_ID, {
+          ...BASE_REQUEST,
+          rtpCommitId: "  rtp-abc123  ",
+        })
+        .subscribe();
+
+      const request = httpController.expectOne(REPUSH_FINAL_URL);
+      expect(request.request.body.rtpCommitId).toBe("rtp-abc123");
+      request.flush({ testExecutionId: "exec-1" });
+    });
+
+    it("includes optional executionGroupId when provided", () => {
+      service
+        .rerunScenarioFromFinalProduct(PROJECT_ID, SCENARIO_RUN_ID, {
+          ...BASE_REQUEST,
+          executionGroupId: "group-1",
+        })
+        .subscribe();
+
+      const request = httpController.expectOne(REPUSH_FINAL_URL);
+      expect(request.request.body.executionGroupId).toBe("group-1");
+      request.flush({ testExecutionId: "exec-1" });
+    });
+
+    it("includes stopServices flag in the body", () => {
+      service
+        .rerunScenarioFromFinalProduct(PROJECT_ID, SCENARIO_RUN_ID, {
+          ...BASE_REQUEST,
+          stopServices: true,
+        })
+        .subscribe();
+
+      const request = httpController.expectOne(REPUSH_FINAL_URL);
+      expect(request.request.body.stopServices).toBe(true);
+      request.flush({ testExecutionId: "exec-1" });
+    });
+
+    it("returns the test execution response on success", async () => {
+      const resultPromise = firstValueFrom(
+        service.rerunScenarioFromFinalProduct(
+          PROJECT_ID,
+          SCENARIO_RUN_ID,
+          BASE_REQUEST
+        )
+      );
+
+      httpController
+        .expectOne(REPUSH_FINAL_URL)
+        .flush({ testExecutionId: "exec-1" });
+
+      expect(await resultPromise).toEqual({ testExecutionId: "exec-1" });
+    });
+
+    it("throws an error when the server responds with 500", async () => {
+      const resultPromise = firstValueFrom(
+        service.rerunScenarioFromFinalProduct(
+          PROJECT_ID,
+          SCENARIO_RUN_ID,
+          BASE_REQUEST
+        )
+      );
+
+      httpController
+        .expectOne(REPUSH_FINAL_URL)
+        .flush("Internal server error", {
+          status: 500,
+          statusText: "Internal Server Error",
+        });
+
+      await expect(resultPromise).rejects.toThrow("Internal server error");
+    });
+
+    it("throws an error when the server responds with 404", async () => {
+      const resultPromise = firstValueFrom(
+        service.rerunScenarioFromFinalProduct(
+          PROJECT_ID,
+          SCENARIO_RUN_ID,
+          BASE_REQUEST
+        )
+      );
+
+      httpController.expectOne(REPUSH_FINAL_URL).flush("Not found", {
+        status: 404,
+        statusText: "Not Found",
+      });
+
+      await expect(resultPromise).rejects.toThrow("Not found");
+    });
+  });
+
+  describe("bulkRerunFromFinalProduct", () => {
+    const BULK_REPUSH_FINAL_URL = `${BASE_URL}/bulk-repush-from-final-product`;
+    const BASE_REQUEST = {
+      finalProductId: "fp-final-123",
+      rtpCommitId: "rtp-abc123",
+      scenariosToBeRepushed: ["run-1", "run-2"],
+    };
+    const MOCK_BULK_RESPONSE = {
+      successfulRepushes: [
+        {
+          originalScenarioExecutionId: "run-1",
+          repushedScenarioExecutionId: "new-run-1",
+        },
+      ],
+      failedRepushes: ["run-2"],
+    };
+
+    it("posts to the bulk-repush-from-final-product endpoint", () => {
+      service.bulkRerunFromFinalProduct(PROJECT_ID, BASE_REQUEST).subscribe();
+
+      const request = httpController.expectOne(BULK_REPUSH_FINAL_URL);
+      expect(request.request.method).toBe("POST");
+      request.flush(MOCK_BULK_RESPONSE);
+    });
+
+    it("sends the final product ID in the body", () => {
+      service.bulkRerunFromFinalProduct(PROJECT_ID, BASE_REQUEST).subscribe();
+
+      const request = httpController.expectOne(BULK_REPUSH_FINAL_URL);
+      expect(request.request.body.finalProductId).toBe("fp-final-123");
+      request.flush(MOCK_BULK_RESPONSE);
+    });
+
+    it("sends the RTP commit ID in the body", () => {
+      service.bulkRerunFromFinalProduct(PROJECT_ID, BASE_REQUEST).subscribe();
+
+      const request = httpController.expectOne(BULK_REPUSH_FINAL_URL);
+      expect(request.request.body.rtpCommitId).toBe("rtp-abc123");
+      request.flush(MOCK_BULK_RESPONSE);
+    });
+
+    it("sends scenariosToBeRepushed in the body", () => {
+      service.bulkRerunFromFinalProduct(PROJECT_ID, BASE_REQUEST).subscribe();
+
+      const request = httpController.expectOne(BULK_REPUSH_FINAL_URL);
+      expect(request.request.body.scenariosToBeRepushed).toEqual([
+        "run-1",
+        "run-2",
+      ]);
+      request.flush(MOCK_BULK_RESPONSE);
+    });
+
+    it("trims whitespace from finalProductId", () => {
+      service
+        .bulkRerunFromFinalProduct(PROJECT_ID, {
+          ...BASE_REQUEST,
+          finalProductId: "  fp-final-123  ",
+        })
+        .subscribe();
+
+      const request = httpController.expectOne(BULK_REPUSH_FINAL_URL);
+      expect(request.request.body.finalProductId).toBe("fp-final-123");
+      request.flush(MOCK_BULK_RESPONSE);
+    });
+
+    it("trims whitespace from rtpCommitId", () => {
+      service
+        .bulkRerunFromFinalProduct(PROJECT_ID, {
+          ...BASE_REQUEST,
+          rtpCommitId: "  rtp-abc123  ",
+        })
+        .subscribe();
+
+      const request = httpController.expectOne(BULK_REPUSH_FINAL_URL);
+      expect(request.request.body.rtpCommitId).toBe("rtp-abc123");
+      request.flush(MOCK_BULK_RESPONSE);
+    });
+
+    it("returns the bulk rerun response on success", async () => {
+      const resultPromise = firstValueFrom(
+        service.bulkRerunFromFinalProduct(PROJECT_ID, BASE_REQUEST)
+      );
+
+      httpController.expectOne(BULK_REPUSH_FINAL_URL).flush(MOCK_BULK_RESPONSE);
+
+      expect(await resultPromise).toEqual(MOCK_BULK_RESPONSE);
+    });
+
+    it("throws an error when the server responds with 500", async () => {
+      const resultPromise = firstValueFrom(
+        service.bulkRerunFromFinalProduct(PROJECT_ID, BASE_REQUEST)
+      );
+
+      httpController
+        .expectOne(BULK_REPUSH_FINAL_URL)
+        .flush("Internal server error", {
+          status: 500,
+          statusText: "Internal Server Error",
+        });
+
+      await expect(resultPromise).rejects.toThrow("Internal server error");
+    });
+
+    it("throws an error when the server responds with 404", async () => {
+      const resultPromise = firstValueFrom(
+        service.bulkRerunFromFinalProduct(PROJECT_ID, BASE_REQUEST)
+      );
+
+      httpController.expectOne(BULK_REPUSH_FINAL_URL).flush("Not found", {
+        status: 404,
+        statusText: "Not Found",
+      });
+
+      await expect(resultPromise).rejects.toThrow("Not found");
+    });
+  });
+
+  describe("isRepushAllowed", () => {
+    const CAN_REPUSH_URL = `${GATEWAY_URL}projects/${PROJECT_ID}/test-execution-manager/execution-group/${EXECUTION_GROUP_ID}/scenario-execution/${SCENARIO_RUN_ID}/can-repush`;
+    const PERMISSION = {
+      actionAllowed: true,
+      rejectionReasons: [],
+      warnings: [],
+    };
+
+    it("sends a GET request to the can-repush endpoint", () => {
+      service
+        .isRepushAllowed(PROJECT_ID, EXECUTION_GROUP_ID, SCENARIO_RUN_ID)
+        .subscribe();
+
+      const request = httpController.expectOne(CAN_REPUSH_URL);
+      expect(request.request.method).toBe("GET");
+      request.flush(PERMISSION);
+    });
+
+    it("returns the repush permission on success", async () => {
+      const resultPromise = firstValueFrom(
+        service.isRepushAllowed(PROJECT_ID, EXECUTION_GROUP_ID, SCENARIO_RUN_ID)
+      );
+
+      httpController.expectOne(CAN_REPUSH_URL).flush(PERMISSION);
+
+      expect(await resultPromise).toEqual(PERMISSION);
+    });
+
+    it("throws an error when the server responds with 500", async () => {
+      const resultPromise = firstValueFrom(
+        service.isRepushAllowed(PROJECT_ID, EXECUTION_GROUP_ID, SCENARIO_RUN_ID)
+      );
+
+      httpController.expectOne(CAN_REPUSH_URL).flush("Internal server error", {
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(resultPromise).rejects.toThrow("Internal server error");
+    });
+  });
+
+  describe("fetchById error handling", () => {
+    it("throws an error when the server responds with 404", async () => {
+      const resultPromise = firstValueFrom(
+        service.fetchById(PROJECT_ID, SCENARIO_RUN_ID)
+      );
+
+      httpController
+        .expectOne(`${BASE_URL}/${SCENARIO_RUN_ID}`)
+        .flush("Not found", { status: 404, statusText: "Not Found" });
+
+      await expect(resultPromise).rejects.toThrow("Not found");
+    });
+  });
+
+  describe("runScenario error handling", () => {
+    it("throws an error with the HTTP error message when the request fails", async () => {
+      const resultPromise = firstValueFrom(
+        service.runScenario(PROJECT_ID, {
+          scenarioDefinitionId: "scenario-definition-1",
+          subContextId: "BUILD_AND_TEST",
+          branchName: "feature/temp-branch",
+          commitId: null,
+          executionGroupId: EXECUTION_GROUP_ID,
+          machineGroupId: "infra-group-1",
+          disableKeepExecution: true,
+          stopServices: true,
+          disableConfigurationEditor: false,
+          supportReconActivities: false,
+          validationScopeEnabled: false,
+          incidentEnabled: false,
+          qualityLevel: "MQG",
+        })
+      ).catch((error) => error);
+
+      httpController.expectOne(EXECUTE_URL).flush("rejected", {
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      const error = await resultPromise;
+      expect(error).toBeInstanceOf(Error);
+    });
+  });
+
+  describe("isExecutionAllowed error handling", () => {
+    it("throws a descriptive error when the request fails", async () => {
+      const resultPromise = firstValueFrom(
+        service.isExecutionAllowed(PROJECT_ID, EXECUTION_GROUP_ID)
+      );
+
+      httpController.expectOne(CAN_PUSH_URL).flush("Server error", {
+        status: 500,
+        statusText: "Internal Server Error",
+      });
+
+      await expect(resultPromise).rejects.toThrow(
+        "Failed to fetch scenario executions allowed"
+      );
+    });
+  });
+  describe("scenario housekeeping", () => {
+    it("should call api correctly for housekeeping", async () => {
+      const resultPromise = firstValueFrom(
+        service.housekeepScenarioExecution(PROJECT_ID, SCENARIO_RUN_ID)
+      );
+
+      const req = httpController.expectOne(`${BASE_URL}/${SCENARIO_RUN_ID}`);
+      expect(req.request.method).toBe("DELETE");
+      req.flush(null);
+
+      await expect(resultPromise).resolves.toBeNull();
+    });
+
+    it("should handle error correctly when housekeeping scenario already cleaned", async () => {
+      const resultPromise = firstValueFrom(
+        service.housekeepScenarioExecution(PROJECT_ID, SCENARIO_RUN_ID)
+      );
+
+      httpController
+        .expectOne(`${BASE_URL}/${SCENARIO_RUN_ID}`)
+        .flush("ERROR", { status: 409, statusText: "Conflict" });
+
+      await expect(resultPromise).rejects.toThrow("ERROR");
     });
   });
 });

@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, OnInit } from "@angular/core";
+import { Component, effect, inject, OnDestroy, OnInit } from "@angular/core";
 import {
   BinaryUpgradeExecutionsQueryRequest,
   BinaryUpgradeExecutionsQueryResult,
@@ -26,7 +26,6 @@ export class BinaryUpgradeExecutionsComponent implements OnInit, OnDestroy {
   private queryParamsChanged$ =
     new Subject<BinaryUpgradeExecutionsQueryRequest>();
 
-  projectId = "";
   totalRecords = 0;
   isLoading = false;
   executions = [] as BinaryUpgradeExecutionSummary[];
@@ -41,6 +40,17 @@ export class BinaryUpgradeExecutionsComponent implements OnInit, OnDestroy {
     ProjectIdRouteParamsResolverService
   );
 
+  readonly projectId = this.projectIdResolver.projectId;
+
+  constructor() {
+    effect(() => {
+      const projectId = this.projectId();
+      if (projectId) {
+        this.loadBusinessProcessDefinitions(projectId);
+      }
+    });
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next({});
     this.destroy$.complete();
@@ -50,14 +60,15 @@ export class BinaryUpgradeExecutionsComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.queryParamsChanged$
       .pipe(
-        concatMap((query) => this.getExecutions(this.projectId, query)),
+        concatMap((query) => this.getExecutions(this.projectId(), query)),
         takeUntil(this.destroy$)
       )
       .subscribe(this.handleReceivingExecutions());
+  }
 
-    this.projectId = this.projectIdResolver.resolve();
+  private loadBusinessProcessDefinitions(projectId: string): void {
     this.businessProcessDefinitionService
-      .getBusinessProcessDefinitions({ projectId: this.projectId })
+      .getBusinessProcessDefinitions({ projectId })
       .pipe(takeUntil(this.destroy$))
       .subscribe((definitions) => {
         this.businessProcessDefinitions = definitions;

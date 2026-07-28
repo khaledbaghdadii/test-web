@@ -1,4 +1,5 @@
 import { EnvironmentStatus } from "@mxflow/features/environment";
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
 import { TestExecutionMode } from "./model/test-execution-mode";
 import { ScenarioExecutionStatus } from "./scenario-execution-status/scenario-execution-status";
 import { ScenarioAnalysisStatus } from "./scenario-analysis-status/scenario-analysis-status";
@@ -50,7 +51,7 @@ export class Report {
 export interface ScenarioExecution {
   id: string;
   testUnitId: string;
-  cleaningStatus: string;
+  cleaningStatus: ScenarioExecutionHousekeepingStatus;
   status: ScenarioExecutionStatus;
   analysisStatus?: ScenarioAnalysisStatus;
   scenarioDefinitionId: string;
@@ -67,7 +68,7 @@ export interface ScenarioExecution {
   commitId: string;
   mxVersion: string;
   mxBuildId: string;
-  branch: string;
+  branch?: string;
   subContextId?: string;
   comment: string;
   executionGroupId?: string;
@@ -81,11 +82,12 @@ export interface ScenarioExecution {
   finalProductId?: string;
   rtpCommitId?: string;
   validation?: Validation;
-  keptExecution: boolean;
+  keepExecution: boolean;
   supportReconActivities: boolean;
   businessProcesses: ScenarioExecutionBusinessProcess[];
   project: ScenarioExecutionProject;
   qualityLevel?: string;
+  testUnitHead: boolean;
 }
 
 export class ScenarioExecutionBusinessProcess {

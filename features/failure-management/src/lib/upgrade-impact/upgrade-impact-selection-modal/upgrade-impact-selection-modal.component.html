@@ -58,13 +58,22 @@
       (warningMessage)="handleWarningMessage($event)"
     ></mxevolve-upgrade-impact-selection-table>
   </div>
-  @if (!hideSelection) {
+  @if (!hideSelection) { @if (showDescriptionOverrideOption()) {
+  <div class="mt-4 flex flex-col gap-2">
+    <mxevolve-override-binary-impact-description
+      data-testId="override-binary-impact-description"
+      [required]="true"
+      [(overrideBinaryImpactDescription)]="overrideBinaryImpactDescription"
+    ></mxevolve-override-binary-impact-description>
+  </div>
+  }
   <div class="flex justify-end">
     <p-button
       (click)="submit()"
       (keydown)="submit()"
       label="Submit"
       class="pl-4"
+      [disabled]="isSubmitDisabled()"
       data-testId="submit-button"
     ></p-button>
     <p-button

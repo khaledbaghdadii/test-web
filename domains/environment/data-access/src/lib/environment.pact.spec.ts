@@ -11,7 +11,9 @@ import { ManagementRequestService } from "./management-request/management-reques
 import { DatabaseEditorService } from "./database-editor/database-editor.service";
 import { ServiceActionsService } from "./service-actions/service-actions.service";
 import { ApplicationConnectionService } from "./application-connection/application-connection.service";
-import { SystematicConfigAuditService } from "./systematic-config-audit/systematic-config-audit.service";
+import { EnvironmentAbortService } from "./environment-abort/environment-abort.service";
+import { EnvironmentCleanService } from "./environment-clean/environment-clean.service";
+import { ManagementRequestMetricsService } from "./management-request-metrics/management-request-metrics.service";
 import { TechnicalReseedService } from "./technical-reseed/technical-reseed.service";
 
 describe("environment contract tests", () => {
@@ -35,7 +37,9 @@ describe("environment contract tests", () => {
   let databaseEditorService: DatabaseEditorService;
   let serviceActionsService: ServiceActionsService;
   let applicationConnectionService: ApplicationConnectionService;
-  let systematicConfigAuditService: SystematicConfigAuditService;
+  let environmentAbortService: EnvironmentAbortService;
+  let environmentCleanService: EnvironmentCleanService;
+  let managementRequestMetricsService: ManagementRequestMetricsService;
   let technicalReseedService: TechnicalReseedService;
 
   beforeAll(async () => {
@@ -59,7 +63,9 @@ describe("environment contract tests", () => {
         DatabaseEditorService,
         ServiceActionsService,
         ApplicationConnectionService,
-        SystematicConfigAuditService,
+        EnvironmentAbortService,
+        EnvironmentCleanService,
+        ManagementRequestMetricsService,
         TechnicalReseedService,
       ],
     });
@@ -70,7 +76,11 @@ describe("environment contract tests", () => {
     databaseEditorService = TestBed.inject(DatabaseEditorService);
     serviceActionsService = TestBed.inject(ServiceActionsService);
     applicationConnectionService = TestBed.inject(ApplicationConnectionService);
-    systematicConfigAuditService = TestBed.inject(SystematicConfigAuditService);
+    environmentAbortService = TestBed.inject(EnvironmentAbortService);
+    environmentCleanService = TestBed.inject(EnvironmentCleanService);
+    managementRequestMetricsService = TestBed.inject(
+      ManagementRequestMetricsService
+    );
     technicalReseedService = TestBed.inject(TechnicalReseedService);
   });
 
@@ -606,51 +616,100 @@ describe("environment contract tests", () => {
     expect(details.clientPackage).toBeDefined();
   });
 
-  test("validates contract for fetching systematic config audit", async () => {
+  test("validates contract for aborting a project environment", async () => {
     await provider.addInteraction({
-      state: "systematic config audit exists",
-      uponReceiving: "a request to fetch systematic config audit",
+      state: "project environments can be aborted",
+      uponReceiving: "a request to abort a project environment",
       withRequest: {
-        method: "GET",
-        path: `/projects/${projectId}/environments/${environmentId}/systematic-config-audit`,
+        method: "POST",
+        path: `/projects/${projectId}/environments/abort`,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: {
+          environmentIds: Matchers.eachLike(Matchers.string()),
+        },
       },
       willRespondWith: {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-        body: {
-          operationId: Matchers.string(),
-          environmentId: Matchers.string(),
-          targetCommitId: Matchers.string(),
-          baselineCommitId: Matchers.string(),
-          requestStatus: Matchers.string("ENDED"),
-          requestResultStatus: Matchers.string("SUCCESS"),
-          configurationLintingResult: {
-            resultStatus: Matchers.string("PASS"),
-            artifacts: Matchers.eachLike(Matchers.string()),
-            mode: Matchers.string("DELTA"),
-          },
-        },
+        status: 201,
       },
     });
 
-    const audit = await lastValueFrom(
-      systematicConfigAuditService.retrieveSystematicConfigAudit(
+    await expect(
+      lastValueFrom(
+        environmentAbortService.abortProjectEnvironments(projectId, {
+          environmentIds: [environmentId],
+        })
+      )
+    ).resolves.toBeNull();
+  });
+
+  test("validates contract for cleaning an environment", async () => {
+    await provider.addInteraction({
+      state: "environment can be cleaned",
+      uponReceiving: "a request to clean an environment",
+      withRequest: {
+        method: "POST",
+        path: `/projects/${projectId}/environments/${environmentId}/clean`,
+      },
+      willRespondWith: {
+        status: 200,
+      },
+    });
+
+    await expect(
+      lastValueFrom(
+        environmentCleanService.cleanEnvironment(projectId, environmentId)
+      )
+    ).resolves.toBeNull();
+  });
+
+  test("validates contract for fetching management request metrics", async () => {
+    const managementRequestId = "managementRequestId";
+
+    await provider.addInteraction({
+      state: "management request metrics exist",
+      uponReceiving: "a request to retrieve management request metrics",
+      withRequest: {
+        method: "GET",
+        path: `/projects/${projectId}/environments/${environmentId}/management-requests/${managementRequestId}/metrics`,
+      },
+      willRespondWith: {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: Matchers.eachLike({
+          id: Matchers.string(),
+          projectId: Matchers.string(),
+          environmentId: Matchers.string(),
+          managementRequestId: Matchers.string(),
+          taskName: Matchers.string(),
+          startTime: Matchers.iso8601DateTimeWithMillis(),
+          endTime: Matchers.iso8601DateTimeWithMillis(),
+          duration: Matchers.regex({
+            generate: "PT1H30M15S",
+            matcher: "^PT(?:(\\d+H)?)(?:(\\d+M)?)(?:(\\d+S)?)$",
+          }),
+        }),
+      },
+    });
+
+    const result = await lastValueFrom(
+      managementRequestMetricsService.getManagementRequestMetrics(
         projectId,
-        environmentId
+        environmentId,
+        managementRequestId
       )
     );
 
-    expect(audit).toBeDefined();
-    expect(audit.operationId).toBeDefined();
-    expect(audit.environmentId).toBeDefined();
-    expect(audit.configurationLintingResult?.artifacts.length).toBeGreaterThan(
-      0
-    );
+    expect(result).toBeDefined();
+    expect(result.length).toBeGreaterThan(0);
   });
 
   test("validates contract for fetching technical reseed execution group details", async () => {
     await provider.addInteraction({
-      state: "technical reseed execution group exists",
+      state: "Execution group details can be returned",
       uponReceiving:
         "a request to fetch technical reseed execution group details",
       withRequest: {
@@ -693,7 +752,7 @@ describe("environment contract tests", () => {
 
   test("validates contract for launching technical reseed", async () => {
     await provider.addInteraction({
-      state: "technical reseed execution group can launch reseed",
+      state: "Technical reseed operation can be launched",
       uponReceiving: "a request to launch technical reseed",
       withRequest: {
         method: "POST",

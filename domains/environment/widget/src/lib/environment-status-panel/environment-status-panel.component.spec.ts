@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/angular";
-import { Subject, of } from "rxjs";
+import { of, Subject } from "rxjs";
 import { MockComponent, ngMocks } from "ng-mocks";
 import userEvent from "@testing-library/user-event";
 import { DialogModule } from "primeng/dialog";
@@ -8,8 +8,8 @@ import {
   DurationDisplayComponent,
 } from "@mxevolve/shared/ui/primitive";
 import {
-  EnvironmentStatusDisplayComponent,
   EnvironmentDetailsLinkComponent,
+  EnvironmentStatusDisplayComponent,
 } from "@mxevolve/domains/environment/ui";
 import { ConfigureMxTestButtonComponent } from "../configure-mxtest-button/configure-mxtest-button.component";
 import { ConnectToDatabaseButtonComponent } from "../connect-to-database-button/connect-to-database-button.component";
@@ -78,7 +78,10 @@ const MOCK_PANEL_DATA: EnvironmentStatusPanelData = {
 
 async function renderComponent(
   inputs: Partial<
-    typeof REQUIRED_INPUTS & { showOpenConfigEditorAction: boolean }
+    typeof REQUIRED_INPUTS & {
+      showOpenConfigEditorAction: boolean;
+      showDeploymentDetails: boolean;
+    }
   > = {}
 ) {
   return render(EnvironmentStatusPanelComponent, {
@@ -110,6 +113,44 @@ describe("EnvironmentStatusPanelComponent", () => {
       await renderComponent();
 
       await waitFor(() => expect(screen.getByText("Environment")).toBeTruthy());
+    });
+  });
+
+  describe("environmentCleaned output", () => {
+    it("emits environmentCleaned when the environment is cleaned", async () => {
+      mockFacade.fetchPanelData.mockReturnValue(
+        of({ ...MOCK_PANEL_DATA, status: EnvironmentStatus.CLEANED })
+      );
+
+      const { fixture } = await renderComponent();
+      const cleanedSpy = jest.fn();
+      fixture.componentInstance.environmentCleaned.subscribe(cleanedSpy);
+
+      await waitFor(() => expect(cleanedSpy).toHaveBeenCalledTimes(1));
+    });
+
+    it("still renders the panel content for a cleaned environment", async () => {
+      mockFacade.fetchPanelData.mockReturnValue(
+        of({ ...MOCK_PANEL_DATA, status: EnvironmentStatus.CLEANED })
+      );
+
+      await renderComponent();
+
+      await waitFor(() =>
+        expect(
+          document.querySelector("mxevolve-service-actions-button")
+        ).toBeTruthy()
+      );
+      expect(screen.getByText("Environment")).toBeTruthy();
+    });
+
+    it("does not emit environmentCleaned when the environment is not cleaned", async () => {
+      const { fixture } = await renderComponent();
+      const cleanedSpy = jest.fn();
+      fixture.componentInstance.environmentCleaned.subscribe(cleanedSpy);
+
+      await waitFor(() => expect(screen.getByText("Environment")).toBeTruthy());
+      expect(cleanedSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -333,6 +374,35 @@ describe("EnvironmentStatusPanelComponent", () => {
     });
   });
 
+  describe("showDeploymentDetails", () => {
+    it("shows the deployment details row when unset (default)", async () => {
+      await renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("Deployment Start Date")).toBeTruthy();
+        expect(screen.getByText("Deployment End Date")).toBeTruthy();
+        expect(screen.getByText("Deployment Duration")).toBeTruthy();
+        expect(screen.getByText("Termination Message")).toBeTruthy();
+      });
+    });
+
+    it("keeps the environment status row visible when showDeploymentDetails is false", async () => {
+      await renderComponent({ showDeploymentDetails: false });
+
+      await waitFor(() => expect(screen.getByText("Environment")).toBeTruthy());
+    });
+
+    it("hides the deployment details row when showDeploymentDetails is false", async () => {
+      await renderComponent({ showDeploymentDetails: false });
+
+      await waitFor(() => expect(screen.getByText("Environment")).toBeTruthy());
+      expect(screen.queryByText("Deployment Start Date")).toBeNull();
+      expect(screen.queryByText("Deployment End Date")).toBeNull();
+      expect(screen.queryByText("Deployment Duration")).toBeNull();
+      expect(screen.queryByText("Termination Message")).toBeNull();
+    });
+  });
+
   describe("termination message", () => {
     it("renders the full message when it is within the truncation limit", async () => {
       const shortMessage = "A".repeat(80);
@@ -422,6 +492,26 @@ describe("EnvironmentStatusPanelComponent", () => {
       );
 
       await waitFor(() => expect(screen.getByText(longMessage)).toBeTruthy());
+    });
+
+    it("renders the termination message dialog with a wide layout", async () => {
+      const user = userEvent.setup();
+      const longMessage = "A".repeat(81);
+      mockFacade.fetchPanelData.mockReturnValue(
+        of({ ...MOCK_PANEL_DATA, terminationMessage: longMessage })
+      );
+
+      await renderComponent();
+
+      await user.click(
+        await screen.findByRole("button", {
+          name: "See full termination message",
+        })
+      );
+
+      await waitFor(() => {
+        expect(document.querySelector(".dialog-cols-6")).toBeTruthy();
+      });
     });
   });
 

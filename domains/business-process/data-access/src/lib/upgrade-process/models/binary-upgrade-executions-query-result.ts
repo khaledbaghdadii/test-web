@@ -11,6 +11,7 @@ export class BinaryUpgradeExecutionsQueryResult {
 
 export class BinaryUpgradeExecutionSummary {
   id: string;
+  definitionId?: string;
   name: string;
   definitionName: string;
   processName: string;
@@ -21,5 +22,6 @@ export class BinaryUpgradeExecutionSummary {
   status: ExecutionStatus;
   daysExtended: number;
   officiality: BusinessProcessOfficialStatus;
+  sourceDefinitionId?: string;
   input: UpgradeProcessInput;
 }

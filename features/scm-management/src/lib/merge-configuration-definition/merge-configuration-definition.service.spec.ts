@@ -44,6 +44,7 @@ describe("Service: MergeConfigurationDefinitionService", () => {
     automergeBulkSize: 3,
     runFullMaintenance: true,
     deltaConfigImportEnabled: true,
+    mxLintEnabled: false,
     infraResourceSettings: {
       infraGroupId: INFRA_GROUP_ID,
       maxNumberOfFailedEnvironmentsToKeep: 5,
@@ -171,6 +172,7 @@ describe("Service: MergeConfigurationDefinitionService", () => {
       automergeBulkSize: 3,
       runFullMaintenance: true,
       deltaConfigImportEnabled: true,
+      mxLintEnabled: false,
       infraResourceSettings: {
         infraGroupId: INFRA_GROUP_ID,
         maxNumberOfFailedEnvironmentsToKeep: 5,
@@ -312,6 +314,7 @@ describe("Service: MergeConfigurationDefinitionService", () => {
       automergeBulkSize: 5,
       runFullMaintenance: false,
       deltaConfigImportEnabled: false,
+      mxLintEnabled: false,
       infraResourceSettings: {
         infraGroupId: "newInfraGroupId",
         maxNumberOfFailedEnvironmentsToKeep: 10,

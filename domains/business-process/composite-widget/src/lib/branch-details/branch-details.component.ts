@@ -3,18 +3,22 @@ import { rxResource } from "@angular/core/rxjs-interop";
 
 import { Message } from "primeng/message";
 import type { BranchCreationDetails } from "@mxevolve/domains/business-process/util";
-import { DevelopmentDetailsComponent } from "@mxevolve/domains/scm/composite-widget";
 import {
+  BranchDetailsFacadeService,
+  DevelopmentDetailsComponent,
+} from "@mxevolve/domains/scm/composite-widget";
+import {
+  CommitsService,
   Development,
-  MergeRequestService,
   MergeRequestOverview,
+  MergeRequestService,
 } from "@mxevolve/domains/scm/data-access";
 import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
 
 @Component({
   selector: "mxevolve-branch-details",
   imports: [Message, DevelopmentDetailsComponent, MxevolveIconComponent],
-  providers: [MergeRequestService],
+  providers: [BranchDetailsFacadeService, MergeRequestService, CommitsService],
   templateUrl: "./branch-details.component.html",
 })
 export class BranchDetailsComponent {
@@ -22,13 +26,12 @@ export class BranchDetailsComponent {
   readonly processId = input.required<string>();
   readonly branchCreation = input.required<BranchCreationDetails>();
   readonly development = input.required<Development>();
-  readonly commitsBehindCount = input<number>(0);
 
-  private readonly mergeRequestService = inject(MergeRequestService);
+  private readonly branchDetailsFacade = inject(BranchDetailsFacadeService);
 
   readonly failureDetailsVisible = signal(false);
 
-  readonly mergeRequestResource = rxResource({
+  private readonly mergeRequestResource = rxResource({
     params: () => {
       const developmentId = this.branchCreation().developmentId;
       if (!developmentId || this.branchCreation().failed) {
@@ -41,26 +44,15 @@ export class BranchDetailsComponent {
       };
     },
     stream: ({ params }) =>
-      this.mergeRequestService.getFilteredMergeRequests(params.projectId, {
-        developmentId: params.developmentId,
-        contextId: params.processId,
-      }),
+      this.branchDetailsFacade.getLatestMergeRequest(
+        params.projectId,
+        params.developmentId,
+        params.processId
+      ),
   });
 
-  readonly latestMergeRequest = computed<MergeRequestOverview | undefined>(
-    () => {
-      if (!this.mergeRequestResource.hasValue()) {
-        return undefined;
-      }
-      const mergeRequests = this.mergeRequestResource.value();
-      return [...mergeRequests]
-        .sort(
-          (first, second) =>
-            new Date(second.createdOn ?? 0).getTime() -
-            new Date(first.createdOn ?? 0).getTime()
-        )
-        .at(0);
-    }
+  readonly latestMergeRequest = computed<MergeRequestOverview | undefined>(() =>
+    this.mergeRequestResource.value()
   );
 
   toggleFailureDetails(): void {

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { NO_ERRORS_SCHEMA, signal } from "@angular/core";
-import { By } from "@angular/platform-browser";
+import { By, DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { DomTestUtils } from "@mxevolve/testing";
 
 import { RebaseWorkspaceContainerComponent } from "./rebase-workspace-container.component";
@@ -123,6 +123,25 @@ describe("RebaseWorkspaceContainerComponent", () => {
         clonedRepositoryId: CLONED_REPOSITORY_ID,
         projectRepositoryId: PROJECT_REPOSITORY_ID,
         sourceBranchName: SOURCE_BRANCH,
+        mtsUrl: undefined,
+      });
+    });
+
+    it("should forward mtsUrl input to state service when provided", () => {
+      const sanitizer = TestBed.inject(DomSanitizer);
+      const mtsUrl: SafeResourceUrl = sanitizer.bypassSecurityTrustResourceUrl(
+        "https://example.com/mxtest"
+      );
+      fixture.componentRef.setInput("mtsUrl", mtsUrl);
+
+      fixture.detectChanges();
+
+      expect(mockStateService.initialize).toHaveBeenCalledWith({
+        projectId: PROJECT_ID,
+        clonedRepositoryId: CLONED_REPOSITORY_ID,
+        projectRepositoryId: PROJECT_REPOSITORY_ID,
+        sourceBranchName: SOURCE_BRANCH,
+        mtsUrl,
       });
     });
   });

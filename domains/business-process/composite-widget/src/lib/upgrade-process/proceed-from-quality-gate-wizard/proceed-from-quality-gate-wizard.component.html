@@ -29,7 +29,7 @@
             <p-button
               styleClass="w-full"
               label="Next"
-              (onClick)="goToKeepEnvironments()"
+              (onClick)="goToFactoryProduct()"
               [loading]="loading()"
             />
             } @else if (validationDecision() ===
@@ -44,6 +44,37 @@
             <p-button styleClass="w-full" label="Next" [disabled]="true" />
             }
           </div>
+        </div>
+      </ng-template>
+    </mxevolve-step>
+
+    <mxevolve-step stepId="factory-product">
+      <ng-template>
+        <mxevolve-factory-product-submission-form
+          [formControl]="factoryProductSubmissionControl"
+          [projectId]="projectId()"
+          [developmentId]="developmentId()"
+          [initialFactoryProductId]="initialFactoryProductId()!"
+          [mode]="factoryProductMode()"
+        />
+
+        <div class="flex-1 grid-6 content-end">
+          <p-button
+            styleClass="w-full"
+            label="Back"
+            severity="secondary"
+            class="col-start-3"
+            [outlined]="true"
+            (onClick)="goBackToValidateQg()"
+          />
+
+          <p-button
+            styleClass="w-full"
+            label="Next"
+            class="col-start-4"
+            (onClick)="goToKeepEnvironments()"
+            [disabled]="factoryProductSubmissionControl.invalid"
+          />
         </div>
       </ng-template>
     </mxevolve-step>
@@ -66,7 +97,7 @@
             severity="secondary"
             class="col-start-3"
             [outlined]="true"
-            (onClick)="goBackToValidateQg()"
+            (onClick)="goToFactoryProduct()"
           />
           <p-button
             styleClass="w-full"

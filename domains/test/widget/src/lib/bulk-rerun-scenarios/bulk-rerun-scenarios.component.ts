@@ -17,6 +17,10 @@ import { APP_CONFIG } from "@mxflow/config";
 import { FactoryProductApiService } from "@mxevolve/domains/artifact/data-access";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 import { MultiSelectScenarioRunTableComponent } from "../multi-select-scenario-run-table/multi-select-scenario-run-table.component";
+import type {
+  RerunMode,
+  RerunRequestedEvent,
+} from "../rerun-dialog/rerun-dialog.component";
 import { RerunDialogComponent } from "../rerun-dialog/rerun-dialog.component";
 import type { ScenarioRunsPanelViewModel } from "../scenario-runs/scenario-runs-panel-facade.service";
 
@@ -42,6 +46,10 @@ import type { ScenarioRunsPanelViewModel } from "../scenario-runs/scenario-runs-
 export class BulkRerunScenariosComponent {
   readonly projectId = input.required<string>();
   readonly panels = input.required<ScenarioRunsPanelViewModel[]>();
+  readonly allowOfficialRerun = input(false);
+  readonly initialFinalProductId = input<string>();
+  readonly branch = input<string>();
+  readonly defaultRerunMode = input<RerunMode>("unofficial");
 
   readonly rerunCompleted = output<void>();
 
@@ -83,38 +91,40 @@ export class BulkRerunScenariosComponent {
     this.showRerunDialog.set(true);
   }
 
-  onBulkRerunRequested(event: {
-    factoryProductId: string;
-    commitId?: string;
-  }): void {
+  onBulkRerunRequested(event: RerunRequestedEvent): void {
     this.bulkRerunLoading.set(true);
-    this.scenarioRunService
-      .bulkRerun(this.projectId(), {
-        factoryProductId: event.factoryProductId,
-        commitId: event.commitId,
-        scenariosToBeRepushed: this.selectedScenarioRunIds(),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          this.bulkRerunLoading.set(false);
-          this.showRerunDialog.set(false);
-          const failedCount = response.failedRepushes.length;
-          if (failedCount > 0) {
-            this.toastMessageService.showSuccess(
-              `Bulk rerun successfully submitted. ${failedCount} failed.`
-            );
-          } else {
-            this.toastMessageService.showSuccess(
-              "Bulk rerun successfully submitted."
-            );
-          }
-          this.rerunCompleted.emit();
-        },
-        error: () => {
-          this.bulkRerunLoading.set(false);
-          this.toastMessageService.showError("Failed to submit bulk rerun.");
-        },
-      });
+    const request$ =
+      event.mode === "official"
+        ? this.scenarioRunService.bulkRerunFromFinalProduct(this.projectId(), {
+            finalProductId: event.finalProductId,
+            rtpCommitId: event.rtpCommitId,
+            scenariosToBeRepushed: this.selectedScenarioRunIds(),
+          })
+        : this.scenarioRunService.bulkRerun(this.projectId(), {
+            factoryProductId: event.factoryProductId,
+            commitId: event.commitId,
+            scenariosToBeRepushed: this.selectedScenarioRunIds(),
+          });
+    request$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        this.bulkRerunLoading.set(false);
+        this.showRerunDialog.set(false);
+        const failedCount = response.failedRepushes.length;
+        if (failedCount > 0) {
+          this.toastMessageService.showSuccess(
+            `Bulk rerun successfully submitted. ${failedCount} failed.`
+          );
+        } else {
+          this.toastMessageService.showSuccess(
+            "Bulk rerun successfully submitted."
+          );
+        }
+        this.rerunCompleted.emit();
+      },
+      error: () => {
+        this.bulkRerunLoading.set(false);
+        this.toastMessageService.showError("Failed to submit bulk rerun.");
+      },
+    });
   }
 }

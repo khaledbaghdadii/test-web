@@ -24,7 +24,6 @@ import {
   TableEmptyMessageComponent,
 } from "@mxflow/ui/utils";
 import { signal, Type, WritableSignal } from "@angular/core";
-import { NoopAnimationsModule } from "@angular/platform-browser/animations";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute } from "@angular/router";
 import { FetchBinaryImpactsTableQuery } from "./fetch-binary-impacts-table-query.model";
@@ -62,6 +61,7 @@ type MockBinaryImpactTableStateService = {
   warningMessage: WritableSignal<string | undefined>;
   setValidationScope: jest.Mock;
   showImpactsWithoutDefects: jest.Mock;
+  setPreviouslyLinkedFilter: jest.Mock;
 };
 
 type MockBinaryImpactTableSelectionStateService = {
@@ -105,6 +105,7 @@ describe("BinaryImpactsSelectionTableComponent", () => {
       refreshBinaryImpacts: jest.fn(),
       warningMessage: signal(undefined),
       showImpactsWithoutDefects: jest.fn(),
+      setPreviouslyLinkedFilter: jest.fn(),
     };
 
     const initiallyBinaryImpactSelectionStates$ = signal<
@@ -136,11 +137,7 @@ describe("BinaryImpactsSelectionTableComponent", () => {
     } as unknown as jest.Mocked<AnalysisObjectTableSelectionStateService>;
 
     await TestBed.configureTestingModule({
-      imports: [
-        BinaryImpactsSelectionTableComponent,
-        NoopAnimationsModule,
-        CommonModule,
-      ],
+      imports: [BinaryImpactsSelectionTableComponent, CommonModule],
     })
       .overrideComponent(BinaryImpactsSelectionTableComponent, {
         set: {
@@ -204,6 +201,30 @@ describe("BinaryImpactsSelectionTableComponent", () => {
         );
       }
     );
+  });
+
+  describe("previously linked filter", () => {
+    it("should set the filter in the state service after receiving them as input", () => {
+      const spy = jest.spyOn(
+        binaryImpactTableStateService,
+        "setPreviouslyLinkedFilter"
+      );
+      component.previouslyLinkedFilter = {
+        testCaseExternalIds: ["ext-1"],
+        scenarioDefinitionId: "scenario-1",
+      };
+      expect(spy).toHaveBeenLastCalledWith(["ext-1"], "scenario-1");
+    });
+
+    it("should call state service with undefined when the previously linked filter is cleared", () => {
+      const spy = jest.spyOn(
+        binaryImpactTableStateService,
+        "setPreviouslyLinkedFilter"
+      );
+      component.previouslyLinkedFilter = { testCaseExternalIds: ["ext-1"] };
+      component.previouslyLinkedFilter = undefined;
+      expect(spy).toHaveBeenLastCalledWith(undefined, undefined);
+    });
   });
 
   describe("initiallySelectedImpacts Input setter", () => {
@@ -999,6 +1020,17 @@ describe("BinaryImpactsSelectionTableComponent", () => {
     });
   });
 
+  describe("binary impact id column", () => {
+    it("should render the human-readable id link for each binary impact row", () => {
+      binaryImpactTableStateService.binaryImpacts.set([getFirstBinaryImpact()]);
+      fixture.detectChanges();
+      const idLink = fixture.debugElement.query(
+        By.css('[data-testid="binary-impact-id-link"]')
+      );
+      expect(idLink.nativeElement.textContent.trim()).toBe("PROJECT-BIMP-1");
+    });
+  });
+
   describe("template filters", () => {
     it("template owner phrase filter should be bound to ownerPhrase field", () => {
       fixture.detectChanges();
@@ -1018,6 +1050,17 @@ describe("BinaryImpactsSelectionTableComponent", () => {
       const titleFieldName: keyof FetchBinaryImpactsTableQuery = "titlePhrase";
       expect(titleFieldName).toBeDefined();
       expect(titleColumnFilter.field).toBe("titlePhrase");
+    });
+
+    it("template id phrase filter should be bound to objectIdPhrase field", () => {
+      fixture.detectChanges();
+      const idColumnFilter = fixture.debugElement.query(
+        By.css('[data-testid="id-column-filter"]')
+      ).componentInstance as ColumnFilter;
+      const objectIdFieldName: keyof FetchBinaryImpactsTableQuery =
+        "objectIdPhrase";
+      expect(objectIdFieldName).toBeDefined();
+      expect(idColumnFilter.field).toBe("objectIdPhrase");
     });
 
     it("template upgrade impact external issue id phrase filter should be bound to upgradeImpactExternalIssueId field", () => {
@@ -1077,6 +1120,7 @@ describe("BinaryImpactsSelectionTableComponent", () => {
       id: "analysisObjectId1",
       projectId: "projectId1",
       title: "title1",
+      objectId: "PROJECT-BIMP-1",
       upgradeImpact: {
         id: "id",
         externalIssue: {
@@ -1094,6 +1138,7 @@ describe("BinaryImpactsSelectionTableComponent", () => {
       id: "analysisObjectId2",
       projectId: "projectId1",
       title: "title2",
+      objectId: "PROJECT-BIMP-2",
       upgradeImpact: {
         id: "id",
         externalIssue: {

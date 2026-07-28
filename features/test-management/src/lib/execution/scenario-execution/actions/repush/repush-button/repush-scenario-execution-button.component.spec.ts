@@ -17,11 +17,11 @@ import { Button } from "primeng/button";
 import { MenuModule } from "primeng/menu";
 import { RepushTooltipEvaluatorPipe } from "../repush-evaluator-pipe/repush-tooltip-evaluator.pipe";
 import { TooltipModule } from "primeng/tooltip";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 const EXECUTION_GROUP_ID = "group-1";
 const SCENARIO_EXECUTION_ID = "scenario-1";
-const KEPT_EXECUTION = true;
+const KEEP_EXECUTION = true;
 const INITIAL_FINAL_PRODUCT_ID = "final-1";
 const BRANCH = "main";
 const MX_BUILD_ID = "build-1";
@@ -38,7 +38,7 @@ function getTestUnit() {
       mxVersion: MX_VERSION,
       mxBuildId: MX_BUILD_ID,
       factoryProductId: FACTORY_PRODUCT_ID,
-      keptExecution: KEPT_EXECUTION,
+      keepExecution: KEEP_EXECUTION,
     },
     executionGroupId: EXECUTION_GROUP_ID,
     branch: BRANCH,
@@ -193,7 +193,7 @@ describe("repush scenario execution button component", () => {
     ).toHaveBeenCalledWith({
       scenarioExecutionId: SCENARIO_EXECUTION_ID,
       factoryProductId: FACTORY_PRODUCT_ID,
-      keptExecution: KEPT_EXECUTION,
+      keepExecution: KEEP_EXECUTION,
       executionGroupId: EXECUTION_GROUP_ID,
     });
   });
@@ -225,7 +225,7 @@ describe("repush scenario execution button component", () => {
     ).toHaveBeenCalledWith({
       branch: BRANCH,
       initialFinalProductId: INITIAL_FINAL_PRODUCT_ID,
-      keptExecution: KEPT_EXECUTION,
+      keepExecution: KEEP_EXECUTION,
       scenarioExecutionId: SCENARIO_EXECUTION_ID,
       executionGroupId: EXECUTION_GROUP_ID,
     });

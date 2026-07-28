@@ -391,11 +391,11 @@ describe("ScenarioExecutionRepushModalComponent", () => {
 
   describe("warning messages", () => {
     it.each([true, false])(
-      "should not display kept execution warning message when kept execution is marked as %s and keep execution is disabled",
+      "should not display keep execution warning message when keep execution is marked as %s and keep execution is disabled",
       (keptScenarioExecution: boolean) => {
         component.disableKeepExecution = true;
         component.openModal(
-          getComponentInput({ keptExecution: keptScenarioExecution })
+          getComponentInput({ keepExecution: keptScenarioExecution })
         );
         fixture.detectChanges();
         const warningMessageText = DomTestUtils.getElementByType(
@@ -406,9 +406,9 @@ describe("ScenarioExecutionRepushModalComponent", () => {
       }
     );
 
-    it("should not display kept execution warning message when scenario is marked as kept and keep execution is enabled", () => {
+    it("should not display keep execution warning message when scenario is marked as kept and keep execution is enabled", () => {
       component.disableKeepExecution = false;
-      component.openModal(getComponentInput({ keptExecution: true }));
+      component.openModal(getComponentInput({ keepExecution: true }));
       fixture.detectChanges();
 
       const warningMessageText = DomTestUtils.getElementByType(
@@ -418,9 +418,9 @@ describe("ScenarioExecutionRepushModalComponent", () => {
       expect(warningMessageText.isRendered()).toBeFalsy();
     });
 
-    it("should display kept execution warning message when scenario is not marked as kept and keep execution is enabled", () => {
+    it("should display keep execution warning message when scenario is not marked as kept and keep execution is enabled", () => {
       component.disableKeepExecution = false;
-      component.openModal(getComponentInput({ keptExecution: false }));
+      component.openModal(getComponentInput({ keepExecution: false }));
       fixture.detectChanges();
       const warningMessageText = DomTestUtils.getElementByType(
         fixture,
@@ -527,7 +527,7 @@ function getComponentInput(
     mxBuildId: MX_BUILD_ID,
     factoryProductId: FACTORY_PRODUCT_ID,
     executionGroupId: EXECUTION_GROUP_ID,
-    keptExecution: true,
+    keepExecution: true,
     stopServices: true,
     ...overrides,
   };

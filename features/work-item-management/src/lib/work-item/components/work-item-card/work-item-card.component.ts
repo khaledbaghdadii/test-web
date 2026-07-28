@@ -3,7 +3,6 @@ import {
   Component,
   inject,
   Input,
-  OnInit,
   signal,
   ViewChild,
 } from "@angular/core";

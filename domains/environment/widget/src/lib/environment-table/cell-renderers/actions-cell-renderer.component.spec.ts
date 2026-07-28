@@ -260,4 +260,27 @@ describe("ActionsCellRendererComponent", () => {
       expect(fixture.componentInstance.refresh()).toBe(false);
     });
   });
+
+  describe("environment source", () => {
+    it("given an explicit environment param, then it is used instead of the row data", async () => {
+      const { fixture } = await render(ActionsCellRendererComponent, {
+        componentImports: MOCK_IMPORTS,
+      });
+      fixture.componentInstance.agInit({
+        data: undefined,
+        environment: { ...MOCK_ENVIRONMENT, id: "explicit-env" },
+        projectId: "proj-001",
+      } as ActionsCellRendererParams);
+      fixture.detectChanges();
+
+      await waitFor(() =>
+        expect(
+          document.querySelector("mxevolve-open-client-button")
+        ).toBeTruthy()
+      );
+
+      const button = ngMocks.find(fixture, OpenClientButtonComponent);
+      expect(button.componentInstance.environmentId).toBe("explicit-env");
+    });
+  });
 });

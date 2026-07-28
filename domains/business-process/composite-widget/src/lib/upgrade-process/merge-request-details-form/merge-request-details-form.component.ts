@@ -18,8 +18,8 @@ import {
   Validator,
   Validators,
 } from "@angular/forms";
-import { DeleteDevelopmentCheckboxComponent } from "@mxevolve/domains/business-process/widget";
 import type { DeleteDevelopmentValue } from "@mxevolve/domains/business-process/widget";
+import { DeleteDevelopmentCheckboxComponent } from "@mxevolve/domains/business-process/widget";
 import { ExecutionFamily } from "@mxevolve/domains/business-process/util";
 import { InputText } from "primeng/inputtext";
 import { Message } from "primeng/message";
@@ -30,8 +30,8 @@ import {
 import {
   CommitsService,
   DevelopmentService,
-  MergeConfigurationService,
   MergeConfiguration,
+  MergeConfigurationService,
   Reviewer,
 } from "@mxevolve/domains/scm/data-access";
 import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
@@ -82,6 +82,7 @@ export class MergeRequestDetailsFormComponent
   readonly developmentId = input.required<string>();
   readonly supportsResourceManagement = input.required<boolean>();
   readonly parentBranchName = input.required<string>();
+  readonly family = input<ExecutionFamily>(ExecutionFamily.UPGRADE_PROCESS);
 
   readonly ExecutionFamily = ExecutionFamily;
 

@@ -207,7 +207,7 @@ describe("ScenarioDefinitionCreateComponent", () => {
       nonFunctionalTest: false,
       environmentDefinitionId,
       qualityLevel: "CQG",
-      tests: [{ full: true, testSelectionIds: ["1"], testDefinitionId: "1" }],
+      tests: [{ testSelectionIds: ["1"], testDefinitionId: "1" }],
     };
 
     it("should create test scenario", () => {

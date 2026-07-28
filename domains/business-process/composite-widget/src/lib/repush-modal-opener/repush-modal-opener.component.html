@@ -1,0 +1,20 @@
+<p-button
+  [pTooltip]="
+    buttonDisabled() ? 'Repush is disabled for this process' : 'Repush'
+  "
+  tooltipPosition="top"
+  [rounded]="true"
+  [text]="true"
+  [loading]="loading()"
+  [disabled]="buttonDisabled()"
+  (onClick)="openRepushModal()"
+>
+  <ng-template #icon>
+    <mxevolve-icon name="refresh" />
+  </ng-template>
+</p-button>
+
+<mxevolve-business-process-limit-exceed-modal
+  [(visible)]="limitModalVisible"
+  [ineligibilityResult]="ineligibilityResult()"
+/>

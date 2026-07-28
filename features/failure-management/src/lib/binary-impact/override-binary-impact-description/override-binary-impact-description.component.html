@@ -1,0 +1,25 @@
+<div class="flex flex-col gap-2" role="radiogroup">
+  <span class="block font-medium"
+    >Use as binary impact description @if (required()) {
+    <span class="text-red-500">*</span>
+    }</span
+  >
+  <div class="flex flex-row gap-2 w-full sm:w-1/2" role="radiogroup">
+    @for (option of options; track option.id) {
+    <div class="flex flex-col gap-1 flex-1">
+      <div class="flex flex-row items-center gap-2">
+        <p-radioButton
+          [inputId]="option.id"
+          name="useAsBinaryImpactDescription"
+          [value]="option.value"
+          [(ngModel)]="overrideBinaryImpactDescription"
+        ></p-radioButton>
+        <label [for]="option.id">{{ option.label }}</label>
+      </div>
+      <small class="text-gray-500 pl-6 whitespace-normal break-words">{{
+        option.hint
+      }}</small>
+    </div>
+    }
+  </div>
+</div>

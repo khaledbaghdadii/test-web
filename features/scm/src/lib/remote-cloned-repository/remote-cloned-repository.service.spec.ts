@@ -73,6 +73,7 @@ describe("Service: RemoteClonedRepositoryService", () => {
         payload: {
           sourceBranchName: "source-branch",
           targetBranchName: "target-branch",
+          mtsUrl: "mts-url",
         },
       };
 
@@ -96,6 +97,7 @@ describe("Service: RemoteClonedRepositoryService", () => {
         payload: {
           sourceBranchName: "source-branch",
           targetBranchName: "target-branch",
+          mtsUrl: "mts-url",
         },
       };
 
@@ -111,6 +113,30 @@ describe("Service: RemoteClonedRepositoryService", () => {
         )
       ).rejects.toMatchObject({ message: ERROR_MESSAGE });
 
+      expect(httpClient.post).toHaveBeenCalledWith(
+        `${GATEWAY_URL}scm-operations/projects/${PROJECT_ID}/remote-cloned-repositories/${REMOTE_REPOSITORY_ID}/operations/functional-technical-rebase`,
+        request.payload
+      );
+    });
+
+    it("should start functional technical rebase with null mtsUrl", async () => {
+      const request: FunctionalTechnicalRebaseApiRequest = {
+        projectId: PROJECT_ID,
+        remoteClonedRepositoryId: REMOTE_REPOSITORY_ID,
+        payload: {
+          sourceBranchName: "source-branch",
+          targetBranchName: "target-branch",
+          mtsUrl: null,
+        },
+      };
+
+      jest.spyOn(httpClient, "post").mockReturnValue(of(undefined));
+
+      const data = await firstValueFrom(
+        service.startRemoteClonedRepositoryFunctionalTechnicalRebase(request)
+      );
+
+      expect(data).toBeUndefined();
       expect(httpClient.post).toHaveBeenCalledWith(
         `${GATEWAY_URL}scm-operations/projects/${PROJECT_ID}/remote-cloned-repositories/${REMOTE_REPOSITORY_ID}/operations/functional-technical-rebase`,
         request.payload

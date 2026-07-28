@@ -41,6 +41,7 @@ export interface ScenarioRunsPanelViewModel {
   readonly totalNumberOfImpacts: number;
   readonly totalNumberOfRegressions: number;
   readonly totalNumberOfIncidents: number;
+  readonly totalNumberOfFailureReasons: number;
 }
 
 export interface FetchScenarioRunsRequest {
@@ -209,7 +210,7 @@ export class ScenarioRunsPanelFacadeService {
       readonly { startDate?: string; endDate?: string }[]
     > = new Map()
   ): Observable<ScenarioRunsPanelViewModel> {
-    return this.enrichWithEnvironmentStatuses(runs, filterData).pipe(
+    return this.enrichWithEnvironmentStatuses(runs, filterData, projectId).pipe(
       switchMap((panel) =>
         this.enrichWithDurationBreakdown(
           panel,
@@ -252,14 +253,15 @@ export class ScenarioRunsPanelFacadeService {
 
   private enrichWithEnvironmentStatuses(
     runs: HeadScenarioRunViewModel[],
-    filterData: PanelFilterData
+    filterData: PanelFilterData,
+    projectId: string
   ): Observable<ScenarioRunsPanelViewModel> {
     const environmentIds = extractUniqueEnvironmentIds(runs);
     if (environmentIds.length === 0) {
       return of(splitIntoHeadAndPreviousRuns(runs, new Map(), filterData));
     }
     return this.environmentService
-      .fetchByEnvironmentIds(environmentIds)
+      .fetchByProjectAndEnvironmentIds(projectId, environmentIds)
       .pipe(
         map((environments) =>
           splitIntoHeadAndPreviousRuns(

@@ -9,6 +9,7 @@
   styleClass="w-full"
   [showClear]="true"
   [virtualScroll]="true"
+  [disabled]="isLoadingCommitsInfo()"
   [virtualScrollOptions]="{
     lazy: true,
     step: itemsSize,

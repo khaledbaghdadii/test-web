@@ -30,6 +30,8 @@ import { GetPullRequestApiRequest } from "./pull-request/request/get-pull-reques
 import { GetPaginatedCommitsDifferenceApiRequest } from "./commits/request/get-paginated-commits-difference-api-request";
 import { GetPullRequestCommitsPageApiResponse } from "./pull-request/response/get-pull-request-commits-page-api-response";
 import { GetPaginatedCommitsDifferencePageApiResponse } from "./commits/response/get-paginated-commits-difference-page-api-response";
+import { GetCommitsInfoRequest } from "./commits/request/get-commits-info-request";
+import { CommitInfoApiResponse } from "./commits/response/commit-info-api-response";
 import { BranchDetailsApiModel } from "./branch-details/branch-details-api-model";
 import { TagDetailsApiModel } from "./tag-details/tag-details.api-model";
 import { DescribeRootNotFoundError } from "./describe-repository/describe-root-not-found-error";
@@ -59,6 +61,7 @@ const TOTAL_ELEMENTS = 1;
 const PULL_REQUEST_ID = "PULL_REQUEST_ID";
 const VERSION = "VERSION";
 const PATH = "PATH";
+const DISPLAY_ID = "displayId";
 
 describe("ScmService", () => {
   let service: ScmService;
@@ -723,6 +726,61 @@ describe("ScmService", () => {
       });
     });
   });
+
+  describe("getCommitsInfo", () => {
+    const mockCommitsInfoResponse: CommitInfoApiResponse[] = [
+      {
+        id: ID,
+        displayId: DISPLAY_ID,
+        message: MESSAGE,
+      },
+    ];
+
+    it("should get commits info successfully", async () => {
+      const request = getCommitsInfoRequest();
+      const expectedUrl = `${mockConfig.gatewayUrl}scm-operations/projects/${PROJECT_ID}/repositories/${REPO_ID}/commits`;
+
+      const promise = firstValueFrom(service.getCommitsInfo(request));
+
+      const req = httpMock.expectOne(expectedUrl);
+      expect(req.request.method).toBe("POST");
+      expect(req.request.body).toEqual(request.commitIds);
+      req.flush(mockCommitsInfoResponse);
+
+      const response = await promise;
+      expect(response).toEqual(mockCommitsInfoResponse);
+    });
+
+    it("should handle error when getting commits info", async () => {
+      const request = getCommitsInfoRequest();
+      const mockError = { status: 500, statusText: "Server Error" };
+      const errorResponse = {
+        status: 500,
+        message: "Error fetching commits info",
+        timestamp: "2026-02-02T12:00:00Z",
+        errors: {},
+        failureReason: null,
+      };
+      const expectedUrl = `${mockConfig.gatewayUrl}scm-operations/projects/${PROJECT_ID}/repositories/${REPO_ID}/commits`;
+
+      const promise = firstValueFrom(service.getCommitsInfo(request));
+
+      const req = httpMock.expectOne(expectedUrl);
+      req.flush(errorResponse, mockError);
+
+      await expect(promise).rejects.toMatchObject({
+        message: "Error fetching commits info",
+      });
+    });
+  });
+
+  function getCommitsInfoRequest(): GetCommitsInfoRequest {
+    return {
+      projectId: PROJECT_ID,
+      repositoryId: REPO_ID,
+      commitIds: [ID],
+    };
+  }
 
   function getBranchDetailsRequest(): GetBranchDetailsRequest {
     return {

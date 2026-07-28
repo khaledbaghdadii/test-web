@@ -17,6 +17,7 @@ import {
   QualityGateValidationService,
   SendChangesForReviewService,
   UpgradeProcessStateUpdaterService,
+  FactoryProductUpdateService,
 } from "@mxevolve/domains/business-process/data-access";
 import {
   StageStatus,
@@ -26,6 +27,7 @@ import {
 import { QualityGateValidationFormComponent } from "../quality-gate-validation-form/quality-gate-validation-form.component";
 import { MergeRequestDetailsFormComponent } from "../merge-request-details-form/merge-request-details-form.component";
 import { KeepEnvironmentsTableComponent } from "../keep-environments-table/keep-environments-table.component";
+import { FactoryProductSubmissionFormComponent } from "../factory-product-submission-form/factory-product-submission-form.component";
 import { ProceedFromQualityGateWizardComponent } from "./proceed-from-quality-gate-wizard.component";
 import { ComponentFixture } from "@angular/core/testing";
 import {
@@ -64,6 +66,7 @@ const MOCK_IMPORTS = [
   MockComponent(QualityGateValidationFormComponent),
   MockComponent(MergeRequestDetailsFormComponent),
   MockComponent(KeepEnvironmentsTableComponent),
+  MockComponent(FactoryProductSubmissionFormComponent),
 ];
 
 const mockQualityGateService = {
@@ -88,6 +91,11 @@ const mockFurtherAnalysisService = {
   markResourcesForFurtherAnalysis: jest.fn(),
 };
 
+const mockFactoryProductUpdateService = {
+  updateFactoryProduct: jest.fn(),
+  getFactoryProductUpdates: jest.fn(),
+};
+
 async function renderComponent(inputs = {}) {
   return render(ProceedFromQualityGateWizardComponent, {
     inputs: { ...REQUIRED_INPUTS, ...inputs },
@@ -108,6 +116,10 @@ async function renderComponent(inputs = {}) {
       {
         provide: FurtherAnalysisService,
         useValue: mockFurtherAnalysisService,
+      },
+      {
+        provide: FactoryProductUpdateService,
+        useValue: mockFactoryProductUpdateService,
       },
     ],
     providers: [
@@ -175,6 +187,12 @@ describe("ProceedFromQualityGateWizardComponent", () => {
     mockFurtherAnalysisService.markResourcesForFurtherAnalysis.mockReturnValue(
       of(void 0)
     );
+    mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+      of({ actions: [] })
+    );
+    mockFactoryProductUpdateService.updateFactoryProduct.mockReturnValue(
+      of({ success: true, skipped: false, files: [] })
+    );
   });
   describe("Next Step button", () => {
     it("is enabled when stage status is PENDING_INPUT", async () => {
@@ -202,6 +220,9 @@ describe("ProceedFromQualityGateWizardComponent", () => {
       expect(screen.getByText("Validate QG")).toBeInTheDocument();
       expect(screen.getByText("Merge Request")).toBeInTheDocument();
       expect(screen.getByText("Keep Environments")).toBeInTheDocument();
+      expect(
+        screen.getByText("Factory Product Submission")
+      ).toBeInTheDocument();
     });
 
     it("renders quality gate validation component with correct inputs", async () => {
@@ -307,6 +328,50 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         comment: "Looks good",
         deleteBranch: null,
       });
+    });
+
+    it("when the user opens the wizard with an existing passed quality gate decision, then the latest factory product state should be loaded", async () => {
+      const user = userEvent.setup();
+
+      await renderComponent({ validationResult: passedResult });
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+
+      expect(
+        mockFactoryProductUpdateService.getFactoryProductUpdates
+      ).toHaveBeenCalledWith("proj-1", "proc-1");
+    });
+
+    it("when the user reopens the wizard after a successful factory product submission, then the latest state should be loaded again and the submission should remain readonly", async () => {
+      mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+        of({
+          actions: [createFactoryProductAction()],
+        })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent({
+        validationResult: passedResult,
+        keptResourcesDecisionMade: false,
+      });
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+
+      expect(
+        mockFactoryProductUpdateService.getFactoryProductUpdates
+      ).toHaveBeenCalledTimes(1);
+
+      expect(fixture.componentInstance.factoryProductMode()).toBe("readonly");
+
+      fixture.componentInstance.dialogVisible.set(false);
+      fixture.detectChanges();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+
+      expect(
+        mockFactoryProductUpdateService.getFactoryProductUpdates
+      ).toHaveBeenCalledTimes(2);
+
+      expect(fixture.componentInstance.factoryProductMode()).toBe("readonly");
     });
   });
 
@@ -519,8 +584,78 @@ describe("ProceedFromQualityGateWizardComponent", () => {
     });
   });
 
+  describe("factory product step", () => {
+    async function goToFactoryProductStep(
+      fixture: ComponentFixture<ProceedFromQualityGateWizardComponent>,
+      user: ReturnType<typeof userEvent.setup>
+    ) {
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+    }
+
+    it("when the user validates the quality gate, and clicks on next, then the factory product submission form should be shown", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await goToFactoryProductStep(fixture, user);
+
+      expect(
+        document.querySelector("mxevolve-factory-product-submission-form")
+      ).toBeTruthy();
+
+      expect(
+        document.querySelector(".p-dialog-title")?.textContent?.trim()
+      ).toBe("Factory Product Submission");
+    });
+
+    it("when the user opens the factory product submission step, then the form should be initialized with the expected values", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent({
+        initialFactoryProductId: "fp-1",
+      });
+
+      await goToFactoryProductStep(fixture, user);
+
+      const formComponent = ngMocks.find(
+        fixture,
+        FactoryProductSubmissionFormComponent
+      ).componentInstance;
+      expect(formComponent.projectId).toBe("proj-1");
+      expect(formComponent.developmentId).toBe("dev-1");
+      expect(formComponent.initialFactoryProductId).toBe("fp-1");
+    });
+
+    it("when the user completes the factory product submission step and clicks on next, then the keep environments step should be shown", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await goToFactoryProductStep(fixture, user);
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      expect(
+        document.querySelector("mxevolve-keep-environments-table")
+      ).toBeTruthy();
+    });
+
+    it("when the user clicks on back from the factory product submission step, then the quality gate validation step should be shown", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await goToFactoryProductStep(fixture, user);
+      await user.click(screen.getByRole("button", { name: "Back" }));
+
+      expect(
+        document.querySelector("mxevolve-quality-gate-validation-form")
+      ).toBeTruthy();
+    });
+  });
+
   describe("keep environments step", () => {
-    it("shows the keep environments table after passing quality gate validation", async () => {
+    it("shows the keep environments table after factory product submission", async () => {
       const user = userEvent.setup();
       const { fixture } = await renderComponent();
 
@@ -529,6 +664,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
       expect(
@@ -549,6 +685,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         QualityGateValidationDecision.VALIDATION_PASSED
       );
       await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
 
       expect(
         document.querySelector(".p-dialog-title")?.textContent?.trim()
@@ -564,6 +701,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
       const tableComponent = ngMocks.find(
@@ -584,6 +722,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Back" }));
@@ -635,6 +774,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
       });
 
       await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Back" }));
 
       const tableComponent = ngMocks.find(
@@ -665,6 +805,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
       });
 
       await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Back" }));
 
       const tableComponent = ngMocks.find(
@@ -686,6 +827,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
@@ -710,6 +852,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
       );
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
 
       expect(screen.getByRole("button", { name: "Back" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument();
@@ -724,6 +867,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Back" }));
@@ -742,6 +886,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
@@ -868,6 +1013,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
       );
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
 
       await setMergeRequestValue(fixture);
       await user.click(screen.getByRole("button", { name: "Send" }));
@@ -891,6 +1037,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
@@ -918,6 +1065,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
       );
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
 
       await setMergeRequestValue(fixture);
       await user.click(screen.getByRole("button", { name: "Send" }));
@@ -938,6 +1086,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
@@ -963,6 +1112,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
@@ -991,6 +1141,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
       );
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
 
       await setMergeRequestValue(fixture);
       await user.click(screen.getByRole("button", { name: "Send" }));
@@ -1013,6 +1164,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         QualityGateValidationDecision.VALIDATION_PASSED,
         "All good"
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
@@ -1039,6 +1191,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
       );
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
 
       await setMergeRequestValue(fixture, { mergeRequestTitle: "My MR" });
       await user.click(screen.getByRole("button", { name: "Send" }));
@@ -1062,6 +1215,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
@@ -1110,6 +1264,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         scenarioIds: ["scn-1"],
       });
 
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await setMergeRequestValue(fixture);
       await user.click(screen.getByRole("button", { name: "Send" }));
@@ -1165,6 +1320,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
 
@@ -1238,6 +1394,7 @@ describe("ProceedFromQualityGateWizardComponent", () => {
         fixture,
         QualityGateValidationDecision.VALIDATION_PASSED
       );
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await user.click(screen.getByRole("button", { name: "Next" }));
       await setMergeRequestValue(fixture, {
@@ -1387,4 +1544,551 @@ describe("ProceedFromQualityGateWizardComponent", () => {
       ).toBeTruthy();
     });
   });
+
+  describe("factory product update on submit", () => {
+    async function fillFactoryProductAndProceedToFinalStep(
+      fixture: ComponentFixture<ProceedFromQualityGateWizardComponent>,
+      user: ReturnType<typeof userEvent.setup>,
+      factoryProductValue: {
+        factoryProductId?: string;
+        commitMessage?: string;
+        selectedConfigurationFilePaths?: string[];
+        skipSubmission?: boolean;
+      } = {}
+    ) {
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      const fpComponent = ngMocks.find(
+        fixture,
+        FactoryProductSubmissionFormComponent
+      );
+      ngMocks.change(fpComponent, {
+        factoryProductId: factoryProductValue.factoryProductId ?? "fp-1",
+        commitMessage: factoryProductValue.commitMessage ?? "commit",
+        selectedConfigurationFilePaths:
+          factoryProductValue.selectedConfigurationFilePaths ?? ["file-1"],
+        skipSubmission: factoryProductValue.skipSubmission ?? false,
+      });
+
+      await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
+      await setMergeRequestValue(fixture);
+    }
+
+    it("when the user provides factory product submission details and sends the review request, then the submitted factory product values should be used", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await fillFactoryProductAndProceedToFinalStep(fixture, user, {
+        factoryProductId: "fp-99",
+        commitMessage: "my commit",
+        selectedConfigurationFilePaths: ["a.yaml", "b.yaml"],
+      });
+      await user.click(screen.getByRole("button", { name: "Send" }));
+
+      const expectedRequest = expect.objectContaining({
+        projectId: "proj-1",
+        processId: "proc-1",
+        factoryProductId: "fp-99",
+        commitMessage: "my commit",
+        filesToUpdate: ["a.yaml", "b.yaml"],
+        skipUpdate: false,
+      });
+
+      await waitFor(expectUpdateFactoryProductCalledWith(expectedRequest));
+    });
+
+    it("when the user chooses to skip the factory product submission and sends the review request, then the submission should be marked as skipped", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await fillFactoryProductAndProceedToFinalStep(fixture, user, {
+        skipSubmission: true,
+      });
+      await user.click(screen.getByRole("button", { name: "Send" }));
+
+      const expectedRequest = expect.objectContaining({
+        skipUpdate: true,
+      });
+      await waitFor(expectUpdateFactoryProductCalledWith(expectedRequest));
+    });
+
+    it("when the user sends the review request, then the factory product submission should be processed before the review request is sent", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      const callOrder: string[] = [];
+
+      mockFactoryProductUpdateService.updateFactoryProduct.mockImplementation(
+        () => {
+          callOrder.push("updateFactoryProduct");
+          return of({ success: true, skipped: false, files: [] });
+        }
+      );
+
+      mockSendChangesForReviewService.sendChangesForReview.mockImplementation(
+        () => {
+          callOrder.push("sendChangesForReview");
+          return of(void 0);
+        }
+      );
+
+      await fillFactoryProductAndProceedToFinalStep(fixture, user);
+      await user.click(screen.getByRole("button", { name: "Send" }));
+
+      await waitFor(() => expect(callOrder).toHaveLength(2));
+
+      expect(callOrder).toEqual([
+        "updateFactoryProduct",
+        "sendChangesForReview",
+      ]);
+    });
+
+    it("when the factory product submission fails for one or more files, then the user should see the failures and the review request should not be sent", async () => {
+      mockFactoryProductUpdateService.updateFactoryProduct.mockReturnValue(
+        of({
+          success: false,
+          skipped: false,
+          files: [
+            {
+              configurationFilePath: "path/one.yml",
+              commitId: "",
+              status: "FAILURE",
+              failureMessage: "conflict detected",
+            },
+            {
+              configurationFilePath: "path/two.yml",
+              commitId: "c2",
+              status: "SUCCESS",
+            },
+            {
+              configurationFilePath: "path/three.yml",
+              commitId: "",
+              status: "FAILURE",
+              failureMessage: "invalid content",
+            },
+          ],
+        })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await fillFactoryProductAndProceedToFinalStep(fixture, user);
+      await user.click(screen.getByRole("button", { name: "Send" }));
+
+      await waitFor(() =>
+        expect(mockToastMessageService.showError).toHaveBeenCalled()
+      );
+
+      expect(mockToastMessageService.showError).toHaveBeenCalledWith(
+        "path/one.yml: conflict detected\npath/three.yml: invalid content"
+      );
+      expect(
+        mockSendChangesForReviewService.sendChangesForReview
+      ).not.toHaveBeenCalled();
+    });
+
+    it("when the user navigates between wizard steps, then the factory product state should not be loaded again", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      expect(
+        mockFactoryProductUpdateService.getFactoryProductUpdates
+      ).toHaveBeenCalledTimes(1);
+
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+
+      await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      await user.click(screen.getByRole("button", { name: "Back" }));
+      await user.click(screen.getByRole("button", { name: "Back" }));
+      await user.click(screen.getByRole("button", { name: "Back" }));
+
+      expect(
+        mockFactoryProductUpdateService.getFactoryProductUpdates
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it("when the user reopens the wizard, then the latest factory product state should be loaded again", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      expect(
+        mockFactoryProductUpdateService.getFactoryProductUpdates
+      ).toHaveBeenCalledTimes(1);
+
+      fixture.componentInstance.dialogVisible.set(false);
+      fixture.detectChanges();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+
+      expect(
+        mockFactoryProductUpdateService.getFactoryProductUpdates
+      ).toHaveBeenCalledTimes(2);
+    });
+
+    it("when the user navigates away from the factory product submission step and returns to it, then the entered values should be preserved", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      const fpValue = {
+        factoryProductId: "fp-99",
+        commitMessage: "in memory",
+        selectedConfigurationFilePaths: ["path/one.yml"],
+        skipSubmission: false,
+      };
+      fixture.componentInstance.factoryProductSubmissionControl.setValue(
+        fpValue
+      );
+
+      await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Back" }));
+
+      expect(
+        mockFactoryProductUpdateService.getFactoryProductUpdates
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        fixture.componentInstance.factoryProductSubmissionControl.value
+      ).toEqual(fpValue);
+    });
+
+    it("when no previous factory product actions exist, then the factory product submission step should be editable", async () => {
+      mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+        of({ actions: [] })
+      );
+
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent({
+        initialFactoryProductId: "fp-suggested",
+      });
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      const fpComponent = ngMocks.find(
+        fixture,
+        FactoryProductSubmissionFormComponent
+      ).componentInstance;
+
+      await waitFor(() => expect(fpComponent.mode).toBe("edit"));
+
+      expect(
+        fixture.componentInstance.factoryProductSubmissionControl.value
+      ).toEqual({
+        factoryProductId: "fp-suggested",
+        commitMessage: "",
+        selectedConfigurationFilePaths: [],
+        skipSubmission: false,
+      });
+    });
+
+    it("when the latest factory product submission was successful, then the factory product submission step should be readonly", async () => {
+      mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+        of({
+          actions: [createFactoryProductAction()],
+        })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      const fpComponent = ngMocks.find(
+        fixture,
+        FactoryProductSubmissionFormComponent
+      ).componentInstance;
+
+      await waitFor(() => expect(fpComponent.mode).toBe("readonly"));
+
+      expect(
+        fixture.componentInstance.factoryProductSubmissionControl.value
+      ).toEqual({
+        factoryProductId: "fp-1",
+        commitMessage: "done",
+        selectedConfigurationFilePaths: [],
+        skipSubmission: false,
+      });
+    });
+
+    it("when the latest factory product submission failed, then the factory product submission step should remain editable", async () => {
+      mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+        of({
+          actions: [
+            createFactoryProductAction({
+              status: "FAILURE",
+              commitMessage: "retry",
+            }),
+          ],
+        })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      const fpComponent = ngMocks.find(
+        fixture,
+        FactoryProductSubmissionFormComponent
+      ).componentInstance;
+
+      await waitFor(() => expect(fpComponent.mode).toBe("edit"));
+
+      expect(
+        fixture.componentInstance.factoryProductSubmissionControl.value
+      ).toEqual({
+        factoryProductId: "fp-1",
+        commitMessage: "retry",
+        selectedConfigurationFilePaths: [],
+        skipSubmission: false,
+      });
+    });
+
+    it("when the latest factory product action is a failed skip submission, then the factory product submission step should remain editable", async () => {
+      mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+        of({
+          actions: [
+            {
+              id: "a1",
+              projectId: "proj-1",
+              processId: "proc-1",
+              actionType: "SKIP_FAP_UPDATE",
+              status: "FAILURE",
+              occurredAt: "2026-01-01T00:00:00Z",
+              details: {},
+            },
+          ],
+        })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      const fpComponent = ngMocks.find(
+        fixture,
+        FactoryProductSubmissionFormComponent
+      ).componentInstance;
+
+      await waitFor(() => expect(fpComponent.mode).toBe("edit"));
+    });
+
+    it("when the latest factory product action is a successful skip submission, then the factory product submission step should be readonly", async () => {
+      mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+        of({
+          actions: [
+            {
+              id: "a1",
+              projectId: "proj-1",
+              processId: "proc-1",
+              actionType: "SKIP_FAP_UPDATE",
+              status: "SUCCESS",
+              occurredAt: "2026-01-01T00:00:00Z",
+              details: {},
+            },
+          ],
+        })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      const fpComponent = ngMocks.find(
+        fixture,
+        FactoryProductSubmissionFormComponent
+      ).componentInstance;
+
+      await waitFor(() => expect(fpComponent.mode).toBe("readonly"));
+
+      expect(
+        fixture.componentInstance.factoryProductSubmissionControl.value
+      ).toEqual({
+        factoryProductId: undefined,
+        commitMessage: "",
+        selectedConfigurationFilePaths: [],
+        skipSubmission: true,
+      });
+    });
+
+    it("when the factory product state cannot be loaded, then the factory product submission step should remain editable", async () => {
+      const loadError = new Error("Failed to load");
+
+      mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+        throwError(() => loadError)
+      );
+
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent({
+        initialFactoryProductId: "fp-suggested",
+      });
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      const fpComponent = ngMocks.find(
+        fixture,
+        FactoryProductSubmissionFormComponent
+      ).componentInstance;
+
+      await waitFor(() => expect(fpComponent.mode).toBe("edit"));
+
+      expect(
+        fixture.componentInstance.factoryProductSubmissionControl.value
+      ).toEqual({
+        factoryProductId: "fp-suggested",
+        commitMessage: "",
+        selectedConfigurationFilePaths: [],
+        skipSubmission: false,
+      });
+    });
+
+    it("when the factory product submission was already completed successfully, then no new factory product submission should be performed", async () => {
+      mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+        of({
+          actions: [createFactoryProductAction()],
+        })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
+      await setMergeRequestValue(fixture);
+      await user.click(screen.getByRole("button", { name: "Send" }));
+
+      await waitFor(() => {
+        expect(
+          mockSendChangesForReviewService.sendChangesForReview
+        ).toHaveBeenCalled();
+      });
+      expect(
+        mockFactoryProductUpdateService.updateFactoryProduct
+      ).not.toHaveBeenCalled();
+    });
+
+    it("uses the latest factory product action returned by the backend to determine the submission mode", async () => {
+      mockFactoryProductUpdateService.getFactoryProductUpdates.mockReturnValue(
+        of({
+          actions: [
+            createFactoryProductAction({
+              id: "a2",
+              occurredAt: "2026-02-01T00:00:00Z",
+              status: "SUCCESS",
+              commitMessage: "success",
+            }),
+            createFactoryProductAction({
+              id: "a1",
+              occurredAt: "2026-01-01T00:00:00Z",
+              status: "FAILURE",
+              commitMessage: "failed",
+            }),
+          ],
+        })
+      );
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Next Step" }));
+      await setQualityGateValue(
+        fixture,
+        QualityGateValidationDecision.VALIDATION_PASSED
+      );
+      await user.click(screen.getByRole("button", { name: "Next" }));
+
+      const fpComponent = ngMocks.find(
+        fixture,
+        FactoryProductSubmissionFormComponent
+      ).componentInstance;
+
+      await waitFor(() => expect(fpComponent.mode).toBe("readonly"));
+    });
+  });
+
+  function createFactoryProductAction({
+    id = "a1",
+    actionType = "SUBMIT_FAP",
+    occurredAt = "2026-01-01T00:00:00Z",
+    status = "SUCCESS",
+    commitMessage = "done",
+  }: {
+    id?: string;
+    actionType?: string;
+    occurredAt?: string;
+    status?: "SUCCESS" | "FAILURE" | "NA";
+    commitMessage?: string;
+  } = {}) {
+    return {
+      id,
+      projectId: "proj-1",
+      processId: "proc-1",
+      actionType,
+      status,
+      occurredAt,
+      details: {
+        factoryProductId: "fp-1",
+        commitMessage,
+        files: [],
+      },
+    };
+  }
+
+  function expectUpdateFactoryProductCalledWith(expectedRequest: unknown) {
+    return () =>
+      expect(
+        mockFactoryProductUpdateService.updateFactoryProduct
+      ).toHaveBeenCalledWith(expectedRequest);
+  }
 });

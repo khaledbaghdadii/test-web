@@ -43,6 +43,15 @@ export function toEnvironment(apiModel: EnvironmentApiModel): Environment {
     environmentActions: apiModel.environmentActions,
     webClientUrl: apiModel.webClientUrl,
     secureClientArtifactUri: apiModel.secureClientArtifactUri,
+    environmentDeploymentMode: apiModel.environmentDeploymentMode,
+    environmentSource: apiModel.environmentSource,
+    environmentDefinition: apiModel.environmentDefinition,
+    configurationIdentifier: apiModel.configurationIdentifier,
+    maintenance: apiModel.maintenance,
+    allocationId: apiModel.allocationId,
+    clients: apiModel.clients,
+    tests: apiModel.tests,
+    clonedRepositoryPath: apiModel.clonedRepositoryPath,
   };
 }
 
@@ -62,6 +71,9 @@ function toBundles(
       id: apiModel.id,
       branch: apiModel.branch,
       version: apiModel.version,
+      ...(apiModel.changelist !== undefined
+        ? { changelist: apiModel.changelist }
+        : {}),
       ...(bundleType ? { type: bundleType } : {}),
     };
   });
@@ -79,6 +91,17 @@ function toDatabases(
   return (apiModels ?? []).map((apiModel) => ({
     name: apiModel.name,
     mxDbTypes: apiModel.mxDbTypes ?? [],
+    ...(apiModel.allocation
+      ? {
+          allocation: {
+            name: apiModel.allocation.name,
+            port: apiModel.allocation.port,
+            machine: apiModel.allocation.machine
+              ? { name: apiModel.allocation.machine.name }
+              : undefined,
+          },
+        }
+      : {}),
   }));
 }
 

@@ -3,6 +3,7 @@ export type {
   TimeoutDuration,
 } from "./lib/types/test-definition";
 export type { TestSelection } from "./lib/types/test-selection";
+export type { LiteScenarioExecution } from "./lib/types/lite-scenario-execution";
 export type { PreconfiguredTestSelection } from "./lib/types/preconfigured-test-selection";
 export { Heaviness, PossibleHeaviness } from "./lib/types/heaviness";
 export type { BusinessProcessChain } from "./lib/types/business-process-chain";
@@ -34,6 +35,10 @@ export {
   TransferToReconProgressStatus,
   TransferToReconProgressStatusDisplayValue,
 } from "./lib/types/transfer-to-recon-progress-status";
+export {
+  ScenarioExecutionHousekeepingStatus,
+  ScenarioExecutionHousekeepingStatusDisplayValue,
+} from "./lib/types/scenario-execution-housekeeping-status";
 export type { CreateTestDefinitionRequest } from "./lib/requests/create-test-definition-request";
 export type { EditTestDefinitionRequest } from "./lib/requests/edit-test-definition-request";
 export type { CreateTestSelectionRequest } from "./lib/requests/create-test-selection-request";
@@ -41,8 +46,11 @@ export type { EditTestSelectionRequest } from "./lib/requests/edit-test-selectio
 export type { FetchTestSelectionsRequest } from "./lib/requests/fetch-test-selections-request";
 export type { TestSelectionTreeNode } from "./lib/types/test-selection-tree-node";
 export type { TestSequenceSummaryModel } from "./lib/types/test-sequence-summary.model";
+export type { PreviouslyLinkedFilter } from "./lib/types/previously-linked-filter";
 export type { RepushPermission } from "./lib/types/repush-permission";
 export type { UpdateAssigneeRequest } from "./lib/requests/update-assignee-request";
 export type { RerunFromFactoryProductRequest } from "./lib/requests/rerun-from-factory-product-request";
+export type { RerunFromFinalProductRequest } from "./lib/requests/rerun-from-final-product-request";
+export type { BulkRerunFromFinalProductRequest } from "./lib/requests/bulk-rerun-from-final-product-request";
 export type { RerunFromFactoryProductResponse } from "./lib/response/rerun-from-factory-product-response";
 export { ScenarioDefinitionActivityStatus } from "./lib/types/scenario-definition-activity-status";

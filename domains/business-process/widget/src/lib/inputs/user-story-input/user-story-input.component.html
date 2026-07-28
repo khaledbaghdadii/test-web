@@ -1,0 +1,54 @@
+<div class="grid-2">
+  @for (field of fields(); track field.control; let i = $index) {
+  <div class="flex flex-col gap-1">
+    <label [for]="'user-story-' + i">{{ label(i) }}</label>
+    <div class="flex items-center gap-2">
+      <p-iconfield class="grow">
+        <input
+          pInputText
+          type="text"
+          class="w-full"
+          [id]="'user-story-' + i"
+          [formControl]="field.control"
+          [placeholder]="
+            'Enter your user story ID' + (i === 0 ? '' : ' ' + (i + 1))
+          "
+          (keyup.enter)="addField()"
+        />
+        @if (field.status() === 'pending') {
+        <p-inputicon class="pi pi-spin pi-spinner" />
+        } @else if (field.status() === 'valid') {
+        <p-inputicon class="pi pi-check text-green-600" />
+        }
+      </p-iconfield>
+      @if (fields().length > 1) {
+      <p-button
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        (onClick)="removeField(field)"
+        ariaLabel="Remove user story"
+      >
+        <ng-template #icon>
+          <mxevolve-icon name="close" size="sm" />
+        </ng-template>
+      </p-button>
+      } @if ($last) {
+      <p-button
+        [rounded]="true"
+        [disabled]="!canAdd()"
+        (onClick)="addField()"
+        ariaLabel="Add user story"
+      >
+        <ng-template #icon>
+          <mxevolve-icon name="add" size="sm" />
+        </ng-template>
+      </p-button>
+      }
+    </div>
+    @if (field.error(); as message) {
+    <small class="text-red-500 block">{{ message }}</small>
+    }
+  </div>
+  }
+</div>

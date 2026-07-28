@@ -393,8 +393,8 @@ describe("ScenarioDefinitionEditComponent", () => {
         name: "Test Scenario",
         qualityLevel: "CQG",
         tests: [
-          { full: true, testSelectionIds: ["1"], testDefinitionId: "1" },
-          { full: false, testSelectionIds: ["1"], testDefinitionId: "2" },
+          { testSelectionIds: ["1"], testDefinitionId: "1" },
+          { testSelectionIds: ["1"], testDefinitionId: "2" },
         ],
       };
 

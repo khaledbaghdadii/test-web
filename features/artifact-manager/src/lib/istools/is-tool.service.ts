@@ -31,6 +31,10 @@ export class ArtifactIsToolsService {
 
     url += `&searchKey=${encodeURIComponent(filters.searchKey ?? "")}`;
 
+    if (filters.archived !== undefined && filters.archived !== null) {
+      url += `&archived=${filters.archived}`;
+    }
+
     url += "&sort=createdOn%2Cdesc";
 
     return url;

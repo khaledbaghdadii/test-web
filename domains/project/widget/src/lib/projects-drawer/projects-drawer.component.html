@@ -1,0 +1,38 @@
+<p-drawer
+  [(visible)]="visible"
+  position="right"
+  header="List of projects"
+  [style]="{ width: '30vw' }"
+  (onShow)="onShow()"
+>
+  <div class="flex flex-col gap-4 min-h-0">
+    <span class="p-input-icon-left w-full">
+      <p-iconfield>
+        <input
+          pInputText
+          type="text"
+          class="w-full"
+          aria-label="Search projects"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+        />
+        <p-inputicon>
+          <mxevolve-icon name="search" size="sm" />
+        </p-inputicon>
+      </p-iconfield>
+    </span>
+
+    @if (loading()) { @for (item of [0, 1, 2, 3, 4]; track item) {
+    <p-skeleton height="5rem" styleClass="w-full" />
+    } } @else { @for (project of filteredProjects(); track project.id;) {
+    <p-panel
+      [header]="project.name"
+      (click)="onProjectSelect(project)"
+      (keydown)="onProjectSelect(project)"
+      class="cursor-pointer hover:bg-surface-100"
+    >
+      <p>{{ project.description }}</p>
+    </p-panel>
+    } @empty { No projects found. } }
+  </div>
+</p-drawer>

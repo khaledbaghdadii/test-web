@@ -20,6 +20,14 @@ import { ButtonModule } from "primeng/button";
 import { FormsModule, ReactiveFormsModule } from "@angular/forms";
 import { DomTestUtils } from "@mxevolve/testing";
 import { IncidentInputComponent } from "@mxflow/features/incident-management";
+import {
+  ClientImpactNoteAffectedVersionsConfigApiModel,
+  ClientImpactNoteService,
+  VersionType,
+  VersionValidationResult,
+  VersionValidationService,
+} from "@mxevolve/domains/test/data-access";
+import { VersionsMultiselectDropdownComponent } from "@mxevolve/domains/test/widget";
 
 const binaryImpactAttachment = {
   attachmentId: "attachmentId",
@@ -50,11 +58,18 @@ describe("EditBinaryImpactModalComponent", () => {
   const cbpmL1L2L3 = ["cbpmL1L2L3", "cbpmL1L2L3-2"];
   const cbpmL3L4 = ["cbpmL3L4", "cbpmL3L4-2"];
   const cbpmL2Scope = ["cbpmL2Scope", "cbpmL2Scope-2"];
+  const affectedVersionNames = ["version1", "version2"];
+  const affectedVersions = [
+    { id: "version1", name: "version1" },
+    { id: "version2", name: "version2" },
+  ];
 
   let component: EditBinaryImpactModalComponent;
   let fixture: ComponentFixture<EditBinaryImpactModalComponent>;
   let binaryImpactService: BinaryImpactService;
   let toastMessageService: ToastMessageService;
+  let clientImpactNoteService: ClientImpactNoteService;
+  let versionValidationService: VersionValidationService;
 
   beforeEach(() => {
     jest.useFakeTimers();
@@ -68,7 +83,27 @@ describe("EditBinaryImpactModalComponent", () => {
     toastMessageService = {
       showError: jest.fn(),
       showSuccess: jest.fn(),
+      showWarning: jest.fn(),
     } as unknown as ToastMessageService;
+    clientImpactNoteService = {
+      fetchAllowedVersionsConfiguration: jest.fn(() =>
+        of<ClientImpactNoteAffectedVersionsConfigApiModel>({
+          allowedVersionTypes: [VersionType.RELEASE_EFFECTIVE],
+          allowedInactive: true,
+        })
+      ),
+    } as unknown as ClientImpactNoteService;
+    versionValidationService = {
+      validateVersions: jest.fn(() =>
+        of<VersionValidationResult>({
+          validVersions: [
+            { id: "1.0", name: "1.0" },
+            { id: "2.0", name: "2.0" },
+          ],
+          invalidVersions: [],
+        })
+      ),
+    } as unknown as VersionValidationService;
     TestBed.configureTestingModule({
       imports: [EditBinaryImpactModalComponent],
       providers: [provideNoopAnimations()],
@@ -81,7 +116,8 @@ describe("EditBinaryImpactModalComponent", () => {
             AttachmentUploaderComponent,
             ClientImpactNoteSingleSelectDropdownComponent,
             ClientImpactNoteMultiSelectDropdownComponent,
-            IncidentInputComponent
+            IncidentInputComponent,
+            VersionsMultiselectDropdownComponent
           ),
           SkeletonModule,
           DialogModule,
@@ -99,6 +135,14 @@ describe("EditBinaryImpactModalComponent", () => {
             provide: ToastMessageService,
             useValue: toastMessageService,
           },
+          {
+            provide: ClientImpactNoteService,
+            useValue: clientImpactNoteService,
+          },
+          {
+            provide: VersionValidationService,
+            useValue: versionValidationService,
+          },
         ],
       },
     });
@@ -106,6 +150,10 @@ describe("EditBinaryImpactModalComponent", () => {
     component = fixture.componentInstance;
     component.projectId = projectId;
     component.binaryImpactId = binaryImpactId;
+    component.affectedVersionsDropdownParams = {
+      versionTypes: [VersionType.RELEASE_EFFECTIVE],
+      active: true,
+    };
   });
 
   describe("ngOnInit", () => {
@@ -142,6 +190,13 @@ describe("EditBinaryImpactModalComponent", () => {
         component.editBinaryImpactForm.controls.mxVersion.disabled
       ).toBeTruthy();
     });
+
+    it("should disable the upgrade impact field", () => {
+      component.ngOnInit();
+      expect(
+        component.editBinaryImpactForm.controls.upgradeImpactId.disabled
+      ).toBeTruthy();
+    });
   });
 
   describe("ngOnDestroy", () => {
@@ -153,6 +208,98 @@ describe("EditBinaryImpactModalComponent", () => {
 
       expect(destroyNextSpy).toHaveBeenCalled();
       expect(destroyCompleteSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("affected versions dropdown params", () => {
+    it("should keep loading the form while the affected versions configuration is being fetched", () => {
+      const configurationSubject =
+        new Subject<ClientImpactNoteAffectedVersionsConfigApiModel>();
+      jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(configurationSubject);
+
+      fixture.detectChanges();
+
+      expect(component.isFormLoading).toBeTruthy();
+    });
+
+    it("should stop loading the form once the affected versions configuration has been fetched", () => {
+      const configurationSubject =
+        new Subject<ClientImpactNoteAffectedVersionsConfigApiModel>();
+      jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(configurationSubject);
+
+      fixture.detectChanges();
+      expect(component.isFormLoading).toBeTruthy();
+
+      configurationSubject.next({
+        allowedVersionTypes: [VersionType.RELEASE_EFFECTIVE],
+        allowedInactive: true,
+      });
+      configurationSubject.complete();
+
+      expect(component.isFormLoading).toBeFalsy();
+    });
+
+    it("should stop loading the form if fetching the affected versions configuration fails", () => {
+      jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(throwError(() => new Error("Error occurred")));
+
+      fixture.detectChanges();
+
+      expect(component.isFormLoading).toBeFalsy();
+    });
+
+    it("should restrict the dropdown to active versions when inactive versions are not allowed", () => {
+      const fetchAllowedVersionsConfigurationSpy = jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(
+          of<ClientImpactNoteAffectedVersionsConfigApiModel>({
+            allowedVersionTypes: [VersionType.RELEASE_EFFECTIVE],
+            allowedInactive: false,
+          })
+        );
+
+      fixture.detectChanges();
+
+      expect(fetchAllowedVersionsConfigurationSpy).toHaveBeenCalled();
+      expect(component.affectedVersionsDropdownParams).toEqual({
+        versionTypes: [VersionType.RELEASE_EFFECTIVE],
+        active: true,
+      });
+    });
+
+    it("should allow inactive versions in the dropdown when inactive versions are allowed", () => {
+      const fetchAllowedVersionsConfigurationSpy = jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(
+          of<ClientImpactNoteAffectedVersionsConfigApiModel>({
+            allowedVersionTypes: [VersionType.RELEASE_EFFECTIVE],
+            allowedInactive: true,
+          })
+        );
+
+      fixture.detectChanges();
+
+      expect(fetchAllowedVersionsConfigurationSpy).toHaveBeenCalled();
+      expect(component.affectedVersionsDropdownParams).toEqual({
+        versionTypes: [VersionType.RELEASE_EFFECTIVE],
+        active: undefined,
+      });
+    });
+
+    it("should show an error message when loading the configuration fails", () => {
+      const errorMessage = "Error occurred";
+      jest
+        .spyOn(clientImpactNoteService, "fetchAllowedVersionsConfiguration")
+        .mockReturnValue(throwError(() => new Error(errorMessage)));
+
+      fixture.detectChanges();
+
+      expect(toastMessageService.showError).toHaveBeenCalledWith(errorMessage);
     });
   });
 
@@ -175,10 +322,7 @@ describe("EditBinaryImpactModalComponent", () => {
 
       component.isModalShown = true;
 
-      expect(binaryImpactService.getById).toHaveBeenCalledWith(
-        projectId,
-        binaryImpactId
-      );
+      expect(binaryImpactService.getById).toHaveBeenCalledWith(binaryImpactId);
       expect(component.editBinaryImpactForm.controls.title.value).toEqual(
         binaryImpact.title
       );
@@ -215,6 +359,108 @@ describe("EditBinaryImpactModalComponent", () => {
       expect(component.editBinaryImpactForm.controls.region.value).toEqual(
         binaryImpact.region.id
       );
+    });
+
+    it("should initialize affected versions field with binary impact valid affected versions", () => {
+      const binaryImpact = BinaryImpactTestUtils.getBinaryImpact(uuidv4());
+      jest
+        .spyOn(binaryImpactService, "getById")
+        .mockReturnValue(of(binaryImpact));
+      const validVersions = [
+        { id: "version1", name: "version1" },
+        { id: "version2", name: "version2" },
+      ];
+      jest.spyOn(versionValidationService, "validateVersions").mockReturnValue(
+        of<VersionValidationResult>({
+          validVersions: validVersions,
+          invalidVersions: [],
+        })
+      );
+
+      component.isModalShown = true;
+
+      expect(
+        component.editBinaryImpactForm.controls.affectedVersions.value
+      ).toEqual(validVersions);
+    });
+
+    it("should resolve the valid versions using the binary impact affected versions and the dropdown params", () => {
+      const binaryImpact = BinaryImpactTestUtils.getBinaryImpact(uuidv4());
+      jest
+        .spyOn(binaryImpactService, "getById")
+        .mockReturnValue(of(binaryImpact));
+
+      component.isModalShown = true;
+
+      expect(versionValidationService.validateVersions).toHaveBeenCalledWith(
+        binaryImpact.affectedVersions,
+        component.affectedVersionsDropdownParams.versionTypes,
+        component.affectedVersionsDropdownParams.active
+      );
+    });
+
+    it("should set the prefilled affected versions to the resolved valid versions", () => {
+      const binaryImpact = BinaryImpactTestUtils.getBinaryImpact(uuidv4(), {
+        affectedVersions: ["version1", "version2"],
+      });
+      jest
+        .spyOn(binaryImpactService, "getById")
+        .mockReturnValue(of(binaryImpact));
+      jest.spyOn(versionValidationService, "validateVersions").mockReturnValue(
+        of<VersionValidationResult>({
+          validVersions: [{ id: "version1", name: "version1" }],
+          invalidVersions: [],
+        })
+      );
+
+      component.isModalShown = true;
+
+      expect(component.prefilledAffectedVersions).toEqual([
+        { id: "version1", name: "version1" },
+      ]);
+    });
+
+    it("should show a warning listing the invalid affected versions", () => {
+      const binaryImpact = BinaryImpactTestUtils.getBinaryImpact(uuidv4(), {
+        affectedVersions: ["version1", "version3"],
+      });
+      jest
+        .spyOn(binaryImpactService, "getById")
+        .mockReturnValue(of(binaryImpact));
+      jest.spyOn(versionValidationService, "validateVersions").mockReturnValue(
+        of<VersionValidationResult>({
+          validVersions: [],
+          invalidVersions: ["version3"],
+        })
+      );
+
+      component.isModalShown = true;
+
+      expect(toastMessageService.showWarning).toHaveBeenCalledWith(
+        "Invalid affected versions: version3."
+      );
+    });
+
+    it("should not show a warning when all the affected versions are valid", () => {
+      const binaryImpact = BinaryImpactTestUtils.getBinaryImpact(uuidv4(), {
+        affectedVersions: ["version1", "version2"],
+      });
+      jest
+        .spyOn(binaryImpactService, "getById")
+        .mockReturnValue(of(binaryImpact));
+      jest.spyOn(versionValidationService, "validateVersions").mockReturnValue(
+        of<VersionValidationResult>({
+          validVersions: [
+            { id: "version1", name: "version1" },
+            { id: "version2", name: "version2" },
+          ],
+          invalidVersions: [],
+        })
+      );
+
+      component.isModalShown = true;
+
+      expect(toastMessageService.showWarning).not.toHaveBeenCalled();
     });
 
     it("should should set region to null when it is not provided in the binary impact", () => {
@@ -496,6 +742,19 @@ describe("EditBinaryImpactModalComponent", () => {
       );
       expect(component.isFormLoading).toBeFalsy();
     });
+
+    it("should display error if resolving the valid affected versions fails", () => {
+      jest
+        .spyOn(versionValidationService, "validateVersions")
+        .mockReturnValue(throwError(throwException()));
+
+      component.isModalShown = true;
+
+      expect(toastMessageService.showError).toHaveBeenCalledWith(
+        BinaryImpactTestUtils.ERROR_MESSAGE
+      );
+      expect(component.isFormLoading).toBeFalsy();
+    });
   });
 
   describe("cancelling the modal", () => {
@@ -533,6 +792,13 @@ describe("EditBinaryImpactModalComponent", () => {
     it("should be invalid when region is not provided", () => {
       component.editBinaryImpactForm.controls.region.setValue(null);
       expect(component.editBinaryImpactForm.controls.region.valid).toBeFalsy();
+    });
+
+    it("should be invalid when affected versions are not provided", () => {
+      component.editBinaryImpactForm.controls.affectedVersions.setValue(null);
+      expect(
+        component.editBinaryImpactForm.controls.affectedVersions.valid
+      ).toBeFalsy();
     });
 
     it("should be invalid when stream is not provided", () => {
@@ -604,6 +870,9 @@ describe("EditBinaryImpactModalComponent", () => {
       component.editBinaryImpactForm.controls.identificationPattern.setValue(
         identificationPattern
       );
+      component.editBinaryImpactForm.controls.affectedVersions.setValue(
+        affectedVersions
+      );
     });
 
     it("should update binary impact", () => {
@@ -615,19 +884,6 @@ describe("EditBinaryImpactModalComponent", () => {
         getEditRequest()
       );
       expect(component.isButtonLoading).toBeFalsy();
-    });
-
-    it("should emit binary impact update message with undefined upgrade impact id if not set", () => {
-      component.editBinaryImpactForm.controls.upgradeImpactId.setValue(null);
-      component.onFormSubmission();
-      expect(binaryImpactService.update).toHaveBeenCalledWith(
-        projectId,
-        binaryImpactId,
-        {
-          ...getEditRequest(),
-          upgradeImpactId: undefined,
-        }
-      );
     });
 
     it("should emit success message on successful update", () => {
@@ -1112,6 +1368,22 @@ describe("EditBinaryImpactModalComponent", () => {
       const regionInput = getElementByTestId("region-input");
       expect(regionInput.isRendered()).toBeFalsy();
     });
+
+    it("should display affected versions input when form is not loading", () => {
+      component.isFormLoading = false;
+      const affectedVersionsDropdown = getElementByTestId(
+        "affected-versions-dropdown"
+      );
+      expect(affectedVersionsDropdown.isRendered()).toBeTruthy();
+    });
+
+    it("should not display affected versions input when form is loading", () => {
+      component.isFormLoading = true;
+      const affectedVersionsInput = getElementByTestId(
+        "affected-versions-dropdown"
+      );
+      expect(affectedVersionsInput.isRendered()).toBeFalsy();
+    });
   });
 
   function getElementByTestId(testId: string) {
@@ -1134,7 +1406,7 @@ describe("EditBinaryImpactModalComponent", () => {
     return {
       title: title,
       description: description,
-      upgradeImpactId: upgradeImpactId,
+      affectedVersions: affectedVersionNames,
       region: region,
       stream: stream,
       magnitude: magnitude,

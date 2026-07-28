@@ -99,7 +99,7 @@ export class EditBinaryRegressionModalComponent implements OnInit, OnDestroy {
         Validators.maxLength(255),
         WhitespaceValidators.notBlank(),
       ]),
-      incidentId: new FormControl<string | null>(null, []),
+      incidentId: new FormControl<string | null>(null, [Validators.required]),
     });
 
   ngOnInit(): void {

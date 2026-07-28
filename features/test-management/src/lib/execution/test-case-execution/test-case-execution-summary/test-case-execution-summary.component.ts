@@ -23,7 +23,7 @@ import {
 import { TestCaseExecutionStatusComponent } from "../status/test-case-execution-status.component";
 import { ScenarioExecutionStateManagementService } from "../../scenario-execution/scenario-execution-details/scenario-execution-state-management.service";
 import { Divider } from "primeng/divider";
-import { ActivatedRoute, Params, Router } from "@angular/router";
+import { ActivatedRoute, Params, Router, RouterLink } from "@angular/router";
 import { Skeleton } from "primeng/skeleton";
 import {
   catchError,
@@ -46,6 +46,7 @@ import {
   ConfigurationRegressionService,
   DetectionCategory,
   DetectionType,
+  DetectionUriBuilderPipe,
   LiteBinaryImpact,
   LiteBinaryRegression,
   LiteConfigurationImpact,
@@ -80,6 +81,17 @@ import { TestCaseExecutionAnalyzabilityService } from "../test-case-execution-an
 import { TestCaseTestUnitLinksDrawerComponent } from "../test-case-test-unit-links-drawer/test-case-test-unit-links-drawer.component";
 import { TestCaseExecution } from "../test-case-execution";
 
+type LinkedImpactDisplayItem = {
+  id: string;
+  label: string;
+  isBinaryImpact: boolean;
+  linkContext: {
+    id: string;
+    projectId?: string;
+    analysisObjectType?: DetectionType;
+  };
+};
+
 @Component({
   selector: "mxevolve-test-case-execution-summary",
   templateUrl: "./test-case-execution-summary.component.html",
@@ -104,6 +116,8 @@ import { TestCaseExecution } from "../test-case-execution";
     Message,
     FormsModule,
     TestCaseTestUnitLinksDrawerComponent,
+    DetectionUriBuilderPipe,
+    RouterLink,
   ],
 })
 export class TestCaseExecutionSummaryComponent implements OnInit, OnDestroy {
@@ -183,6 +197,13 @@ export class TestCaseExecutionSummaryComponent implements OnInit, OnDestroy {
     this.filterService.register(
       "arrayContainsDetection",
       this.filterDetections()
+    );
+
+    this.filterService.register("arrayContainsImpact", this.filterImpacts());
+
+    this.filterService.register(
+      "arrayContainsBinaryImpactId",
+      this.filterBinaryImpactIds()
     );
   }
 
@@ -309,6 +330,102 @@ export class TestCaseExecutionSummaryComponent implements OnInit, OnDestroy {
         detections?.some((detection: LinkedDetectionData) =>
           detection.title.toLowerCase().includes(filterLower)
         ) ?? false
+      );
+    };
+  }
+
+  protected getLinkedBinaryImpacts(
+    linkedImpacts: LinkedDetectionData[]
+  ): LiteBinaryImpact[] {
+    return (linkedImpacts ?? []).filter(
+      (impact) => impact.analysisObjectType === DetectionType.Binary
+    ) as unknown as LiteBinaryImpact[];
+  }
+
+  protected getLinkedConfigurationImpacts(
+    linkedImpacts: LinkedDetectionData[]
+  ): LinkedDetectionData[] {
+    return (linkedImpacts ?? []).filter(
+      (impact) => impact.analysisObjectType !== DetectionType.Binary
+    );
+  }
+
+  protected getLinkedImpactsTooltip(
+    linkedImpacts: LinkedDetectionData[]
+  ): string {
+    return this.getLinkedImpactDisplayItems(linkedImpacts)
+      .map((impact) => impact.label)
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  protected getLinkedImpactDisplayItems(
+    linkedImpacts: LinkedDetectionData[] | null | undefined
+  ): LinkedImpactDisplayItem[] {
+    const impacts = linkedImpacts ?? [];
+
+    return [
+      ...this.getLinkedConfigurationImpacts(impacts).map((impact) => ({
+        id: impact.id,
+        label: impact.title ?? "",
+        isBinaryImpact: false,
+        linkContext: {
+          id: impact.id,
+          projectId: impact.projectId,
+          analysisObjectType: impact.analysisObjectType,
+        },
+      })),
+      ...this.getLinkedBinaryImpacts(impacts).map((impact) => ({
+        id: impact.id,
+        label: impact.objectId ?? "",
+        isBinaryImpact: true,
+        linkContext: {
+          id: impact.id,
+          projectId: impact.projectId,
+          analysisObjectType: DetectionType.Binary,
+        },
+      })),
+    ];
+  }
+
+  protected getBinaryImpactRoute(
+    binaryImpact: Pick<LinkedDetectionData, "id" | "projectId">
+  ): Array<string | undefined> {
+    return [
+      "/app",
+      binaryImpact.projectId,
+      "detections",
+      "impacts",
+      "binary",
+      binaryImpact.id,
+    ];
+  }
+
+  private filterImpacts() {
+    return (impacts: LinkedDetectionData[], filter: string): boolean => {
+      if (!filter) return true;
+
+      const filterLower = filter.toLowerCase();
+      const configImpacts = this.getLinkedConfigurationImpacts(impacts);
+      const binaryImpacts = this.getLinkedBinaryImpacts(impacts);
+
+      return (
+        configImpacts.some((impact) =>
+          impact.title?.toLowerCase().includes(filterLower)
+        ) ||
+        binaryImpacts.some((impact) =>
+          impact.objectId?.toLowerCase().includes(filterLower)
+        )
+      );
+    };
+  }
+
+  private filterBinaryImpactIds() {
+    return (impacts: LinkedDetectionData[], filter: string): boolean => {
+      if (!filter) return true;
+      const filterLower = filter.toLowerCase();
+      return this.getLinkedBinaryImpacts(impacts).some((impact) =>
+        impact.objectId?.toLowerCase().includes(filterLower)
       );
     };
   }

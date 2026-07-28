@@ -2,6 +2,7 @@ export class CreateBinaryImpactRequest {
   title: string;
   description: string;
   mxVersion: string;
+  affectedVersions: string[];
   upgradeImpactId?: string;
   incidentId?: string;
   correlationId: string;

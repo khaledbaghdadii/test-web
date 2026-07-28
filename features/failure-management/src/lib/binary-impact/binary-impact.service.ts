@@ -13,6 +13,10 @@ import { FetchBinaryImpactsApiResponse } from "./fetch-binary-impacts-api-respon
 import { FetchBinaryImpactsResponse } from "./fetch-binary-impacts-response.model";
 import { FetchBinaryImpactsQueryApiRequest } from "./fetch-binary-impacts-query-api-request";
 import { LiteBinaryImpact } from "./lite-binary-impact.model";
+import { PrepareBinaryImpactFromUpgradeImpactResponse } from "./prepare-binary-impact-from-upgrade-impact-response.model";
+import { PrepareBinaryImpactFromUpgradeImpactApiRequest } from "./prepare-binary-impact-from-upgrade-impact-api-request.model";
+import { UpdateUpgradeImpactForBinaryImpactApiRequest } from "./update-upgrade-impact-for-binary-impact-api-request.model";
+import { UpdateUpgradeImpactForBinaryImpactRequest } from "./update-upgrade-impact-for-binary-impact-request.model";
 
 @Injectable()
 export class BinaryImpactService {
@@ -38,8 +42,7 @@ export class BinaryImpactService {
       .pipe(catchError((error) => throwError(() => new Error(error.error))));
   }
 
-  fetchAll(
-    projectId: string,
+  getAll(
     query: FetchBinaryImpactsQuery = {}
   ): Observable<FetchBinaryImpactsResponse> {
     const pageable = {
@@ -50,9 +53,11 @@ export class BinaryImpactService {
 
     return this.http
       .post<FetchBinaryImpactsApiResponse>(
-        this.getFetchAllUrl(projectId),
+        this.getFetchAllUrl(),
         this.buildFetchBinaryImpactsQueryApiRequest(query),
-        { params }
+        {
+          params,
+        }
       )
       .pipe(
         map((result) => this.buildFetchBinaryImpactsResult(result)),
@@ -66,7 +71,7 @@ export class BinaryImpactService {
       page: 0,
       size: ids.length,
     };
-    return this.fetchAll(projectId, query).pipe(
+    return this.getAll({ ...query, projectIds: [projectId] }).pipe(
       map((response) => response.binaryImpacts.content)
     );
   }
@@ -89,6 +94,7 @@ export class BinaryImpactService {
     return {
       ids: query.ids,
       titlePhrase: query.titlePhrase,
+      objectIdPhrase: query.objectIdPhrase,
       ownerPhrase: query.ownerPhrase,
       mxVersionPhrases: query.mxVersionPhrases,
       upgradeImpactExternalIssuePhrase: query.upgradeImpactExternalIssuePhrase,
@@ -96,13 +102,16 @@ export class BinaryImpactService {
       referenceVersion: query.referenceVersion,
       returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact:
         query.returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact,
+      testCaseExternalIds: query.testCaseExternalIds,
+      scenarioDefinitionId: query.scenarioDefinitionId,
+      projectIds: query.projectIds,
     };
   }
 
-  getById(projectId: string, binaryImpactId: string): Observable<BinaryImpact> {
+  getById(binaryImpactId: string): Observable<BinaryImpact> {
     return this.http
       .get<BinaryImpactApiResponse>(
-        this.getBaseUrl(projectId) + `/${binaryImpactId}`
+        `${this.apiUrl}failure-management/impacts/binary/${binaryImpactId}`
       )
       .pipe(catchError((error) => throwError(() => new Error(error.error))));
   }
@@ -121,11 +130,34 @@ export class BinaryImpactService {
       .pipe(catchError((error) => throwError(() => new Error(error.error))));
   }
 
+  updateUpgradeImpact(
+    updateUpgradeImpactRequest: UpdateUpgradeImpactForBinaryImpactRequest
+  ): Observable<void> {
+    const url = `${this.getBaseUrl(updateUpgradeImpactRequest.projectId)}/${
+      updateUpgradeImpactRequest.binaryImpactId
+    }/upgrade-impact`;
+    return this.http
+      .patch<void>(
+        url,
+        this.getUpdateUpgradeImpactApiRequest(updateUpgradeImpactRequest)
+      )
+      .pipe(catchError((error) => throwError(() => new Error(error.error))));
+  }
+
+  private getUpdateUpgradeImpactApiRequest(
+    request: UpdateUpgradeImpactForBinaryImpactRequest
+  ) {
+    return {
+      upgradeImpactId: request.upgradeImpactId,
+      overrideFromUpgradeImpact: request.overrideFromUpgradeImpact,
+    } as UpdateUpgradeImpactForBinaryImpactApiRequest;
+  }
+
   private getEditBinaryImpactRequest(request: EditBinaryImpactRequest) {
     return {
       title: request.title?.trim(),
       description: request.description?.trim(),
-      upgradeImpactId: request.upgradeImpactId,
+      affectedVersions: request.affectedVersions,
       region: request.region,
       stream: request.stream,
       magnitude: request.magnitude,
@@ -158,12 +190,26 @@ export class BinaryImpactService {
       .pipe(catchError((error) => throwError(() => new Error(error.error))));
   }
 
+  prepareFromUpgradeImpact(
+    apiRequest: PrepareBinaryImpactFromUpgradeImpactApiRequest
+  ): Observable<PrepareBinaryImpactFromUpgradeImpactResponse> {
+    const params = new HttpParams({
+      fromObject: { upgradeImpactId: apiRequest.upgradeImpactId },
+    });
+    return this.http
+      .get<PrepareBinaryImpactFromUpgradeImpactResponse>(
+        `${this.getBaseUrl(apiRequest.projectId)}/prepare-from-upgrade-impact`,
+        { params }
+      )
+      .pipe(catchError((error) => throwError(() => new Error(error.error))));
+  }
+
   private getBaseUrl(projectId: string): string {
     return `${this.apiUrl}projects/${projectId}/failure-management/impacts/binary`;
   }
 
-  private getFetchAllUrl(projectId: string): string {
-    return `${this.getBaseUrl(projectId)}/fetch`;
+  private getFetchAllUrl(): string {
+    return `${this.apiUrl}failure-management/impacts/binary/fetch`;
   }
 
   private getTrimmedCreateRequest(request: CreateBinaryImpactRequest) {
@@ -171,6 +217,7 @@ export class BinaryImpactService {
       title: request.title.trim(),
       description: request.description,
       mxVersion: request.mxVersion.trim(),
+      affectedVersions: request.affectedVersions,
       upgradeImpactId: request.upgradeImpactId,
       attachmentIds: request.attachmentIds,
       correlationId: request.correlationId,

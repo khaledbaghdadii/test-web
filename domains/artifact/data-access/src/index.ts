@@ -15,9 +15,7 @@ export {
   ConfigurationComponentMxBundlesResponse,
 } from "./lib/factory-product-selector/models/factory-product";
 export { FactoryProductFilters } from "./lib/factory-product-selector/models/factory-product-filters";
-
 export { FactoryProductApiService } from "./lib/factory-product-selector/factory-product-api.service";
-export { FinalProductService } from "./lib/final-product/final-product.service";
 export {
   FinalProductState,
   FinalProductLatestSyncState,
@@ -35,3 +33,5 @@ export type {
   FinalProductMxBundle,
   FinalProductSyncRequest,
 } from "./lib/final-product/final-product.model";
+
+export { FinalProductApiService } from "./lib/final-product/final-product-api.service";

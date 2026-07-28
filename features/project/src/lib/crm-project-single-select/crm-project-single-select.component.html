@@ -1,0 +1,8 @@
+<mxevolve-single-select-dropdown
+  data-testid="crm-project-single-select"
+  [stateProvider]="stateProvider"
+  [dataParams]="{ projectId: projectId() }"
+  [config]="{ placeholder: 'Select CRM Project' }"
+  (errorEvent)="onError($event)"
+  (selectionChange)="onSelectionChange($event)"
+/>

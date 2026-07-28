@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-4 p-4">
-  <h4 class="text-lg font-bold m-0">Activity Run Details</h4>
+  <h4 class="text-lg font-bold m-0">Run Details</h4>
 
   <div class="flex flex-wrap items-stretch gap-6">
     <div class="flex flex-col gap-1">
@@ -8,7 +8,7 @@
     </div>
     <p-divider layout="vertical" />
     <div class="flex flex-col gap-1">
-      <span class="text-muted-color">Activity Type</span>
+      <span class="text-muted-color">Process Type</span>
       <span class="font-semibold">{{
         execution().familyName + " / " + execution().processName
       }}</span>
@@ -24,6 +24,11 @@
       } @else {
       <span class="font-semibold">-</span>
       }
+    </div>
+    <p-divider layout="vertical" />
+    <div class="flex flex-col gap-1">
+      <span class="text-muted-color">Process Run owner</span>
+      <span class="font-semibold">{{ execution().owner || "-" }}</span>
     </div>
   </div>
 
@@ -68,11 +73,50 @@
       <div class="flex items-stretch gap-6">
         <div class="flex flex-col gap-1">
           <span class="text-muted-color">Build Scenario Definition</span>
+          <span class="font-semibold">
+            @if (scenarioDefinitionId(); as scenarioDefinitionId) {
+            <mxevolve-scenario-name
+              [projectId]="execution().projectId"
+              [scenarioDefinitionId]="scenarioDefinitionId"
+            />
+            } @else { - }
+          </span>
+        </div>
+        <p-divider layout="vertical" />
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">
+            Skip "Prepare Build Environment"
+          </span>
           <span class="font-semibold">{{
-            execution().input.buildEnvironment.scenarioDefinitionId || "-"
+            skipEnvironmentDeployment() ? "True" : "False"
           }}</span>
         </div>
       </div>
+    </div>
+
+    <p-divider layout="vertical" />
+
+    <div class="flex flex-col gap-3">
+      <span class="text-primary font-bold">User Stories</span>
+      @if (storyIds().length > 0) {
+      <div class="flex flex-col gap-2">
+        <span class="text-muted-color">User story ID</span>
+        <div class="flex flex-wrap items-center gap-2">
+          @for (storyId of storyIds(); track storyId) {
+          <a
+            [title]="'View ' + storyId + ' in Jira'"
+            [href]="storyId | jiraIssueUrlResolver : jiraBaseUrl()"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <p-chip [label]="storyId" />
+          </a>
+          }
+        </div>
+      </div>
+      } @else {
+      <span class="font-semibold">-</span>
+      }
     </div>
   </div>
 

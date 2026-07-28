@@ -16,3 +16,15 @@ Object.defineProperty(window, "matchMedia", {
   })),
   writable: true,
 });
+
+class ResizeObserverMock {
+  observe = jest.fn();
+  unobserve = jest.fn();
+  disconnect = jest.fn();
+}
+
+Object.defineProperty(window, "ResizeObserver", {
+  value: ResizeObserverMock,
+  writable: true,
+});
+global.ResizeObserver = ResizeObserverMock;

@@ -28,6 +28,7 @@ function getFirstBinaryImpact(): LiteBinaryImpact {
     },
     mxVersion: "mxVersion1",
     owner: "owner1",
+    objectId: "objectId1",
   };
 }
 
@@ -45,6 +46,7 @@ function getSecondBinaryImpact(): LiteBinaryImpact {
     },
     mxVersion: "mxVersion2",
     owner: "owner2",
+    objectId: "objectId2",
   };
 }
 
@@ -82,6 +84,9 @@ function getDefaultFetchBinaryImpactsRequest(): FetchBinaryImpactsQuery {
     currentVersion: undefined,
     referenceVersion: undefined,
     returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact: false,
+    testCaseExternalIds: undefined,
+    scenarioDefinitionId: undefined,
+    projectIds: [PROJECT_ID],
   };
 }
 
@@ -99,11 +104,15 @@ function getFetchBinaryImpactsRequest(): FetchBinaryImpactsQuery {
     ids: ["id1", "id2"],
     titlePhrase: "title1",
     ownerPhrase: "owner",
+    objectIdPhrase: "objectId",
     mxVersionPhrases: ["mxVersion1", "mxVersion2"],
     upgradeImpactExternalIssuePhrase: "upgradeImpactExternalIssuePhrase",
     currentVersion: "currentVersion",
     referenceVersion: "referenceVersion",
     returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact: false,
+    testCaseExternalIds: undefined,
+    scenarioDefinitionId: undefined,
+    projectIds: [PROJECT_ID],
   };
 }
 
@@ -149,7 +158,7 @@ describe("BinaryImpactTableStateService", () => {
     } as unknown as Store;
 
     binaryImpactDataService = {
-      fetchAll: jest.fn(() => of(getFirstFetchBinaryImpactResponse())),
+      getAll: jest.fn(() => of(getFirstFetchBinaryImpactResponse())),
     } as unknown as BinaryImpactService;
 
     TestBed.configureTestingModule({
@@ -213,6 +222,7 @@ describe("BinaryImpactTableStateService", () => {
         "upgradeImpactExternalIssuePhrase"
       );
       service["ownerPhrase"].set("owner");
+      service["objectIdPhrase"].set("objectId");
       service["pageIndex"].set(1);
       service["pageSize"].set(20);
       service["currentVersion"].set("currentVersion");
@@ -229,7 +239,7 @@ describe("BinaryImpactTableStateService", () => {
       expect(service.binaryImpactsPage()).toEqual(getFirstBinaryImpactPage());
 
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(of(getSecondFetchBinaryImpactResponse()));
       service["pageIndex"].set(1);
       tick();
@@ -241,7 +251,7 @@ describe("BinaryImpactTableStateService", () => {
       expect(service.binaryImpacts()).toEqual([getFirstBinaryImpact()]);
 
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(of(getSecondFetchBinaryImpactResponse()));
       service["pageIndex"].set(1);
       tick();
@@ -252,7 +262,7 @@ describe("BinaryImpactTableStateService", () => {
     it("should compute total elements from binary impacts page", fakeAsync(() => {
       expect(service.totalElements()).toEqual(2);
 
-      jest.spyOn(binaryImpactDataService, "fetchAll").mockReturnValueOnce(
+      jest.spyOn(binaryImpactDataService, "getAll").mockReturnValueOnce(
         of({
           binaryImpacts: {
             ...getSecondBinaryImpactPage(),
@@ -283,7 +293,7 @@ describe("BinaryImpactTableStateService", () => {
       expect(service.warningMessage()).toBeUndefined();
 
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(of(getFetchBinaryImpactResponseWithWarning()));
       service["pageIndex"].set(1);
       tick();
@@ -348,7 +358,7 @@ describe("BinaryImpactTableStateService", () => {
       tick();
       service.refreshBinaryImpacts(true);
       tick();
-      expect(binaryImpactDataService.fetchAll).not.toHaveBeenCalled();
+      expect(binaryImpactDataService.getAll).not.toHaveBeenCalled();
     }));
   });
 
@@ -468,14 +478,14 @@ describe("BinaryImpactTableStateService", () => {
         "upgradeImpactExternalIssuePhrase"
       );
       service["ownerPhrase"].set("owner");
+      service["objectIdPhrase"].set("objectId");
       service["currentVersion"].set("currentVersion");
       service["referenceVersion"].set("referenceVersion");
       service["returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact"].set(
         false
       );
       tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledWith(
-        "project1",
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledWith(
         getFetchBinaryImpactsRequest()
       );
     }));
@@ -483,14 +493,12 @@ describe("BinaryImpactTableStateService", () => {
     it("should fetch the binary impacts page again when page index changes", fakeAsync(() => {
       expect(service["pageIndex"]()).toEqual(0);
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(of(getSecondFetchBinaryImpactResponse()));
       service["pageIndex"].set(1);
       tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledTimes(2);
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledWith(
-        "project1",
-
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledTimes(2);
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledWith(
         getDefaultFetchBinaryImpactsRequest()
       );
     }));
@@ -499,13 +507,12 @@ describe("BinaryImpactTableStateService", () => {
       jest.clearAllMocks();
       expect(service["refresh$"].value).toBeFalsy();
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(of(getFirstFetchBinaryImpactResponse()));
       service.refreshBinaryImpacts(true);
       tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledTimes(1);
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledWith(
-        "project1",
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledTimes(1);
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledWith(
         getDefaultFetchBinaryImpactsRequest()
       );
       expect(service["refresh$"].value).toBeTruthy();
@@ -514,13 +521,12 @@ describe("BinaryImpactTableStateService", () => {
     it("should fetch the binary impacts page again when page size changes", fakeAsync(() => {
       expect(service["pageSize"]()).toEqual(10);
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(of(getSecondFetchBinaryImpactResponse()));
       service["pageSize"].set(20);
       tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledTimes(2);
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledWith(
-        "project1",
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledTimes(2);
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledWith(
         getDefaultFetchBinaryImpactsRequest()
       );
     }));
@@ -529,21 +535,21 @@ describe("BinaryImpactTableStateService", () => {
       expect(service["pageIndex"]()).toEqual(0);
       service["pageIndex"].set(0);
       tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledTimes(1);
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledTimes(1);
     }));
 
     it("should not fetch the binary impacts page again if the page size is set to the same value", fakeAsync(() => {
       expect(service["pageSize"]()).toEqual(10);
       service["pageSize"].set(10);
       tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledTimes(1);
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledTimes(1);
     }));
 
     it("should not fetch the binary impacts page again if the ids are set to the same value", fakeAsync(() => {
       expect(service["fetchBinaryImpactsRequest"]().ids).toBeUndefined();
       service["ids"].set(undefined);
       tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledTimes(1);
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledTimes(1);
     }));
 
     it("should set isLoading to true when fetching binary impacts", fakeAsync(() => {
@@ -556,7 +562,7 @@ describe("BinaryImpactTableStateService", () => {
     it("should set isLoading to false when fetching binary impacts failed", fakeAsync(() => {
       const isLoadingSpy = jest.spyOn(service["_isLoading"], "set");
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(throwError(() => "failure"));
       service["pageIndex"].set(1);
       tick();
@@ -565,7 +571,7 @@ describe("BinaryImpactTableStateService", () => {
 
     it("should default result to an empty page when there is a failure while fetching binary impacts", fakeAsync(() => {
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(throwError(() => "failure"));
       service["pageIndex"].set(1);
       tick();
@@ -575,7 +581,7 @@ describe("BinaryImpactTableStateService", () => {
 
     it("should set error message signal on failure to fetch binary impacts", fakeAsync(() => {
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(throwError(() => "failure"));
       service["pageIndex"].set(1);
       tick();
@@ -584,13 +590,13 @@ describe("BinaryImpactTableStateService", () => {
 
     it("should reinitialize the list of binary impacts on failure to fetch binary impacts", fakeAsync(() => {
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(of(getSecondFetchBinaryImpactResponse()));
       service["pageIndex"].set(1);
       tick();
       expect(service.binaryImpacts()).toEqual([getSecondBinaryImpact()]);
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(throwError(() => "failure"));
       service["pageIndex"].set(2);
       tick();
@@ -606,7 +612,7 @@ describe("BinaryImpactTableStateService", () => {
     it("should set the warning message from the fetch binary impacts response", fakeAsync(() => {
       const warningMessageSpy = jest.spyOn(service["_warningMessage"], "set");
       jest
-        .spyOn(binaryImpactDataService, "fetchAll")
+        .spyOn(binaryImpactDataService, "getAll")
         .mockReturnValueOnce(of(getFetchBinaryImpactResponseWithWarning()));
       service["pageIndex"].set(1);
       tick();
@@ -615,49 +621,107 @@ describe("BinaryImpactTableStateService", () => {
 
     it("should fetch binary impacts page again when the return impacts not linked to any defect signal changes", fakeAsync(() => {
       tick();
-      jest.spyOn(binaryImpactDataService, "fetchAll");
+      jest.spyOn(binaryImpactDataService, "getAll");
       expect(
         service["returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact"]()
       ).toBeFalsy();
       service.showImpactsWithoutDefects(true);
       tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledTimes(2);
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledWith(
-        PROJECT_ID,
-        {
-          ...getDefaultFetchBinaryImpactsRequest(),
-          returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact: true,
-        }
-      );
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledTimes(2);
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledWith({
+        ...getDefaultFetchBinaryImpactsRequest(),
+        returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact: true,
+      });
     }));
   });
 
-  describe("ngOnDestroy", () => {
-    it("should emit a value on the destroy$ subject", () => {
-      const destroySpy = jest.spyOn(service["destroy$"], "next");
-      service.ngOnDestroy();
-      expect(destroySpy).toHaveBeenCalledWith({});
-    });
-    it("should complete the destroy$ subject", () => {
-      const destroySpy = jest.spyOn(service["destroy$"], "complete");
-      service.ngOnDestroy();
-      expect(destroySpy).toHaveBeenCalled();
-    });
-
-    it("should not fetch binary impacts when the service is destroyed", fakeAsync(() => {
-      service.ngOnDestroy();
+  describe("setPreviouslyLinkedFilter", () => {
+    it("should include previously linked filter in the fetch request when set", fakeAsync(() => {
+      service.setPreviouslyLinkedFilter(["ext1"], "scenarioDef1");
       tick();
-      service["pageIndex"].set(2);
-      tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledTimes(1);
+      expect(binaryImpactDataService.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({
+          testCaseExternalIds: ["ext1"],
+          scenarioDefinitionId: "scenarioDef1",
+        })
+      );
     }));
 
-    it("should not fetch binary impacts when the service is destroyed and the fetch binary impacts request signal changes", fakeAsync(() => {
-      service.ngOnDestroy();
+    it("should exclude previously linked test cases if set to empty", fakeAsync(() => {
+      service.setPreviouslyLinkedFilter(["ext1"], "scenarioDef1");
       tick();
-      service["titlePhrase"].set("title2");
+      service.setPreviouslyLinkedFilter([], "scenarioDef1");
       tick();
-      expect(binaryImpactDataService.fetchAll).toHaveBeenCalledTimes(1);
+      const lastGetAllCall = (
+        binaryImpactDataService.getAll as jest.Mock
+      ).mock.calls.at(-1);
+      const request = lastGetAllCall[0] as FetchBinaryImpactsQuery;
+      expect(request.testCaseExternalIds).toBeUndefined();
+      expect(request.scenarioDefinitionId).toBe("scenarioDef1");
     }));
+
+    it("should exclude previously linked test cases if not set", fakeAsync(() => {
+      service.setPreviouslyLinkedFilter(["ext1"], "scenarioDef1");
+      tick();
+      service.setPreviouslyLinkedFilter(undefined, "scenarioDef1");
+      tick();
+      const lastGetAllCall = (
+        binaryImpactDataService.getAll as jest.Mock
+      ).mock.calls.at(-1);
+      const request = lastGetAllCall[0] as FetchBinaryImpactsQuery;
+      expect(request.testCaseExternalIds).toBeUndefined();
+      expect(request.scenarioDefinitionId).toBe("scenarioDef1");
+    }));
+
+    it("should exclude previously linked scenario if not set", fakeAsync(() => {
+      service.setPreviouslyLinkedFilter(["ext1"], "scenarioDef1");
+      tick();
+      service.setPreviouslyLinkedFilter(["ext1"]);
+      tick();
+      const lastGetAllCall = (
+        binaryImpactDataService.getAll as jest.Mock
+      ).mock.calls.at(-1);
+      const request = lastGetAllCall[0] as FetchBinaryImpactsQuery;
+      expect(request.testCaseExternalIds).toEqual(["ext1"]);
+      expect(request.scenarioDefinitionId).toBeUndefined();
+    }));
+
+    it("should reset to the first page when previously linked filters change", () => {
+      service.setBinaryImpactsTableQuery({
+        page: 1,
+      } as FetchBinaryImpactsTableQuery);
+      const signalSpy = jest.spyOn(service["pageIndex"], "set");
+      service.setPreviouslyLinkedFilter(["ext1"], "scenarioDef1");
+      expect(signalSpy).toHaveBeenCalledWith(0);
+    });
+
+    describe("ngOnDestroy", () => {
+      it("should emit a value on the destroy$ subject", () => {
+        const destroySpy = jest.spyOn(service["destroy$"], "next");
+        service.ngOnDestroy();
+        expect(destroySpy).toHaveBeenCalledWith({});
+      });
+      it("should complete the destroy$ subject", () => {
+        const destroySpy = jest.spyOn(service["destroy$"], "complete");
+        service.ngOnDestroy();
+        expect(destroySpy).toHaveBeenCalled();
+      });
+
+      it("should not fetch binary impacts when the service is destroyed", fakeAsync(() => {
+        service.ngOnDestroy();
+        tick();
+        service["pageIndex"].set(2);
+        tick();
+        expect(binaryImpactDataService.getAll).toHaveBeenCalledTimes(1);
+      }));
+
+      it("should not fetch binary impacts when the service is destroyed and the fetch binary impacts request signal changes", fakeAsync(() => {
+        service.ngOnDestroy();
+        tick();
+        service["titlePhrase"].set("title2");
+        tick();
+        expect(binaryImpactDataService.getAll).toHaveBeenCalledTimes(1);
+      }));
+    });
   });
 });

@@ -17,11 +17,21 @@
     ></mxevolve-create-incident-button>
   </div>
 </div>
+<div class="mb-2 flex items-center gap-2">
+  <mxevolve-previously-linked-detection-toggle
+    [analysisObjectType]="AnalysisObjectType.INCIDENT"
+    [showPreviouslyLinked]="showPreviouslyLinkedIncidents()"
+    (showPreviouslyLinkedChange)="showPreviouslyLinkedIncidents.set($event)"
+  />
+</div>
 <div class="mb-6">
   <mxevolve-incidents-selection-table
     [initiallySelectedIncidents]="initiallySelectedIncidents"
     [selectedIncidentIdsLoading]="selectedIncidentIdsLoading"
     [refresh]="refresh$"
+    [previouslyLinkedFilter]="
+      showPreviouslyLinkedIncidents() ? previouslyLinkedFilter : undefined
+    "
     (selectedIncidentsChange)="onIncidentsSelectionChange($event)"
   >
   </mxevolve-incidents-selection-table>

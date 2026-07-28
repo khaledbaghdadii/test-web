@@ -2,20 +2,17 @@ import { render, screen, waitFor } from "@testing-library/angular";
 import { MockComponent, ngMocks } from "ng-mocks";
 import { BuildAndTestTestSectionComponent } from "./build-and-test-test-section.component";
 import { BuildAndTestProcessStateUpdaterService } from "@mxevolve/domains/business-process/data-access";
-import { ScenarioRunsComponent } from "@mxevolve/domains/test/widget";
 import {
-  ConfigAuditButtonComponent,
-  EnvironmentStatusPanelComponent,
-} from "@mxevolve/domains/environment/widget";
-import { SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE } from "../scenario-execution-group-permission-warning-message";
-import { BuildAndTestRunTpkComponent } from "./build-and-test-run-tpk.component";
+  RunScenarioComponent,
+  ScenarioRunsComponent,
+  SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE,
+} from "@mxevolve/domains/test/widget";
+import { Development } from "@mxevolve/domains/scm/data-access";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 
 const MOCK_IMPORTS = [
   MockComponent(ScenarioRunsComponent),
-  MockComponent(ConfigAuditButtonComponent),
-  MockComponent(EnvironmentStatusPanelComponent),
-  MockComponent(BuildAndTestRunTpkComponent),
+  MockComponent(RunScenarioComponent),
 ];
 
 const mockStateUpdater = {
@@ -26,12 +23,23 @@ const mockToastMessageService = {
   showError: jest.fn(),
 };
 
+const DEVELOPMENT: Development = {
+  id: "development-1",
+  name: "feature/temp-branch",
+  source: "main",
+  projectId: "proj-001",
+  repository: { id: "repo-1", url: "https://git.example/repo.git" },
+  latestCommitId: "head-commit",
+  createdOn: "2026-01-01T00:00:00Z",
+  parentCommitId: "parent-commit",
+  deleted: false,
+};
+
 async function renderComponent(
   inputs: Partial<{
     projectId: string;
     processId: string;
-    environmentId: string;
-    branchName: string;
+    development: Development;
     executionGroupId: string;
     machineGroupId: string;
   }> = {}
@@ -57,11 +65,11 @@ describe("BuildAndTestTestSectionComponent", () => {
     jest.clearAllMocks();
   });
 
-  it("renders the Test panel header and the TPK Results heading", async () => {
+  it("renders the Test panel header and the Test Results heading", async () => {
     await renderComponent();
 
     await waitFor(() => expect(screen.getByText("Test")).toBeTruthy());
-    expect(screen.getByText("TPK Results")).toBeTruthy();
+    expect(screen.getByText("Test Results")).toBeTruthy();
   });
 
   it("wires the scenario-runs widget with the build-and-test context and warning map", async () => {
@@ -78,6 +86,19 @@ describe("BuildAndTestTestSectionComponent", () => {
     expect(scenarioRuns.componentInstance.warningMessageMap).toEqual(
       SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE
     );
+    expect(scenarioRuns.componentInstance.hideEnvironmentPanelWhenCleaned).toBe(
+      true
+    );
+    expect(scenarioRuns.componentInstance.enableKeepServices).toBe(true);
+    expect(scenarioRuns.componentInstance.showOpenConfigEditorAction).toBe(
+      true
+    );
+    expect(scenarioRuns.componentInstance.showHistory).toBe(false);
+    expect(scenarioRuns.componentInstance.showHistorySummary).toBe(true);
+    expect(scenarioRuns.componentInstance.sortPanelsByStartDateDesc).toBe(true);
+    expect(
+      scenarioRuns.componentInstance.showEnvironmentDetailsOnlyWhenExpanded
+    ).toBe(true);
   });
 
   it("reloads the execution when a scenario changes", async () => {
@@ -97,63 +118,55 @@ describe("BuildAndTestTestSectionComponent", () => {
     );
   });
 
-  describe("run TPK row", () => {
-    it("renders the run TPK row when branch name and execution group are available", async () => {
+  describe("run scenario row", () => {
+    it("renders the run scenario row when development and execution group are available", async () => {
       await renderComponent({
-        branchName: "feature/temp-branch",
+        development: DEVELOPMENT,
         executionGroupId: "scenario-group-001",
       });
 
       await waitFor(() =>
-        expect(
-          document.querySelector("mxevolve-build-and-test-run-tpk")
-        ).toBeTruthy()
+        expect(document.querySelector("mxevolve-run-scenario")).toBeTruthy()
       );
     });
 
-    it("passes legacy run scenario inputs to the run TPK wrapper", async () => {
+    it("passes legacy run scenario inputs to the run scenario wrapper", async () => {
       const { fixture } = await renderComponent({
-        branchName: "feature/temp-branch",
+        development: DEVELOPMENT,
         executionGroupId: "scenario-group-001",
         machineGroupId: "infra-group-001",
       });
 
       await waitFor(() =>
-        expect(
-          document.querySelector("mxevolve-build-and-test-run-tpk")
-        ).toBeTruthy()
+        expect(document.querySelector("mxevolve-run-scenario")).toBeTruthy()
       );
 
-      const runTpk = ngMocks.find(fixture, BuildAndTestRunTpkComponent);
-      expect(ngMocks.input(runTpk, "projectId")).toBe("proj-001");
-      expect(ngMocks.input(runTpk, "branchName")).toBe("feature/temp-branch");
-      expect(ngMocks.input(runTpk, "executionGroupId")).toBe("scenario-group-001");
-      expect(ngMocks.input(runTpk, "machineGroupId")).toBe("infra-group-001");
+      const runScenario = ngMocks.find(fixture, RunScenarioComponent);
+      expect(ngMocks.input(runScenario, "projectId")).toBe("proj-001");
+      expect(ngMocks.input(runScenario, "branchName")).toBe(DEVELOPMENT.name);
+      expect(ngMocks.input(runScenario, "executionGroupId")).toBe(
+        "scenario-group-001"
+      );
+      expect(ngMocks.input(runScenario, "machineGroupId")).toBe(
+        "infra-group-001"
+      );
+      expect(ngMocks.input(runScenario, "warningMessageMap")).toEqual(
+        SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE
+      );
     });
 
-    it("hides the run TPK row until both branch name and execution group are available", async () => {
-      await renderComponent({ branchName: "feature/temp-branch" });
-
-      await waitFor(() => expect(screen.getByText("TPK Results")).toBeTruthy());
-      expect(
-        document.querySelector("mxevolve-build-and-test-run-tpk")
-      ).toBeNull();
-    });
-
-    it("reloads the execution when a TPK is pushed", async () => {
+    it("reloads the execution when a scenario is pushed", async () => {
       const { fixture } = await renderComponent({
-        branchName: "feature/temp-branch",
+        development: DEVELOPMENT,
         executionGroupId: "scenario-group-001",
       });
 
       await waitFor(() =>
-        expect(
-          document.querySelector("mxevolve-build-and-test-run-tpk")
-        ).toBeTruthy()
+        expect(document.querySelector("mxevolve-run-scenario")).toBeTruthy()
       );
 
       ngMocks
-        .find(fixture, BuildAndTestRunTpkComponent)
+        .find(fixture, RunScenarioComponent)
         .componentInstance.scenarioPushed.emit();
 
       expect(mockStateUpdater.reloadProcessDetails).toHaveBeenCalledWith(
@@ -162,49 +175,88 @@ describe("BuildAndTestTestSectionComponent", () => {
       );
     });
 
-    it("shows the error from the run TPK row", async () => {
+    it("shows the error from the run scenario row as a toast", async () => {
       const { fixture } = await renderComponent({
-        branchName: "feature/temp-branch",
+        development: DEVELOPMENT,
         executionGroupId: "scenario-group-001",
       });
 
       await waitFor(() =>
-        expect(
-          document.querySelector("mxevolve-build-and-test-run-tpk")
-        ).toBeTruthy()
+        expect(document.querySelector("mxevolve-run-scenario")).toBeTruthy()
       );
 
       ngMocks
-        .find(fixture, BuildAndTestRunTpkComponent)
+        .find(fixture, RunScenarioComponent)
         .componentInstance.errorOccurred.emit("run failed");
 
       expect(mockToastMessageService.showError).toHaveBeenCalledWith(
         "run failed"
       );
     });
-  });
 
-  describe("environment bar", () => {
-    it("does not render the environment status panel when no environment id is provided", async () => {
-      await renderComponent();
-
-      await waitFor(() => expect(screen.getByText("Test")).toBeTruthy());
-      expect(
-        document.querySelector("mxevolve-environment-status-panel")
-      ).toBeNull();
-    });
-
-    it("renders the environment status panel with the Config Audit action when an environment id is provided", async () => {
-      await renderComponent({ environmentId: "env-001" });
+    it("given development related info is not resolved yet, then the run scenario capability should not be shown to the user", async () => {
+      await renderComponent({ executionGroupId: "scenario-group-001" });
 
       await waitFor(() =>
-        expect(
-          document.querySelector("mxevolve-environment-status-panel")
-        ).toBeTruthy()
+        expect(screen.getByText("Test Results")).toBeTruthy()
       );
-      expect(
-        document.querySelector("mxevolve-config-audit-button")
-      ).toBeTruthy();
+      expect(document.querySelector("mxevolve-run-scenario")).toBeNull();
+    });
+
+    it("when the scenario execution group is not yet available, then the run scenario capability should not be shown to the user", async () => {
+      await renderComponent({ development: DEVELOPMENT });
+
+      await waitFor(() =>
+        expect(screen.getByText("Test Results")).toBeTruthy()
+      );
+      expect(document.querySelector("mxevolve-run-scenario")).toBeNull();
+    });
+
+    it("when development related info and execution group are both available, then the run scenario capability is shown to the user", async () => {
+      const { fixture } = await renderComponent({
+        development: DEVELOPMENT,
+        executionGroupId: "scenario-group-001",
+        machineGroupId: "infra-group-001",
+      });
+
+      await waitFor(() =>
+        expect(document.querySelector("mxevolve-run-scenario")).toBeTruthy()
+      );
+
+      const runScenario = ngMocks.find(fixture, RunScenarioComponent);
+      expect(ngMocks.input(runScenario, "projectId")).toBe("proj-001");
+      expect(ngMocks.input(runScenario, "branchName")).toBe(DEVELOPMENT.name);
+      expect(ngMocks.input(runScenario, "executionGroupId")).toBe(
+        "scenario-group-001"
+      );
+      expect(ngMocks.input(runScenario, "machineGroupId")).toBe(
+        "infra-group-001"
+      );
+      expect(ngMocks.input(runScenario, "configurationAudit")).toStrictEqual({
+        enabled: true,
+        baselineCommit: DEVELOPMENT.parentCommitId,
+      });
+    });
+
+    it("given the rest of the pre-requisite info to run a scenario are present, when the parent commit id gets resolved to an empty value for some reason, then the run scenario capability is still shown to the user but with linting disabled", async () => {
+      const developmentWithoutCommit = {
+        ...DEVELOPMENT,
+        parentCommitId: undefined,
+      } as unknown as Development;
+
+      const { fixture } = await renderComponent({
+        development: developmentWithoutCommit,
+        executionGroupId: "scenario-group-001",
+      });
+
+      await waitFor(() => {
+        expect(document.querySelector("mxevolve-run-scenario")).toBeTruthy();
+      });
+
+      const runScenario = ngMocks.find(fixture, RunScenarioComponent);
+      expect(ngMocks.input(runScenario, "configurationAudit")).toStrictEqual({
+        enabled: false,
+      });
     });
   });
 });

@@ -1,5 +1,8 @@
 export { UserService } from "./lib/user/user.service";
-export type { UserApiResponse } from "./lib/user/user-api-model";
+export type {
+  UserApiResponse,
+  UserPageResponse,
+} from "./lib/user/user-api-model";
 export {
   GroupService,
   type Group,

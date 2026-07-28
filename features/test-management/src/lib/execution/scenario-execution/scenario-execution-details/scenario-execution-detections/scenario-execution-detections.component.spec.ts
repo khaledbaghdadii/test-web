@@ -25,6 +25,7 @@ import { AnalysisObjectUnlinkModalComponent } from "../../../analysis-object-lin
 import { MockComponent } from "ng-mocks";
 import { By } from "@angular/platform-browser";
 import { AnalysisObjectType } from "@mxflow/features/analysis-objects";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 import { LinkedConfigurationRegressionDetailsTableComponent } from "./linked-configuration-regression-details-table/linked-configuration-regression-details-table.component";
 import { LinkedConfigurationImpactDetailsTableComponent } from "./linked-configuration-impact-details-table/linked-configuration-impact-details-table.component";
 import { LinkedBinaryRegressionDetailsTableComponent } from "./linked-binary-regression-details-table/linked-binary-regression-details-table.component";
@@ -41,6 +42,7 @@ describe("ScenarioExecutionDetectionsComponent", () => {
   let configurationRegressionService: jest.Mocked<ConfigurationRegressionService>;
   let binaryRegressionService: jest.Mocked<BinaryRegressionDataService>;
   let binaryImpactService: jest.Mocked<BinaryImpactService>;
+  let analyticsTrackerService: jest.Mocked<TestManagementAnalyticsTrackerService>;
 
   const analysisObjectLinks: WritableSignal<AnalysisObjectLink[]> = signal([]);
 
@@ -63,6 +65,7 @@ describe("ScenarioExecutionDetectionsComponent", () => {
     owner: "owner",
     mxVersion: "mxVersion",
     projectId: "projectId",
+    objectId: "objectId",
     upgradeImpact: {
       id: "upgradeImpactId",
       externalIssue: {
@@ -77,6 +80,7 @@ describe("ScenarioExecutionDetectionsComponent", () => {
     owner: "owner",
     mxVersion: "mxVersion",
     projectId: "projectId",
+    objectId: "objectId",
     upgradeImpact: {
       id: "upgradeImpactId",
       externalIssue: {
@@ -188,6 +192,10 @@ describe("ScenarioExecutionDetectionsComponent", () => {
       fetchByIds: jest.fn(() => of([])),
     } as unknown as jest.Mocked<BinaryImpactService>;
 
+    analyticsTrackerService = {
+      trackUnlinkAnalysisObject: jest.fn(),
+    } as unknown as jest.Mocked<TestManagementAnalyticsTrackerService>;
+
     analysisObjectLinks.set([]);
 
     stateService = {
@@ -236,6 +244,10 @@ describe("ScenarioExecutionDetectionsComponent", () => {
         {
           provide: BinaryImpactService,
           useValue: binaryImpactService,
+        },
+        {
+          provide: TestManagementAnalyticsTrackerService,
+          useValue: analyticsTrackerService,
         },
       ],
       imports: [
@@ -1099,6 +1111,13 @@ describe("ScenarioExecutionDetectionsComponent", () => {
       expect(unlinkModal.componentInstance.analysisObjectId).toEqual(
         analysisObjectId
       );
+    });
+
+    it("should track the unlink button click with the correct analysis object type", () => {
+      component.openUnlinkModal(analysisObjectId, analysisObjectType);
+      expect(
+        analyticsTrackerService.trackUnlinkAnalysisObject
+      ).toHaveBeenCalledWith(analysisObjectType);
     });
   });
 

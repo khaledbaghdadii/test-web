@@ -1,0 +1,18 @@
+<p-panel
+  class="mt-4"
+  [showHeader]="false"
+  [pt]="{
+    content: '!p-0'
+  }"
+>
+  <p class="text-xl font-bold m-3">Environment Requests</p>
+  <p-divider class="my-2"></p-divider>
+
+  <div class="m-4">
+    <mxevolve-environment-actions-table
+      [projectId]="projectId()"
+      [environmentId]="environmentId()"
+      [requests]="requests()"
+    />
+  </div>
+</p-panel>

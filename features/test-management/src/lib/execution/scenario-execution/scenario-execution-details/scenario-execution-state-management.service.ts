@@ -228,18 +228,18 @@ export class ScenarioExecutionStateManagementService {
     });
   }
 
-  setKeptExecution(keptExecution: boolean) {
+  setKeepExecution(keepExecution: boolean) {
     this._fetchedScenarioExecution.update((scenarioExecution) => {
       return {
         ...scenarioExecution,
-        keptExecution: keptExecution,
+        keepExecution: keepExecution,
       };
     });
   }
 
-  setKeptExecutionForTestUnitScenarioExecution(
+  setKeepExecutionForTestUnitScenarioExecution(
     scenarioExecutionId: string,
-    keptExecution: boolean
+    keepExecution: boolean
   ) {
     const testUnit = this._testUnit();
     if (!testUnit) return;
@@ -247,7 +247,7 @@ export class ScenarioExecutionStateManagementService {
     const updatedScenarioExecutions = testUnit.scenarioExecutions.map(
       (execution) =>
         execution.id === scenarioExecutionId
-          ? { ...execution, keptExecution }
+          ? { ...execution, keepExecution }
           : execution
     );
 

@@ -49,6 +49,7 @@ export class BinaryImpactTableStateService implements OnDestroy {
   private readonly _projectId = signal<string>("");
   readonly projectId = computed(() => this._projectId());
   private readonly titlePhrase = signal<string | undefined>(undefined);
+  private readonly objectIdPhrase = signal<string | undefined>(undefined);
   private readonly ownerPhrase = signal<string | undefined>(undefined);
   private readonly upgradeImpactExternalIssuePhrase = signal<
     string | undefined
@@ -60,12 +61,18 @@ export class BinaryImpactTableStateService implements OnDestroy {
   private readonly _warningMessage = signal<string | undefined>(undefined);
   private readonly returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact =
     signal<boolean>(false);
+  private readonly testCaseExternalIds = signal<string[] | undefined>(
+    undefined
+  );
+  private readonly scenarioDefinitionId = signal<string | undefined>(undefined);
   private readonly fetchBinaryImpactsRequest =
     computed<FetchBinaryImpactsQuery>(() => ({
       page: this.pageIndex(),
       size: this.pageSize(),
+      projectIds: [this.projectId()],
       ids: this.ids(),
       titlePhrase: this.titlePhrase(),
+      objectIdPhrase: this.objectIdPhrase(),
       ownerPhrase: this.ownerPhrase(),
       upgradeImpactExternalIssuePhrase: this.upgradeImpactExternalIssuePhrase(),
       mxVersionPhrases: this.mxVersionPhrases(),
@@ -73,6 +80,8 @@ export class BinaryImpactTableStateService implements OnDestroy {
       referenceVersion: this.referenceVersion(),
       returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact:
         this.returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact(),
+      testCaseExternalIds: this.testCaseExternalIds(),
+      scenarioDefinitionId: this.scenarioDefinitionId(),
     }));
 
   fetchBinaryImpactResponse: Signal<FetchBinaryImpactsResponse>;
@@ -100,12 +109,7 @@ export class BinaryImpactTableStateService implements OnDestroy {
       this.fetchBinaryImpactsRequest
     ).pipe(takeUntil(this.destroy$));
 
-    const projectId$ = toObservable(this._projectId).pipe(
-      takeUntil(this.destroy$)
-    );
-
     const fetchBinaryImpactsResponse$ = combineLatest([
-      projectId$,
       fetchBinaryImpactsRequest$,
       this.refresh$,
     ]).pipe(
@@ -113,8 +117,8 @@ export class BinaryImpactTableStateService implements OnDestroy {
         this._isLoading.set(true);
         this._warningMessage.set(undefined);
       }),
-      switchMap(([projectId, request]) => {
-        return this.binaryImpactService.fetchAll(projectId, request).pipe(
+      switchMap(([request]) => {
+        return this.binaryImpactService.getAll(request).pipe(
           catchError((error) => {
             this._errorMessage.set(error);
             return of(this.emptyResult);
@@ -147,6 +151,9 @@ export class BinaryImpactTableStateService implements OnDestroy {
       this.filterUndefinedAndEmptyStringArray(query.mxVersionPhrases)
     );
     this.titlePhrase.set(this.filterUndefinedAndEmptyString(query.titlePhrase));
+    this.objectIdPhrase.set(
+      this.filterUndefinedAndEmptyString(query.objectIdPhrase)
+    );
     this.ownerPhrase.set(this.filterUndefinedAndEmptyString(query.ownerPhrase));
     this.upgradeImpactExternalIssuePhrase.set(
       this.filterUndefinedAndEmptyString(query.upgradeImpactExternalIssuePhrase)
@@ -182,5 +189,16 @@ export class BinaryImpactTableStateService implements OnDestroy {
 
   showImpactsWithoutDefects(value: boolean) {
     this.returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact.set(value);
+  }
+
+  setPreviouslyLinkedFilter(
+    testCaseExternalIds?: string[],
+    scenarioDefinitionId?: string
+  ) {
+    this.testCaseExternalIds.set(
+      testCaseExternalIds?.length ? testCaseExternalIds : undefined
+    );
+    this.scenarioDefinitionId.set(scenarioDefinitionId || undefined);
+    this.pageIndex.set(0);
   }
 }

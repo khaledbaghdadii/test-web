@@ -28,7 +28,6 @@ import {
   ScenarioRunNameDisplayComponent,
   ScenarioRunStatusDisplayComponent,
   ScenarioRunTableComponent,
-  type ScenarioRunTableViewModel,
 } from "@mxevolve/domains/test/ui";
 import { EnvironmentStatusDisplayComponent } from "@mxevolve/domains/environment/ui";
 import { EnvironmentStatusPanelComponent } from "@mxevolve/domains/environment/widget";
@@ -69,6 +68,7 @@ import {
 import { AbortScenarioRunButtonComponent } from "../abort-scenario-run-button/abort-scenario-run-button.component";
 import { EnvironmentLinkButtonComponent } from "../environment-link-button/environment-link-button.component";
 import { RerunScenarioButtonComponent } from "../rerun-scenario-button/rerun-scenario-button.component";
+import type { RerunMode } from "../rerun-dialog/rerun-dialog.component";
 import { ScenarioRunAssigneeDropdownComponent } from "../assignee-dropdown/scenario-run-assignee-dropdown.component";
 import type { SummaryFilterEvent } from "../scenario-runs-summary/summary-filter-event";
 import { BulkRerunScenariosComponent } from "../bulk-rerun-scenarios/bulk-rerun-scenarios.component";
@@ -123,19 +123,26 @@ const CLOSED_INCIDENT_STATUSES = new Set(["CLOSED", "DUPLICATE", "CANCEL"]);
     StreamsService,
   ],
   templateUrl: "./scenario-runs.component.html",
-  styles: `
-    ::ng-deep .duration-popover-no-arrow::before,
-    ::ng-deep .duration-popover-no-arrow::after {
-      display: none !important;
-    }
-  `,
 })
 export class ScenarioRunsComponent implements OnInit {
   readonly projectId = input.required<string>();
   readonly contextId = input<string>();
   readonly subContextId = input<string>();
   readonly scenarioRunIds = input<string[]>();
+  /**
+   * Business process execution name used to filter the global operations
+   * detections/incidents dashboards when redirecting from the test unit
+   * findings. Defaults to "" so consumers without a process execution name
+   * do not add the filter.
+   */
+  readonly bpExecutionName = input<string>("");
   readonly showEnvironmentDetails = input<boolean>(true);
+  /**
+   * When true, the environment status panel for a run is only rendered once
+   * that run's row has been expanded via the collapse/expand chevron.
+   * Defaults to false so existing consumers keep showing it unconditionally.
+   */
+  readonly showEnvironmentDetailsOnlyWhenExpanded = input<boolean>(false);
   readonly showEnvironmentLink = input<boolean>(true);
   readonly showHistory = input<boolean>(false);
   readonly showHistorySummary = input<boolean>(true);
@@ -145,7 +152,26 @@ export class ScenarioRunsComponent implements OnInit {
   readonly detailsExpandedByDefault = input<boolean>(false);
   readonly showActionButtons = input<boolean>(true);
   readonly warningMessageMap = input<Record<string, string>>();
-  readonly filter = input<SummaryFilterEvent>();
+  readonly filter = input<SummaryFilterEvent[]>([]);
+  readonly allowOfficialRerun = input(false);
+  readonly initialFinalProductId = input<string>();
+  readonly branch = input<string>();
+  readonly enableKeepServices = input(false);
+  readonly defaultRerunMode = input<RerunMode>("unofficial");
+  readonly showOpenConfigEditorAction = input(false);
+  /**
+   * When true, the environment status panel for a given run is removed once
+   * that environment reports it has been cleaned. Defaults to false so most
+   * consumers keep showing the panel regardless of status.
+   */
+  readonly hideEnvironmentPanelWhenCleaned = input(false);
+  readonly hideIncidents = input(false);
+  /**
+   * When true, panels are sorted by head.startDate descending (latest run
+   * first). Defaults to false to preserve the natural API/testUnits order
+   * for existing consumers.
+   */
+  readonly sortPanelsByStartDateDesc = input<boolean>(false);
 
   private readonly scenarioRunsPanelFacade = inject(
     ScenarioRunsPanelFacadeService
@@ -194,6 +220,23 @@ export class ScenarioRunsComponent implements OnInit {
   private readonly expandedPanelIds = signal(new Set<string>());
   private readonly historyVisiblePanelIds = signal(new Set<string>());
   readonly searchTerm = signal("");
+  private readonly cleanedEnvironmentIds = signal(new Set<string>());
+
+  onEnvironmentCleaned(environmentId: string): void {
+    if (!environmentId || this.cleanedEnvironmentIds().has(environmentId)) {
+      return;
+    }
+    const updated = new Set(this.cleanedEnvironmentIds());
+    updated.add(environmentId);
+    this.cleanedEnvironmentIds.set(updated);
+  }
+
+  isEnvironmentPanelHidden(environmentId: string): boolean {
+    return (
+      this.hideEnvironmentPanelWhenCleaned() &&
+      this.cleanedEnvironmentIds().has(environmentId)
+    );
+  }
 
   readonly assigneeFilterOptions: {
     label: string;
@@ -213,39 +256,41 @@ export class ScenarioRunsComponent implements OnInit {
 
   readonly filteredPanels = computed(() => {
     let result = this.panels();
-    const activeFilter = this.filter();
-    if (activeFilter) {
-      result = result.filter((panel) => {
-        switch (activeFilter.type) {
-          case "analysisStatus":
-            return panel.head.analysisStatus === activeFilter.value;
-          case "detection":
-            switch (activeFilter.value) {
-              case "wasteReasons":
-                return panel.filterData.hasWasteReasons;
-              case "regressions":
-                return panel.filterData.hasRegressions;
-              case "impacts":
-                return panel.filterData.hasImpacts;
-              default:
-                return false;
-            }
-          case "incident":
-            if (activeFilter.value === "total") {
-              return panel.filterData.hasIncidents;
-            }
-            if (activeFilter.value === "closed") {
-              return panel.filterData.incidentStatuses.some((s) =>
-                CLOSED_INCIDENT_STATUSES.has(s.toUpperCase())
+    const activeFilters = this.filter();
+    if (activeFilters.length > 0) {
+      result = result.filter((panel) =>
+        activeFilters.some((activeFilter) => {
+          switch (activeFilter.type) {
+            case "analysisStatus":
+              return panel.head.analysisStatus === activeFilter.value;
+            case "detection":
+              switch (activeFilter.value) {
+                case "wasteReasons":
+                  return panel.filterData.hasWasteReasons;
+                case "regressions":
+                  return panel.filterData.hasRegressions;
+                case "impacts":
+                  return panel.filterData.hasImpacts;
+                default:
+                  return false;
+              }
+            case "incident":
+              if (activeFilter.value === "total") {
+                return panel.filterData.hasIncidents;
+              }
+              if (activeFilter.value === "closed") {
+                return panel.filterData.incidentStatuses.some((s) =>
+                  CLOSED_INCIDENT_STATUSES.has(s.toUpperCase())
+                );
+              }
+              return panel.filterData.incidentStatuses.some(
+                (s) => s === activeFilter.value
               );
-            }
-            return panel.filterData.incidentStatuses.some(
-              (s) => s === activeFilter.value
-            );
-          default:
-            return true;
-        }
-      });
+            default:
+              return true;
+          }
+        })
+      );
     }
     const term = this.searchTerm().toLowerCase();
     if (term) {
@@ -277,6 +322,13 @@ export class ScenarioRunsComponent implements OnInit {
           userId,
           streamBpcIds
         )
+      );
+    }
+    if (this.sortPanelsByStartDateDesc()) {
+      result = [...result].sort(
+        (a, b) =>
+          new Date(b.head.startDate).getTime() -
+          new Date(a.head.startDate).getTime()
       );
     }
     return result;
@@ -337,12 +389,42 @@ export class ScenarioRunsComponent implements OnInit {
     return `/app/${this.projectId()}/test/execution/details/${run.id}`;
   }
 
-  getIncidentsLink(run: HeadScenarioRunViewModel): string {
-    return `/app/${this.projectId()}/test/execution/details/${run.id}`;
+  getDetectionsDashboardLink(): string {
+    return "/global-operations/detections";
   }
 
-  getEnvironmentLink(run: HeadScenarioRunViewModel): string {
-    return `/app/${this.projectId()}/environments/${run.environmentId}`;
+  getDetectionsDashboardQueryParams(
+    run: HeadScenarioRunViewModel,
+    category: "Impact" | "Regression"
+  ): Record<string, unknown> {
+    return {
+      projectIds: [this.projectId()],
+      ...(run.name ? { scenarioDefinitionNamePhrases: [run.name] } : {}),
+      ...(this.bpExecutionName()
+        ? { businessProcessExecutionNamePhrase: this.bpExecutionName() }
+        : {}),
+      category,
+    };
+  }
+
+  getIncidentsDashboardLink(): string {
+    return "/global-operations/incidents";
+  }
+
+  getIncidentsDashboardQueryParams(
+    run: HeadScenarioRunViewModel
+  ): Record<string, unknown> {
+    return {
+      projectIds: [this.projectId()],
+      ...(run.name ? { scenarioDefinitionNamePhrases: [run.name] } : {}),
+      ...(this.bpExecutionName()
+        ? { businessProcessExecutionNamePhrase: this.bpExecutionName() }
+        : {}),
+    };
+  }
+
+  getHistoryLink(run: HeadScenarioRunViewModel): string {
+    return `/app/${this.projectId()}/test/execution/details/${run.id}`;
   }
 
   getDurationBreakdown(
@@ -365,27 +447,34 @@ export class ScenarioRunsComponent implements OnInit {
     popover.hide();
   }
 
-  passedRunCount(runs: readonly ScenarioRunTableViewModel[]): number {
-    return runs.filter((r) =>
-      ScenarioRunsComponent.PASSED_STATUSES.has(r.status)
+  private historyRunStatuses(
+    panel: ScenarioRunsPanelViewModel
+  ): readonly ScenarioRunStatus[] {
+    return [panel.head.status, ...panel.previousRuns.map((run) => run.status)];
+  }
+
+  passedRunCount(panel: ScenarioRunsPanelViewModel): number {
+    return this.historyRunStatuses(panel).filter((status) =>
+      ScenarioRunsComponent.PASSED_STATUSES.has(status)
     ).length;
   }
 
-  failedRunCount(runs: readonly ScenarioRunTableViewModel[]): number {
-    return runs.filter((r) =>
-      ScenarioRunsComponent.FAILED_STATUSES.has(r.status)
+  failedRunCount(panel: ScenarioRunsPanelViewModel): number {
+    return this.historyRunStatuses(panel).filter((status) =>
+      ScenarioRunsComponent.FAILED_STATUSES.has(status)
     ).length;
   }
 
-  underwayRunCount(runs: readonly ScenarioRunTableViewModel[]): number {
-    return runs.filter(
-      (r) =>
-        !ScenarioRunsComponent.PASSED_STATUSES.has(r.status) &&
-        !ScenarioRunsComponent.FAILED_STATUSES.has(r.status)
+  underwayRunCount(panel: ScenarioRunsPanelViewModel): number {
+    return this.historyRunStatuses(panel).filter(
+      (status) =>
+        !ScenarioRunsComponent.PASSED_STATUSES.has(status) &&
+        !ScenarioRunsComponent.FAILED_STATUSES.has(status)
     ).length;
   }
 
   readonly scenarioChanged = output<void>();
+  readonly scenarioRunsFetched = output<string[]>();
 
   ngOnInit(): void {
     this.loadPanels();
@@ -427,6 +516,7 @@ export class ScenarioRunsComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (panels) => {
+          this.scenarioRunsFetched.emit(panels.map((panel) => panel.head.id));
           this.panels.set(panels);
           this.initPanelStates(panels);
           this.loading.set(false);

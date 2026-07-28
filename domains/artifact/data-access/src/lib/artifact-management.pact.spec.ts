@@ -5,14 +5,12 @@ import { provideHttpClient } from "@angular/common/http";
 import { GATEWAY_CONFIG } from "@mxevolve/shared/core/config";
 import { catchError, lastValueFrom, of } from "rxjs";
 import { FactoryProductApiService } from "./factory-product-selector/factory-product-api.service";
-import { FinalProductService } from "./final-product/final-product.service";
 
 const PROJECT_ID = "projectId";
 const FACTORY_PRODUCT_ID = "factoryProductId";
 const SOFTWARE_PRODUCT_VERSION = "3.1.65";
 const SOFTWARE_PRODUCT_BUILD_ID = "buildId";
 const SEARCH_KEY = "searchKey";
-const FINAL_PRODUCT_ID = "finalProductId";
 
 describe("artifact management contract tests", () => {
   const provider = new Pact({
@@ -23,7 +21,6 @@ describe("artifact management contract tests", () => {
   const projectId = PROJECT_ID;
 
   let factoryProductApiService: FactoryProductApiService;
-  let finalProductService: FinalProductService;
 
   beforeAll(async () => {
     await provider.setup();
@@ -40,12 +37,10 @@ describe("artifact management contract tests", () => {
           },
         },
         FactoryProductApiService,
-        FinalProductService,
       ],
     });
 
     factoryProductApiService = TestBed.inject(FactoryProductApiService);
-    finalProductService = TestBed.inject(FinalProductService);
   });
 
   afterEach(async () => {
@@ -272,74 +267,6 @@ describe("artifact management contract tests", () => {
 
     expect(result).toBeTruthy();
   });
-
-  test("validates contract for fetching a final product by id", async () => {
-    await provider.addInteraction({
-      state: "final product exists",
-      uponReceiving: "a request to fetch a final product by id",
-      withRequest: {
-        method: "GET",
-        path: `/artifact-management/projects/${projectId}/final-products/${FINAL_PRODUCT_ID}`,
-      },
-      willRespondWith: {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: finalProductMatcher(),
-      },
-    });
-
-    const response = await lastValueFrom(
-      finalProductService.getFinalProductById(projectId, FINAL_PRODUCT_ID)
-    );
-
-    expect(response).not.toBeNull();
-    expect(response.id).toBeDefined();
-    expect(response.configurationCommitId).toBeDefined();
-  });
-
-  test("validates contract for fetching final products with filters", async () => {
-    await provider.addInteraction({
-      state: "final products exist",
-      uponReceiving: "a request to fetch project scoped final products",
-      withRequest: {
-        method: "GET",
-        path: `/artifact-management/projects/${projectId}/final-products`,
-        query: {
-          page: "0",
-          size: "50",
-          sort: "createdOn,desc",
-          validationLevelFilter: ["MQG", "DQG"],
-        },
-      },
-      willRespondWith: {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: {
-          content: eachLike(finalProductMatcher()),
-          totalPages: Matchers.integer(1),
-          totalElements: Matchers.integer(1),
-          size: Matchers.integer(50),
-          number: Matchers.integer(0),
-          last: Matchers.boolean(true),
-        },
-      },
-    });
-
-    const response = await lastValueFrom(
-      finalProductService.getFinalProducts(projectId, {
-        page: 0,
-        size: 50,
-        sort: "createdOn,desc",
-        validationLevelFilter: ["MQG", "DQG"],
-      })
-    );
-
-    expect(response.content.length).toBeGreaterThan(0);
-  });
 });
 
 function factoryProductMatcher(): Record<string, unknown> {
@@ -392,37 +319,5 @@ function factoryProductMatcher(): Record<string, unknown> {
         }),
       }),
     }),
-  };
-}
-
-function finalProductMatcher(): Record<string, unknown> {
-  return {
-    id: Matchers.string(FINAL_PRODUCT_ID),
-    projectId: Matchers.string(PROJECT_ID),
-    branch: Matchers.string("release/branch"),
-    repositoryId: Matchers.string("repositoryId"),
-    tag: Matchers.string("FP-1"),
-    clientConfigurations: Matchers.eachLike({
-      id: Matchers.string(),
-      type: Matchers.string(),
-      branch: Matchers.string(),
-      commitId: Matchers.string(),
-    }),
-    validationLevel: Matchers.string("MQG"),
-    environmentDefinitionId: Matchers.string(),
-    version: Matchers.string(),
-    configurationCommitId: Matchers.string(),
-    state: Matchers.string("AVAILABLE"),
-    mxBundles: Matchers.eachLike({
-      id: Matchers.string(),
-      type: Matchers.string(),
-    }),
-    isTools: Matchers.eachLike({
-      id: Matchers.string(),
-      name: Matchers.string(),
-      type: Matchers.string(),
-    }),
-    createdOn: Matchers.iso8601DateTimeWithMillis(),
-    syncRequests: [],
   };
 }

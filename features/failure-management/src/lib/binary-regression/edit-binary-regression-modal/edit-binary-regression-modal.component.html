@@ -110,7 +110,9 @@
       </div>
 
       <div class="col-span-10 col-start-2 flex flex-col gap-2">
-        <label for="incidentId" class="block">Incident</label>
+        <label for="incidentId" class="block"
+          >Incident <span class="text-red-500">*</span></label
+        >
         @if (isFormLoading) {
         <p-skeleton styleClass="mb-2 h-12"></p-skeleton>
         } @if (!isFormLoading) {
@@ -118,6 +120,12 @@
           id="incidentId"
           formControlName="incidentId"
         ></mxevolve-incident-input>
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryRegressionForm.controls.incidentId
+          }"
+        ></ng-template>
         }
       </div>
 

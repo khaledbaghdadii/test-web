@@ -1,0 +1,26 @@
+<p-button
+  *showElementIfAuthorized="{
+    action: 'project_bulk_abort',
+    resource: 'environment',
+    package: 'environment',
+    attributes: {},
+    projectId: projectId()
+  }"
+  [rounded]="true"
+  [text]="true"
+  severity="danger"
+  ariaLabel="Abort environment"
+  pTooltip="Abort environment"
+  tooltipPosition="top"
+  (onClick)="handleAbortClicked()"
+  [loading]="loading()"
+>
+  <mxevolve-icon name="power_settings_new" />
+</p-button>
+
+<p-confirmDialog appendTo="self">
+  <ng-template #footer>
+    <p-button label="Cancel" severity="secondary" (onClick)="rejectAbort()" />
+    <p-button label="Confirm" severity="danger" (onClick)="confirmAbort()" />
+  </ng-template>
+</p-confirmDialog>

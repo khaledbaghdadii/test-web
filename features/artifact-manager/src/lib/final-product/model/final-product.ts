@@ -55,7 +55,7 @@ export const SYNC_STATE_DISPLAY_LABELS: Record<string, string> = {
   SUCCESS: "Success",
   FAILED: "Failed",
   IN_PROGRESS: "In Progress",
-  UNSTABLE: "Unstable",
+  UNSTABLE: "Success (Warning)",
 };
 
 export function getSyncStateDisplayLabel(state: string): string {

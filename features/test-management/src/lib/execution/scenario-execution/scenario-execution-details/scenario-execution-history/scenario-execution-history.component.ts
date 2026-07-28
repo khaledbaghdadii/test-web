@@ -25,15 +25,20 @@ export class ScenarioExecutionHistoryComponent {
   );
 
   @Input() assignee = "-";
-  @Output() keptExecutionToggled = new EventEmitter<string>();
+  @Input({ required: true }) projectId: string;
+  @Output() keepExecutionToggled = new EventEmitter<string>();
 
   isTargetExecution(scenarioExecution: TestUnitScenarioExecutionModel) {
     return scenarioExecution.id == this.selectedScenarioExecutionId();
   }
 
-  toggleKeptExecutionFlag(id: string) {
-    this.keptExecutionToggled.emit(id);
+  toggleKeepExecutionFlag(id: string) {
+    this.keepExecutionToggled.emit(id);
   }
 
   protected readonly Array = Array;
+
+  protected refreshSelectedScenarioExecution() {
+    this.stateService.refreshSelectedScenarioExecution$().subscribe();
+  }
 }

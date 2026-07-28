@@ -14,6 +14,7 @@ import {
   MxevolveIllustrationComponent,
   MxevolveIconComponent,
 } from "@mxevolve/shared/ui/primitive";
+import { Message } from "primeng/message";
 import { Tag } from "primeng/tag";
 
 const mockToastService = {
@@ -36,6 +37,7 @@ async function renderComponent(data: Partial<UnderValidationStageData> = {}) {
     inputs: { data: { ...BASE_DATA, ...data } },
     componentImports: [
       DatePipe,
+      MockComponent(Message),
       MockComponent(Tag),
       MockComponent(ScenarioRunsComponent),
       MockComponent(PaginatedCommitsDifferenceComponent),
@@ -166,6 +168,20 @@ describe("UnderValidationStageDetailsComponent", () => {
       });
     });
 
+    it("forwards the selector saved event as priorityUpdated", async () => {
+      const { fixture } = await renderComponent({
+        mergeRequestState: "QUEUED",
+        mergeRequestPriority: "HIGH",
+      });
+      const emitted = jest.fn();
+      fixture.componentInstance.priorityUpdated.subscribe(emitted);
+
+      const selector = ngMocks.find(MergeRequestPrioritySelectorComponent);
+      ngMocks.output(selector, "saved").emit();
+
+      expect(emitted).toHaveBeenCalled();
+    });
+
     it("does not show Rebase section in QUEUED state", async () => {
       await renderComponent({ mergeRequestState: "QUEUED" });
       expect(screen.queryByText("Rebase")).toBeNull();
@@ -251,9 +267,31 @@ describe("UnderValidationStageDetailsComponent", () => {
         mergeRequestState: "UNDER_VALIDATION_FAILED",
         failureReason: "REBASE_CONFLICT",
       });
+      expect(screen.getByText("Commits")).toBeTruthy();
+      expect(
+        screen.getByText(
+          "The below commits couldn't be rebased from feature/my-branch to main due to merge conflicts."
+        )
+      ).toBeTruthy();
       expect(
         document.querySelector("mxevolve-paginated-commits-difference")
       ).toBeTruthy();
+    });
+
+    it("shows the failed rebase tag with the cancel icon", async () => {
+      await renderComponent({
+        mergeRequestState: "UNDER_VALIDATION_FAILED",
+        failureReason: "REBASE_CONFLICT",
+      });
+
+      expect(screen.getByTestId("rebase-status-tag")).toHaveTextContent(
+        "Failed"
+      );
+      const cancelIcon = ngMocks
+        .findAll(MxevolveIconComponent)
+        .find((icon) => ngMocks.input(icon, "name") === "cancel");
+      expect(cancelIcon).toBeTruthy();
+      expect(ngMocks.input(cancelIcon, "size")).toBe("sm");
     });
 
     it("passes correct inputs to commits difference", async () => {
@@ -308,30 +346,142 @@ describe("UnderValidationStageDetailsComponent", () => {
     });
   });
 
-  describe("rebaseFailureReason computed", () => {
-    it("returns dash when rebase is not failed", async () => {
+  describe("Sequential vs Bulk scenario executions", () => {
+    it("renders only the Sequential Execution section when all builds are sequential", async () => {
+      await renderComponent({
+        mergeRequestState: "UNDER_VALIDATION",
+        builds: [
+          {
+            id: "build-1",
+            scenarioExecutionId: "seq-1",
+            bulkMode: false,
+            createdOn: "2026-01-01T10:00:00Z",
+          },
+          {
+            id: "build-2",
+            scenarioExecutionId: "seq-2",
+            bulkMode: false,
+            createdOn: "2026-01-01T11:00:00Z",
+          },
+        ],
+      });
+      expect(screen.getByText("Sequential Execution")).toBeTruthy();
+      expect(screen.queryByText("Bulk Execution")).toBeNull();
+      const scenarioRuns = ngMocks.findAll(ScenarioRunsComponent);
+      expect(scenarioRuns).toHaveLength(1);
+      expect(ngMocks.input(scenarioRuns[0], "scenarioRunIds")).toEqual([
+        "seq-1",
+        "seq-2",
+      ]);
+    });
+
+    it("renders only the Bulk Execution section when all builds are bulk", async () => {
+      await renderComponent({
+        mergeRequestState: "UNDER_VALIDATION",
+        builds: [
+          {
+            id: "build-1",
+            scenarioExecutionId: "bulk-1",
+            bulkMode: true,
+            createdOn: "2026-01-01T10:00:00Z",
+          },
+        ],
+      });
+      expect(screen.getByText("Bulk Execution")).toBeTruthy();
+      expect(screen.queryByText("Sequential Execution")).toBeNull();
+      const scenarioRuns = ngMocks.findAll(ScenarioRunsComponent);
+      expect(scenarioRuns).toHaveLength(1);
+      expect(ngMocks.input(scenarioRuns[0], "scenarioRunIds")).toEqual([
+        "bulk-1",
+      ]);
+    });
+
+    it("renders both sections when builds mix sequential and bulk", async () => {
       const { fixture } = await renderComponent({
         mergeRequestState: "UNDER_VALIDATION",
+        builds: [
+          {
+            id: "build-1",
+            scenarioExecutionId: "seq-1",
+            bulkMode: false,
+            createdOn: "2026-01-01T10:00:00Z",
+          },
+          {
+            id: "build-2",
+            scenarioExecutionId: "bulk-1",
+            bulkMode: true,
+            createdOn: "2026-01-01T11:00:00Z",
+          },
+        ],
       });
-      expect(fixture.componentInstance.rebaseFailureReason()).toBe("-");
+      expect(screen.getByText("Sequential Execution")).toBeTruthy();
+      expect(screen.getByText("Bulk Execution")).toBeTruthy();
+      expect(ngMocks.findAll(ScenarioRunsComponent)).toHaveLength(2);
+      expect(fixture.componentInstance.sequentialScenarioRunIds()).toEqual([
+        "seq-1",
+      ]);
+      expect(fixture.componentInstance.bulkScenarioRunIds()).toEqual([
+        "bulk-1",
+      ]);
     });
 
-    it("returns reason text for REBASE_CONFLICT", async () => {
+    it("sorts scenario executions by createdOn ascending within each mode", async () => {
       const { fixture } = await renderComponent({
-        mergeRequestState: "UNDER_VALIDATION_FAILED",
-        failureReason: "REBASE_CONFLICT",
+        mergeRequestState: "UNDER_VALIDATION",
+        builds: [
+          {
+            id: "build-1",
+            scenarioExecutionId: "seq-late",
+            bulkMode: false,
+            createdOn: "2026-01-02T10:00:00Z",
+          },
+          {
+            id: "build-2",
+            scenarioExecutionId: "seq-early",
+            bulkMode: false,
+            createdOn: "2026-01-01T10:00:00Z",
+          },
+          {
+            id: "build-3",
+            scenarioExecutionId: "bulk-late",
+            bulkMode: true,
+            createdOn: "2026-01-03T10:00:00Z",
+          },
+          {
+            id: "build-4",
+            scenarioExecutionId: "bulk-early",
+            bulkMode: true,
+            createdOn: "2026-01-01T09:00:00Z",
+          },
+        ],
       });
-      expect(fixture.componentInstance.rebaseFailureReason()).toBe(
-        "Lorem ipsum Lorem ipsum"
-      );
+      expect(fixture.componentInstance.sequentialScenarioRunIds()).toEqual([
+        "seq-early",
+        "seq-late",
+      ]);
+      expect(fixture.componentInstance.bulkScenarioRunIds()).toEqual([
+        "bulk-early",
+        "bulk-late",
+      ]);
     });
 
-    it("returns dash for non-rebase failure reasons", async () => {
+    it("ignores builds without a scenarioExecutionId", async () => {
       const { fixture } = await renderComponent({
-        mergeRequestState: "UNDER_VALIDATION_FAILED",
-        failureReason: "CQG_FAILURE",
+        mergeRequestState: "UNDER_VALIDATION",
+        builds: [
+          {
+            id: "build-1",
+            scenarioExecutionId: "seq-1",
+            bulkMode: false,
+            createdOn: "2026-01-01T10:00:00Z",
+          },
+          { id: "build-2", bulkMode: false, createdOn: "2026-01-01T11:00:00Z" },
+        ],
       });
-      expect(fixture.componentInstance.rebaseFailureReason()).toBe("-");
+      expect(fixture.componentInstance.sequentialScenarioRunIds()).toEqual([
+        "seq-1",
+      ]);
+      expect(fixture.componentInstance.hasScenarioRuns()).toBe(true);
     });
   });
 
@@ -358,6 +508,80 @@ describe("UnderValidationStageDetailsComponent", () => {
         mergeRequestPriority: "LOW",
       });
       expect(fixture.componentInstance.mergeRequestPriority()).toBe("Low");
+    });
+  });
+
+  describe("validationFailureReasonMessage computed", () => {
+    it("returns dash when no failure reason", async () => {
+      const { fixture } = await renderComponent({
+        mergeRequestState: "UNDER_VALIDATION_FAILED",
+      });
+      expect(fixture.componentInstance.validationFailureReasonMessage()).toBe(
+        "-"
+      );
+    });
+
+    it.each([
+      ["PR_UNAPPROVED", "Validation failed due to unapproved merge request"],
+      ["PR_DECLINED", "Validation failed due to declined merge request"],
+      ["PR_DELETED", "Validation failed due to deleted merge request"],
+      [
+        "MERGE_REQUEST_NOT_FOUND",
+        "Validation failed due to deleted merge request",
+      ],
+      ["TECHNICAL_FAILURE", "Validation failed due to a technical failure"],
+      ["CQG_FAILURE", "Validation failed due to a CQG failure"],
+      [
+        "PR_NOT_MERGEABLE",
+        "Validation failed due to unmergeable merge request",
+      ],
+      [
+        "SCENARIO_EXECUTION_TIMEOUT",
+        "Validation failed due to scenario execution timeout",
+      ],
+      ["UNKNOWN_REASON", "UNKNOWN_REASON"],
+    ])(
+      "returns correct message for %s",
+      async (failureReason, expectedMessage) => {
+        const { fixture } = await renderComponent({
+          mergeRequestState: "UNDER_VALIDATION_FAILED",
+          failureReason,
+        });
+        expect(fixture.componentInstance.validationFailureReasonMessage()).toBe(
+          expectedMessage
+        );
+      }
+    );
+  });
+
+  describe("Validation failure message rendered in HTML", () => {
+    it.each([
+      ["PR_UNAPPROVED", "Validation failed due to unapproved merge request"],
+      ["CQG_FAILURE", "Validation failed due to a CQG failure"],
+    ])("shows %s failure reason", async (failureReason, expectedMessage) => {
+      await renderComponent({
+        mergeRequestState: "UNDER_VALIDATION_FAILED",
+        failureReason,
+      });
+      expect(
+        screen.getByTestId("validation-failure-message").textContent?.trim()
+      ).toBe(expectedMessage);
+      expect(screen.getByRole("heading", { name: "Rebase" })).toBeTruthy();
+    });
+
+    it.each([
+      [
+        "REBASE_CONFLICT failure",
+        {
+          mergeRequestState: "UNDER_VALIDATION_FAILED",
+          failureReason: "REBASE_CONFLICT",
+        },
+      ],
+      ["UNDER_VALIDATION state", { mergeRequestState: "UNDER_VALIDATION" }],
+      ["QUEUED state", { mergeRequestState: "QUEUED" }],
+    ])("does not show section for %s", async (_, data) => {
+      await renderComponent(data);
+      expect(screen.queryByTestId("validation-failure-message")).toBeNull();
     });
   });
 });

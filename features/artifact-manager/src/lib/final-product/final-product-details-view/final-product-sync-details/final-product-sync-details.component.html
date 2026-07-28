@@ -13,17 +13,30 @@
     <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
       Sync State
     </div>
+
     <div class="text-surface-900 dark:text-surface-0">
       <p-tag
         [severity]="
           getStateSeverity(finalProductSyncDetails().syncRequestDetails.state)
         "
-        [value]="
-          getStateDisplayLabel(
-            finalProductSyncDetails().syncRequestDetails.state
-          )
+        [tooltipDisabled]="
+          !isSyncUnstable(finalProductSyncDetails().syncRequestDetails.state)
         "
-      ></p-tag>
+        [pTooltip]="getUnstableSyncStateToolTip()"
+        tooltipPosition="top"
+      >
+        <div class="flex items-center gap-1">
+          @if
+          (isSyncUnstable(finalProductSyncDetails().syncRequestDetails.state)) {
+          <i class="pi pi-info-circle pr-1"></i>
+          }
+          <span>{{
+            getStateDisplayLabel(
+              finalProductSyncDetails().syncRequestDetails.state
+            )
+          }}</span>
+        </div>
+      </p-tag>
     </div>
   </div>
   <div class="grid grid-cols-1 col-span-3 p-4">
@@ -155,10 +168,9 @@
       </mxevolve-show-more-less-text>
     </div>
   </div>
-  } @if (finalProductSyncDetails().syncRequestDetails.state.toLowerCase() ===
-  SyncState.UNSTABLE.toLowerCase() &&
+  } @if (isSyncUnstable(finalProductSyncDetails().syncRequestDetails.state) &&
   finalProductSyncDetails().syncRequestDetails.failureMessage) {
-  <div class="grid grid-cols-1 col-span-12 p-4">
+  <div class="grid grid-cols-1 col-span-12 p-4" data-testid="warning-section">
     <div class="text-surface-500 dark:text-surface-300 font-medium mb-2">
       Warning
     </div>

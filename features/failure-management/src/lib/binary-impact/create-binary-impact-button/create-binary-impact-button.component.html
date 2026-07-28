@@ -1,21 +1,37 @@
 <p-button
-  data-testid="create-binary-impact-button"
-  type="submit"
-  [label]="buttonLabel"
-  severity="secondary"
-  (click)="onBinaryImpactCreationStarted()"
-  (keydown)="onBinaryImpactCreationStarted()"
-></p-button>
+  severity="primary"
+  (onClick)="menu.toggle($event)"
+  styleClass="w-[200px]"
+>
+  Create New
+  <mxevolve-icon pButtonIcon name="keyboard_arrow_down" size="sm" />
+</p-button>
+
+<p-menu
+  #menu
+  [model]="createNewButtonItems"
+  [popup]="true"
+  styleClass="w-[200px]"
+/>
+
+<mxevolve-upgrade-impact-selection-modal
+  mxevolveAppendToBody
+  [(isVisible)]="isUpgradeImpactSelectionModalVisible"
+  [warningMessage]="upgradeImpactWarningMessage"
+  [validationScope]="validationScope"
+  [initialValidationScope]="initialValidationScope"
+  (selectedUpgradeImpactIdChange)="onUpgradeImpactSelected($event)"
+></mxevolve-upgrade-impact-selection-modal>
 <mxevolve-create-binary-impact-modal
   mxevolveAppendToBody
   [projectId]="projectId"
-  [isVisible]="isCreateModalVisible"
   [correlationId]="correlationId"
   [mxVersionInitialValue]="mxVersionInitialValue"
-  [validationScope]="validationScope"
-  [initialValidationScope]="initialValidationScope"
-  [warningMessage]="upgradeImpactWarningMessage"
   [submitCreationButtonLabel]="submitCreationButtonLabel"
+  [initialDescription]="prefillDescription"
+  [initialAttachments]="prefillAttachments"
+  [upgradeImpactId]="prefillUpgradeImpactId"
+  [isVisible]="isCreateModalVisible"
   (binaryImpactCreated)="onBinaryImpactCreated($event)"
   (createBinaryImpactCancelled)="onBinaryImpactCreationCancelled()"
 ></mxevolve-create-binary-impact-modal>

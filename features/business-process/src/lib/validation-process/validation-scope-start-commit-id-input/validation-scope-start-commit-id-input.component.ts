@@ -65,6 +65,15 @@ export class ValidationScopeStartCommitIdInputComponent
   }
 
   ngOnInit(): void {
+    const existingValue = this.startCommitIdFormControl.value;
+    if (existingValue) {
+      this.selectionModeControl.setValue(
+        ValidationScopeStartCommitIdInputSelectionMode.CUSTOMIZED,
+        { emitEvent: false }
+      );
+      this.customCommitIdControl.setValue(existingValue, { emitEvent: false });
+    }
+
     this.selectionModeControl.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {

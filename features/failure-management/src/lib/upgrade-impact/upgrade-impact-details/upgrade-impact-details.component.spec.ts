@@ -362,44 +362,6 @@ describe("UpgradeImpactDetailsComponent", () => {
       expect(defectLinksElement).toBeTruthy();
       expect(defectLinksElement.textContent?.trim()).toEqual("-");
     });
-
-    it("should display affected versions when upgrade impact has introduced in release versions", () => {
-      jest.spyOn(upgradeImpactDataService, "fetchById").mockReturnValue(
-        of({
-          ...getUpgradeImpact(),
-          introducedInReleaseVersion: ["1.0", "2.0"],
-        })
-      );
-      component.upgradeImpactId = "new id";
-      fixture.detectChanges();
-
-      const affectedVersionsElement = getElementByTestId("affected-versions");
-      expect(affectedVersionsElement.isRendered()).toBeTruthy();
-
-      const versionsValuesElement = affectedVersionsElement.getNativeElement()
-        .nextElementSibling as HTMLElement;
-      expect(versionsValuesElement).toBeTruthy();
-      expect(versionsValuesElement.textContent).toEqual("1.0, 2.0");
-    });
-
-    it("should display - when there are no affected versions", () => {
-      jest.spyOn(upgradeImpactDataService, "fetchById").mockReturnValue(
-        of({
-          ...getUpgradeImpact(),
-          introducedInReleaseVersion: [],
-        })
-      );
-      component.upgradeImpactId = "new id";
-      fixture.detectChanges();
-
-      const affectedVersionsElement = getElementByTestId("affected-versions");
-      expect(affectedVersionsElement.isRendered()).toBeTruthy();
-
-      const versionsValuesElement = affectedVersionsElement.getNativeElement()
-        .nextElementSibling as HTMLElement;
-      expect(versionsValuesElement).toBeTruthy();
-      expect(versionsValuesElement.textContent).toEqual("-");
-    });
   });
 
   function getElementByTestId(testId: string) {

@@ -84,6 +84,7 @@ describe("FinalProductDropdownInputComponent", () => {
       searchKey: signal(undefined),
       isLastPage: signal(false),
       isLoadingData: signal(false),
+      isLoadingCommitsInfo: signal(false),
       lastFetchedElement: signal(-1),
       pageIndex: signal(0),
       dropdownDefaultSelectionModeSignal: signal(
@@ -508,6 +509,19 @@ describe("FinalProductDropdownInputComponent", () => {
       mockStateService.isLoadingData.set(true);
       expect(component.isLoadingData()).toBeTruthy();
     });
+
+    it("should read is loading commits info from state service", () => {
+      mockStateService.isLoadingCommitsInfo.set(true);
+      expect(component.isLoadingCommitsInfo()).toBeTruthy();
+    });
+
+    it("should disable the dropdown when commits info is loading", () => {
+      mockStateService.isLoadingCommitsInfo.set(true);
+      fixture.detectChanges();
+      const pDropdownElement = fixture.debugElement.query(By.directive(Select));
+      const pDropdownInstance = pDropdownElement.componentInstance as Select;
+      expect(pDropdownInstance.disabled).toBeTruthy();
+    });
   });
 
   describe("handleScroll", () => {
@@ -554,6 +568,13 @@ describe("FinalProductDropdownInputComponent", () => {
 
     it("should do nothing if the data is loading", () => {
       mockStateService.isLoadingData.set(true);
+      component.handleScroll({ first: 5, last: 10 });
+      expect(mockStateService.setPageIndex).not.toHaveBeenCalled();
+      expect(mockStateService.setLastFetchedElement).not.toHaveBeenCalled();
+    });
+
+    it("should do nothing if the commits info is loading", () => {
+      mockStateService.isLoadingCommitsInfo.set(true);
       component.handleScroll({ first: 5, last: 10 });
       expect(mockStateService.setPageIndex).not.toHaveBeenCalled();
       expect(mockStateService.setLastFetchedElement).not.toHaveBeenCalled();

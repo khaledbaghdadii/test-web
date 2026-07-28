@@ -1,11 +1,11 @@
 import {
   Component,
   EventEmitter,
+  inject,
   Input,
   OnDestroy,
   OnInit,
   Output,
-  inject,
 } from "@angular/core";
 import { DialogModule } from "primeng/dialog";
 import { MandatoryFieldModule, ToastMessageService } from "@mxflow/ui/alert";
@@ -29,6 +29,7 @@ import {
   map,
   of,
   Subject,
+  switchMap,
   takeUntil,
   tap,
   throwError,
@@ -42,10 +43,20 @@ import {
   Attachment,
   AttachmentUploaderComponent,
 } from "@mxflow/features/attachment";
-import { ClientImpactNoteFieldType } from "@mxevolve/domains/test/data-access";
+import {
+  ClientImpactNoteAffectedVersionsConfigApiModel,
+  ClientImpactNoteFieldType,
+  ClientImpactNoteService,
+  VersionValidationService,
+} from "@mxevolve/domains/test/data-access";
 import { ClientImpactNoteMultiSelectDropdownComponent } from "../../client-impact-note";
 import { ClientImpactNoteSingleSelectDropdownComponent } from "../../client-impact-note/client-impact-note-single-select-dropdown/client-impact-note-single-select-dropdown.component";
 import { IncidentInputComponent } from "@mxflow/features/incident-management";
+import {
+  Version,
+  VersionsDropdownParams,
+  VersionsMultiselectDropdownComponent,
+} from "@mxevolve/domains/test/widget";
 
 @Component({
   selector: "mxevolve-edit-binary-impact-modal",
@@ -65,13 +76,16 @@ import { IncidentInputComponent } from "@mxflow/features/incident-management";
     ClientImpactNoteSingleSelectDropdownComponent,
     ClientImpactNoteMultiSelectDropdownComponent,
     IncidentInputComponent,
+    VersionsMultiselectDropdownComponent,
   ],
-  providers: [BinaryImpactService],
+  providers: [BinaryImpactService, ClientImpactNoteService],
   templateUrl: "./edit-binary-impact-modal.component.html",
 })
 export class EditBinaryImpactModalComponent implements OnInit, OnDestroy {
   private readonly binaryImpactService = inject(BinaryImpactService);
   private readonly toastMessageService = inject(ToastMessageService);
+  private readonly clientImpactNoteService = inject(ClientImpactNoteService);
+  private readonly versionValidatorService = inject(VersionValidationService);
 
   private _isModalShown: boolean;
   private readonly destroy$ = new Subject();
@@ -81,6 +95,8 @@ export class EditBinaryImpactModalComponent implements OnInit, OnDestroy {
   isFormLoading: boolean;
   isButtonLoading: boolean;
   attachments: Attachment[] = [];
+  affectedVersionsDropdownParams: VersionsDropdownParams;
+  prefilledAffectedVersions?: Version[];
   readonly uploadingAttachmentsCount = new Int32Array(1);
 
   @Input({ required: true }) set isModalShown(value: boolean) {
@@ -117,6 +133,9 @@ export class EditBinaryImpactModalComponent implements OnInit, OnDestroy {
         Validators.maxLength(255),
         WhitespaceValidators.notBlank(),
       ]),
+      affectedVersions: new FormControl<Version[] | null>(null, [
+        Validators.required,
+      ]),
       incidentId: new FormControl<string | null>(null, []),
       attachments: new FormControl<null>(null),
       upgradeImpactId: new FormControl<string | null>(null),
@@ -142,6 +161,8 @@ export class EditBinaryImpactModalComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.editBinaryImpactForm.controls.mxVersion.disable();
+    this.editBinaryImpactForm.controls.upgradeImpactId.disable();
+    this.loadAffectedVersionsDropdownParams();
   }
 
   onCancel(): void {
@@ -178,10 +199,28 @@ export class EditBinaryImpactModalComponent implements OnInit, OnDestroy {
   private fetchBinaryImpact() {
     this.isFormLoading = true;
     this.binaryImpactService
-      .getById(this.projectId, this.binaryImpactId)
-      .pipe(takeUntil(this.destroy$))
+      .getById(this.binaryImpactId)
+      .pipe(
+        switchMap((binaryImpact) =>
+          this.versionValidatorService
+            .validateVersions(
+              binaryImpact.affectedVersions,
+              this.affectedVersionsDropdownParams.versionTypes,
+              this.affectedVersionsDropdownParams.active
+            )
+            .pipe(
+              map((validVersions) => ({
+                binaryImpact,
+                validVersions: validVersions,
+              }))
+            )
+        ),
+        takeUntil(this.destroy$)
+      )
       .subscribe({
-        next: (binaryImpact: BinaryImpact) => {
+        next: ({ binaryImpact, validVersions }) => {
+          this.prefilledAffectedVersions = validVersions.validVersions;
+          this.showWarningWithNotAllowedVersions(validVersions.invalidVersions);
           this.setFormValue(binaryImpact);
           this.attachments = binaryImpact.attachments.map((attachment) => {
             return {
@@ -203,12 +242,24 @@ export class EditBinaryImpactModalComponent implements OnInit, OnDestroy {
       });
   }
 
+  private showWarningWithNotAllowedVersions(invalidVersions: string[]) {
+    if (invalidVersions.length > 0) {
+      const versionNames = invalidVersions
+        .map((versionName) => `${versionName}`)
+        .join(", ");
+      this.toastMessageService.showWarning(
+        `Invalid affected versions: ${versionNames}.`
+      );
+    }
+  }
+
   private setFormValue(binaryImpact: BinaryImpact) {
     this.editBinaryImpactForm.markAsPristine();
     this.editBinaryImpactForm.setValue({
       title: binaryImpact.title,
       description: binaryImpact.description,
       mxVersion: binaryImpact.mxVersion,
+      affectedVersions: this.prefilledAffectedVersions ?? [],
       upgradeImpactId: binaryImpact.upgradeImpactId ?? null,
       attachments: null,
       region: this.getClientImpactNoteFieldId(binaryImpact.region),
@@ -249,7 +300,9 @@ export class EditBinaryImpactModalComponent implements OnInit, OnDestroy {
     return {
       title: formValue.title as string,
       description: formValue.description as string,
-      upgradeImpactId: formValue.upgradeImpactId ?? undefined,
+      affectedVersions: (formValue.affectedVersions as Version[]).map(
+        (version) => version.name
+      ),
       region: formValue.region as string,
       stream: formValue.stream as string,
       magnitude: formValue.magnitude as string,
@@ -371,6 +424,34 @@ export class EditBinaryImpactModalComponent implements OnInit, OnDestroy {
   decrementUploadingAttachmentCount() {
     Atomics.sub(this.uploadingAttachmentsCount, 0, 1);
   }
+
+  private loadAffectedVersionsDropdownParams() {
+    this.isFormLoading = true;
+    this.clientImpactNoteService
+      .fetchAllowedVersionsConfiguration()
+      .pipe(
+        finalize(() => {
+          this.isFormLoading = false;
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (configuration) => {
+          this.affectedVersionsDropdownParams =
+            this.getAffectedVersionsDropdownParams(configuration);
+        },
+        error: (error) => this.handleErrorOccurred(error.message),
+      });
+  }
+
+  getAffectedVersionsDropdownParams(
+    configuration: ClientImpactNoteAffectedVersionsConfigApiModel
+  ): VersionsDropdownParams {
+    return {
+      versionTypes: configuration.allowedVersionTypes,
+      active: configuration.allowedInactive ? undefined : true,
+    };
+  }
   protected readonly ClientImpactNoteFieldType = ClientImpactNoteFieldType;
 }
 
@@ -378,6 +459,7 @@ export interface EditBinaryImpactForm {
   title: FormControl<string | null>;
   description: FormControl<string | null>;
   mxVersion: FormControl<string | null>;
+  affectedVersions: FormControl<Version[] | null>;
   upgradeImpactId: FormControl<string | null>;
   attachments: FormControl<null>;
   region: FormControl<string | null>;

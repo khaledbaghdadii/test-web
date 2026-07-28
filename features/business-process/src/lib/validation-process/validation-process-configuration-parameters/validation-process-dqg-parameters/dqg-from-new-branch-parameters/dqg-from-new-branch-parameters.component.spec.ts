@@ -117,7 +117,7 @@ describe("DQG from new branch parameters", () => {
       archivalBranchInputComponent.initialInvalid.emit();
 
       expect(toastService.showError).toHaveBeenCalledWith(
-        "The branch name available in the BP definition already exists in the repository. Please update the definition with a unique name to create a new branch."
+        "The branch name available in the Process Template already exists in the repository. Please update the Process Template with a unique name to create a new branch."
       );
     });
   });

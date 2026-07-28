@@ -112,6 +112,7 @@ describe("Upgrade process listing service contract tests", () => {
             definitionName: Matchers.string(),
             processName: Matchers.string(),
             officiality: Matchers.string(),
+            sourceDefinitionId: Matchers.string(),
             input: {
               parentMxArchivalBranch: Matchers.string(),
               configurationBranchName: Matchers.string(),

@@ -15,6 +15,7 @@ import { Tooltip } from "primeng/tooltip";
 
 export interface ActionsCellRendererParams extends ICellRendererParams {
   projectId: string;
+  environment?: Environment;
 }
 
 @Component({
@@ -39,7 +40,7 @@ export class ActionsCellRendererComponent implements ICellRendererAngularComp {
   readonly projectId = signal("");
 
   agInit(params: ActionsCellRendererParams): void {
-    this.environment.set(params.data);
+    this.environment.set(params.environment ?? params.data);
     this.projectId.set(params.projectId);
   }
 

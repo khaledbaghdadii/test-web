@@ -1,10 +1,12 @@
 import { HttpClient } from "@angular/common/http";
 import { Inject, Injectable } from "@angular/core";
 import { AppConfig, APP_CONFIG } from "@mxflow/config";
-import { catchError, Observable, throwError } from "rxjs";
+import { catchError, map, Observable, throwError } from "rxjs";
 import { ProjectResponse } from "./response/project-response";
 import { FeatureToggleResponse } from "./response/feature-toggle-response";
+import { CrmProjectResponse } from "./response/crm-project-response";
 import { Project } from "./project";
+import { CrmProject } from "./crm-project";
 
 @Injectable({ providedIn: "root" })
 export class ProjectService {
@@ -36,6 +38,26 @@ export class ProjectService {
     return this.http
       .get<ProjectResponse>(this.apiUrl + "/" + projectId)
       .pipe(catchError((error) => throwError(() => new Error(error.error))));
+  }
+
+  getCrmProjects(projectId: string): Observable<CrmProject[]> {
+    return this.http
+      .get<CrmProjectResponse[]>(
+        this.apiUrl + "/" + projectId + "/crm-projects"
+      )
+      .pipe(
+        map((responses) =>
+          responses.map(
+            (response): CrmProject => ({
+              id: response.id,
+              projectId: response.projectId,
+              externalId: response.externalId,
+              name: response.name,
+            })
+          )
+        ),
+        catchError((error) => throwError(() => new Error(error.error)))
+      );
   }
 
   getFeatureToggle(projectId: string, featureId: string) {

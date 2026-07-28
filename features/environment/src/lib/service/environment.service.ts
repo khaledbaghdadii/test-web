@@ -4,6 +4,7 @@ import {
   HttpErrorResponse,
   HttpParams,
 } from "@angular/common/http";
+import { DomSanitizer } from "@angular/platform-browser";
 import { APP_CONFIG, AppConfig } from "@mxflow/config";
 import { catchError, map, Observable, throwError } from "rxjs";
 import { EnvironmentDefinition } from "../environment-definition";
@@ -30,6 +31,7 @@ import { MXClientDetailsApiModel } from "./models/mxclient-details-api.model";
 export class EnvironmentService {
   private readonly config: AppConfig = inject(APP_CONFIG);
   private readonly http: HttpClient = inject(HttpClient);
+  private readonly sanitizer: DomSanitizer = inject(DomSanitizer);
 
   getEnvironmentDefinitions(
     projectId: string,
@@ -244,7 +246,14 @@ export class EnvironmentService {
       return undefined;
     }
     return {
-      ...properties,
-    } as ConfigurationEditorProperties;
+      disabled: properties.disabled,
+      testConfigurationApplication: properties.testConfigurationApplication
+        ? {
+            url: this.sanitizer.bypassSecurityTrustResourceUrl(
+              properties.testConfigurationApplication.url
+            ),
+          }
+        : undefined,
+    };
   }
 }

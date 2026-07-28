@@ -138,7 +138,7 @@ describe("MQG from new branch parameters", () => {
       parentBranchInputComponent.initialInvalid.emit();
 
       expect(toastService.showError).toHaveBeenCalledWith(
-        "The branch name available in the BP definition doesn't exist in the repository. Please check the name and try again with an existing branch."
+        "The branch name available in the Process Template doesn't exist in the repository. Please check the name and try again with an existing branch."
       );
     });
   });
@@ -183,7 +183,7 @@ describe("MQG from new branch parameters", () => {
       archivalBranchInputComponent.initialInvalid.emit();
 
       expect(toastService.showError).toHaveBeenCalledWith(
-        "The branch name available in the BP definition already exists in the repository. Please update the definition with a unique name to create a new branch."
+        "The branch name available in the Process Template already exists in the repository. Please update the Process Template with a unique name to create a new branch."
       );
     });
   });

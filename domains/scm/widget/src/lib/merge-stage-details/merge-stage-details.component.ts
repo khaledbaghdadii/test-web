@@ -66,8 +66,11 @@ export class MergeStageDetailsComponent {
     if (!reason) return "-";
     switch (reason) {
       case FailureReason.PR_UNAPPROVED:
+        return "Merge failed due to unapproved merge request";
       case FailureReason.PR_DECLINED:
-        return "Merge failed due to declined pull request";
+        return "Merge failed due to declined merge request";
+      case FailureReason.PR_CONFLICT:
+        return "Merge failed due to conflicting merge request";
       case FailureReason.PR_DELETED:
       case FailureReason.MERGE_REQUEST_NOT_FOUND:
         return "Merge failed due to deleted merge request";

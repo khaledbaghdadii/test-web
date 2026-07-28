@@ -12,7 +12,12 @@ import { ToastMessageService } from "@mxflow/ui/alert";
 import { FileInfo, ScmService } from "@mxflow/features/scm";
 import { UpdateReferenceModalComponent } from "./update-reference-modal.component";
 import { UpdateReferenceService } from "../update-reference.service";
-import { MockBuilder, MockedComponentFixture, MockRender } from "ng-mocks";
+import {
+  MockBuilder,
+  MockedComponentFixture,
+  MockRender,
+  ngMocks,
+} from "ng-mocks";
 import { TabsModule } from "primeng/tabs";
 import {
   TriggerUpdateReferenceRequest,
@@ -20,6 +25,7 @@ import {
 } from "../trigger-update-reference-request";
 import { getFullySelectedAnalysisObject } from "../../../analysis-object-link/analysis-object-link-test-utils";
 import {
+  AnalysisObjectType,
   AnalysisObjectSelectionState,
   AnalysisObjectSelectionType,
 } from "@mxflow/features/analysis-objects";
@@ -33,7 +39,8 @@ import {
   ValidationScopeSetterComponent,
 } from "@mxflow/features/validation-management";
 import { FormsModule } from "@angular/forms";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
+import { PreviouslyLinkedDetectionToggleComponent } from "@mxevolve/domains/test/widget";
 
 interface UpdateReferenceModalTestInputs {
   projectId: string;
@@ -65,6 +72,7 @@ function getFirstBinaryImpact(): LiteBinaryImpact {
     id: "1",
     projectId: PROJECT_ID,
     title: "title1",
+    objectId: "PROJECT-BIMP-1",
     owner: "owner1",
     mxVersion: "mxVersion",
     upgradeImpact: {
@@ -82,6 +90,7 @@ function getSecondBinaryImpact(): LiteBinaryImpact {
     id: "2",
     projectId: PROJECT_ID,
     title: "title2",
+    objectId: "PROJECT-BIMP-2",
     owner: "owner2",
     mxVersion: "mxVersion",
     upgradeImpact: {
@@ -192,6 +201,20 @@ describe("update reference modal", () => {
     expect(component).toBeTruthy();
   });
 
+  it("should pass the binary impact type to the previously linked toggle", () => {
+    component.isVisible = true;
+    fixture.detectChanges();
+
+    const toggle = ngMocks.find(
+      fixture,
+      PreviouslyLinkedDetectionToggleComponent
+    );
+
+    expect(ngMocks.input(toggle, "analysisObjectType")).toBe(
+      AnalysisObjectType.BINARY_IMPACT
+    );
+  });
+
   it("refresh should be behavioural subject with false initial value", async () => {
     component.refresh$.subscribe((refresh) => {
       expect(refresh).toBeFalsy();
@@ -252,8 +275,7 @@ describe("update reference modal", () => {
     const computedCommitMessage = `${component.commitMessageSignal()} -Configuration Impacts: ${
       component.selectedConfigurationImpactsSignal()[0].analysisObject.title
     } -Binary Impacts: ${
-      component.selectedBinaryImpactsSignal()[0].analysisObject.upgradeImpact
-        ?.externalIssue.id
+      component.selectedBinaryImpactsSignal()[0].analysisObject.objectId
     }`;
 
     component.submit();
@@ -499,9 +521,7 @@ describe("update reference modal", () => {
     component.commitMessageSignal.set("commit message");
 
     expect(component.computedCommitMessageSignal()).toEqual(
-      `commit message -Binary Impacts: ${
-        getFirstBinaryImpact().upgradeImpact?.externalIssue.id
-      }`
+      `commit message -Binary Impacts: ${getFirstBinaryImpact().objectId}`
     );
   });
 
@@ -515,9 +535,9 @@ describe("update reference modal", () => {
     component.commitMessageSignal.set("commit message");
 
     expect(component.computedCommitMessageSignal()).toEqual(
-      `commit message -Binary Impacts: ${
-        getFirstBinaryImpact().upgradeImpact?.externalIssue.id
-      }, ${getSecondBinaryImpact().upgradeImpact?.externalIssue.id}`
+      `commit message -Binary Impacts: ${getFirstBinaryImpact().objectId}, ${
+        getSecondBinaryImpact().objectId
+      }`
     );
   });
 
@@ -538,6 +558,7 @@ describe("update reference modal", () => {
         id: "1",
         projectId: PROJECT_ID,
         title: "title1",
+        objectId: "PROJECT-BIMP-1",
         owner: "owner1",
         mxVersion: "mxVersion",
         upgradeImpact: {
@@ -549,7 +570,7 @@ describe("update reference modal", () => {
     component.commitMessageSignal.set("commit message");
 
     expect(component.computedCommitMessageSignal()).toContain(
-      getFirstBinaryImpact().title
+      getFirstBinaryImpact().objectId
     );
   });
 
@@ -598,8 +619,8 @@ describe("update reference modal", () => {
       `commit message -Configuration Impacts: ${
         getFirstConfigurationImpact().title
       }, ${getSecondConfigurationImpact().title} -Binary Impacts: ${
-        getFirstBinaryImpact().upgradeImpact?.externalIssue.id
-      }, ${getSecondBinaryImpact().upgradeImpact?.externalIssue.id}`
+        getFirstBinaryImpact().objectId
+      }, ${getSecondBinaryImpact().objectId}`
     );
   });
 
@@ -669,6 +690,47 @@ describe("update reference modal", () => {
   describe("show impactsWithoutDefects toggle tests", () => {
     it("should default show impacts with no defects signal to false", () => {
       expect(component.showImpactsWithoutDefects()).toBeFalsy();
+    });
+  });
+
+  describe("show previously linked impacts", () => {
+    it("should default show previously linked impacts signal to false", () => {
+      expect(component.showPreviouslyLinkedImpacts()).toBeFalsy();
+    });
+
+    it("should not forward previously linked filter to the selection table when disabled", () => {
+      component.previouslyLinkedFilter = {
+        testCaseExternalIds: ["ext-1", "ext-2"],
+        scenarioDefinitionId: "scenario-1",
+      };
+      component.showPreviouslyLinkedImpacts.set(false);
+      component.isVisible = true;
+      fixture.detectChanges();
+
+      const selectionTableComponent = DomTestUtils.getElementByType(
+        fixture,
+        BinaryImpactsSelectionTableComponent
+      ).getInstance();
+      expect(selectionTableComponent.previouslyLinkedFilter).toBeUndefined();
+    });
+
+    it("should forward previously linked filter to the selection table when enabled", () => {
+      component.previouslyLinkedFilter = {
+        testCaseExternalIds: ["ext-1", "ext-2"],
+        scenarioDefinitionId: "scenario-1",
+      };
+      component.showPreviouslyLinkedImpacts.set(true);
+      component.isVisible = true;
+      fixture.detectChanges();
+
+      const selectionTableComponent = DomTestUtils.getElementByType(
+        fixture,
+        BinaryImpactsSelectionTableComponent
+      ).getInstance();
+      expect(selectionTableComponent.previouslyLinkedFilter).toEqual({
+        testCaseExternalIds: ["ext-1", "ext-2"],
+        scenarioDefinitionId: "scenario-1",
+      });
     });
   });
 

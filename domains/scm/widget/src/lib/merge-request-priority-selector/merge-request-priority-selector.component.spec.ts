@@ -123,6 +123,24 @@ describe("MergeRequestPrioritySelectorComponent", () => {
       });
     });
 
+    it("emits saved after a successful update", async () => {
+      const user = userEvent.setup();
+      mockMergeRequestService.updateMergeRequestPriority.mockReturnValue(
+        of({})
+      );
+
+      const { fixture } = await renderComponent();
+      const savedSpy = jest.fn();
+      fixture.componentInstance.saved.subscribe(savedSpy);
+
+      await waitFor(() => expect(screen.getByLabelText("High")).toBeTruthy());
+
+      await user.click(screen.getByLabelText("High"));
+      await user.click(screen.getByRole("button", { name: "Save" }));
+
+      await waitFor(() => expect(savedSpy).toHaveBeenCalled());
+    });
+
     it("shows error toast when priority update fails", async () => {
       const user = userEvent.setup();
       mockMergeRequestService.updateMergeRequestPriority.mockReturnValue(

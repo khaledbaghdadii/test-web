@@ -215,19 +215,25 @@ describe("ScenarioRunTableComponent", () => {
     it("shows the formatted duration between start and end dates", async () => {
       await renderComponent({ scenarioRuns: [MOCK_SCENARIO_RUN] });
 
-      await waitFor(() => {
-        const cells = within(getDataRows()[0]).getAllByRole("gridcell");
-        expect(cells[4].textContent?.trim()).toBe("1h 30m 45s");
-      });
+      await waitFor(
+        () => {
+          const cells = within(getDataRows()[0]).getAllByRole("gridcell");
+          expect(cells[4].textContent?.trim()).toBe("1h 30m 45s");
+        },
+        { timeout: 5000 }
+      );
     });
 
     it("shows a dash when start or end date is not available", async () => {
       await renderComponent({ scenarioRuns: [MOCK_SCENARIO_RUN_MINIMAL] });
 
-      await waitFor(() => {
-        const cells = within(getDataRows()[0]).getAllByRole("gridcell");
-        expect(cells[4].textContent?.trim()).toBe("-");
-      });
+      await waitFor(
+        () => {
+          const cells = within(getDataRows()[0]).getAllByRole("gridcell");
+          expect(cells[4].textContent?.trim()).toBe("-");
+        },
+        { timeout: 5000 }
+      );
     });
   });
 

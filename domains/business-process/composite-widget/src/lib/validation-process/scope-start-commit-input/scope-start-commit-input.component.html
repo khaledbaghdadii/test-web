@@ -1,0 +1,41 @@
+<div class="flex flex-col gap-3">
+  <div class="flex flex-row gap-4">
+    <div class="flex flex-row items-center gap-1">
+      <p-radioButton
+        inputId="scope-commit-suggested"
+        name="scope-commit-mode"
+        value="SUGGESTED"
+        [ngModel]="mode()"
+        (ngModelChange)="selectMode($event)"
+      />
+      <label for="scope-commit-suggested">Suggested commits</label>
+    </div>
+    <div class="flex flex-row items-center gap-1">
+      <p-radioButton
+        inputId="scope-commit-custom"
+        name="scope-commit-mode"
+        value="CUSTOM"
+        [ngModel]="mode()"
+        (ngModelChange)="selectMode($event)"
+      />
+      <label for="scope-commit-custom">Custom Commit ID</label>
+    </div>
+  </div>
+
+  @if (mode() === "SUGGESTED") {
+  <mxevolve-single-select-dropdown
+    [stateProvider]="stateProvider"
+    [dataParams]="{ projectId: projectId(), parentBranch: parentBranch() }"
+    [config]="{ placeholder: 'Select a suggested commit', filter: true }"
+    (selectionChange)="onSuggestedSelected($event)"
+  />
+  } @else {
+  <input
+    pInputText
+    class="w-full"
+    [ngModel]="customCommitId()"
+    (ngModelChange)="onCustomChanged($event)"
+    placeholder="Enter a custom commit id"
+  />
+  }
+</div>

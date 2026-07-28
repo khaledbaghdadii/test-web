@@ -28,6 +28,20 @@
     <ng-template pTemplate="header">
       <tr>
         <th scope="col" style="width: 10px"></th>
+        <th scope="col" class="min-w-40">
+          ID
+          <p-columnFilter
+            field="objectIdPhrase"
+            matchMode="contains"
+            display="menu"
+            data-testid="id-column-filter"
+            [showMatchModes]="false"
+            [showOperator]="false"
+            [showApplyButton]="false"
+            [showAddButton]="false"
+            [showClearButton]="false"
+          ></p-columnFilter>
+        </th>
         <th scope="col">
           Title
           <p-columnFilter
@@ -117,6 +131,13 @@
           />
         </td>
         <td>
+          <mxevolve-binary-impact-id-link
+            [binaryImpactId]="impactRow.id"
+            [readableId]="impactRow.objectId"
+            [projectId]="projectId"
+          ></mxevolve-binary-impact-id-link>
+        </td>
+        <td>
           <a
             class="p-button-link"
             routerLink="{{
@@ -151,7 +172,7 @@
     <ng-template pTemplate="loadingbody">
       @for (row of Array(3); track row) {
       <tr>
-        @for (col of Array(5); track col) {
+        @for (col of Array(6); track col) {
         <td>
           <p-skeleton></p-skeleton>
         </td>

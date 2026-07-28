@@ -4,7 +4,10 @@ import {
   BusinessProcessContentContainerComponent,
   StageContainerComponent,
 } from "@mxevolve/domains/business-process/ui";
-import { ScenarioRunsComponent } from "@mxevolve/domains/test/widget";
+import {
+  ScenarioRunsComponent,
+  SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE,
+} from "@mxevolve/domains/test/widget";
 import type { StepStatus } from "@mxevolve/shared/ui/primitive";
 
 const PREPARE_BUILD_ENVIRONMENT_SUB_CONTEXT_ID = "PREPARE_BUILD_ENVIRONMENT";
@@ -27,9 +30,13 @@ export class PrepareBuildStageComponent {
   readonly processId = input.required<string>();
   readonly stageStatus = input.required<StepStatus>();
 
-  private readonly stateUpdater = inject(BuildAndTestProcessStateUpdaterService);
+  private readonly stateUpdater = inject(
+    BuildAndTestProcessStateUpdaterService
+  );
 
   readonly subContextId = PREPARE_BUILD_ENVIRONMENT_SUB_CONTEXT_ID;
+  readonly warningMessageMap =
+    SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE;
 
   reloadExecution(): void {
     this.stateUpdater.reloadProcessDetails(this.processId(), this.projectId());

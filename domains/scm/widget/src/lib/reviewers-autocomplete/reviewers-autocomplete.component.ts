@@ -1,8 +1,10 @@
 import {
   ChangeDetectorRef,
   Component,
+  effect,
   EventEmitter,
   inject,
+  input,
   Input,
   OnInit,
   Output,
@@ -45,20 +47,22 @@ export class ReviewersAutoCompleteComponent implements OnInit {
   reviewersFormControl: FormControl;
   @Input()
   destinationBranchFormControl: FormControl;
-  @Input()
-  sourceDevelopmentId: string;
-  showReviewersWarningMessage = false;
-  private _project_id: string;
 
-  @Input() set projectId(value: string) {
-    if (value) {
-      this._project_id = value;
-      this.sendForReviewStateService.setProjectId(value);
-    }
-  }
-  get projectId(): string {
-    return this._project_id;
-  }
+  readonly projectId = input.required<string>();
+  readonly sourceDevelopmentId = input<string>();
+  readonly inputId = input<string>();
+
+  /**
+   * Optional explicit repository scope for the reviewer search. When a consumer
+   * knows the repository up-front (e.g. the backport executor, whose repository
+   * is prefilled from the definition) it can set it directly instead of relying
+   * on the destination-branch/development lookup. Without it — and without a
+   * `destinationBranchFormControl` — the search would never receive a
+   * repository id and would load indefinitely.
+   */
+  readonly repositoryId = input<string>();
+
+  showReviewersWarningMessage = false;
 
   @Output() errorMessageChange = new EventEmitter<string>();
 
@@ -72,25 +76,35 @@ export class ReviewersAutoCompleteComponent implements OnInit {
   pageIndex = this.sendForReviewStateService.pageIndex;
   defaultReviewersLoading = false;
 
-  reviewerSuggestionsChanged = false;
   listOfReviewerSuggestions: Reviewer[] = [];
 
   readonly changeRef = inject(ChangeDetectorRef);
 
   constructor() {
+    effect(() => {
+      const projectId = this.projectId();
+      if (projectId) {
+        this.sendForReviewStateService.setProjectId(projectId);
+      }
+    });
+
+    effect(() => {
+      const repositoryId = this.repositoryId();
+      if (repositoryId) {
+        this.sendForReviewStateService.setRepositoryId(repositoryId);
+      }
+    });
+
     toObservable(this.errorMessageSignal)
       .pipe(takeUntilDestroyed())
       .subscribe((error) => {
         if (error) this.errorMessageChange.emit(error);
       });
 
-    toObservable(this.reviewerSuggestions)
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => {
-        if (this.reviewerSuggestions().length > 0) {
-          this.reviewerSuggestionsChanged = true;
-        }
-      });
+    effect(() => {
+      this.listOfReviewerSuggestions = this.reviewerSuggestions();
+      this.changeRef.detectChanges();
+    });
   }
 
   ngOnInit() {
@@ -104,8 +118,8 @@ export class ReviewersAutoCompleteComponent implements OnInit {
           this.defaultReviewersLoading = true;
           this.showReviewersWarningMessage = false;
           this.getDefaultReviewers(
-            this.projectId,
-            this.sourceDevelopmentId,
+            this.projectId(),
+            this.sourceDevelopmentId(),
             mergeConfiguration.branchName
           ).subscribe({
             next: (defaultReviewers) => {
@@ -131,11 +145,11 @@ export class ReviewersAutoCompleteComponent implements OnInit {
 
   private getDefaultReviewers(
     projectId: string,
-    developmentId: string,
+    developmentId: string | undefined,
     targetBranch: string
   ) {
     return this.developmentService
-      .getDevelopment(projectId, developmentId)
+      .getDevelopment(projectId, developmentId ?? "")
       .pipe(
         tap((development) => {
           this.sendForReviewStateService.setRepositoryId(
@@ -165,25 +179,6 @@ export class ReviewersAutoCompleteComponent implements OnInit {
     this.sendForReviewStateService.setFilterReset(true);
     this.sendForReviewStateService.setPageIndex(0);
     this.sendForReviewStateService.setFilter(event.query);
-    this.waitForReviewerSuggestionsUpdate().then(() => {
-      this.reviewerSuggestionsChanged = false;
-      this.listOfReviewerSuggestions = this.reviewerSuggestions();
-      this.changeRef.detectChanges();
-    });
-  }
-
-  waitForReviewerSuggestionsUpdate() {
-    return new Promise<void>((resolve) => {
-      const interval = setInterval(() => {
-        if (
-          this.reviewerSuggestionsChanged &&
-          this.reviewerSuggestions().length > 0
-        ) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 100);
-    });
   }
 
   private shouldScrollForReviewerSuggestions(last: number): boolean {

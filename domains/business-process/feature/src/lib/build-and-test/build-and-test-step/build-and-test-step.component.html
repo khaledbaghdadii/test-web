@@ -26,13 +26,15 @@
   <!-- Build panel (env bar shown once a build environment id is threaded) -->
   <mxevolve-build-and-test-build-section
     [projectId]="projectId()"
+    [processId]="processId()"
     [storyIds]="storyIds()"
-    [environmentId]="environmentId()"
+    [environmentId]="resolveEnvironmentId()"
     [automerge]="automerge()"
     [development]="development()"
-    [latestScenarioExecutionId]="environmentScenarioId()"
+    [mergeRequest]="mergeRequestResource.value()"
     [showEnvironmentWaitingMessage]="showEnvironmentWaitingMessage()"
     [scenarioDetailsDisabled]="isUserInterventionDisabled()"
+    (scenarioRerun)="reloadExecution()"
   />
 
   <!-- Technical Reseed panel -->
@@ -42,7 +44,7 @@
     [executionGroupId]="technicalReseedExecutionGroupId()!"
     [infraGroup]="machineGroupId()"
     [targetBranch]="temporaryBranchName()"
-    (operationLaunched)="reloadExecution()"
+    (reloadRequested)="reloadExecution()"
   />
   }
 
@@ -50,40 +52,39 @@
   <mxevolve-build-and-test-test-section
     [projectId]="projectId()"
     [processId]="processId()"
-    [environmentId]="environmentId()"
-    [branchName]="branchName()"
+    [development]="development()"
     [executionGroupId]="scenarioExecutionGroup()"
     [machineGroupId]="machineGroupId()"
   />
 
   <mxevolve-business-process-content-container footer [clearBackground]="true">
     @if (latestMergeJobId() && mergeRequestResource.isLoading()) {
-    <p-skeleton class="col-start-5 col-span-4 lg:col-span-2" height="2.5rem" />
+    <p-skeleton class="col-span-2 col-start-6" height="2.5rem" />
     } @else if (canReopenMergeRequest()) {
-    <p-button
-      class="col-start-5 col-span-4 lg:col-span-2"
-      styleClass="w-full"
-      label="Reopen Merge Request"
-      [disabled]="sendForReviewDisabled()"
-      [loading]="actionLoading()"
-      (onClick)="reopenMergeRequest()"
+    <mxevolve-build-and-test-merge-request-reopen
+      class="col-span-2 col-start-6"
+      [areMergeRequestDetailsEditable]="true"
+      [projectId]="projectId()"
+      [processId]="processId()"
+      [repositoryId]="execution().input.repositoryId"
+      [actionsDisabled]="sendForReviewDisabled()"
+      [developmentId]="developmentId()"
+      [destinationBranch]="mergeRequestResource.value()?.destinationBranch"
+      [mergeRequestTitle]="mergeRequestResource.value()?.title ?? ''"
+      [mergeRequestReviewers]="mergeRequestResource.value()?.reviewers ?? []"
+      (reopened)="reloadExecution()"
     />
     } @else {
     <p-button
-      class="col-start-5 col-span-4 lg:col-span-2"
+      class="col-span-2 col-start-6"
       styleClass="w-full"
-      label="Create New Merge Request"
+      label="Merge"
       [disabled]="sendForReviewDisabled()"
       (onClick)="openSendForReview()"
     />
-    }
-
-    @if (showDecisionResult()) {
-    <p-message
-      class="col-span-12"
-      [severity]="decisionMessageSeverity()"
-    >
-      {{ decisionResultLabel() }} by {{ decisionRequester() }}
+    } @if (showDecisionResult()) {
+    <p-message class="col-span-12" [severity]="decisionMessageSeverity()">
+      {{ decisionMessage() }}
     </p-message>
     }
   </mxevolve-business-process-content-container>
@@ -92,14 +93,18 @@
 </mxevolve-stage-container>
 
 <mxevolve-build-and-test-send-for-review
+  class="col-start-5 col-span-2"
   [(visible)]="sendForReviewVisible"
   [projectId]="projectId()"
   [processId]="processId()"
   [repositoryId]="execution().input.repositoryId"
   [developmentId]="developmentId()!"
+  [sourceBranchName]="execution().input.configurationBranchName"
   [parentBranchName]="execution().input.configurationParentBranch"
   [supportsResourceManagement]="execution().supportsResourceManagement"
-  [hasPredefinedMergeRequestInputs]="execution().hasPredefinedMergeRequestInputs"
+  [hasPredefinedMergeRequestInputs]="
+    execution().hasPredefinedMergeRequestInputs
+  "
   [ciVersion]="execution().ciVersion"
   (mergeRequestCreated)="reloadExecution()"
 />

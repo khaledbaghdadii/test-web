@@ -4,12 +4,12 @@
     [collapsed]="!!validationResult()?.decision"
     header="Summary"
   >
-    @if (activeFilter(); as filter) {
+    @for (filter of activeFilters(); track filter.value) {
     <p-chip
       headerExtra
       [label]="filter.label"
       [removable]="true"
-      (onRemove)="activeFilter.set(undefined)"
+      (onRemove)="removeFilter(filter)"
     />
     }
     <mxevolve-scenario-runs-summary
@@ -18,8 +18,8 @@
       subContextId="REGRESSION_TEST_PACKAGE"
       [projectId]="projectId()"
       [bpExecutionName]="processName()"
-      [externalFilter]="activeFilter()"
-      (filterClicked)="activeFilter.set($event ?? undefined)"
+      [externalFilter]="activeFilters()"
+      (filterClicked)="toggleFilter($event)"
     />
   </mxevolve-business-process-content-container>
 
@@ -28,19 +28,29 @@
     [collapsed]="!!validationResult()?.decision"
     header="Run Quality Gate"
   >
+    @if (showRefreshInfo()) {
+    <div class="w-max">
+      <p-message>
+        Scenarios are currently being executed. Please refresh to see the latest
+        result.
+      </p-message>
+    </div>
+    }
     <mxevolve-scenario-runs
       class="col-span-12"
       [projectId]="projectId()"
       [contextId]="processId()"
       subContextId="REGRESSION_TEST_PACKAGE"
+      [bpExecutionName]="processName()"
       [showEnvironmentDetails]="false"
       [showEnvironmentLink]="true"
       [showHistory]="false"
       [detailsExpandedByDefault]="false"
       [showBulkRerun]="true"
-      [filter]="activeFilter()"
+      [filter]="activeFilters()"
       [showTopBarActions]="true"
       (scenarioChanged)="reloadExecution()"
+      (scenarioRunsFetched)="handleScenarioRunsFetched($event)"
     >
       <ng-template #topBar>
         @if (referenceScenarioExecution.hasValue()) {
@@ -74,6 +84,7 @@
       [stageStatus]="stageStatus()"
       [validationResult]="validationResult()"
       [keptResourcesDecisionMade]="keptResourcesDecisionMade()"
+      [initialFactoryProductId]="factoryProductId()"
     ></mxevolve-proceed-from-quality-gate-wizard>
   </mxevolve-business-process-content-container>
 </mxevolve-stage-container>

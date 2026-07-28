@@ -18,6 +18,7 @@ export * from "./lib/my-executions-toggle/my-executions-toggle.component";
 
 export * from "./lib/business-process-uri-factory-pipe/business-process-uri-factory-pipe.module";
 export * from "./lib/business-process-uri-factory-pipe/business-process-uri-factory.pipe";
+export * from "./lib/business-process-uri-factory-pipe/integrate-changes-uri-factory.service";
 export * from "./lib/business-process-uri-factory-pipe/business-process-global-uri-factory.pipe";
 
 export * from "./lib/business-process-name-pipe/business-process-name.pipe";

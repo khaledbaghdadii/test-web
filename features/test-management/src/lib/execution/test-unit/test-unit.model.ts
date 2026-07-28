@@ -2,6 +2,7 @@ import {
   ScenarioAnalysisStatus,
   ScenarioExecutionStatus,
 } from "@mxflow/test-management";
+import { LiteScenarioExecution } from "@mxevolve/domains/test/model";
 
 export interface TestUnitModel {
   id: string;
@@ -20,8 +21,7 @@ export interface TestUnitModel {
   incidentEnabled: boolean;
 }
 
-export interface TestUnitScenarioExecutionModel {
-  id: string;
+export interface TestUnitScenarioExecutionModel extends LiteScenarioExecution {
   analysisObjects: ScenarioExecutionAnalysisObjectsModel;
   analysisStatus: ScenarioAnalysisStatus;
   status: ScenarioExecutionStatus;
@@ -31,11 +31,10 @@ export interface TestUnitScenarioExecutionModel {
   mxVersion: string;
   mxBuildId: string;
   factoryProductId: string;
-  keptExecution: boolean;
+  keepExecution: boolean;
   environment: ScenarioExecutionEnvironmentModel;
-  cleaningStatus: string;
   isFailed: boolean;
-  isFinished: boolean;
+  testUnitHead: boolean;
 }
 
 export interface ScenarioExecutionAnalysisObjectsModel {

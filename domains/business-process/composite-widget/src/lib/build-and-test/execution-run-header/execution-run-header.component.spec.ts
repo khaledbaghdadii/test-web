@@ -14,6 +14,7 @@ import {
   StageStatus,
 } from "@mxevolve/domains/business-process/util";
 import { BuildAndTestActivityRunDetailsComponent } from "@mxevolve/domains/business-process/widget";
+import { BreadcrumbComponent } from "@mxevolve/domains/analytics/widget";
 import {
   ExecutionAlertDisplayComponent,
   ExecutionStatusTagComponent,
@@ -26,6 +27,7 @@ import {
   CommitsService,
   Development,
   DevelopmentService,
+  MergeRequestService,
 } from "@mxevolve/domains/scm/data-access";
 import {
   MxevolveIconComponent,
@@ -40,6 +42,7 @@ const MOCK_IMPORTS = [
   MockComponent(BuildAndTestActivityRunDetailsComponent),
   MockComponent(BranchDetailsComponent),
   MockComponent(MxevolveIconComponent),
+  MockComponent(BreadcrumbComponent),
   Divider,
   Card,
   TooltipModule,
@@ -135,6 +138,7 @@ async function renderComponent(
       },
       { provide: DevelopmentService, useValue: mockDevelopmentService },
       { provide: CommitsService, useValue: mockCommitsService },
+      { provide: MergeRequestService, useValue: {} },
       { provide: ToastMessageService, useValue: mockToastMessageService },
     ],
   });
@@ -145,6 +149,19 @@ describe("ExecutionRunHeaderComponent (build & test)", () => {
     jest.clearAllMocks();
     mockDevelopmentService.getDevelopment.mockReturnValue(of(MOCK_DEVELOPMENT));
     mockCommitsService.getCommitDifferences.mockReturnValue(of([]));
+  });
+
+  describe("breadcrumb", () => {
+    it("renders the breadcrumb with the business process resource type and execution ids", async () => {
+      const { fixture } = await renderComponent();
+
+      const breadcrumb = ngMocks.find(fixture, BreadcrumbComponent);
+      expect(ngMocks.input(breadcrumb, "resourceType")).toBe(
+        "BUSINESS_PROCESS"
+      );
+      expect(ngMocks.input(breadcrumb, "resourceId")).toBe("exec-123");
+      expect(ngMocks.input(breadcrumb, "projectId")).toBe("project-123");
+    });
   });
 
   describe("execution name", () => {
@@ -228,10 +245,20 @@ describe("ExecutionRunHeaderComponent (build & test)", () => {
   });
 
   describe("tabs", () => {
+    it("keeps an 8px gap between the header actions and the divider", async () => {
+      await renderComponent();
+
+      expect(
+        screen
+          .getByText("Run Details")
+          .closest(".flex.items-center.justify-between")
+      ).toHaveClass("pb-2");
+    });
+
     it("always shows the Activity Run Details tab", async () => {
       await renderComponent();
 
-      expect(screen.getByText("Activity Run Details")).toBeTruthy();
+      expect(screen.getByText("Run Details")).toBeTruthy();
     });
 
     it("never shows a Reference Environment tab", async () => {
@@ -292,7 +319,7 @@ describe("ExecutionRunHeaderComponent (build & test)", () => {
       const user = userEvent.setup();
       const { fixture } = await renderComponent();
 
-      await user.click(screen.getByText("Activity Run Details"));
+      await user.click(screen.getByText("Run Details"));
 
       const details = ngMocks.find(
         fixture,
@@ -305,13 +332,11 @@ describe("ExecutionRunHeaderComponent (build & test)", () => {
       const user = userEvent.setup();
       await renderComponent();
 
-      await user.click(screen.getByText("Activity Run Details"));
-      await user.click(screen.getByText("Activity Run Details"));
+      await user.click(screen.getByText("Run Details"));
+      await user.click(screen.getByText("Run Details"));
 
       expect(
-        document.querySelector(
-          "mxevolve-build-and-test-activity-run-details"
-        )
+        document.querySelector("mxevolve-build-and-test-activity-run-details")
       ).toBeNull();
     });
 
@@ -358,25 +383,25 @@ describe("ExecutionRunHeaderComponent (build & test)", () => {
       });
     });
 
-    it("passes commitsBehindCount > 0 to branch details when branch is behind", async () => {
+    it("shows a commits-behind warning badge on the branch-details tab when behind", async () => {
       mockCommitsService.getCommitDifferences.mockReturnValue(
         of([{ id: "c1" }, { id: "c2" }, { id: "c3" }])
       );
-      const user = userEvent.setup();
+
       const { fixture } = await renderComponent({
         createBranchStage: {
           name: "create-branch",
           status: StageStatus.PASSED,
-          route: "create-branch",
           developmentId: "dev-1",
         },
       });
 
-      await user.click(screen.getByText("Branch Details"));
+      const isWarningIcon = (icon: unknown) =>
+        ngMocks.input(icon, "name") === "warning";
 
       await waitFor(() => {
-        const branchDetails = ngMocks.find(fixture, BranchDetailsComponent);
-        expect(ngMocks.input(branchDetails, "commitsBehindCount")).toBe(3);
+        const icons = ngMocks.findAll(fixture, MxevolveIconComponent);
+        expect(icons.some(isWarningIcon)).toBe(true);
       });
     });
 

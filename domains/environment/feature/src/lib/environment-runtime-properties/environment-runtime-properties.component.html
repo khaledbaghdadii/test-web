@@ -1,0 +1,216 @@
+@if (errorMessage(); as message) {
+<mxflow-error-alert
+  [errorMessage]="message"
+  (closeErrorAlert)="errorMessage.set(null)"
+/>
+}
+
+<mxevolve-card-container>
+  <div class="mb-4">
+    <mxflow-header-title class="title">
+      Runtime Properties
+    </mxflow-header-title>
+  </div>
+
+  <div class="flex justify-between mb-4 pb-4 mt-4 pt-4">
+    <div class="flex items-center gap-2">
+      <label
+        for="runtime-properties-request-type-select"
+        class="shrink-0 whitespace-nowrap"
+      >
+        Request Type
+      </label>
+
+      <p-select
+        [options]="requestTypeOptions"
+        [ngModel]="selectedRequestType()"
+        (onChange)="onRequestTypeChange($event)"
+        optionLabel="label"
+        optionValue="value"
+        [showClear]="true"
+        (onClear)="onClear()"
+        placeholder="Select Request Type"
+        data-testid="runtime-properties-request-type-select"
+        id="runtime-properties-request-type-select"
+        class="min-w-56"
+      />
+    </div>
+    <div>
+      <p-iconfield>
+        <p-inputicon>
+          <i class="pi pi-search"></i>
+        </p-inputicon>
+        <input
+          pInputText
+          type="text"
+          placeholder="Search for property"
+          (input)="
+            propertiesTree.filterGlobal($any($event.target).value, 'contains')
+          "
+        />
+      </p-iconfield>
+    </div>
+  </div>
+
+  <mxflow-spinner [isLoading]="isLoading()">
+    <p-treetable
+      #propertiesTree
+      [value]="runtimePropertiesNodes()"
+      class="w-full runtime-properties-tree"
+      [scrollable]="true"
+      [tableStyle]="{ 'min-width': '50rem' }"
+      scrollHeight="65vh"
+      [filterMode]="'lenient'"
+      [globalFilterFields]="['name', 'kind', 'description', 'deprecatedValue']"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th id="property">
+            <div class="flex items-center gap-2">
+              <button
+                pButton
+                text=""
+                [pTooltip]="allExpanded() ? 'Collapse All' : 'Expand All'"
+                (click)="toggleExpandAll()"
+              >
+                <span
+                  pButtonIcon
+                  [class]="
+                    allExpanded()
+                      ? 'pi pi-angle-double-up'
+                      : 'pi pi-angle-double-down'
+                  "
+                ></span>
+              </button>
+              <span>Property</span>
+            </div>
+          </th>
+          <th id="description" style="width: 35%">Description</th>
+          <th
+            id="alwaysPresent"
+            style="width: 10%"
+            class="text-center"
+            [pTooltip]="
+              'If not always present, check the presence of the property before referencing it.'
+            "
+            tooltipPosition="top"
+          >
+            Always Present
+          </th>
+          <th id="deprecationStatus" style="width: 15%" class="text-center">
+            Deprecation Status
+          </th>
+          <th id="dataType" style="width: 10%" class="text-center">
+            Data Type
+          </th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-serializedNode let-node="node">
+        @if (node.data.isListElement) {
+        <tr>
+          <td>
+            <div class="flex gap-2">
+              <p-treeTableToggler [rowNode]="serializedNode" />
+              <div class="flex items-center gap-1">
+                <i
+                  >{{ node.label }}
+                  <p-tag
+                    value="list element"
+                    severity="secondary"
+                    styleClass="text-xs ml-1"
+                  />
+                </i>
+              </div>
+            </div>
+          </td>
+
+          <td colspan="3">
+            <ng-container
+              *ngTemplateOutlet="allowedValuesTemplate; context: { node: node }"
+            />
+          </td>
+          <td style="width: 10%">
+            <div class="flex justify-center">
+              <p-tag [value]="node.data.kind" severity="secondary" />
+            </div>
+          </td>
+        </tr>
+        } @else {
+        <tr [ttRow]="serializedNode">
+          <td>
+            <div class="flex gap-2">
+              <p-treeTableToggler [rowNode]="serializedNode" />
+              <div class="flex items-center gap-1">
+                <mxevolve-copy-to-clipboard [value]="node.data.path" />
+                <span>{{ node.label }}</span>
+              </div>
+            </div>
+          </td>
+
+          <td style="width: 35%">
+            <div>
+              <div class="mb-2">{{ node.data.description ?? "-" }}</div>
+              <ng-container
+                *ngTemplateOutlet="
+                  allowedValuesTemplate;
+                  context: { node: node }
+                "
+              />
+            </div>
+          </td>
+
+          <td style="width: 10%" class="text-center">
+            @if (!node.data.optional) {
+            <i class="pi pi-check text-green-500"></i>
+            } @else {
+            <i class="pi pi-times text-red-500"></i>
+            }
+          </td>
+
+          <td style="width: 15%">
+            <div class="flex justify-center">
+              @if (node.data.deprecated) {
+              <p-tag
+                value="Deprecated"
+                severity="danger"
+                [pTooltip]="node.data.deprecationReason"
+                [autoHide]="false"
+              />
+              }
+            </div>
+          </td>
+
+          <td style="width: 10%">
+            <div class="flex justify-center">
+              <p-tag [value]="node.data.kind" severity="secondary" />
+            </div>
+          </td>
+        </tr>
+        }
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="py-4">
+            <mxflow-table-empty-message />
+          </td>
+        </tr>
+      </ng-template>
+    </p-treetable>
+  </mxflow-spinner>
+</mxevolve-card-container>
+
+<ng-template #allowedValuesTemplate let-node="node">
+  @if (node.data.kind === 'ENUM' && node.data.allowedValues?.length) {
+  <div class="flex flex-wrap gap-1">
+    <span class="text-s text-surface-500">Allowed Values:</span>
+    @for (allowedValue of node.data.allowedValues; track allowedValue; let last
+    = $last) {
+    <span class="text-s">
+      <p-tag [value]="allowedValue" severity="secondary" />
+    </span>
+    }
+  </div>
+  }
+</ng-template>

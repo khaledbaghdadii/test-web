@@ -1,5 +1,6 @@
 import { Component, DestroyRef, inject } from "@angular/core";
 import {
+  BusinessProcessOfficialStatus,
   DefinitionInputComponent,
   DefinitionInputGroupComponent,
   DefinitionInputsValidators,
@@ -108,7 +109,7 @@ export class RepushValidationProcessExecutionInputsComponent {
     this.execution = execution;
 
     this.initializeNameFormControl(execution);
-    this.initializeOfficialFormControl();
+    this.initializeOfficialFormControl(execution);
     this.initializeNotificationsRecipientsFormControl(execution);
     this.initializeConfigurationParameters();
     this.initializeTestsParameters();
@@ -189,13 +190,21 @@ export class RepushValidationProcessExecutionInputsComponent {
     ]);
   }
 
-  private initializeOfficialFormControl() {
+  private initializeOfficialFormControl(execution: ValidationProcessExecution) {
     this.officialFormControl = new FormControl(
-      null,
+      this.mapOfficialityToBoolean(execution.officiality),
       DefinitionInputsValidators.standardSelectableInputValidators(
         InputValidationMode.VALIDATE_ALL_FIELDS
       )
     );
+  }
+
+  private mapOfficialityToBoolean(
+    officiality: BusinessProcessOfficialStatus
+  ): boolean | null {
+    if (officiality === BusinessProcessOfficialStatus.OFFICIAL) return true;
+    if (officiality === BusinessProcessOfficialStatus.UNOFFICIAL) return false;
+    return null;
   }
 
   private initializeNotificationsRecipientsFormControl(

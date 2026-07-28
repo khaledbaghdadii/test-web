@@ -12,11 +12,11 @@ import {
   QualityGateValidationResult,
   StageStatus,
 } from "@mxevolve/domains/business-process/util";
+import type { SummaryFilterEvent } from "@mxevolve/domains/test/widget";
 import {
   ScenarioRunsComponent,
   ScenarioRunsSummaryComponent,
 } from "@mxevolve/domains/test/widget";
-import type { SummaryFilterEvent } from "@mxevolve/domains/test/widget";
 import {
   ScenarioExecution,
   ScenarioExecutionService,
@@ -59,6 +59,7 @@ const REQUIRED_INPUTS = {
   validationResult: undefined as QualityGateValidationResult | undefined,
   referenceScenarioExecutionId: "scenario-exec-1",
   keptResourcesDecisionMade: true,
+  factoryProductId: "fp-1",
 };
 
 async function renderComponent(
@@ -122,13 +123,14 @@ describe("RunQualityGateStageComponent", () => {
       expect(ngMocks.input(runs, "showHistory")).toBe(false);
       expect(ngMocks.input(runs, "detailsExpandedByDefault")).toBe(false);
       expect(ngMocks.input(runs, "showBulkRerun")).toBe(true);
+      expect(ngMocks.input(runs, "bpExecutionName")).toBe("Upgrade Process");
     });
 
     it("passes no active filter to scenario runs by default", async () => {
       const { fixture } = await renderComponent();
 
       const runs = ngMocks.find(fixture, ScenarioRunsComponent);
-      expect(ngMocks.input(runs, "filter")).toBeUndefined();
+      expect(ngMocks.input(runs, "filter")).toEqual([]);
     });
   });
 
@@ -161,6 +163,7 @@ describe("RunQualityGateStageComponent", () => {
       );
       expect(ngMocks.input(wizard, "validationResult")).toBe(validationResult);
       expect(ngMocks.input(wizard, "keptResourcesDecisionMade")).toBe(true);
+      expect(ngMocks.input(wizard, "initialFactoryProductId")).toBe("fp-1");
     });
 
     it("passes undefined validation result to the wizard when none is provided", async () => {
@@ -192,7 +195,7 @@ describe("RunQualityGateStageComponent", () => {
       await waitFor(() => {
         expect(
           ngMocks.input(ngMocks.find(fixture, ScenarioRunsComponent), "filter")
-        ).toEqual(filter);
+        ).toEqual([filter]);
       });
     });
 
@@ -210,17 +213,17 @@ describe("RunQualityGateStageComponent", () => {
       await waitFor(() => {
         expect(
           ngMocks.input(ngMocks.find(fixture, ScenarioRunsComponent), "filter")
-        ).toEqual(filter);
+        ).toEqual([filter]);
       });
 
       ngMocks
         .find(fixture, ScenarioRunsSummaryComponent)
-        .componentInstance.filterClicked.emit(null);
+        .componentInstance.filterClicked.emit(filter);
 
       await waitFor(() => {
         expect(
           ngMocks.input(ngMocks.find(fixture, ScenarioRunsComponent), "filter")
-        ).toBeUndefined();
+        ).toEqual([]);
       });
     });
   });
@@ -289,6 +292,42 @@ describe("RunQualityGateStageComponent", () => {
           "project-1"
         );
       });
+    });
+  });
+
+  it("should display a warning in case no scenario runs were fetched", async () => {
+    const { fixture } = await renderComponent({
+      projectId: "my-project",
+      processId: "my-process",
+    });
+
+    const scenarioRunsComponent = ngMocks.find(fixture, ScenarioRunsComponent);
+    scenarioRunsComponent.componentInstance.scenarioRunsFetched.emit([]);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Scenarios are currently being executed. Please refresh to see the latest result."
+        )
+      ).toBeTruthy();
+    });
+  });
+
+  it("should not display a warning in case scenario runs were fetched", async () => {
+    const { fixture } = await renderComponent({
+      projectId: "my-project",
+      processId: "my-process",
+    });
+
+    const scenarioRunsComponent = ngMocks.find(fixture, ScenarioRunsComponent);
+    scenarioRunsComponent.componentInstance.scenarioRunsFetched.emit(["run-1"]);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(
+          "Scenarios are currently being executed. Please refresh to see the latest result."
+        )
+      ).toBeNull();
     });
   });
 });

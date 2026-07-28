@@ -35,7 +35,9 @@ export class BuildAndTestBackportActionsComponent {
   readonly processStatus = input.required<ExecutionStatus>();
 
   private readonly userInputService = inject(BuildAndTestUserInputService);
-  private readonly stateUpdater = inject(BuildAndTestProcessStateUpdaterService);
+  private readonly stateUpdater = inject(
+    BuildAndTestProcessStateUpdaterService
+  );
   private readonly toastMessageService = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 

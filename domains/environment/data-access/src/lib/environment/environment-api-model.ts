@@ -19,6 +19,36 @@ export interface EnvironmentApiModel {
   environmentActions?: string[];
   webClientUrl?: string;
   secureClientArtifactUri?: string;
+  environmentDeploymentMode?: string;
+  environmentSource?: string;
+  environmentDefinition?: EnvironmentDefinitionApiModel;
+  maintenance?: EnvironmentMaintenanceApiModel;
+  allocationId?: string;
+  clients?: EnvironmentMachineRefApiModel[];
+  tests?: EnvironmentMachineRefApiModel[];
+  clonedRepositoryPath?: string;
+}
+
+export interface EnvironmentDefinitionApiModel {
+  id?: string;
+  name: string;
+}
+
+export interface EnvironmentMaintenanceApiModel {
+  full?: boolean;
+}
+
+export interface EnvironmentMachineRefApiModel {
+  directory?: string;
+  allocation?: EnvironmentMachineRefAllocationApiModel;
+}
+
+export interface EnvironmentMachineRefAllocationApiModel {
+  machine?: EnvironmentMachineRefMachineApiModel;
+}
+
+export interface EnvironmentMachineRefMachineApiModel {
+  name: string;
 }
 
 export interface EnvironmentDatabaseApiModel {
@@ -41,6 +71,7 @@ export interface EnvironmentBundleApiModel {
   id: string;
   branch: string;
   version: string;
+  changelist?: string;
 }
 
 export interface EnvironmentIsToolApiModel {

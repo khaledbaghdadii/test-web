@@ -9,12 +9,12 @@ import { UpdateReference, UpdateReferenceStatus } from "../update-reference";
 import { UpdateReferenceService } from "../update-reference.service";
 import { concatMap, forkJoin, map, of } from "rxjs";
 import {
+  BinaryImpactIdLinksComponent,
   BinaryImpactService,
   ConfigurationImpactService,
   DetectionCategory,
   DetectionType,
   DetectionUriBuilderPipe,
-  ExternalIssueSummary,
   LiteBinaryImpact,
   LiteConfigurationImpact,
 } from "@mxflow/features/failure-management";
@@ -25,10 +25,16 @@ export interface LinkedImpact {
   link: string;
 }
 
+export interface LinkedBinaryImpact {
+  binaryImpactId: string;
+  readableId: string;
+}
+
 export interface UpdateReferenceRow {
   path: string;
   commitMessage: string;
   commitId: string;
+  linkedBinaryImpacts: LinkedBinaryImpact[];
   linkedImpacts: LinkedImpact[];
   status: UpdateReferenceStatus;
 }
@@ -42,6 +48,7 @@ export interface UpdateReferenceRow {
     Skeleton,
     TableEmptyMessageComponent,
     UpdateReferenceStatusComponent,
+    BinaryImpactIdLinksComponent,
   ],
   providers: [UpdateReferenceService, DetectionUriBuilderPipe],
   templateUrl: "./update-reference-table.component.html",
@@ -93,36 +100,36 @@ export class UpdateReferenceTableComponent implements OnInit {
     configImpacts: LiteConfigurationImpact[]
   ) {
     return updateReferences.map((updateReference) => {
-      const linkedImpacts = [
-        ...this.getUpgradeImpactFromLinkedBinaryImpacts(
-          updateReference,
-          binaryImpacts
-        ),
-        ...this.getLinkedConfigurationImpacts(updateReference, configImpacts),
-      ];
       return {
         path: updateReference.path,
         commitMessage: updateReference.commitMessage,
         commitId: updateReference.commitId,
         status: updateReference.status,
-        linkedImpacts: linkedImpacts,
+        linkedBinaryImpacts: this.getLinkedBinaryImpacts(
+          updateReference,
+          binaryImpacts
+        ),
+        linkedImpacts: this.getLinkedConfigurationImpacts(
+          updateReference,
+          configImpacts
+        ),
       };
     });
   }
 
-  private getUpgradeImpactFromLinkedBinaryImpacts(
+  private getLinkedBinaryImpacts(
     updateReference: UpdateReference,
     binaryImpacts: LiteBinaryImpact[]
-  ) {
-    return this.getDistinctUpgradeImpactExternalIssuesFromBinaryImpacts(
-      updateReference,
-      binaryImpacts
-    ).map((upgradeImpactExternalIssue) => {
-      return {
-        displayText: upgradeImpactExternalIssue.id,
-        link: upgradeImpactExternalIssue.link,
-      };
-    });
+  ): LinkedBinaryImpact[] {
+    return Array.from(updateReference.linkedBinaryImpactsIds)
+      .map((binaryImpactId) =>
+        binaryImpacts.filter((impact) => impact.id === binaryImpactId).pop()
+      )
+      .filter((impact) => impact !== undefined)
+      .map((impact) => ({
+        binaryImpactId: impact.id,
+        readableId: impact.objectId,
+      }));
   }
 
   private getLinkedConfigurationImpacts(
@@ -161,29 +168,6 @@ export class UpdateReferenceTableComponent implements OnInit {
     });
   }
 
-  private getDistinctUpgradeImpactExternalIssuesFromBinaryImpacts(
-    updateReference: UpdateReference,
-    binaryImpacts: LiteBinaryImpact[]
-  ) {
-    return this.getDistinctUpgradeImpactExternalIssues(
-      this.getUpgradeImpactExternalIssues(updateReference, binaryImpacts)
-    );
-  }
-
-  private getUpgradeImpactExternalIssues(
-    updateReference: UpdateReference,
-    binaryImpacts: LiteBinaryImpact[]
-  ) {
-    return Array.from(updateReference.linkedBinaryImpactsIds)
-      .map((binaryImpactId) => {
-        const upgradeImpact = binaryImpacts
-          .filter((impact) => impact.id === binaryImpactId)
-          .pop()?.upgradeImpact;
-        return upgradeImpact ? upgradeImpact.externalIssue : undefined;
-      })
-      .filter((externalIssue) => externalIssue != undefined);
-  }
-
   private fetchConfigImpacts(configImpactIds: Set<string>) {
     if (configImpactIds.size > 0) {
       return this.configImpactService.fetchByIds(
@@ -217,16 +201,5 @@ export class UpdateReferenceTableComponent implements OnInit {
       });
     }
     return { binaryImpactIds, configImpactIds };
-  }
-
-  private getDistinctUpgradeImpactExternalIssues(
-    externalIssues: ExternalIssueSummary[]
-  ) {
-    const result = [...externalIssues];
-    return result.filter(
-      (externalIssue, index) =>
-        index ===
-        result.findIndex((otherIssue) => otherIssue.id === externalIssue.id)
-    );
   }
 }

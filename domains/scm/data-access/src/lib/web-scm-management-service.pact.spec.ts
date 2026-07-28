@@ -154,6 +154,90 @@ describe("DevelopmentService contract tests", () => {
     expect(result).toBeTruthy();
   });
 
+  test("should get developments without filters", async () => {
+    await provider.addInteraction({
+      state: "can get all developments",
+      uponReceiving: "a request to get all developments without filters",
+      withRequest: {
+        method: "GET",
+        path: `/scm-management/projects/${PROJECT_ID}/developments`,
+      },
+      willRespondWith: {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: {
+          content: Matchers.eachLike({
+            id: Matchers.string(),
+            name: Matchers.string(),
+            source: Matchers.string(),
+            projectId: Matchers.string(),
+            createdOn: Matchers.string(),
+            parentCommitId: Matchers.string(),
+          }),
+          totalPages: Matchers.integer(),
+          totalElements: Matchers.integer(),
+          size: Matchers.integer(),
+          number: Matchers.integer(),
+          last: Matchers.boolean(),
+        },
+      },
+    });
+
+    const result = await lastValueFrom(
+      developmentService.getDevelopments(PROJECT_ID, {})
+    );
+
+    expect(result.content).toBeDefined();
+  });
+
+  test("should get developments with repository and name filters", async () => {
+    await provider.addInteraction({
+      state: "can get all developments",
+      uponReceiving:
+        "a request to get developments with repository and name filters",
+      withRequest: {
+        method: "GET",
+        path: `/scm-management/projects/${PROJECT_ID}/developments`,
+        query: {
+          repositoryId: "repository-id",
+          name: "feature-branch",
+        },
+      },
+      willRespondWith: {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: {
+          content: Matchers.eachLike({
+            id: Matchers.string(),
+            name: Matchers.string(),
+            source: Matchers.string(),
+            projectId: Matchers.string(),
+            createdOn: Matchers.string(),
+            parentCommitId: Matchers.string(),
+          }),
+          totalPages: Matchers.integer(),
+          totalElements: Matchers.integer(),
+          size: Matchers.integer(),
+          number: Matchers.integer(),
+          last: Matchers.boolean(),
+        },
+      },
+    });
+
+    const result = await lastValueFrom(
+      developmentService.getDevelopments(PROJECT_ID, {
+        repositoryId: "repository-id",
+        name: "feature-branch",
+      })
+    );
+
+    expect(result.content).toBeDefined();
+  });
+
   test("should fetch filtered merge requests", async () => {
     await provider.addInteraction({
       state: "a request to filter merge requests",
@@ -233,6 +317,7 @@ describe("DevelopmentService contract tests", () => {
         },
         body: Matchers.like({
           pullRequestId: Matchers.string(),
+          title: Matchers.string(),
           mergeRequestState: Matchers.like("IN_REVIEW"),
           pullRequestUrl: Matchers.string(),
           mergeConfiguration: Matchers.like({
@@ -246,12 +331,20 @@ describe("DevelopmentService contract tests", () => {
           isLastBuildInBulkMode: Matchers.boolean(),
           builds: Matchers.eachLike({
             id: Matchers.string(),
+            scenarioExecutionId: Matchers.string(),
             bulkMode: Matchers.boolean(),
+            createdOn: Matchers.string(),
           }),
           stateTransitions: Matchers.eachLike({
             mergeRequestPreviousState: Matchers.string(),
             mergeRequestCurrentState: Matchers.string(),
             transitionedOn: Matchers.string(),
+          }),
+          reviewers: Matchers.eachLike({
+            name: Matchers.string(),
+            displayName: Matchers.string(),
+            emailAddress: Matchers.string(),
+            approved: Matchers.boolean(),
           }),
           owner: Matchers.string(),
           projectId: Matchers.string(),
@@ -266,6 +359,8 @@ describe("DevelopmentService contract tests", () => {
     expect(result).not.toBeNull();
     expect(result.pullRequestId).toBeTruthy();
     expect(result.mergeRequestState).toBeTruthy();
+    expect(result.title).toBeTruthy();
+    expect(result.reviewers?.length).toBeGreaterThan(0);
   });
 
   test("should update merge request priority", async () => {

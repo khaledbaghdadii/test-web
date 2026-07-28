@@ -10,7 +10,7 @@ import { ConfirmationService } from "primeng/api";
 import { ConfirmPopupModule } from "primeng/confirmpopup";
 import { Toast } from "primeng/toast";
 import { DisableAbortPipe } from "./disable-abort.pipe";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 @Component({
   selector: "mxevolve-abort-scenario-execution-button",

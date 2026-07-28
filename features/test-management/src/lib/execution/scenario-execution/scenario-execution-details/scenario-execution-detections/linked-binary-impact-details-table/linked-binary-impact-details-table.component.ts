@@ -7,6 +7,7 @@ import { TableEmptyMessageComponent } from "@mxflow/ui/utils";
 import { TableModule } from "primeng/table";
 import { TooltipModule } from "primeng/tooltip";
 import {
+  BinaryImpactIdLinkComponent,
   DetectionUriBuilderPipe,
   LiteBinaryImpact,
   DetectionCategory,
@@ -24,6 +25,7 @@ import {
     TableModule,
     TooltipModule,
     DetectionUriBuilderPipe,
+    BinaryImpactIdLinkComponent,
   ],
   templateUrl: "./linked-binary-impact-details-table.component.html",
 })

@@ -192,6 +192,26 @@ describe("CreateBinaryRegressionModalComponent", () => {
 
       expect(component.isLoading).toBe(false);
     }));
+
+    it("should map incidentId to empty string when it is null on submit", () => {
+      const mockFormValues = {
+        title: "Test Title",
+        description: "Test Description",
+        defect: "Test Guilty Change",
+        fix: "Test Fix",
+        mxVersion: "Test Mx version",
+        incidentId: null,
+      };
+      component.createBinaryRegressionForm.setValue(mockFormValues);
+      component.onFormSubmission();
+
+      expect(
+        binaryRegressionService.createBinaryRegression
+      ).toHaveBeenCalledWith(
+        PROJECT_ID,
+        expect.objectContaining({ incidentId: "" })
+      );
+    });
   });
 
   describe("onCancel", () => {
@@ -320,5 +340,20 @@ describe("CreateBinaryRegressionModalComponent", () => {
       component.handleErrorOccurred(errorMessage);
       expect(showErrorSpy).toHaveBeenCalledWith(errorMessage);
     });
+  });
+
+  it("should mark the form as invalid when incidentId is null", () => {
+    component.createBinaryRegressionForm.setValue({
+      title: "Test Title",
+      description: "Test Description",
+      defect: "Test Guilty Change",
+      fix: "Test Fix",
+      mxVersion: "Test Mx version",
+      incidentId: "Incident Id",
+    });
+    expect(component.createBinaryRegressionForm.valid).toBe(true);
+
+    component.createBinaryRegressionForm.patchValue({ incidentId: null });
+    expect(component.createBinaryRegressionForm.valid).toBe(false);
   });
 });

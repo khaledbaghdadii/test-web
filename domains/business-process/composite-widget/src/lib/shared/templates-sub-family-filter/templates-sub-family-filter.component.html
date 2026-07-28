@@ -1,0 +1,36 @@
+<div class="flex items-end gap-3">
+  <div class="flex w-1/2 flex-col gap-1">
+    <label for="templates-sub-activity">Select Sub-Activity</label>
+    <mxevolve-single-select-dropdown
+      [stateProvider]="stateProvider"
+      [dataParams]="dataParams()"
+      inputId="templates-sub-activity"
+      [config]="{ placeholder: 'All' }"
+      (selectionChange)="subFamilyChange.emit($event)"
+    />
+  </div>
+  <div class="relative flex-1">
+    <input
+      pInputText
+      class="w-full pr-8"
+      type="text"
+      placeholder="Search templates"
+      aria-label="Search templates"
+      [value]="searchTerm()"
+      (input)="searchChange.emit($any($event.target).value)"
+    />
+    @if (searchTerm()) {
+    <p-button
+      class="absolute right-0 top-0"
+      [rounded]="true"
+      [text]="true"
+      ariaLabel="Clear template search"
+      (onClick)="searchChange.emit('')"
+    >
+      <ng-template #icon>
+        <mxevolve-icon name="close" size="sm" />
+      </ng-template>
+    </p-button>
+    }
+  </div>
+</div>

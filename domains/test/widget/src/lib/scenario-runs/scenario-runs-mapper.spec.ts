@@ -5,6 +5,7 @@ import type {
 } from "@mxevolve/domains/test/data-access";
 import type { UserApiResponse } from "@mxevolve/domains/user/data-access";
 import { EnvironmentStatus } from "@mxevolve/domains/environment/util";
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
 import {
   applyEnvironmentStatus,
   applyResolvedAssignees,
@@ -52,9 +53,9 @@ function createExecution(
     mxVersion: "3.1.64",
     mxBuildId: "build-1",
     factoryProductId: "",
-    keptExecution: false,
+    keepExecution: false,
     environment: { environmentId: "env-1", status: "CREATED" },
-    cleaningStatus: "",
+    cleaningStatus: ScenarioExecutionHousekeepingStatus.NOT_LAUNCHED,
     failed: false,
     finished: true,
     ...overrides,
@@ -305,7 +306,7 @@ describe("mapExecutionToRun", () => {
 
   it("sets warningMessage when execution is not kept and keep execution is enabled", () => {
     const result = mapExecutionToRun(
-      createExecution({ keptExecution: false }),
+      createExecution({ keepExecution: false }),
       createTestUnit({ disableKeepExecution: false })
     );
 
@@ -316,7 +317,7 @@ describe("mapExecutionToRun", () => {
 
   it("does not set warningMessage when execution is kept", () => {
     const result = mapExecutionToRun(
-      createExecution({ keptExecution: true }),
+      createExecution({ keepExecution: true }),
       createTestUnit({ disableKeepExecution: false })
     );
 
@@ -325,11 +326,50 @@ describe("mapExecutionToRun", () => {
 
   it("does not set warningMessage when keep execution is disabled", () => {
     const result = mapExecutionToRun(
-      createExecution({ keptExecution: false }),
+      createExecution({ keepExecution: false }),
       createTestUnit({ disableKeepExecution: true })
     );
 
     expect(result.warningMessage).toBeUndefined();
+  });
+
+  it("defaults counts and IDs to empty when analysisObjects is undefined", () => {
+    const result = mapExecutionToRun(
+      createExecution({
+        analysisObjects: undefined,
+      } as Partial<TestUnitScenarioExecutionApiModel>),
+      createTestUnit()
+    );
+
+    expect(result.numberOfImpacts).toBe(0);
+    expect(result.numberOfRegressions).toBe(0);
+    expect(result.numberOfIncidents).toBe(0);
+    expect(result.impactIds).toEqual([]);
+    expect(result.regressionIds).toEqual([]);
+    expect(result.incidentIds).toEqual([]);
+  });
+
+  it("defaults counts and IDs to empty when individual analysisObjects arrays are undefined", () => {
+    const result = mapExecutionToRun(
+      createExecution({
+        analysisObjects: {
+          binaryImpacts: undefined,
+          configurationImpacts: undefined,
+          binaryRegressions: undefined,
+          configurationRegressions: undefined,
+          failureReasons: undefined,
+          incidents: undefined,
+        } as Partial<TestUnitScenarioExecutionApiModel["analysisObjects"]>,
+      } as Partial<TestUnitScenarioExecutionApiModel>),
+      createTestUnit()
+    );
+
+    expect(result.numberOfImpacts).toBe(0);
+    expect(result.numberOfRegressions).toBe(0);
+    expect(result.numberOfIncidents).toBe(0);
+    expect(result.impactIds).toEqual([]);
+    expect(result.regressionIds).toEqual([]);
+    expect(result.incidentIds).toEqual([]);
   });
 });
 
@@ -526,6 +566,49 @@ describe("mapApiResponseToRun", () => {
     expect(result.factoryProductId).toBeUndefined();
     expect(result.repushable).toBeUndefined();
   });
+
+  it("defaults counts and IDs to empty when detections is undefined", () => {
+    const result = mapApiResponseToRun(
+      createApiResponse({
+        detections: undefined,
+      } as Partial<ScenarioRunApiResponse>)
+    );
+
+    expect(result.numberOfImpacts).toBe(0);
+    expect(result.numberOfRegressions).toBe(0);
+    expect(result.impactIds).toEqual([]);
+    expect(result.regressionIds).toEqual([]);
+  });
+
+  it("defaults counts and IDs to empty when individual detections arrays are undefined", () => {
+    const result = mapApiResponseToRun(
+      createApiResponse({
+        detections: {
+          binaryImpactIds: undefined,
+          configurationImpactIds: undefined,
+          binaryRegressionIds: undefined,
+          configurationRegressionIds: undefined,
+          failureReasonIds: undefined,
+        } as Partial<ScenarioRunApiResponse["detections"]>,
+      } as Partial<ScenarioRunApiResponse>)
+    );
+
+    expect(result.numberOfImpacts).toBe(0);
+    expect(result.numberOfRegressions).toBe(0);
+    expect(result.impactIds).toEqual([]);
+    expect(result.regressionIds).toEqual([]);
+  });
+
+  it("defaults count and IDs to empty when linkedIncidents is undefined", () => {
+    const result = mapApiResponseToRun(
+      createApiResponse({
+        linkedIncidents: undefined,
+      } as Partial<ScenarioRunApiResponse>)
+    );
+
+    expect(result.numberOfIncidents).toBe(0);
+    expect(result.incidentIds).toEqual([]);
+  });
 });
 
 describe("splitIntoHeadAndPreviousRuns", () => {
@@ -585,7 +668,7 @@ describe("splitIntoHeadAndPreviousRuns", () => {
             configurationImpacts: ["imp-3"],
             binaryRegressions: ["reg-1"],
             configurationRegressions: ["reg-2"],
-            failureReasons: [],
+            failureReasons: ["fr-1", "fr-2"],
             incidents: ["inc-1", "inc-2"],
           },
         }),
@@ -599,7 +682,7 @@ describe("splitIntoHeadAndPreviousRuns", () => {
             configurationImpacts: ["imp-4"],
             binaryRegressions: ["reg-1", "reg-3"],
             configurationRegressions: [],
-            failureReasons: [],
+            failureReasons: ["fr-2", "fr-3"],
             incidents: ["inc-2", "inc-3"],
           },
         }),
@@ -616,6 +699,7 @@ describe("splitIntoHeadAndPreviousRuns", () => {
     expect(result.totalNumberOfImpacts).toBe(4);
     expect(result.totalNumberOfRegressions).toBe(3);
     expect(result.totalNumberOfIncidents).toBe(3);
+    expect(result.totalNumberOfFailureReasons).toBe(3);
   });
 
   it("returns zero totals when runs have no findings", () => {
@@ -633,6 +717,7 @@ describe("splitIntoHeadAndPreviousRuns", () => {
     expect(result.totalNumberOfImpacts).toBe(0);
     expect(result.totalNumberOfRegressions).toBe(0);
     expect(result.totalNumberOfIncidents).toBe(0);
+    expect(result.totalNumberOfFailureReasons).toBe(0);
   });
 });
 
@@ -990,6 +1075,51 @@ describe("computeFilterDataFromTestUnit", () => {
     expect(result.hasRegressions).toBe(false);
     expect(result.hasImpacts).toBe(false);
   });
+
+  it("does not throw and returns all false when analysisObjects is undefined", () => {
+    const testUnit = createTestUnit({
+      scenarioExecutions: [
+        createExecution({
+          analysisObjects: undefined,
+        } as Partial<TestUnitScenarioExecutionApiModel>),
+      ],
+    });
+
+    const result = computeFilterDataFromTestUnit(testUnit);
+
+    expect(result).toEqual({
+      hasWasteReasons: false,
+      hasRegressions: false,
+      hasImpacts: false,
+      hasIncidents: false,
+      incidentStatuses: [],
+      businessProcessChainIds: [],
+    });
+  });
+
+  it("does not throw when individual analysisObjects arrays are undefined", () => {
+    const testUnit = createTestUnit({
+      scenarioExecutions: [
+        createExecution({
+          analysisObjects: {
+            binaryImpacts: undefined,
+            configurationImpacts: undefined,
+            binaryRegressions: undefined,
+            configurationRegressions: undefined,
+            failureReasons: undefined,
+            incidents: undefined,
+          } as Partial<TestUnitScenarioExecutionApiModel["analysisObjects"]>,
+        } as Partial<TestUnitScenarioExecutionApiModel>),
+      ],
+    });
+
+    const result = computeFilterDataFromTestUnit(testUnit);
+
+    expect(result.hasWasteReasons).toBe(false);
+    expect(result.hasRegressions).toBe(false);
+    expect(result.hasImpacts).toBe(false);
+    expect(result.hasIncidents).toBe(false);
+  });
 });
 
 describe("computeFilterDataFromApiResponses", () => {
@@ -1102,6 +1232,52 @@ describe("computeFilterDataFromApiResponses", () => {
     expect(result.hasWasteReasons).toBe(false);
     expect(result.hasIncidents).toBe(false);
   });
+
+  it("does not throw and returns all false when detections is undefined", () => {
+    const result = computeFilterDataFromApiResponses([
+      createApiResponse({
+        detections: undefined,
+      } as Partial<ScenarioRunApiResponse>),
+    ]);
+
+    expect(result).toEqual({
+      hasWasteReasons: false,
+      hasRegressions: false,
+      hasImpacts: false,
+      hasIncidents: false,
+      incidentStatuses: [],
+      businessProcessChainIds: [],
+    });
+  });
+
+  it("does not throw when individual detections arrays are undefined", () => {
+    const result = computeFilterDataFromApiResponses([
+      createApiResponse({
+        detections: {
+          binaryImpactIds: undefined,
+          configurationImpactIds: undefined,
+          binaryRegressionIds: undefined,
+          configurationRegressionIds: undefined,
+          failureReasonIds: undefined,
+        } as Partial<ScenarioRunApiResponse["detections"]>,
+      } as Partial<ScenarioRunApiResponse>),
+    ]);
+
+    expect(result.hasWasteReasons).toBe(false);
+    expect(result.hasRegressions).toBe(false);
+    expect(result.hasImpacts).toBe(false);
+  });
+
+  it("does not throw and returns hasIncidents false when linkedIncidents is undefined", () => {
+    const result = computeFilterDataFromApiResponses([
+      createApiResponse({
+        linkedIncidents: undefined,
+      } as Partial<ScenarioRunApiResponse>),
+    ]);
+
+    expect(result.hasIncidents).toBe(false);
+    expect(result.incidentStatuses).toEqual([]);
+  });
 });
 
 describe("buildIncidentStatusesByRunId", () => {
@@ -1205,6 +1381,17 @@ describe("buildIncidentStatusesByRunId", () => {
     ]);
 
     expect(result.get("run-1")).toEqual(["Draft"]);
+  });
+
+  it("does not throw and skips runs when linkedIncidents is undefined", () => {
+    const result = buildIncidentStatusesByRunId([
+      createApiResponse({
+        id: "run-1",
+        linkedIncidents: undefined,
+      } as Partial<ScenarioRunApiResponse>),
+    ]);
+
+    expect(result.size).toBe(0);
   });
 });
 

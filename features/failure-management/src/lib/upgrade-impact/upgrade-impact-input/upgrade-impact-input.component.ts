@@ -50,6 +50,8 @@ export class UpgradeImpactInputComponent implements ControlValueAccessor {
   @Input() initialValidationScope?: ValidationScope;
   @Input() warningMessage?: string;
   @Output() errorMessage: EventEmitter<string> = new EventEmitter();
+  @Output() upgradeImpactSelected: EventEmitter<UpgradeImpact | null> =
+    new EventEmitter();
 
   set selectedUpgradeImpactId(value: string | null) {
     this._selectedUpgradeImpactId = value;
@@ -96,6 +98,7 @@ export class UpgradeImpactInputComponent implements ControlValueAccessor {
 
   handleSetSelectedUpgradeImpact(upgradeImpact: UpgradeImpact) {
     this.selectedUpgradeImpact = upgradeImpact;
+    this.upgradeImpactSelected.emit(upgradeImpact);
   }
 
   clearSelectedUpgradeImpact() {
@@ -103,5 +106,6 @@ export class UpgradeImpactInputComponent implements ControlValueAccessor {
     this.selectedUpgradeImpact = null;
     this.onChange(this.selectedUpgradeImpactId);
     this.onTouched();
+    this.upgradeImpactSelected.emit(null);
   }
 }

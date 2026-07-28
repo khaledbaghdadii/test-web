@@ -1,7 +1,7 @@
 export interface EditBinaryImpactRequest {
   title?: string;
   description?: string;
-  upgradeImpactId?: string;
+  affectedVersions: string[];
   region: string;
   stream: string;
   magnitude?: string;

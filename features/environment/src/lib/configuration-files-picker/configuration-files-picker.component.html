@@ -1,0 +1,29 @@
+<p-iconfield>
+  <p-inputicon class="pi pi-file" />
+  <input
+    pTooltip="Select a repository to enable this field"
+    tooltipPosition="top"
+    [tooltipDisabled]="disabled"
+    type="text"
+    pInputText
+    placeholder="Select Configuration Files"
+    class="{{ disabled ? 'disabled w-full' : 'w-full' }} cursor-pointer"
+    [ngModel]="selectedFilePaths"
+    [readOnly]="true"
+    [disabled]="disabled"
+    (click)="openConfigurationFilesBrowser()"
+  />
+
+  @if(selectedFilePaths.length){
+  <p-inputicon
+    class="pi pi-times cursor-pointer"
+    (click)="clearSelectedFiles()"
+    (keydown)="clearSelectedFiles()"
+  />
+  }
+</p-iconfield>
+
+<mxflow-repo-browser-component
+  [projectId]="projectId"
+  (pathsSelected)="handleConfigurationFilesSelected($event)"
+></mxflow-repo-browser-component>

@@ -17,6 +17,7 @@ import {
   ManagementRequestService,
 } from "@mxevolve/domains/environment/data-access";
 import { EnvironmentStatus } from "@mxevolve/domains/environment/util";
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
 import { UserService } from "@mxevolve/domains/user/data-access";
 
 function createTestUnit(
@@ -54,9 +55,9 @@ function createTestUnit(
         mxVersion: "3.1.64",
         mxBuildId: "build-1",
         factoryProductId: "",
-        keptExecution: false,
+        keepExecution: false,
         environment: { environmentId: "env-1", status: "CREATED" },
-        cleaningStatus: "",
+        cleaningStatus: ScenarioExecutionHousekeepingStatus.NOT_LAUNCHED,
         failed: false,
         finished: true,
       },
@@ -105,7 +106,7 @@ describe("ScenarioRunsPanelFacadeService", () => {
   let service: ScenarioRunsPanelFacadeService;
   let scenarioRunService: jest.Mocked<Pick<ScenarioRunService, "fetch">>;
   let environmentService: jest.Mocked<
-    Pick<EnvironmentService, "fetchByEnvironmentIds">
+    Pick<EnvironmentService, "fetchByProjectAndEnvironmentIds">
   >;
   let testUnitService: jest.Mocked<Pick<TestUnitService, "fetch">>;
   let scenarioDefinitionService: jest.Mocked<
@@ -120,7 +121,7 @@ describe("ScenarioRunsPanelFacadeService", () => {
       fetch: jest.fn(),
     };
     environmentService = {
-      fetchByEnvironmentIds: jest.fn().mockReturnValue(of([])),
+      fetchByProjectAndEnvironmentIds: jest.fn().mockReturnValue(of([])),
     };
     testUnitService = {
       fetch: jest.fn(),
@@ -263,7 +264,7 @@ describe("ScenarioRunsPanelFacadeService", () => {
 
     it("enriches environment statuses from the environment service", async () => {
       testUnitService.fetch.mockReturnValue(of([createTestUnit()]));
-      environmentService.fetchByEnvironmentIds.mockReturnValue(
+      environmentService.fetchByProjectAndEnvironmentIds.mockReturnValue(
         of([createEnvironment("env-1", EnvironmentStatus.READY)])
       );
 
@@ -276,9 +277,9 @@ describe("ScenarioRunsPanelFacadeService", () => {
       );
 
       expect(results[0].head.environmentStatus).toBe(EnvironmentStatus.READY);
-      expect(environmentService.fetchByEnvironmentIds).toHaveBeenCalledWith([
-        "env-1",
-      ]);
+      expect(
+        environmentService.fetchByProjectAndEnvironmentIds
+      ).toHaveBeenCalledWith("project-1", ["env-1"]);
     });
 
     it("skips environment fetch when no runs have environment IDs", async () => {
@@ -300,7 +301,9 @@ describe("ScenarioRunsPanelFacadeService", () => {
         })
       );
 
-      expect(environmentService.fetchByEnvironmentIds).not.toHaveBeenCalled();
+      expect(
+        environmentService.fetchByProjectAndEnvironmentIds
+      ).not.toHaveBeenCalled();
     });
 
     it("populates incident statuses from scenario run data", async () => {
@@ -441,7 +444,7 @@ describe("ScenarioRunsPanelFacadeService", () => {
     it("enriches environment statuses via scenario run IDs path", async () => {
       testUnitService.fetch.mockReturnValue(of([createTestUnit()]));
       scenarioRunService.fetch.mockReturnValue(of([]));
-      environmentService.fetchByEnvironmentIds.mockReturnValue(
+      environmentService.fetchByProjectAndEnvironmentIds.mockReturnValue(
         of([createEnvironment("env-1", EnvironmentStatus.READY)])
       );
 

@@ -2,6 +2,18 @@ export { ExecutionStatus } from "./lib/execution-status";
 export { ExecutionFamily } from "./lib/execution-family";
 export { BranchCreationDetails } from "./lib/branch-creation-details";
 export {
+  isInputEmpty,
+  isPrefilled,
+  shouldShowInForm,
+  type InputAccessMode,
+  type DefinitionInputValue,
+  type VisibilityControl,
+} from "./lib/definition-inputs/input-visibility";
+export {
+  isValidationScopeStartCommitVisible,
+  type ValidationScopeVisibilityInput,
+} from "./lib/definition-inputs/validation-scope-visibility";
+export {
   UpgradeProcessExecution,
   UpgradeProcessInput,
   UpgradeProcessCreateBranchStage,
@@ -18,7 +30,10 @@ export {
   BuildAndTestProcessExecution,
   BuildAndTestProcessExecutionInput,
   BuildAndTestProcessBuildEnvironmentInput,
-  BuildAndTestProcessStage,
+  CreateBranchStage,
+  PrepareBuildStage,
+  BuildAndTestStage,
+  IntegrateChangesStage,
   FinalProductPublishing,
   FinalProductFailure,
   BuildAndTestBackport,
@@ -29,3 +44,5 @@ export {
   BuildAndTestSource,
   BuildAndTestSourceType,
 } from "./lib/build-and-test/build-and-test-process-execution";
+export { constructBusinessProcessExecutionUri } from "./lib/business-process-global-uri-factory";
+export { buildDefinitionDetailsPath } from "./lib/definition-details-path";

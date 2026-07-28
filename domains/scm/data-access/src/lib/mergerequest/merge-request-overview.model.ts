@@ -13,6 +13,7 @@ export enum MergeRequestState {
 
 export enum FailureReason {
   PR_UNAPPROVED = "PR_UNAPPROVED",
+  PR_CONFLICT = "PR_CONFLICT",
   PR_DELETED = "PR_DELETED",
   REBASE_CONFLICT = "REBASE_CONFLICT",
   TECHNICAL_FAILURE = "TECHNICAL_FAILURE",
@@ -34,6 +35,7 @@ export interface MergeRequestBuild {
   readonly id: string;
   readonly scenarioExecutionId?: string;
   readonly bulkMode: boolean;
+  readonly createdOn?: string;
 }
 
 export const UNSUCCESSFUL_MERGE_REQUEST_END_STATES: ReadonlySet<MergeRequestState> =
@@ -61,9 +63,17 @@ export interface MergeRequestMergeConfiguration {
   readonly branchName: string;
 }
 
+export interface MergeRequestReviewer {
+  readonly name: string;
+  readonly displayName: string;
+  readonly emailAddress?: string;
+  readonly approved?: boolean;
+}
+
 export interface MergeRequestOverview {
   readonly id?: string;
   readonly pullRequestId: string;
+  readonly title?: string;
   readonly mergeRequestState: MergeRequestState;
   readonly createdOn?: string;
   readonly pullRequestUrl?: string;
@@ -76,6 +86,7 @@ export interface MergeRequestOverview {
   readonly isLastBuildInBulkMode?: boolean;
   readonly development?: MergeRequestDevelopment;
   readonly mergeConfiguration?: MergeRequestMergeConfiguration;
+  readonly reviewers?: MergeRequestReviewer[];
   readonly builds?: MergeRequestBuild[];
   readonly stateTransitions?: MergeRequestStateTransition[];
   readonly owner?: string;

@@ -48,6 +48,7 @@ export class SoftwareProductSelectorComponent
 {
   @Input() projectId: string;
   @Input() required: boolean;
+  @Input() applyGridLayout = false;
   @Input() mxVersion: string | undefined;
   @Input() mxBuildId: string | undefined;
   @Input() parentFactoryProductId: string | undefined;

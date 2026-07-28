@@ -1,0 +1,14 @@
+@if (!isLoading()) {
+<mxevolve-group-dropdown-selection
+  [projectId]="projectId()"
+  [formControl]="selectedGroupFormControl"
+  [inputId]="infraGroupFormControlName()"
+></mxevolve-group-dropdown-selection>
+} @else {
+<p-select
+  placeholder="Select Infra Group"
+  class="w-full"
+  [loading]="true"
+  [inputId]="infraGroupFormControlName()"
+></p-select>
+}

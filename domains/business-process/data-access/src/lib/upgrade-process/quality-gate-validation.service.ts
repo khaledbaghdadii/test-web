@@ -44,8 +44,8 @@ export class QualityGateValidationService {
           requester: this.authenticationService.getUsername(),
           shouldCleanDevelopment: request.shouldCleanDevelopment,
           developmentId: request.developmentId,
-          comment: request.comment,
           supportsResourceManagement: request.supportsResourceManagement,
+          ...(request.comment ? { comment: request.comment } : {}),
         }
       )
       .pipe(

@@ -45,7 +45,9 @@ export class BuildAndTestBackportManualCherryPickComponent {
 
   private readonly commitsService = inject(CommitsService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly stateUpdater = inject(BuildAndTestProcessStateUpdaterService);
+  private readonly stateUpdater = inject(
+    BuildAndTestProcessStateUpdaterService
+  );
   private readonly toastMessageService = inject(ToastMessageService);
   private readonly userInputService = inject(BuildAndTestUserInputService);
   private readonly destroyRef = inject(DestroyRef);
@@ -54,10 +56,10 @@ export class BuildAndTestBackportManualCherryPickComponent {
 
   readonly commitDifferences = rxResource({
     params: () => {
-      const sourceBranch = this.backport().initializeDevelopmentState
-        .cherryPickBranchName;
-      const destinationBranch = this.backport().initializeDevelopmentState
-        .destinationBranchName;
+      const sourceBranch =
+        this.backport().initializeDevelopmentState.cherryPickBranchName;
+      const destinationBranch =
+        this.backport().initializeDevelopmentState.destinationBranchName;
       if (!sourceBranch || !destinationBranch) return undefined;
       return {
         projectId: this.projectId(),

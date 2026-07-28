@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/angular";
 import { MockComponent, ngMocks } from "ng-mocks";
-import { Subject, of } from "rxjs";
+import { of, Subject } from "rxjs";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Tooltip } from "primeng/tooltip";
 import { Divider } from "primeng/divider";
@@ -8,7 +8,7 @@ import { BuildAndTestExecutionViewComponent } from "./build-and-test-execution-v
 import { BuildAndTestMergeStageComponent } from "../merge-stage/build-and-test-merge-stage.component";
 import { PrepareBuildStageComponent } from "../prepare-build-stage/prepare-build-stage.component";
 import { BuildAndTestExecutionRunHeaderComponent } from "@mxevolve/domains/business-process/composite-widget";
-import { BuildAndTestExecutionFetcherService } from "@mxevolve/domains/business-process/data-access";
+import { BuildAndTestExecutionsService } from "@mxevolve/domains/business-process/data-access";
 import {
   BuildAndTestProcessExecution,
   BuildAndTestSourceType,
@@ -16,13 +16,14 @@ import {
   StageStatus,
 } from "@mxevolve/domains/business-process/util";
 import {
-  MxevolveIllustrationComponent,
   MxevolveIconComponent,
+  MxevolveIllustrationComponent,
   StepComponent,
   StepDefinition,
   StepperComponent,
 } from "@mxevolve/shared/ui/primitive";
 import { ExecutionAlertDisplayComponent } from "@mxevolve/domains/business-process/ui";
+import { BusinessProcessExecutionService } from "@mxflow/features/business-process";
 
 const MOCK_IMPORTS = [
   MockComponent(BuildAndTestExecutionRunHeaderComponent),
@@ -48,6 +49,12 @@ const mockExecutionFetcherService = {
 
 const mockRouter = {
   navigate: jest.fn(),
+  createUrlTree: jest.fn(() => ({})),
+  serializeUrl: jest.fn(() => "/business-process-url"),
+};
+
+const mockBusinessProcessExecutionService = {
+  getBusinessProcessExecution: jest.fn(),
 };
 
 function buildMockActivatedRoute(queryParams: Record<string, string> = {}) {
@@ -120,10 +127,14 @@ async function renderComponent(
         provide: ActivatedRoute,
         useValue: buildMockActivatedRoute(queryParams),
       },
+      {
+        provide: BusinessProcessExecutionService,
+        useValue: mockBusinessProcessExecutionService,
+      },
     ],
     componentProviders: [
       {
-        provide: BuildAndTestExecutionFetcherService,
+        provide: BuildAndTestExecutionsService,
         useValue: mockExecutionFetcherService,
       },
     ],
@@ -131,8 +142,9 @@ async function renderComponent(
 }
 
 function getSteps(fixture: { componentInstance: unknown }): StepDefinition[] {
-  return ngMocks.find(fixture as never, StepperComponent).componentInstance
-    .steps() as StepDefinition[];
+  return ngMocks
+    .find(fixture as never, StepperComponent)
+    .componentInstance.steps();
 }
 
 describe("BuildAndTestExecutionViewComponent", () => {
@@ -140,6 +152,9 @@ describe("BuildAndTestExecutionViewComponent", () => {
     jest.clearAllMocks();
     mockExecutionFetcherService.fetchExecution.mockReturnValue(
       of(buildExecution())
+    );
+    mockBusinessProcessExecutionService.getBusinessProcessExecution.mockReturnValue(
+      of({ name: "Parent BP" })
     );
   });
 
@@ -152,16 +167,61 @@ describe("BuildAndTestExecutionViewComponent", () => {
       await renderComponent();
 
       await waitFor(() =>
-        expect(screen.getByText("LOADING SCREEN COMING SOON")).toBeTruthy()
+        expect(screen.queryByTestId("skeleton")).toBeTruthy()
       );
     });
 
     it("hides the loading indicator once execution data is loaded", async () => {
       await renderComponent();
 
-      await waitFor(() =>
-        expect(screen.queryByText("LOADING SCREEN COMING SOON")).toBeNull()
+      await waitFor(() => expect(screen.queryByTestId("skeleton")).toBeNull());
+    });
+  });
+
+  describe("started by a business process", () => {
+    it("shows the originating BP message and link when the source is a business process", async () => {
+      mockExecutionFetcherService.fetchExecution.mockReturnValue(
+        of(
+          buildExecution({
+            source: {
+              id: "bp-execution-1",
+              type: BuildAndTestSourceType.BUSINESS_PROCESS,
+            },
+          })
+        )
       );
+
+      await renderComponent();
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(/This process was started by the following BP:/)
+        ).toBeTruthy()
+      );
+      expect(screen.getByText("Parent BP")).toBeTruthy();
+      expect(
+        mockBusinessProcessExecutionService.getBusinessProcessExecution
+      ).toHaveBeenCalledWith("project-1", "bp-execution-1");
+    });
+
+    it("does not show the originating BP message when the source is a user", async () => {
+      mockExecutionFetcherService.fetchExecution.mockReturnValue(
+        of(
+          buildExecution({
+            source: { id: "source-1", type: BuildAndTestSourceType.USER },
+          })
+        )
+      );
+
+      await renderComponent();
+
+      await waitFor(() => expect(screen.queryByTestId("skeleton")).toBeNull());
+      expect(
+        screen.queryByText(/This process was started by the following BP:/)
+      ).toBeNull();
+      expect(
+        mockBusinessProcessExecutionService.getBusinessProcessExecution
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -248,24 +308,21 @@ describe("BuildAndTestExecutionViewComponent", () => {
   });
 
   describe("steps", () => {
-    it("renders the four CI steps with their titles", async () => {
+    it("renders the three CI steps with their titles", async () => {
       const { fixture } = await renderComponent();
 
-      await waitFor(() => {
-        const steps = getSteps(fixture);
-        expect(steps.map((s) => s.id)).toEqual([
-          "create-branch",
-          "prepare-build",
-          "build-and-test",
-          "merge",
-        ]);
-        expect(steps.map((s) => s.title)).toEqual([
-          "Create Branch",
-          "Prepare Setup",
-          "Build & Test",
-          "Merge",
-        ]);
-      });
+      await waitFor(() => expect(getSteps(fixture).length).toBe(3));
+      const steps = getSteps(fixture);
+      expect(steps.map((s) => s.id)).toEqual([
+        "prepare-build",
+        "build-and-test",
+        "merge",
+      ]);
+      expect(steps.map((s) => s.title)).toEqual([
+        "Prepare Setup",
+        "Build & Test",
+        "Merge",
+      ]);
     });
 
     it("maps stage statuses to step statuses", async () => {
@@ -298,15 +355,48 @@ describe("BuildAndTestExecutionViewComponent", () => {
 
       const { fixture } = await renderComponent();
 
-      await waitFor(() => {
-        const steps = getSteps(fixture);
-        expect(steps.map((s) => s.status)).toEqual([
-          "completed",
-          "completed",
-          "active",
-          "inactive",
-        ]);
-      });
+      await waitFor(() => expect(getSteps(fixture).length).toBe(3));
+      const steps = getSteps(fixture);
+      expect(steps.map((s) => s.status)).toEqual([
+        "completed",
+        "active",
+        "inactive",
+      ]);
+    });
+
+    it("maps an ON_HOLD Merge stage status to an on-hold (pause icon, clickable) step", async () => {
+      mockExecutionFetcherService.fetchExecution.mockReturnValue(
+        of(
+          buildExecution({
+            createBranchStage: buildStage(
+              "create-branch",
+              "create-branch",
+              StageStatus.PASSED
+            ),
+            prepareBuildStage: buildStage(
+              "prepare-build",
+              "prepare-build",
+              StageStatus.PASSED
+            ),
+            buildAndTestStage: buildStage(
+              "build-and-test",
+              "build-and-test",
+              StageStatus.PENDING_INPUT
+            ),
+            integrateChangesStage: buildStage(
+              "integrate-changes",
+              "integrate-changes",
+              StageStatus.ON_HOLD
+            ),
+          })
+        )
+      );
+
+      const { fixture } = await renderComponent();
+
+      await waitFor(() => expect(getSteps(fixture).length).toBe(3));
+      const mergeStep = getSteps(fixture).find((s) => s.id === "merge");
+      expect(mergeStep?.status).toBe("on-hold");
     });
 
     it("passes the mapped Prepare Setup status into the Prepare stage", async () => {
@@ -348,11 +438,11 @@ describe("BuildAndTestExecutionViewComponent", () => {
 
       const { fixture } = await renderComponent();
 
-      await waitFor(() => {
-        const steps = getSteps(fixture);
-        const prepareBuild = steps.find((s) => s.id === "prepare-build");
-        expect(prepareBuild?.status).toBe("skipped");
-      });
+      await waitFor(() => expect(getSteps(fixture).length).toBeGreaterThan(0));
+      const prepareBuild = getSteps(fixture).find(
+        (s) => s.id === "prepare-build"
+      );
+      expect(prepareBuild?.status).toBe("skipped");
     });
 
     it("maps a SKIPPED stage status to a skipped step", async () => {
@@ -375,14 +465,14 @@ describe("BuildAndTestExecutionViewComponent", () => {
 
       const { fixture } = await renderComponent();
 
-      await waitFor(() => {
-        const steps = getSteps(fixture);
-        const prepareBuild = steps.find((s) => s.id === "prepare-build");
-        expect(prepareBuild?.status).toBe("skipped");
-      });
+      await waitFor(() => expect(getSteps(fixture).length).toBeGreaterThan(0));
+      const prepareBuild = getSteps(fixture).find(
+        (s) => s.id === "prepare-build"
+      );
+      expect(prepareBuild?.status).toBe("skipped");
     });
 
-    it("builds a date tooltip for a completed step with start and end dates", async () => {
+    it("folds the Create Branch start date into the Prepare Setup tooltip", async () => {
       mockExecutionFetcherService.fetchExecution.mockReturnValue(
         of(
           buildExecution({
@@ -392,6 +482,15 @@ describe("BuildAndTestExecutionViewComponent", () => {
               StageStatus.PASSED,
               {
                 startDate: "2026-01-01T10:00:00Z",
+                endDate: "2026-01-01T10:30:00Z",
+              }
+            ),
+            prepareBuildStage: buildStage(
+              "prepare-build",
+              "prepare-build",
+              StageStatus.PASSED,
+              {
+                startDate: "2026-01-01T10:30:00Z",
                 endDate: "2026-01-01T11:00:00Z",
               }
             ),
@@ -401,12 +500,12 @@ describe("BuildAndTestExecutionViewComponent", () => {
 
       const { fixture } = await renderComponent();
 
-      await waitFor(() => {
-        const steps = getSteps(fixture);
-        const createBranch = steps.find((s) => s.id === "create-branch");
-        expect(createBranch?.tooltip).toContain("Start:");
-        expect(createBranch?.tooltip).toContain("End:");
-      });
+      await waitFor(() => expect(getSteps(fixture).length).toBeGreaterThan(0));
+      const prepareBuild = getSteps(fixture).find(
+        (s) => s.id === "prepare-build"
+      );
+      expect(prepareBuild?.tooltip).toContain("Start:");
+      expect(prepareBuild?.tooltip).toContain("End:");
     });
 
     it("does not build a tooltip for an inactive step", async () => {
@@ -429,11 +528,9 @@ describe("BuildAndTestExecutionViewComponent", () => {
 
       const { fixture } = await renderComponent();
 
-      await waitFor(() => {
-        const steps = getSteps(fixture);
-        const merge = steps.find((s) => s.id === "merge");
-        expect(merge?.tooltip).toBeUndefined();
-      });
+      await waitFor(() => expect(getSteps(fixture).length).toBeGreaterThan(0));
+      const merge = getSteps(fixture).find((s) => s.id === "merge");
+      expect(merge?.tooltip).toBeUndefined();
     });
   });
 
@@ -459,10 +556,55 @@ describe("BuildAndTestExecutionViewComponent", () => {
       const { fixture } = await renderComponent();
 
       await waitFor(() => {
-        expect(
-          fixture.componentInstance.selectedStepId()
-        ).toBe("build-and-test");
+        expect(fixture.componentInstance.selectedStepId()).toBe(
+          "build-and-test"
+        );
       });
+    });
+
+    it("opens the latest reached step when Prepare Setup is skipped", async () => {
+      const execution = buildExecution({
+        createBranchStage: buildStage(
+          "create-branch",
+          "create-branch",
+          StageStatus.PASSED
+        ),
+        buildAndTestStage: buildStage(
+          "build-and-test",
+          "build-and-test",
+          StageStatus.PASSED
+        ),
+      });
+      execution.input.buildEnvironment.skipEnvironmentDeployment = true;
+      mockExecutionFetcherService.fetchExecution.mockReturnValue(of(execution));
+
+      const { fixture } = await renderComponent();
+
+      await waitFor(() =>
+        expect(fixture.componentInstance.selectedStepId()).toBe(
+          "build-and-test"
+        )
+      );
+    });
+
+    it("never selects a skipped Prepare Setup step", async () => {
+      const execution = buildExecution({
+        createBranchStage: buildStage(
+          "create-branch",
+          "create-branch",
+          StageStatus.PASSED
+        ),
+      });
+      execution.input.buildEnvironment.skipEnvironmentDeployment = true;
+      mockExecutionFetcherService.fetchExecution.mockReturnValue(of(execution));
+
+      const { fixture } = await renderComponent();
+
+      await waitFor(() =>
+        expect(fixture.componentInstance.selectedStepId()).not.toBe(
+          "prepare-build"
+        )
+      );
     });
 
     it("honours the step query parameter when provided", async () => {

@@ -12,7 +12,7 @@ import { MenuItem } from "primeng/api";
 import { ScenarioExecutionRepushModalModule } from "../unofficial-repush-modal/scenario-execution-repush-modal.module";
 import { ScenarioExecutionRepushModalComponent } from "../unofficial-repush-modal/scenario-execution-repush-modal.component";
 import { RepushTooltipEvaluatorPipe } from "../repush-evaluator-pipe/repush-tooltip-evaluator.pipe";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 @Component({
   selector: "mxevolve-repush-scenario-execution-button",
@@ -112,7 +112,7 @@ export class RepushScenarioExecutionButtonComponent implements OnInit {
     this.repushFromFactoryProductModal.openModal({
       scenarioExecutionId: headScenarioExecution.id,
       factoryProductId: headScenarioExecution.factoryProductId,
-      keptExecution: headScenarioExecution.keptExecution,
+      keepExecution: headScenarioExecution.keepExecution,
       executionGroupId: this.testUnit.executionGroupId,
     });
   }
@@ -122,7 +122,7 @@ export class RepushScenarioExecutionButtonComponent implements OnInit {
     this.repushFromFinalProductModalComponent.openModal({
       branch: this.testUnit.branch,
       initialFinalProductId: this.initialFinalProductId,
-      keptExecution: headScenarioExecution.keptExecution,
+      keepExecution: headScenarioExecution.keepExecution,
       scenarioExecutionId: headScenarioExecution.id,
       executionGroupId: this.testUnit.executionGroupId,
     });

@@ -23,7 +23,7 @@ import {
   IncidentLinkingStateService,
 } from "@mxflow/features/analysis-objects";
 import { AnalysisObjectLink } from "@mxflow/test-management";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 import { forkJoin } from "rxjs";
 
 @Component({
@@ -59,7 +59,7 @@ export class ExecutionDetailsComponent implements OnInit {
   @Output() saveCommentEventEmitter = new EventEmitter<string>();
   @Output() cancelCommentEventEmitter = new EventEmitter<void>();
   @Output() abortScenarioRequested = new EventEmitter<string>();
-  @Output() keptExecutionToggled = new EventEmitter<string>();
+  @Output() keepExecutionToggled = new EventEmitter<string>();
 
   scenarioAnalysisStatus = ScenarioAnalysisStatus;
   @Input() comment = "";
@@ -68,8 +68,8 @@ export class ExecutionDetailsComponent implements OnInit {
   isUpradeImpactsModalVisible = false;
   isAnalysisObjectsLinkingModalVisible = false;
   analysisObjectType: AnalysisObjectType;
-  linkToRegressionOptions: MenuItem[] | undefined;
-  linkToImpactOptions: MenuItem[] | undefined;
+  linkToRegressionOptions: MenuItem[] = [];
+  linkToImpactOptions: MenuItem[] = [];
   viewValidationScopeOptions: MenuItem[] = [];
   analysisStatusUpdateIneligibilityReason: AnalysisStatusUpdateIneligibilityReason;
   isAnalysisStatusUpdateEligible = false;
@@ -95,6 +95,9 @@ export class ExecutionDetailsComponent implements OnInit {
       {
         label: "Configuration Regression",
         command: () => {
+          this.analyticsTracker.trackLinkAnalysisObject(
+            AnalysisObjectType.CONFIGURATION_REGRESSION
+          );
           this.showAnalysisObjectsLinkingModal(
             AnalysisObjectType.CONFIGURATION_REGRESSION
           );
@@ -103,6 +106,9 @@ export class ExecutionDetailsComponent implements OnInit {
       {
         label: "Binary Regression",
         command: () => {
+          this.analyticsTracker.trackLinkAnalysisObject(
+            AnalysisObjectType.BINARY_REGRESSION
+          );
           this.showAnalysisObjectsLinkingModal(
             AnalysisObjectType.BINARY_REGRESSION
           );
@@ -114,6 +120,9 @@ export class ExecutionDetailsComponent implements OnInit {
       {
         label: "Configuration Impact",
         command: () => {
+          this.analyticsTracker.trackLinkAnalysisObject(
+            AnalysisObjectType.CONFIGURATION_IMPACT
+          );
           this.showAnalysisObjectsLinkingModal(
             AnalysisObjectType.CONFIGURATION_IMPACT
           );
@@ -122,6 +131,9 @@ export class ExecutionDetailsComponent implements OnInit {
       {
         label: "Binary Impact",
         command: () => {
+          this.analyticsTracker.trackLinkAnalysisObject(
+            AnalysisObjectType.BINARY_IMPACT
+          );
           this.showAnalysisObjectsLinkingModal(
             AnalysisObjectType.BINARY_IMPACT
           );
@@ -175,6 +187,7 @@ export class ExecutionDetailsComponent implements OnInit {
   }
 
   showIncidentsLinkingModal() {
+    this.analyticsTracker.trackLinkAnalysisObject(AnalysisObjectType.INCIDENT);
     this.incidentLinkingStateService.setIsLinking(true);
     this.showAnalysisObjectsLinkingModal(AnalysisObjectType.INCIDENT);
   }
@@ -209,6 +222,9 @@ export class ExecutionDetailsComponent implements OnInit {
 
   handleMarkAnalysisStatusAsCancelled() {
     this.showAnalysisObjectsLinkingModal(AnalysisObjectType.FAILURE_REASON);
+    this.analyticsTracker.trackLinkAnalysisObject(
+      AnalysisObjectType.FAILURE_REASON
+    );
     this.isWaitingForFailureReasonLinking = true;
   }
 
@@ -344,9 +360,9 @@ export class ExecutionDetailsComponent implements OnInit {
     this.errorEventEmitter.emit(errorMessage);
   }
 
-  toggleKeptExecutionFlag() {
+  toggleKeepExecutionFlag() {
     if (this.selectedScenarioExecution()) {
-      this.keptExecutionToggled.emit(this.selectedScenarioExecution()?.id);
+      this.keepExecutionToggled.emit(this.selectedScenarioExecution()?.id);
     }
   }
 

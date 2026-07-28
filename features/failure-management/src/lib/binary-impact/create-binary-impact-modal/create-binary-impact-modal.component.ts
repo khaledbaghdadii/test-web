@@ -1,4 +1,11 @@
-import { Component, EventEmitter, inject, Input, Output } from "@angular/core";
+import {
+  Component,
+  EventEmitter,
+  inject,
+  Input,
+  OnInit,
+  Output,
+} from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ButtonModule } from "primeng/button";
 import { DialogModule } from "primeng/dialog";
@@ -24,16 +31,34 @@ import {
   AttachmentUploaderComponent,
 } from "@mxflow/features/attachment";
 import { catchError, finalize, forkJoin, map, of, tap, throwError } from "rxjs";
-import { ValidationScope } from "@mxflow/features/validation-management";
 import { CreateBinaryImpactResponse } from "../create-binary-impact-response.model";
 import { ClientImpactNoteSingleSelectDropdownComponent } from "../../client-impact-note/client-impact-note-single-select-dropdown/client-impact-note-single-select-dropdown.component";
 import { ClientImpactNoteMultiSelectDropdownComponent } from "../../client-impact-note/client-impact-note-multiselect-dropdown/client-impact-note-multiselect-dropdown.component";
-import { ClientImpactNoteFieldType } from "@mxevolve/domains/test/data-access";
+import {
+  ClientImpactNoteAffectedVersionsConfigApiModel,
+  ClientImpactNoteFieldType,
+  ClientImpactNoteService,
+  VersionService,
+  VersionValidationService,
+} from "@mxevolve/domains/test/data-access";
 import { IncidentInputComponent } from "@mxflow/features/incident-management";
+import {
+  Version,
+  VersionsDropdownParams,
+  VersionsMultiselectDropdownComponent,
+} from "@mxevolve/domains/test/widget";
+import { UpgradeImpact } from "../../upgrade-impact/model/upgrade-impact.model";
+import { Skeleton } from "primeng/skeleton";
 
 @Component({
   selector: "mxevolve-create-binary-impact-modal",
-  providers: [BinaryImpactService, AttachmentService],
+  providers: [
+    BinaryImpactService,
+    AttachmentService,
+    ClientImpactNoteService,
+    VersionValidationService,
+    VersionService,
+  ],
   imports: [
     CommonModule,
     ButtonModule,
@@ -49,27 +74,34 @@ import { IncidentInputComponent } from "@mxflow/features/incident-management";
     ClientImpactNoteSingleSelectDropdownComponent,
     ClientImpactNoteMultiSelectDropdownComponent,
     IncidentInputComponent,
+    VersionsMultiselectDropdownComponent,
+    Skeleton,
   ],
   templateUrl: "./create-binary-impact-modal.component.html",
 })
-export class CreateBinaryImpactModalComponent {
-  private toastMessageService = inject(ToastMessageService);
-  private attachmentService = inject(AttachmentService);
-  private binaryImpactsService = inject(BinaryImpactService);
+export class CreateBinaryImpactModalComponent implements OnInit {
+  private readonly toastMessageService = inject(ToastMessageService);
+  private readonly attachmentService = inject(AttachmentService);
+  private readonly binaryImpactsService = inject(BinaryImpactService);
+  private readonly clientImpactNoteService = inject(ClientImpactNoteService);
+  private readonly versionValidatorService = inject(VersionValidationService);
 
   private _isVisible = false;
   attachments: Attachment[] = [];
   createBinaryImpactForm: FormGroup<CreateBinaryImpactForm>;
-  isLoading = false;
+  isCreateBinaryImpactLoading = false;
+  isFormLoading = false;
+  affectedVersionsDropdownParams: VersionsDropdownParams;
+  prefilledAffectedVersions?: Version[];
   private isBinaryImpactCreated = false;
   readonly uploadingAttachmentsCount = new Int32Array(1);
 
   @Input({ required: true }) projectId: string;
   @Input({ required: true }) correlationId: string;
-  @Input() validationScope?: ValidationScope;
-  @Input() initialValidationScope?: ValidationScope;
-  @Input() warningMessage?: string;
+  @Input() initialDescription?: string;
+  @Input() initialAttachments?: Attachment[];
   @Input({ required: true }) mxVersionInitialValue: string;
+  @Input() upgradeImpactId?: string;
   @Input({ required: true })
   set isVisible(value: boolean) {
     this._isVisible = value;
@@ -77,6 +109,15 @@ export class CreateBinaryImpactModalComponent {
       this.createBinaryImpactForm.controls.mxVersion.setValue(
         this.mxVersionInitialValue
       );
+    }
+    if (this._isVisible) {
+      this.createBinaryImpactForm.controls.description.setValue(
+        this.initialDescription ?? null
+      );
+      this.createBinaryImpactForm.controls.upgradeImpactId.setValue(
+        this.upgradeImpactId ?? null
+      );
+      this.attachments = this.initialAttachments ?? [];
     }
   }
   get isVisible(): boolean {
@@ -111,10 +152,13 @@ export class CreateBinaryImpactModalComponent {
         Validators.maxLength(255),
         WhitespaceValidators.notBlank(),
       ]),
-      upgradeImpactId: new FormControl<string | null>(null, [
-        Validators.maxLength(255),
-        WhitespaceValidators.notBlank(),
+      affectedVersions: new FormControl<Version[] | null>(null, [
+        Validators.required,
       ]),
+      upgradeImpactId: new FormControl<string | null>(
+        { value: null, disabled: true },
+        [Validators.maxLength(255), WhitespaceValidators.notBlank()]
+      ),
       incidentId: new FormControl<string | null>(null, [
         Validators.maxLength(255),
         WhitespaceValidators.notBlank(),
@@ -139,12 +183,19 @@ export class CreateBinaryImpactModalComponent {
     });
   }
 
+  ngOnInit() {
+    this.loadAffectedVersionsDropdownParams();
+  }
+
   onFormSubmission() {
-    const formValues = this.createBinaryImpactForm.value;
+    const formValues = this.createBinaryImpactForm.getRawValue();
     const request: CreateBinaryImpactRequest = {
       title: formValues.title as string,
       description: formValues.description as string,
       mxVersion: formValues.mxVersion as string,
+      affectedVersions: (formValues.affectedVersions as Version[]).map(
+        (version) => version.name
+      ),
       upgradeImpactId: formValues.upgradeImpactId ?? undefined,
       incidentId: formValues.incidentId ?? undefined,
       attachmentIds: this.attachments.map(
@@ -170,6 +221,7 @@ export class CreateBinaryImpactModalComponent {
 
   onCancel() {
     this.createBinaryImpactForm.reset();
+    this.prefilledAffectedVersions = undefined;
     if (!this.isBinaryImpactCreated) {
       this.isVisible = false;
       this.createBinaryImpactCancelled.emit();
@@ -178,8 +230,33 @@ export class CreateBinaryImpactModalComponent {
     }
   }
 
-  handleErrorOccured(errorMessage: string) {
+  handleErrorOccurred(errorMessage: string) {
     this.toastMessageService.showError(errorMessage);
+  }
+
+  onUpgradeImpactSelected(upgradeImpact: UpgradeImpact | null) {
+    const releaseVersionNames = upgradeImpact?.introducedInReleaseVersion ?? [];
+    const params = this.affectedVersionsDropdownParams;
+    this.versionValidatorService
+      .validateVersions(releaseVersionNames, params.versionTypes, params.active)
+      .subscribe({
+        next: (versions) => {
+          this.prefilledAffectedVersions = versions.validVersions;
+          this.showWarningWithNotAllowedVersions(versions.invalidVersions);
+        },
+        error: (error) => this.handleErrorOccurred(error.message),
+      });
+  }
+
+  private showWarningWithNotAllowedVersions(invalidVersions: string[]) {
+    if (invalidVersions.length > 0) {
+      const versionNames = invalidVersions
+        .map((versionName) => `${versionName}`)
+        .join(", ");
+      this.toastMessageService.showWarning(
+        `Invalid affected versions: ${versionNames}.`
+      );
+    }
   }
 
   upload = (file: File) => {
@@ -197,7 +274,7 @@ export class CreateBinaryImpactModalComponent {
           this.decrementUploadingAttachmentCount();
         }),
         catchError((error) => {
-          this.handleErrorOccured(
+          this.handleErrorOccurred(
             `Error occurred when uploading ${file.name}: ${error.message}`
           );
           return throwError(() => error);
@@ -257,10 +334,10 @@ export class CreateBinaryImpactModalComponent {
   }
 
   private onSubmitCreateBinaryImpact(request: CreateBinaryImpactRequest) {
-    this.isLoading = true;
+    this.isCreateBinaryImpactLoading = true;
     this.binaryImpactsService
       .createBinaryImpact(this.projectId, request)
-      .pipe(finalize(() => (this.isLoading = false)))
+      .pipe(finalize(() => (this.isCreateBinaryImpactLoading = false)))
       .subscribe({
         next: (response) => {
           this.toastMessageService.showSuccess(
@@ -268,20 +345,45 @@ export class CreateBinaryImpactModalComponent {
           );
           this.isBinaryImpactCreated = true;
           this.binaryImpactCreated.emit(response);
+          this.prefilledAffectedVersions = undefined;
         },
         error: (error) => {
-          this.handleErrorOccured(error.message);
+          this.handleErrorOccurred(error.message);
         },
       });
   }
 
   protected readonly ClientImpactNoteFieldType = ClientImpactNoteFieldType;
+
+  private loadAffectedVersionsDropdownParams() {
+    this.isFormLoading = true;
+    this.clientImpactNoteService
+      .fetchAllowedVersionsConfiguration()
+      .pipe(finalize(() => (this.isFormLoading = false)))
+      .subscribe({
+        next: (configuration) => {
+          this.affectedVersionsDropdownParams =
+            this.getAffectedVersionsDropdownParams(configuration);
+        },
+        error: (error) => this.handleErrorOccurred(error.message),
+      });
+  }
+
+  getAffectedVersionsDropdownParams(
+    configuration: ClientImpactNoteAffectedVersionsConfigApiModel
+  ): VersionsDropdownParams {
+    return {
+      versionTypes: configuration.allowedVersionTypes,
+      active: configuration.allowedInactive ? undefined : true,
+    };
+  }
 }
 
 export interface CreateBinaryImpactForm {
   title: AbstractControl<string | null>;
   description: AbstractControl<string | null>;
   mxVersion: AbstractControl<string | null>;
+  affectedVersions: AbstractControl<Version[] | null>;
   upgradeImpactId: AbstractControl<string | null>;
   incidentId: AbstractControl<string | null>;
   identificationPattern: AbstractControl<string | null>;

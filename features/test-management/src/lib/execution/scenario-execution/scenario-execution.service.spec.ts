@@ -28,6 +28,7 @@ import {
   AnalysisStatusUpdateIneligibilityReason,
 } from "./scenario-analysis-status/analysis-status-eligibility";
 import { TestBed } from "@angular/core/testing";
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
 
 const ANALYSIS_STATUS = "Passed";
 const COMMIT_ID = "commitId";
@@ -70,7 +71,8 @@ const FULL_MAINTENANCE = true;
 const RTP_COMMIT_ID = "rtpCommitId";
 const FINAL_PRODUCT_ID = "finalProductId";
 const SCENARIO_EXECUTIONS = ["id1", "id2"];
-const SCENARIO_EXECUTION_CLEANING_STATUS = "PASSED";
+const SCENARIO_EXECUTION_CLEANING_STATUS =
+  ScenarioExecutionHousekeepingStatus.PASSED;
 const REFERENCE_FACTORY_PRODUCT_ID = "referenceFactoryProductId";
 const REQUESTED_FACTORY_PRODUCT_ID = "requestedFactoryProductId";
 const binaryRegression1 = "binary regression 1";
@@ -83,7 +85,7 @@ const binaryImpact1 = "binary Impact 1";
 const binaryImpact2 = "binary Impact 2";
 const failureReason1 = "failure reason 1";
 const failureReason2 = "failure reason 2";
-const KEPT_EXECUTION = true;
+const KEEP_EXECUTION = true;
 const JUMP_TYPE = "JUMP_TYPE";
 const TEST_UNIT_ID = "testUnitId";
 const PROJECT_NAME = "projectName";
@@ -212,39 +214,36 @@ describe("Service: Scenario Execution", () => {
     );
   });
 
-  it("should call toggle kept execution with the correct arguments", async () => {
+  it("should call toggle keep execution with the correct arguments", async () => {
     await expect(
       lastValueFrom(
-        service.toggleKeptExecutionFlag(
+        service.toggleKeepExecutionFlag(
           PROJECT_ID,
           SCENARIO_EXECUTION_ID,
-          KEPT_EXECUTION
+          KEEP_EXECUTION
         )
       )
     ).resolves.toEqual({});
     expect(httpClient.put).toHaveBeenCalledWith(
       appConfig.gatewayUrl +
-        `projects/${PROJECT_ID}/test-execution-manager/scenario-executions/${SCENARIO_EXECUTION_ID}/kept-execution`,
-      { keptExecution: KEPT_EXECUTION }
+        `projects/${PROJECT_ID}/test-execution-manager/scenario-executions/${SCENARIO_EXECUTION_ID}/keep-execution`,
+      { keepExecution: KEEP_EXECUTION }
     );
   });
-
-  it("should handle failing to toggle kept execution", (done) => {
+  it("should handle failing to toggle kept execution", async () => {
     jest
       .spyOn(httpClient, "put")
       .mockReturnValue(throwError(() => new Error("error")));
 
-    const response = service.toggleKeptExecutionFlag(
-      PROJECT_ID,
-      SCENARIO_EXECUTION_ID,
-      KEPT_EXECUTION
-    );
-    response.subscribe({
-      error: (error) => {
-        expect(error.message).toBe("error");
-        done();
-      },
-    });
+    await expect(
+      lastValueFrom(
+        service.toggleKeepExecutionFlag(
+          PROJECT_ID,
+          SCENARIO_EXECUTION_ID,
+          KEEP_EXECUTION
+        )
+      )
+    ).rejects.toThrow("error");
   });
 
   it("should call api correctly for repush", async function () {
@@ -617,6 +616,38 @@ describe("Service: Scenario Execution", () => {
     expect(httpClient.get).toHaveBeenCalledWith(
       appConfig.gatewayUrl +
         `projects/123/test-execution-manager/scenario-executions?&scenarioExecutionIds=${SCENARIO_EXECUTION_ID}`
+    );
+  });
+
+  it("should return scenario executions given commit ids", async () => {
+    jest
+      .spyOn(httpClient, "get")
+      .mockReturnValue(
+        of([
+          getActualScenarioExecution("321"),
+          getActualScenarioExecution("3210"),
+        ] as ScenarioExecutionApiModel[])
+      );
+
+    await expect(
+      lastValueFrom(
+        service.getScenarioExecutions(
+          "123",
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          [COMMIT_ID, "another-commit-id"]
+        )
+      )
+    ).resolves.toEqual([
+      getExpectedScenarioExecution("321"),
+      getExpectedScenarioExecution("3210"),
+    ]);
+
+    expect(httpClient.get).toHaveBeenCalledWith(
+      appConfig.gatewayUrl +
+        `projects/123/test-execution-manager/scenario-executions?&commitIds=${COMMIT_ID},another-commit-id`
     );
   });
 
@@ -1099,6 +1130,7 @@ describe("Service: Scenario Execution", () => {
     });
   });
 });
+
 function getScenarioExecutionGroupActionPermissionApiResponse(): ScenarioExecutionGroupActionPermissionApiModel {
   return {
     actionAllowed: SCENARIO_EXECUTION_ALLOWED,
@@ -1106,16 +1138,19 @@ function getScenarioExecutionGroupActionPermissionApiResponse(): ScenarioExecuti
     warnings: ["SHOULD_HOUSKEEP_BEFORE_NEXT_LAUNCH"],
   };
 }
+
 function getRunScenarioApiResponse(): RunScenarioApiResponse {
   return {
     testExecutionId: SCENARIO_EXECUTION_ID,
   };
 }
+
 function getRunScenarioResponse(): RunScenarioResponse {
   return {
     testExecutionId: SCENARIO_EXECUTION_ID,
   };
 }
+
 function getRunScenarioRequest(): RunScenarioRequest {
   return {
     scenarioDefinitionId: SCENARIO_DEFINITION_ID,
@@ -1139,6 +1174,7 @@ function getRunScenarioRequestWithDisableKeepExecutionFlag(
     disableKeepExecution: disableKeepExecution,
   };
 }
+
 function getRunScenarioApiRequest(): RunScenarioApiRequest {
   return {
     scenarioDefinitionId: SCENARIO_DEFINITION_ID,
@@ -1242,6 +1278,7 @@ function getRunScenarioRequestWithIncidentEnabled(
 }
 
 const TEST_EXECUTION_MODE = TestExecutionMode.WEB_TEST_ENGINE;
+
 function getExpectedScenarioExecution(id: string): ScenarioExecution {
   return {
     analysisStatus: ANALYSIS_STATUS,
@@ -1303,7 +1340,7 @@ function getExpectedScenarioExecution(id: string): ScenarioExecution {
     },
     rtpCommitId: RTP_COMMIT_ID,
     finalProductId: FINAL_PRODUCT_ID,
-    keptExecution: KEPT_EXECUTION,
+    keepExecution: KEEP_EXECUTION,
     supportReconActivities: SUPPORT_RECON_ACTIVITIES,
     qualityLevel: QUALITY_LEVEL_CQG,
     businessProcesses: [
@@ -1320,6 +1357,7 @@ function getExpectedScenarioExecution(id: string): ScenarioExecution {
       id: PROJECT_ID,
       name: PROJECT_NAME,
     },
+    testUnitHead: true,
   };
 }
 
@@ -1386,7 +1424,7 @@ function getActualScenarioExecution(id: string): ScenarioExecutionApiModel {
       },
       jumpType: JUMP_TYPE,
     },
-    keptExecution: KEPT_EXECUTION,
+    keepExecution: KEEP_EXECUTION,
     supportReconActivities: SUPPORT_RECON_ACTIVITIES,
     qualityLevel: QUALITY_LEVEL_CQG,
     businessProcesses: [
@@ -1403,5 +1441,6 @@ function getActualScenarioExecution(id: string): ScenarioExecutionApiModel {
       id: PROJECT_ID,
       name: PROJECT_NAME,
     },
+    testUnitHead: true,
   };
 }

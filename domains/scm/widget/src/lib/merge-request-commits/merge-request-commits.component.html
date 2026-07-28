@@ -1,5 +1,15 @@
-<div class="surface-card p-4 border-round shadow-1">
-  <div class="text-xl font-bold text-surface-900 dark:text-surface-0 mb-4">
+<div>
+  @if (showCommitsBehindWarning() && commitsBehindCount() > 0) {
+  <p-message severity="warn" styleClass="mb-4 w-full">
+    <ng-template #icon>
+      <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+    </ng-template>
+    You are <b>{{ commitsBehindCount() }}</b>
+    {{ commitsBehindCount() === 1 ? "commit" : "commits" }} behind
+    {{ development().source ?? "" }}.
+  </p-message>
+  }
+  <div class="text-sm font-bold text-surface-900 dark:text-surface-0 mb-4">
     {{ displayTitle() }}
   </div>
   @if (isMergedWithPr()) {

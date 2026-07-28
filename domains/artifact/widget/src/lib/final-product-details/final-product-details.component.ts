@@ -1,100 +1,64 @@
-import { Component, computed, input, output } from "@angular/core";
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+} from "@angular/core";
 import { rxResource } from "@angular/core/rxjs-interop";
+import { EMPTY } from "rxjs";
+import {
+  CommitIdDisplayComponent,
+  ExpandableMessageComponent,
+} from "@mxevolve/shared/ui/primitive";
 import {
   FinalProduct,
-  FinalProductService,
-  FinalProductState,
+  FinalProductApiService,
 } from "@mxevolve/domains/artifact/data-access";
-import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
-import { Message } from "primeng/message";
 import { Skeleton } from "primeng/skeleton";
 import { Tag } from "primeng/tag";
-import { catchError, of } from "rxjs";
-
-interface StatusConfiguration {
-  readonly severity: "success" | "secondary" | "info" | "warn" | "danger";
-  readonly label: string;
-  readonly icon: string;
-  readonly spin?: boolean;
-}
-
-const STATUS_CONFIGURATIONS: Record<string, StatusConfiguration> = {
-  [FinalProductState.AVAILABLE]: {
-    severity: "success",
-    label: "Available",
-    icon: "check_circle",
-  },
-  [FinalProductState.CREATING]: {
-    severity: "info",
-    label: "In Progress",
-    icon: "progress_activity",
-    spin: true,
-  },
-  [FinalProductState.FAILED]: {
-    severity: "danger",
-    label: "Failed",
-    icon: "cancel",
-  },
-  [FinalProductState.PURGED]: {
-    severity: "secondary",
-    label: "Purged",
-    icon: "archive",
-  },
-  [FinalProductState.PURGING]: {
-    severity: "info",
-    label: "Purging",
-    icon: "progress_activity",
-    spin: true,
-  },
-  [FinalProductState.PURGE_FAILED]: {
-    severity: "danger",
-    label: "Purge Failed",
-    icon: "cancel",
-  },
-};
-
-const IN_PROGRESS_STATUS: StatusConfiguration = {
-  severity: "info",
-  label: "In Progress",
-  icon: "progress_activity",
-  spin: true,
-};
-
-const FAILURE_PRE_PUBLISHING_REQUESTED = "FAILURE_PRE_PUBLISHING_REQUESTED";
+import { Message } from "primeng/message";
+import { FinalProductStatusBadgeComponent } from "./status-badge.component";
+import { Divider } from "primeng/divider";
 
 @Component({
   selector: "mxevolve-final-product-details",
-  imports: [Message, MxevolveIconComponent, Skeleton, Tag],
-  providers: [FinalProductService],
   templateUrl: "./final-product-details.component.html",
   host: {
     style: "display: contents;",
   },
+  imports: [
+    CommitIdDisplayComponent,
+    ExpandableMessageComponent,
+    Skeleton,
+    Tag,
+    Message,
+    FinalProductStatusBadgeComponent,
+    Divider,
+  ],
 })
 export class FinalProductDetailsComponent {
   readonly projectId = input.required<string>();
-  readonly finalProductId = input<string | undefined>();
-  readonly publishingStartDate = input<string | undefined>();
-  readonly finalProductFailure = input<string | undefined>();
-  readonly errorOccurred = output<string>();
+  readonly finalProductId = input<string>();
+  readonly publishingFailed = input(false);
 
-  readonly finalProductResource = rxResource({
-    params: () => {
-      const finalProductId = this.finalProductId();
-      if (!finalProductId || this.didFailToRequestPublishingFinalProduct()) {
-        return undefined;
-      }
-      return { projectId: this.projectId(), finalProductId };
-    },
+  readonly fetchError = output<string>();
+
+  private readonly finalProductApiService = inject(FinalProductApiService);
+
+  private readonly finalProductResource = rxResource({
+    params: () => ({
+      projectId: this.projectId(),
+      finalProductId: this.finalProductId(),
+    }),
     stream: ({ params }) =>
-      this.finalProductService
-        .getFinalProductById(params.projectId, params.finalProductId)
-        .pipe(
-          catchError((error) => {
-            this.errorOccurred.emit(error.message);
-            return of(undefined);
-          })
-        ),
+      params.finalProductId
+        ? this.finalProductApiService.getFinalProductById(
+            params.projectId,
+            params.finalProductId
+          )
+        : EMPTY,
   });
 
   readonly finalProduct = computed<FinalProduct | undefined>(() =>
@@ -103,40 +67,30 @@ export class FinalProductDetailsComponent {
       : undefined
   );
 
-  readonly loading = computed(() => this.finalProductResource.isLoading());
+  readonly loadFailed = computed(
+    () => !!this.finalProductId() && !!this.finalProductResource.error()
+  );
 
-  readonly statusConfiguration = computed<StatusConfiguration>(() => {
-    const finalProduct = this.finalProduct();
-    if (!finalProduct) return IN_PROGRESS_STATUS;
-    return (
-      STATUS_CONFIGURATIONS[finalProduct.state?.toUpperCase()] ?? {
-        severity: "secondary",
-        label: finalProduct.state ?? "NA",
-        icon: "remove_circle",
+  readonly showError = computed(
+    () => this.publishingFailed() || this.loadFailed()
+  );
+
+  readonly isLoading = computed(
+    () => !!this.finalProductId() && this.finalProductResource.isLoading()
+  );
+
+  readonly isPublishingInProgress = computed(
+    () => !this.finalProductId() && !this.publishingFailed()
+  );
+
+  constructor() {
+    effect(() => {
+      const error = this.finalProductResource.error();
+      if (error && this.finalProductId()) {
+        this.fetchError.emit(
+          error instanceof Error ? error.message : String(error)
+        );
       }
-    );
-  });
-
-  constructor(private readonly finalProductService: FinalProductService) {}
-
-  readonly publishingNotStarted = computed(
-    () => !this.publishingStartDate() && !this.finalProductId()
-  );
-
-  readonly awaitingPublishingRequest = computed(
-    () =>
-      !!this.publishingStartDate() &&
-      !this.finalProductId() &&
-      !this.didFailToRequestPublishingFinalProduct()
-  );
-
-  readonly shouldShowFailure = computed(() =>
-    this.didFailToRequestPublishingFinalProduct()
-  );
-
-  private didFailToRequestPublishingFinalProduct(): boolean {
-    return (
-      this.finalProductFailure() === FAILURE_PRE_PUBLISHING_REQUESTED
-    );
+    });
   }
 }

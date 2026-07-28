@@ -32,6 +32,8 @@ import { GetPullRequestApiRequest } from "./pull-request/request/get-pull-reques
 import { GetPaginatedCommitsDifferenceApiRequest } from "./commits/request/get-paginated-commits-difference-api-request";
 import { GetPullRequestCommitsPageApiResponse } from "./pull-request/response/get-pull-request-commits-page-api-response";
 import { GetPaginatedCommitsDifferencePageApiResponse } from "./commits/response/get-paginated-commits-difference-page-api-response";
+import { GetCommitsInfoRequest } from "./commits/request/get-commits-info-request";
+import { CommitInfoApiResponse } from "./commits/response/commit-info-api-response";
 import { ErrorHandler } from "./error-handling/error-handler";
 
 @Injectable()
@@ -86,6 +88,21 @@ export class ScmService {
       .get<CommitDetails[]>(this.constructCommitDifferenceUri(request), {
         params,
       })
+      .pipe(
+        catchError((error) =>
+          throwError(() => new Error(ErrorHandler.extractMessage(error)))
+        )
+      );
+  }
+
+  getCommitsInfo(
+    request: GetCommitsInfoRequest
+  ): Observable<CommitInfoApiResponse[]> {
+    return this.http
+      .post<CommitInfoApiResponse[]>(
+        this.constructCommitsInfoUri(request),
+        request.commitIds
+      )
       .pipe(
         catchError((error) =>
           throwError(() => new Error(ErrorHandler.extractMessage(error)))
@@ -278,6 +295,13 @@ export class ScmService {
     return (
       this.apiUrl +
       `projects/${request.projectId}/repositories/${request.repositoryId}/commits/diff`
+    );
+  }
+
+  private constructCommitsInfoUri(request: GetCommitsInfoRequest) {
+    return (
+      this.apiUrl +
+      `projects/${request.projectId}/repositories/${request.repositoryId}/commits`
     );
   }
 

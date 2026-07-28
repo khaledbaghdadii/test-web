@@ -13,6 +13,7 @@ import { MergeRequestPriority } from "./merge-request-priority.model";
 interface MergeRequestApiItem {
   readonly pullRequestId?: string;
   readonly id: string;
+  readonly title?: string;
   readonly mergeRequestState: string;
   readonly createdOn?: string;
   readonly pullRequestUrl?: string;
@@ -36,6 +37,7 @@ interface MergeRequestApiItem {
     readonly id: string;
     readonly scenarioExecutionId?: string;
     readonly bulkMode: boolean;
+    readonly createdOn?: string;
   }>;
   readonly stateTransitions?: Array<{
     readonly mergeRequestPreviousState: string;
@@ -45,6 +47,12 @@ interface MergeRequestApiItem {
   readonly owner?: string;
   readonly projectId?: string;
   readonly isReOpenable?: boolean;
+  readonly reviewers?: Array<{
+    readonly name?: string;
+    readonly displayName?: string;
+    readonly emailAddress?: string;
+    readonly approved?: boolean;
+  }>;
 }
 
 interface MergeRequestFilterApiResponse {
@@ -124,6 +132,7 @@ export class MergeRequestService {
       map((response) => ({
         id: response.id,
         pullRequestId: response.pullRequestId ?? response.id,
+        title: response.title,
         mergeRequestState: response.mergeRequestState as MergeRequestState,
         createdOn: response.createdOn,
         pullRequestUrl: response.pullRequestUrl,
@@ -143,6 +152,14 @@ export class MergeRequestService {
               branchName: response.mergeConfiguration.branchName ?? "",
             }
           : undefined,
+        reviewers: response.reviewers
+          ?.filter((reviewer) => !!reviewer.name)
+          .map((reviewer) => ({
+            name: reviewer.name as string,
+            displayName: reviewer.displayName ?? (reviewer.name as string),
+            emailAddress: reviewer.emailAddress,
+            approved: reviewer.approved,
+          })),
         builds: response.builds,
         stateTransitions: response.stateTransitions?.map((t) => ({
           mergeRequestPreviousState:

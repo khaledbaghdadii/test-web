@@ -4,6 +4,7 @@ import {
   effect,
   inject,
   input,
+  output,
   signal,
 } from "@angular/core";
 import {
@@ -33,6 +34,9 @@ export class MergeRequestPrioritySelectorComponent {
   readonly mergeRequestPriority = MergeRequestPriority;
 
   readonly mergeRequest = input.required<MergeRequestPrioritySelectorModel>();
+
+  /** Emitted after a successful priority update so parents can refresh data. */
+  readonly saved = output<void>();
 
   private readonly mergeRequestService = inject(MergeRequestService);
   private readonly toastMessageService = inject(ToastMessageService);
@@ -71,6 +75,7 @@ export class MergeRequestPrioritySelectorComponent {
         next: () => {
           this.isLoading.set(false);
           this.toastMessageService.showSuccess("Priority updated successfully");
+          this.saved.emit();
         },
         error: (error) => {
           this.isLoading.set(false);

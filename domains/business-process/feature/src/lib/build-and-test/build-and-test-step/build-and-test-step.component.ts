@@ -1,25 +1,17 @@
-import {
-  Component,
-  computed,
-  DestroyRef,
-  inject,
-  input,
-  signal,
-} from "@angular/core";
-import { rxResource, takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { Component, computed, inject, input, signal } from "@angular/core";
+import { rxResource } from "@angular/core/rxjs-interop";
 import { Button } from "primeng/button";
 import { Message } from "primeng/message";
 import { Skeleton } from "primeng/skeleton";
 import {
   BuildAndTestProcessStateUpdaterService,
   BuildAndTestEnvironmentResolverService,
-  BuildAndTestUserInputService,
 } from "@mxevolve/domains/business-process/data-access";
 import {
-  Development,
   DevelopmentService,
   MergeRequestService,
 } from "@mxevolve/domains/scm/data-access";
+import { ScenarioRunService } from "@mxevolve/domains/test/data-access";
 import {
   BusinessProcessContentContainerComponent,
   StageContainerComponent,
@@ -37,18 +29,9 @@ import { BuildAndTestBuildSectionComponent } from "./build-and-test-build-sectio
 import { BuildAndTestTestSectionComponent } from "./build-and-test-test-section/build-and-test-test-section.component";
 import { BuildAndTestTechnicalReseedSectionComponent } from "./build-and-test-technical-reseed-section/build-and-test-technical-reseed-section.component";
 import { BuildAndTestSendForReviewComponent } from "../merge-stage/build-and-test-send-for-review.component";
-import { catchError, of } from "rxjs";
+import { BuildAndTestMergeRequestReopenComponent } from "../merge-request-reopen/build-and-test-merge-request-reopen.component";
+import { catchError, EMPTY, of } from "rxjs";
 
-/**
- * Build & Test step body.
- *
- * Mirrors the legacy `mxflow-build-and-test-stage` section order:
- *   error alert -> loading illustration -> cherry-pick alert ->
- *   Build panel -> Technical Reseed -> Test panel -> Merge action.
- *
- * Story A delivers the shell with placeholder panels; Build/Test/Reseed/Merge
- * content is implemented in Stories B and C.
- */
 @Component({
   selector: "mxevolve-build-and-test-step",
   templateUrl: "./build-and-test-step.component.html",
@@ -56,6 +39,7 @@ import { catchError, of } from "rxjs";
     BusinessProcessContentContainerComponent,
     Button,
     BuildAndTestSendForReviewComponent,
+    BuildAndTestMergeRequestReopenComponent,
     Message,
     MxevolveIllustrationComponent,
     Skeleton,
@@ -67,7 +51,7 @@ import { catchError, of } from "rxjs";
   providers: [
     BuildAndTestProcessStateUpdaterService,
     BuildAndTestEnvironmentResolverService,
-    BuildAndTestUserInputService,
+    ScenarioRunService,
     DevelopmentService,
     MergeRequestService,
   ],
@@ -79,19 +63,18 @@ export class BuildAndTestStepComponent {
   readonly execution = input.required<BuildAndTestProcessExecution>();
   readonly stageStatus = input.required<StepStatus>();
 
-  private readonly stateUpdater = inject(BuildAndTestProcessStateUpdaterService);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly stateUpdater = inject(
+    BuildAndTestProcessStateUpdaterService
+  );
   private readonly environmentResolver = inject(
     BuildAndTestEnvironmentResolverService
   );
   private readonly developmentService = inject(DevelopmentService);
   private readonly mergeRequestService = inject(MergeRequestService);
-  private readonly userInputService = inject(BuildAndTestUserInputService);
   private readonly toastMessageService = inject(ToastMessageService);
 
   private readonly stage = computed(() => this.execution().buildAndTestStage);
   readonly sendForReviewVisible = signal(false);
-  readonly actionLoading = signal(false);
 
   readonly projectId = computed(() => this.execution().projectId);
   readonly processId = computed(() => this.execution().id);
@@ -116,38 +99,35 @@ export class BuildAndTestStepComponent {
     () => this.execution().createBranchStage.developmentId
   );
 
-  private readonly developmentResource = rxResource<
-    Development,
-    { projectId: string; developmentId: string }
-  >({
-    params: () => {
-      const developmentId = this.developmentId();
-      if (!developmentId) return undefined;
-      return { projectId: this.projectId(), developmentId };
-    },
+  private readonly developmentResource = rxResource({
+    params: () => ({
+      projectId: this.projectId(),
+      developmentId: this.developmentId(),
+    }),
     stream: ({ params }) =>
-      this.developmentService.getDevelopment(
-        params.projectId,
-        params.developmentId,
-        true
-      ),
+      params.developmentId
+        ? this.developmentService
+            .getDevelopment(params.projectId, params.developmentId, true)
+            .pipe(
+              catchError(() => {
+                this.toastMessageService.showError(
+                  "Unable to retrieve branch-related information due to a technical issue. As a result, launching scenarios is currently unavailable."
+                );
+                return EMPTY;
+              })
+            )
+        : EMPTY,
   });
 
   readonly development = computed(() => this.developmentResource.value());
 
-  readonly branchName = computed(() => {
-    const development = this.development();
-    if (development) return development.name;
-    return this.developmentId() ? undefined : this.temporaryBranchName();
-  });
-
   readonly cherryPickFailedMessage = computed(
     () =>
-      `Cherry-pick could not be completed automatically. Please manually cherry-pick your commits to the branch '${this.temporaryBranchName()}' and then click 'Proceed to the Next Step' to open a merge request.`
+      `Cherry-pick could not be completed automatically. Please manually cherry-pick your commits to the branch '${this.temporaryBranchName()}' and then click 'Merge' to open a merge request.`
   );
 
   /** Build Environment is hidden when the run skips environment deployment. */
-  readonly showEnvironmentDetails = computed(
+  readonly prepareBuildStepIsNotSkipped = computed(
     () => !this.execution().input.buildEnvironment.skipEnvironmentDeployment
   );
 
@@ -166,9 +146,7 @@ export class BuildAndTestStepComponent {
 
   readonly sendForReviewDisabled = computed(
     () =>
-      this.stage().status !== StageStatus.PENDING_INPUT ||
-      !this.developmentId() ||
-      this.actionLoading()
+      this.stage().status !== StageStatus.PENDING_INPUT || !this.developmentId()
   );
 
   readonly latestMergeJobId = computed(
@@ -200,14 +178,22 @@ export class BuildAndTestStepComponent {
 
   readonly showDecisionResult = computed(() => !!this.decisionRequester());
 
+  /** When the stage passed, the process moved forward to the next step. */
+  readonly decisionMessage = computed(() => {
+    if (this.stage().status === StageStatus.PASSED) {
+      return `The process was advanced by ${this.decisionRequester()}`;
+    }
+    return `${this.decisionResultLabel()} by ${this.decisionRequester()}`;
+  });
+
   readonly decisionResultLabel = computed(() => {
     if (this.stage().status === StageStatus.PASSED) return "Passed";
     if (this.stage().status === StageStatus.STOPPED) return "Stopped";
     return this.stage().status;
   });
 
-  readonly decisionMessageSeverity = computed<"success" | "secondary">(() =>
-    this.stage().status === StageStatus.PASSED ? "success" : "secondary"
+  readonly decisionMessageSeverity = computed<"info" | "secondary">(() =>
+    this.stage().status === StageStatus.PASSED ? "info" : "secondary"
   );
 
   readonly scenarioExecutionGroup = computed(
@@ -227,12 +213,6 @@ export class BuildAndTestStepComponent {
     () => this.stage().technicalReseedExecutionGroupId
   );
 
-  /**
-   * The build/test environment id is not on the CI model; it is resolved
-   * indirectly from the latest deploy scenario of the prepare-build stage
-   * (mirrors the legacy `getScenarioExecution(...).environmentId` lookup).
-   * Absent when the run skips environment deployment (no deploy scenario).
-   */
   readonly environmentScenarioId = computed(
     () => this.execution().prepareBuildStage.latestScenarioExecutionId
   );
@@ -244,51 +224,34 @@ export class BuildAndTestStepComponent {
       return { projectId: this.projectId(), scenarioExecutionId };
     },
     stream: ({ params }) =>
-      this.environmentResolver.resolveEnvironment(
-        params.projectId,
-        params.scenarioExecutionId
-      ),
+      this.environmentResolver
+        .resolveEnvironment(params.projectId, params.scenarioExecutionId)
+        .pipe(
+          catchError((error) => {
+            this.toastMessageService.showError(
+              error instanceof Error ? error.message : String(error)
+            );
+            return of({ environmentId: undefined });
+          })
+        ),
   });
 
-  readonly environmentResolutionError = computed(() => {
-    const error = this.environmentResource.error();
-    if (!error) return undefined;
-    return error instanceof Error ? error.message : String(error);
-  });
-
-  readonly errorMessage = computed(
-    () => this.stage().errorMessage ?? this.environmentResolutionError()
-  );
-
-  readonly environmentId = computed(
+  readonly resolveEnvironmentId = computed(
     () => this.environmentResource.value()?.environmentId || undefined
   );
 
+  readonly errorMessage = computed(() => this.stage().errorMessage);
+
   readonly showEnvironmentWaitingMessage = computed(
     () =>
-      this.showEnvironmentDetails() &&
-      !this.environmentId() &&
-      !this.environmentResolutionError()
+      this.prepareBuildStepIsNotSkipped() &&
+      this.environmentIdIsNotResolvedYet() &&
+      this.didNotFaceAnyErrorsWhileResolvingEnvironment()
   );
 
   openSendForReview(): void {
     if (this.sendForReviewDisabled()) return;
     this.sendForReviewVisible.set(true);
-  }
-
-  reopenMergeRequest(): void {
-    if (this.sendForReviewDisabled()) return;
-    this.actionLoading.set(true);
-    this.userInputService
-      .reopenMergeRequest({
-        projectId: this.projectId(),
-        processId: this.processId(),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.handleActionSuccess(),
-        error: (error) => this.handleActionError(error.message),
-      });
   }
 
   reloadExecution(): void {
@@ -298,13 +261,11 @@ export class BuildAndTestStepComponent {
     );
   }
 
-  private handleActionSuccess(): void {
-    this.actionLoading.set(false);
-    this.reloadExecution();
+  private environmentIdIsNotResolvedYet() {
+    return this.resolveEnvironmentId() == undefined;
   }
 
-  private handleActionError(message: string): void {
-    this.actionLoading.set(false);
-    this.toastMessageService.showError(message);
+  private didNotFaceAnyErrorsWhileResolvingEnvironment() {
+    return this.environmentResource.isLoading();
   }
 }

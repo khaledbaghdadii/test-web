@@ -1,0 +1,52 @@
+<div class="grid grid-cols-6 gap-x-[16px] gap-y-[16px]">
+  <div class="col-span-6 flex items-center gap-3">
+    <p-toggleswitch
+      inputId="skipFactoryProductToggle"
+      [formControl]="form.controls.skipSubmission"
+    ></p-toggleswitch>
+
+    <label for="skipFactoryProductToggle" class="cursor-pointer select-none">
+      Skip updating Factory Product
+    </label>
+  </div>
+
+  <mxevolve-factory-product-input
+    class="col-span-6"
+    [class.pointer-events-none]="
+      isReadonly() || form.controls.skipSubmission.value
+    "
+    [class.opacity-50]="isReadonly() || form.controls.skipSubmission.value"
+    [projectId]="projectId()"
+    [factoryProductId]="factoryProductId()"
+    (factoryProductIdChange)="onFactoryProductIdChange($event)"
+  />
+
+  <div class="col-span-6 flex flex-col gap-1">
+    <label for="fap-commit-message"> Add a Commit Message Below </label>
+
+    <textarea
+      pTextarea
+      id="fap-commit-message"
+      class="w-full"
+      [formControl]="form.controls.commitMessage"
+      rows="3"
+      placeholder="Enter your commit message"
+    ></textarea>
+  </div>
+
+  <div class="col-span-6 flex flex-col gap-1">
+    <p class="font-medium">MXevolve Config File(s)</p>
+    <mxevolve-configuration-files-picker
+      [class.pointer-events-none]="
+        isReadonly() || form.controls.skipSubmission.value
+      "
+      [class.opacity-50]="isReadonly() || form.controls.skipSubmission.value"
+      [disabled]="isReadonly() || form.controls.skipSubmission.value"
+      [formControl]="form.controls.selectedConfigurationFilePaths"
+      [selectedFilePaths]="form.controls.selectedConfigurationFilePaths.value"
+      [projectId]="projectId()"
+      [repositoryId]="repositoryId()"
+      [branchName]="branchName()"
+    />
+  </div>
+</div>

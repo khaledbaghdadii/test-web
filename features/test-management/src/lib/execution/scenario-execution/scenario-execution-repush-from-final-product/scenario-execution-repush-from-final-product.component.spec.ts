@@ -43,7 +43,7 @@ const EXECUTION_GROUP_ID = "executionGroupId";
 const REPUSHED_SCENARIO = {
   testExecutionId: "repushedScenarioId",
 };
-const KEPT_EXECUTION = true;
+const KEEP_EXECUTION = true;
 const FINAL_PRODUCT_ID = "finalproductId";
 const FINAL_PRODUCT_RTP_COMMIT_ID = "finalproductRtpCommitId";
 const BRANCH = "test-branch";
@@ -480,11 +480,11 @@ describe("ScenarioExecutionRepushFromFinalProductModalComponent", () => {
 
   describe("warning messages", () => {
     it.each([true, false])(
-      "should not display kept execution warning message when kept execution is marked as %s and keep execution is disabled",
+      "should not display keep execution warning message when keep execution is marked as %s and keep execution is disabled",
       (keptScenarioExecution: boolean) => {
         component.disableKeepExecution = true;
         component.openModal(
-          getComponentInput({ keptExecution: keptScenarioExecution })
+          getComponentInput({ keepExecution: keptScenarioExecution })
         );
         fixture.detectChanges();
         const warningMessageText = DomTestUtils.getElementByType(
@@ -495,9 +495,9 @@ describe("ScenarioExecutionRepushFromFinalProductModalComponent", () => {
       }
     );
 
-    it("should not display kept execution warning message when scenario is marked as kept and keep execution is enabled", () => {
+    it("should not display keep execution warning message when scenario is marked as kept and keep execution is enabled", () => {
       component.disableKeepExecution = false;
-      component.openModal(getComponentInput({ keptExecution: true }));
+      component.openModal(getComponentInput({ keepExecution: true }));
       fixture.detectChanges();
 
       const warningMessageText = DomTestUtils.getElementByType(
@@ -507,9 +507,9 @@ describe("ScenarioExecutionRepushFromFinalProductModalComponent", () => {
       expect(warningMessageText.isRendered()).toBeFalsy();
     });
 
-    it("should display kept execution warning message when scenario is not marked as kept and keep execution is enabled", () => {
+    it("should display keep execution warning message when scenario is not marked as kept and keep execution is enabled", () => {
       component.disableKeepExecution = false;
-      component.openModal(getComponentInput({ keptExecution: false }));
+      component.openModal(getComponentInput({ keepExecution: false }));
       fixture.detectChanges();
       const warningMessageText = DomTestUtils.getElementByType(
         fixture,
@@ -613,7 +613,7 @@ function getComponentInput(
     branch: BRANCH,
     initialFinalProductId: INITIAL_FINAL_PRODUCT_ID,
     scenarioExecutionId: SCENARIO_EXECUTION_ID,
-    keptExecution: KEPT_EXECUTION,
+    keepExecution: KEEP_EXECUTION,
     executionGroupId: EXECUTION_GROUP_ID,
     ...overrides,
   };

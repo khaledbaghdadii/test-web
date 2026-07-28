@@ -16,5 +16,6 @@ export interface MergeConfigurationDefinitionApiResponse {
   runFullMaintenance: boolean;
   automergeBulkSize: number;
   deltaConfigImportEnabled: boolean;
+  mxLintEnabled: boolean;
   infraResourceSettings: InfraResourceSettingsApiResponse;
 }

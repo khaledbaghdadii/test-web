@@ -5,7 +5,9 @@ import { AllEnterpriseModule } from "ag-grid-enterprise";
 import { AgGridAngular } from "ag-grid-angular";
 import { CommitsService } from "@mxevolve/domains/scm/data-access";
 import { ToastMessageService } from "@mxflow/ui/alert";
+import { ScenarioRunStatus } from "@mxevolve/domains/test/model";
 import { PaginatedCommitsDifferenceComponent } from "./paginated-commits-difference.component";
+import { TestExecutionsByCommitIdService } from "../test-executions-by-commit-id/test-executions-by-commit-id.service";
 
 ModuleRegistry.registerModules([AllEnterpriseModule]);
 
@@ -16,6 +18,10 @@ const mockCommitsService = {
 const mockToastMessageService = {
   showSuccess: jest.fn(),
   showError: jest.fn(),
+};
+
+const mockTestExecutionsByCommitIdService = {
+  getExecutionsGroupedByCommitId: jest.fn(),
 };
 
 const MOCK_IMPORTS = [AgGridAngular];
@@ -51,12 +57,18 @@ const MOCK_RESPONSE = {
   last: true,
 };
 
-async function renderComponent(inputs: Partial<typeof REQUIRED_INPUTS> = {}) {
+async function renderComponent(
+  inputs: Partial<typeof REQUIRED_INPUTS> & { noRowsMessage?: string } = {}
+) {
   return render(PaginatedCommitsDifferenceComponent, {
     imports: MOCK_IMPORTS,
     inputs: { ...REQUIRED_INPUTS, ...inputs },
     componentProviders: [
       { provide: CommitsService, useValue: mockCommitsService },
+      {
+        provide: TestExecutionsByCommitIdService,
+        useValue: mockTestExecutionsByCommitIdService,
+      },
     ],
     providers: [
       { provide: ToastMessageService, useValue: mockToastMessageService },
@@ -75,6 +87,9 @@ describe("PaginatedCommitsDifferenceComponent", () => {
     jest.clearAllMocks();
     mockCommitsService.getPaginatedCommitDifferences.mockReturnValue(
       of(MOCK_RESPONSE)
+    );
+    mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId.mockReturnValue(
+      of({})
     );
   });
 
@@ -101,6 +116,9 @@ describe("PaginatedCommitsDifferenceComponent", () => {
           screen.getByRole("columnheader", { name: "Author" })
         ).toBeTruthy();
         expect(screen.getByRole("columnheader", { name: "Date" })).toBeTruthy();
+        expect(
+          screen.getByRole("columnheader", { name: "Test Runs" })
+        ).toBeTruthy();
       });
     });
 
@@ -128,6 +146,106 @@ describe("PaginatedCommitsDifferenceComponent", () => {
         expect(screen.getByText("John Doe")).toBeTruthy();
         expect(screen.getByText("Jane Smith")).toBeTruthy();
       });
+    });
+  });
+
+  describe("no-rows overlay", () => {
+    it("shows the no-rows overlay when there are no commits", async () => {
+      mockCommitsService.getPaginatedCommitDifferences.mockReturnValue(
+        of({ content: [], last: true })
+      );
+
+      await renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByText("No commits found")).toBeTruthy();
+      });
+    });
+
+    it("shows the custom no-rows message when provided", async () => {
+      mockCommitsService.getPaginatedCommitDifferences.mockReturnValue(
+        of({ content: [], last: true })
+      );
+
+      await renderComponent({ noRowsMessage: "No commits on this branch" });
+
+      await waitFor(() => {
+        expect(screen.getByText("No commits on this branch")).toBeTruthy();
+      });
+    });
+
+    it("does not show the no-rows overlay when commits are present", async () => {
+      await renderComponent();
+
+      await waitFor(() => {
+        expect(getDataRows()).toHaveLength(2);
+      });
+      expect(screen.queryByText("No commits found")).toBeNull();
+    });
+  });
+
+  describe("scenario execution enrichment", () => {
+    it("fetches executions using all commit IDs from the page", async () => {
+      await renderComponent();
+
+      await waitFor(() => {
+        expect(
+          mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId
+        ).toHaveBeenCalledWith(REQUIRED_INPUTS.projectId, ["abc123", "def456"]);
+      });
+    });
+
+    it("still renders commit rows when execution enrichment fails", async () => {
+      mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId.mockReturnValue(
+        throwError(() => new Error("Enrichment failed"))
+      );
+
+      await renderComponent();
+
+      await waitFor(() => {
+        expect(getDataRows()).toHaveLength(2);
+      });
+    });
+
+    it("does not call grouped execution enrichment when commit list is empty", async () => {
+      mockCommitsService.getPaginatedCommitDifferences.mockReturnValue(
+        of({ content: [], last: true })
+      );
+
+      await renderComponent();
+
+      await waitFor(() => {
+        expect(
+          mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId
+        ).not.toHaveBeenCalled();
+      });
+    });
+
+    it("attaches executions to commit rows by commitId", async () => {
+      mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId.mockReturnValue(
+        of({
+          abc123: [
+            {
+              id: "exec-1",
+              projectId: REQUIRED_INPUTS.projectId,
+              name: "Scenario A",
+              status: ScenarioRunStatus.PASSED,
+              endDate: "2024-01-15T12:00:00Z",
+            },
+            {
+              id: "exec-2",
+              projectId: REQUIRED_INPUTS.projectId,
+              name: "Scenario B",
+              status: ScenarioRunStatus.FAILED,
+              endDate: "2024-01-15T11:00:00Z",
+            },
+          ],
+        })
+      );
+
+      await renderComponent();
+
+      await waitFor(() => expect(getDataRows()).toHaveLength(2));
     });
   });
 

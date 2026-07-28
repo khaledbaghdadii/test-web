@@ -1,0 +1,229 @@
+<div class="flex flex-col gap-4 overflow-x-auto">
+  <section class="border border-surface rounded-md overflow-hidden">
+    <button
+      type="button"
+      class="flex w-full items-center justify-between gap-2 border-none cursor-pointer text-left px-4 py-3 bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700"
+      [attr.aria-expanded]="detailsExpanded()"
+      (click)="toggleDetails()"
+    >
+      <span class="font-semibold">{{ detailsTitle() }}</span>
+      <mxevolve-icon
+        [name]="detailsExpanded() ? 'expand_less' : 'expand_more'"
+        size="sm"
+      />
+    </button>
+    @if (detailsExpanded()) {
+    <div
+      class="border-t border-surface px-4 py-3 bg-surface-100 dark:bg-surface-800"
+    >
+      <mxevolve-validation-prefilled-inputs
+        [projectId]="projectId()"
+        [providedInputs]="prefilledInputs()"
+      />
+    </div>
+    }
+  </section>
+
+  <form class="flex flex-col gap-6" [formGroup]="form()" (ngSubmit)="build()">
+    <p class="mandatory-legend text-sm text-red-500 m-0">* Mandatory Field</p>
+
+    @if (visibility().official) {
+    <fieldset class="flex flex-col gap-2 border-none p-0 m-0">
+      <legend
+        class="text-[0.95rem] font-bold text-primary p-0"
+        [class.required]="
+          form().controls.official.hasValidator(Validators.required)
+        "
+      >
+        Official Status
+      </legend>
+      <div class="flex flex-row gap-4 mt-2">
+        <div class="flex flex-row items-center gap-1">
+          <p-radioButton
+            inputId="validation-official"
+            name="officialUnofficialInput"
+            formControlName="official"
+            [value]="true"
+          />
+          <label for="validation-official">Official Execution</label>
+        </div>
+        <div class="flex flex-row items-center gap-1">
+          <p-radioButton
+            inputId="validation-unofficial"
+            name="officialUnofficialInput"
+            formControlName="official"
+            [value]="false"
+          />
+          <label for="validation-unofficial">Unofficial Execution</label>
+        </div>
+      </div>
+    </fieldset>
+    } @if (visibility().name) {
+    <div class="grid-2">
+      <mxevolve-definition-input
+        inputId="validation-execution-name"
+        [control]="form().controls.name"
+        label="Execution Name"
+      >
+        <input
+          id="validation-execution-name"
+          pInputText
+          class="w-full"
+          formControlName="name"
+          placeholder="Enter a validation process execution name"
+        />
+      </mxevolve-definition-input>
+    </div>
+    } @if (showConfigurationGroup()) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">
+        Configuration Parameters
+      </legend>
+      <div class="grid-2">
+        <mxevolve-validation-configuration-parameters
+          [projectId]="projectId()"
+          [showRepository]="visibility().repositoryId"
+          [repositoryIdFormControl]="form().controls.repositoryId"
+          [businessProcessQualityLevelFormControl]="
+            form().controls.businessProcessQualityLevel
+          "
+          [createBranchFormControl]="form().controls.createBranch"
+          [parentBranchNameFormControl]="form().controls.parentBranchName"
+          [archivalBranchNameFormControl]="form().controls.archivalBranchName"
+          [finalProductIdFormControl]="form().controls.finalProductId"
+          [configCommitIdFormControl]="form().controls.configCommitId"
+          [rtpCommitIdFormControl]="form().controls.rtpCommitId"
+          [preselectedFinalProductId]="preselectedFinalProductId()"
+        />
+      </div>
+    </fieldset>
+    } @if (showTestsGroup()) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">Tests</legend>
+      <div class="grid-2">
+        @if (visibility().qualityGateScenarioDefinitionIds) {
+        <mxevolve-definition-input
+          inputId="validation-quality-gate-test-scenarios"
+          [control]="form().controls.qualityGateScenarioDefinitionIds"
+          label="Quality Gate Execution Test Scenarios"
+          description='Select the collection of test scenarios that you wish to launch in the "Execute Quality Gate" step'
+        >
+          <mxevolve-scenario-definition-multiselect-dropdown
+            [projectId]="projectId()"
+            inputId="validation-quality-gate-test-scenarios"
+            [formControl]="form().controls.qualityGateScenarioDefinitionIds"
+          />
+        </mxevolve-definition-input>
+        } @if (visibility().nightlyRepusherEnabled) {
+        <fieldset class="field flex flex-col gap-1 border-none p-0 m-0">
+          <legend
+            class="font-medium p-0"
+            [class.required]="
+              form().controls.nightlyRepusherEnabled.hasValidator(
+                Validators.required
+              )
+            "
+          >
+            Do you want to enable nightly repush?
+          </legend>
+          <div class="flex flex-row gap-4 mt-1">
+            <div class="flex flex-row items-center gap-1">
+              <p-radioButton
+                inputId="validation-nightly-yes"
+                formControlName="nightlyRepusherEnabled"
+                [value]="true"
+              />
+              <label for="validation-nightly-yes">Yes</label>
+            </div>
+            <div class="flex flex-row items-center gap-1">
+              <p-radioButton
+                inputId="validation-nightly-no"
+                formControlName="nightlyRepusherEnabled"
+                [value]="false"
+              />
+              <label for="validation-nightly-no">No</label>
+            </div>
+          </div>
+          <small class="italic text-gray-500 text-sm text-wrap"
+            >The timing is configured under BP settings accessible by
+            admins</small
+          >
+        </fieldset>
+        }
+      </div>
+    </fieldset>
+    } @if (showScopeStartCommit()) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">
+        Validation Scope Parameters
+      </legend>
+      <div class="grid-2">
+        <mxevolve-definition-input
+          inputId="validation-scope-start-commit"
+          [control]="form().controls.validationScopeStartCommitId"
+          label="Please select the start of the validation scope from"
+        >
+          <mxevolve-scope-start-commit-input
+            [projectId]="projectId()"
+            [parentBranch]="scopeParentBranch()"
+            [formControl]="form().controls.validationScopeStartCommitId"
+          />
+        </mxevolve-definition-input>
+      </div>
+    </fieldset>
+    } @if (visibility().qualityGateInfraGroupId) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">
+        Infrastructure Parameters
+      </legend>
+      <div class="grid-2">
+        <mxevolve-definition-input
+          inputId="validation-quality-gate-infra-group"
+          [control]="form().controls.qualityGateInfraGroupId"
+          label="Quality Gate Execution Infra Group"
+          description='Select the Infra Group for the test(s) under "Execute Quality Gate" step'
+        >
+          <mxevolve-business-process-infra-group-selector
+            [projectId]="projectId()"
+            infraGroupFormControlName="validation-quality-gate-infra-group"
+            [infraGroupFormControl]="form().controls.qualityGateInfraGroupId"
+          />
+        </mxevolve-definition-input>
+      </div>
+    </fieldset>
+    } @if (visibility().notificationsRecipients) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">
+        Notifications
+      </legend>
+      <div class="grid-2">
+        <mxevolve-definition-input
+          inputId="validation-notification-recipients"
+          [control]="form().controls.notificationsRecipients"
+          label="Expiry Date Notification Recipients"
+          description="Select the users who will receive email notifications as the business process approaches its expiry date"
+        >
+          <mxevolve-notifications-recipients-input
+            [projectId]="projectId()"
+            inputId="validation-notification-recipients"
+            [notificationsRecipientsFormControl]="
+              form().controls.notificationsRecipients
+            "
+          />
+        </mxevolve-definition-input>
+      </div>
+    </fieldset>
+    }
+
+    <div class="actions grid-6">
+      <p-button
+        type="submit"
+        label="Run"
+        class="col-start-3 col-span-2"
+        styleClass="w-full justify-center"
+        [disabled]="form().invalid || form().pending || executing()"
+        [loading]="executing()"
+      />
+    </div>
+  </form>
+</div>

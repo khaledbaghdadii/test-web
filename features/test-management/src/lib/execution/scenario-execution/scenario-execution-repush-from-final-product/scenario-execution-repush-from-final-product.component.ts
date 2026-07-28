@@ -77,7 +77,7 @@ export class ScenarioExecutionRepushFromFinalProductModalComponent
   branch: string;
   initialFinalProductId: string;
   finalProductWarningMessage: string;
-  isKeptExecution = false;
+  isKeepExecution = false;
   keepServices?: boolean;
   repositoryId: string;
 
@@ -103,7 +103,7 @@ export class ScenarioExecutionRepushFromFinalProductModalComponent
 
   openModal(input: ScenarioExecutionRepushFromFinalProductInput) {
     this.input = input;
-    this.isKeptExecution = input.keptExecution;
+    this.isKeepExecution = input.keepExecution;
     this.showModal = true;
     this.setProjectId();
     this.setRepositoryId();
@@ -212,6 +212,6 @@ export interface ScenarioExecutionRepushFromFinalProductInput {
   branch: string;
   initialFinalProductId: string;
   scenarioExecutionId: string;
-  keptExecution: boolean;
+  keepExecution: boolean;
   executionGroupId?: string;
 }

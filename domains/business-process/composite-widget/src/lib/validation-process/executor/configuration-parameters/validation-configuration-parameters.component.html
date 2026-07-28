@@ -1,0 +1,57 @@
+@if (showRepository()) {
+<mxevolve-definition-input
+  inputId="validation-repository"
+  [control]="repositoryIdFormControl()"
+  label="Repository"
+  description="Select the Repository where the configuration is stored"
+>
+  <mxevolve-repository-selector
+    inputId="validation-repository"
+    [projectId]="projectId()"
+    [formControl]="repositoryIdFormControl()"
+    (repositoryChanged)="onRepositoryChanged()"
+  />
+</mxevolve-definition-input>
+} @if (businessProcessQualityLevelFormControl().enabled) {
+<mxevolve-definition-input
+  inputId="validation-bp-quality-level"
+  [control]="businessProcessQualityLevelFormControl()"
+  label="Business Process Quality Level"
+  description="Select the business process quality level"
+>
+  <p-select
+    inputId="validation-bp-quality-level"
+    appendTo="body"
+    styleClass="w-full"
+    [options]="qualityLevelOptions"
+    optionLabel="label"
+    optionValue="value"
+    [showClear]="true"
+    [formControl]="businessProcessQualityLevelFormControl()"
+    placeholder="Select Quality Gate Level"
+  />
+</mxevolve-definition-input>
+} @if (businessProcessQualityLevelFormControl().value === "MQG") {
+<mxevolve-validation-mqg-parameters
+  [projectId]="projectId()"
+  [repositoryId]="repositoryIdFormControl().value ?? ''"
+  [createBranchFormControl]="createBranchFormControl()"
+  [parentBranchNameFormControl]="parentBranchNameFormControl()"
+  [archivalBranchNameFormControl]="archivalBranchNameFormControl()"
+  [finalProductIdFormControl]="finalProductIdFormControl()"
+  [configCommitIdFormControl]="configCommitIdFormControl()"
+  [rtpCommitIdFormControl]="rtpCommitIdFormControl()"
+  [preselectedFinalProductId]="preselectedFinalProductId()"
+/>
+} @else if (businessProcessQualityLevelFormControl().value === "DQG") {
+<mxevolve-validation-dqg-parameters
+  [projectId]="projectId()"
+  [repositoryId]="repositoryIdFormControl().value ?? ''"
+  [createBranchFormControl]="createBranchFormControl()"
+  [archivalBranchNameFormControl]="archivalBranchNameFormControl()"
+  [finalProductIdFormControl]="finalProductIdFormControl()"
+  [configCommitIdFormControl]="configCommitIdFormControl()"
+  [rtpCommitIdFormControl]="rtpCommitIdFormControl()"
+  [preselectedFinalProductId]="preselectedFinalProductId()"
+/>
+}

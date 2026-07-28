@@ -4,5 +4,5 @@ export interface CommitDetails {
   committerDisplayEmail: string;
   timeStamp: string;
   message: string;
-  url: string;
+  url?: string;
 }

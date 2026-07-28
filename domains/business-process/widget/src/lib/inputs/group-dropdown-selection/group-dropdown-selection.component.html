@@ -1,0 +1,12 @@
+<mxevolve-single-select-dropdown
+  [stateProvider]="stateProvider"
+  [dataParams]="{ projectId: projectId() }"
+  [inputId]="inputId()"
+  [config]="{
+    placeholder: 'Select Group',
+    lazyLoad: true,
+    showClear: true
+  }"
+  (errorEvent)="onError($event)"
+  (selectionChange)="onSelectionChange($event)"
+/>

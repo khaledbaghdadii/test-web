@@ -10,7 +10,8 @@
       }"
     >
       <div
-        class="col-span-4 bg-surface-50 dark:bg-surface-800 rounded-md border border-surface p-4"
+        [class]="hideIncidents() ? 'col-span-6' : 'col-span-4'"
+        class="bg-surface-50 dark:bg-surface-800 rounded-md border border-surface p-4"
         data-testid="analysis-status-panel"
       >
         <div class="text-color font-medium mb-3">
@@ -24,7 +25,13 @@
           <p-skeleton width="100%" height="2rem" />
         </div>
         } @else {
-        <div class="grid grid-cols-2 gap-4">
+        <div
+          [class]="
+            hideIncidents()
+              ? 'grid grid-cols-4 gap-4'
+              : 'grid grid-cols-2 gap-4'
+          "
+        >
           <mxevolve-summary-dropdown
             [count]="analysisStatus().notStarted"
             label="Not Started"
@@ -74,7 +81,8 @@
       }"
     >
       <div
-        class="col-span-4 bg-surface-50 dark:bg-surface-800 rounded-md border border-surface p-4"
+        [class]="hideIncidents() ? 'col-span-6' : 'col-span-4'"
+        class="bg-surface-50 dark:bg-surface-800 rounded-md border border-surface p-4"
         data-testid="detections-panel"
       >
         <div class="flex justify-between items-center mb-3">
@@ -98,7 +106,13 @@
           <p-skeleton width="100%" height="2rem" />
         </div>
         } @else {
-        <div class="grid grid-cols-2 gap-4">
+        <div
+          [class]="
+            hideIncidents()
+              ? 'grid grid-cols-3 gap-4'
+              : 'grid grid-cols-2 gap-4'
+          "
+        >
           <mxevolve-summary-item
             [count]="detections().wasteReasonCount"
             label="Waste Reasons"
@@ -123,6 +137,7 @@
     </ng-container>
 
     <!-- Panel 3: Aggregated Incidents -->
+    @if (!hideIncidents()) {
     <ng-container
       *showElementIfAuthorized="{
         action: 'view',
@@ -184,5 +199,6 @@
         }
       </div>
     </ng-container>
+    }
   </div>
 </div>

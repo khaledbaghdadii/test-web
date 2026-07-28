@@ -7,7 +7,10 @@ import {
 } from "@mxevolve/domains/business-process/util";
 import { DevelopmentService } from "@mxevolve/domains/scm/data-access";
 import { DevelopmentDetailsComponent } from "@mxevolve/domains/scm/composite-widget";
-import { MxevolveIconComponent, ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import {
+  MxevolveIconComponent,
+  ToastMessageService,
+} from "@mxevolve/shared/ui/primitive";
 import { Message } from "primeng/message";
 import { PanelModule } from "primeng/panel";
 import { BuildAndTestBackportActionsComponent } from "./build-and-test-backport-actions.component";

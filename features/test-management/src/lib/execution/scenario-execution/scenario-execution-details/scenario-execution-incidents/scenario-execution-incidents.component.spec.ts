@@ -14,12 +14,15 @@ import { HeaderTitleModule } from "@mxflow/ui/header";
 import { IncidentsTableComponent } from "@mxflow/features/incident-management";
 import { AnalysisObjectUnlinkModalComponent } from "../../../analysis-object-link/analysis-object-unlink-modal/analysis-object-unlink-modal.component";
 import { MockComponent } from "ng-mocks";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
+import { AnalysisObjectType } from "@mxflow/features/analysis-objects";
 
 describe("ScenarioExecutionIncidentsComponent", () => {
   let component: ScenarioExecutionIncidentsComponent;
   let fixture: ComponentFixture<ScenarioExecutionIncidentsComponent>;
   let toastMessageService: ToastMessageService;
   let stateService: ScenarioExecutionStateManagementService;
+  let analyticsTrackerService: jest.Mocked<TestManagementAnalyticsTrackerService>;
 
   beforeEach(async () => await setup());
 
@@ -112,6 +115,13 @@ describe("ScenarioExecutionIncidentsComponent", () => {
     expect(component.isUnlinkModalVisible).toBeTruthy();
   });
 
+  it("should track the unlink button click with the incident analysis object type", () => {
+    component.openUnlinkModal(incidentId);
+    expect(
+      analyticsTrackerService.trackUnlinkAnalysisObject
+    ).toHaveBeenCalledWith(AnalysisObjectType.INCIDENT);
+  });
+
   it("should set the modal visibility to false", () => {
     component.isUnlinkModalVisible = true;
     component.isVisibleChange(false);
@@ -129,6 +139,10 @@ describe("ScenarioExecutionIncidentsComponent", () => {
       showError: jest.fn(),
       showSuccess: jest.fn(),
     } as unknown as jest.Mocked<ToastMessageService>;
+
+    analyticsTrackerService = {
+      trackUnlinkAnalysisObject: jest.fn(),
+    } as unknown as jest.Mocked<TestManagementAnalyticsTrackerService>;
 
     stateService = {
       projectId: signal(projectId),
@@ -151,6 +165,10 @@ describe("ScenarioExecutionIncidentsComponent", () => {
         {
           provide: ScenarioExecutionStateManagementService,
           useValue: stateService,
+        },
+        {
+          provide: TestManagementAnalyticsTrackerService,
+          useValue: analyticsTrackerService,
         },
       ],
       imports: [

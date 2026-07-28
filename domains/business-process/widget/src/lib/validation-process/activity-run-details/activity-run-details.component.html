@@ -1,0 +1,161 @@
+<div class="flex flex-col gap-4 p-4">
+  <h4 class="text-lg font-bold m-0">Run Details</h4>
+
+  <div class="flex flex-wrap items-stretch gap-6">
+    <div class="flex flex-col gap-1">
+      <span class="text-muted-color">Template Name</span>
+      <span class="font-semibold">{{ execution().definitionName || "-" }}</span>
+    </div>
+    <p-divider layout="vertical" />
+    <div class="flex flex-col gap-1">
+      <span class="text-muted-color">Process Type</span>
+      <span class="font-semibold">{{
+        execution().familyName + " / " + execution().processName
+      }}</span>
+    </div>
+    <p-divider layout="vertical" />
+    <div class="flex flex-col gap-1 max-w-xl">
+      <span class="text-muted-color">Description</span>
+      @if (description()) {
+      <mxevolve-show-more-less-text
+        class="font-semibold"
+        [text]="description()!"
+      />
+      } @else {
+      <span class="font-semibold">-</span>
+      }
+    </div>
+    <p-divider layout="vertical" />
+    <div class="flex flex-col gap-1">
+      <span class="text-muted-color">Process Run owner</span>
+      <span class="font-semibold">{{ execution().owner || "-" }}</span>
+    </div>
+  </div>
+
+  <p-divider class="m-0" />
+
+  <div class="flex flex-col gap-3">
+    <span class="text-primary font-bold">Config Parameters</span>
+    <div class="flex flex-wrap items-stretch gap-6">
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">Repository</span>
+        <span class="font-semibold">
+          @if (execution().input.repositoryId) {
+          <mxevolve-repository-name
+            [projectId]="execution().projectId"
+            [repositoryId]="execution().input.repositoryId"
+          />
+          } @else { - }
+        </span>
+      </div>
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">Business Process Quality Level</span>
+        <span class="font-semibold">{{
+          execution().input.businessProcessQualityLevel || "-"
+        }}</span>
+      </div>
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">Create Branch</span>
+        <span class="font-semibold">{{
+          execution().input.createBranch ? "Yes" : "No"
+        }}</span>
+      </div>
+      @if (showParentBranchName()) {
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">Parent Branch Name</span>
+        <span class="font-semibold">{{
+          execution().input.parentBranch || "-"
+        }}</span>
+      </div>
+      }
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">Archival Branch Name</span>
+        <span class="font-semibold">{{
+          execution().input.archivalBranchName || "-"
+        }}</span>
+      </div>
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">Final Product</span>
+        <span class="font-semibold">
+          @if (finalProductCommitId()) {
+          <mxevolve-commit-id-display [commitId]="finalProductCommitId()!" />
+          } @else { - }
+        </span>
+      </div>
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">Config Commit ID</span>
+        <span class="font-semibold">
+          <mxevolve-commit-id-display
+            [commitId]="execution().input.configCommitId"
+          />
+        </span>
+      </div>
+      <p-divider layout="vertical" />
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">RTP Commit ID</span>
+        <span class="font-semibold">
+          <mxevolve-commit-id-display
+            [commitId]="execution().input.rtpCommitId"
+          />
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <p-divider class="m-0" />
+
+  <div class="flex flex-wrap items-start gap-6">
+    <div class="flex flex-col gap-3">
+      <span class="text-primary font-bold">Tests</span>
+      <div class="flex items-stretch gap-6">
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Nightly Repush Enabled</span>
+          <span class="font-semibold">{{
+            execution().input.nightlyRepusherEnabled ? "Yes" : "No"
+          }}</span>
+        </div>
+      </div>
+    </div>
+    <p-divider layout="vertical" />
+    <div class="flex flex-col gap-3">
+      <span class="text-primary font-bold">User Story Archival</span>
+      <div class="flex items-stretch gap-6">
+        <div class="flex flex-col gap-1">
+          <span class="text-muted-color">Start of Validation Scope Commit</span>
+          <span class="font-semibold">
+            @if (execution().input.validationScopeStartCommitId) {
+            <mxevolve-commit-id-display
+              [commitId]="execution().input.validationScopeStartCommitId!"
+            />
+            } @else { - }
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p-divider class="m-0" />
+
+  <div class="flex flex-col gap-3">
+    <span class="text-primary font-bold">Infrastructure Parameters</span>
+    <div class="flex items-stretch gap-6">
+      <div class="flex flex-col gap-1">
+        <span class="text-muted-color">Quality Gate Infra Group</span>
+        <span class="font-semibold">
+          @if (execution().input.qualityGateExecutionInfraGroupId) {
+          <mxevolve-infra-group-name
+            [projectId]="execution().projectId"
+            [infraGroupId]="execution().input.qualityGateExecutionInfraGroupId"
+          />
+          } @else { - }
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

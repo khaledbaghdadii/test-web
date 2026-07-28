@@ -168,10 +168,12 @@ export class ServiceActionsButtonComponent implements OnInit {
           .startEnvironment(this.projectId(), this.environmentId())
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
-            next: () =>
+            next: () => {
+              this.environmentChanged.emit();
               this.toastService.showSuccess(
                 "Environment services start request submitted successfully"
-              ),
+              );
+            },
             error: (error: Error) => {
               this.loading.set(false);
               this.toastService.showError(error.message);
@@ -202,10 +204,12 @@ export class ServiceActionsButtonComponent implements OnInit {
           .stopEnvironment(this.projectId(), this.environmentId())
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
-            next: () =>
+            next: () => {
+              this.environmentChanged.emit();
               this.toastService.showSuccess(
                 "Environment services stop request submitted successfully"
-              ),
+              );
+            },
             error: (error: Error) => {
               this.loading.set(false);
               this.toastService.showError(error.message);

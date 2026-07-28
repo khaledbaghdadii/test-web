@@ -17,6 +17,7 @@ import { ShowElementIfAuthorizedDirective } from "@mxflow/core/auth";
 import { SummaryItemComponent } from "./summary-item/summary-item.component";
 import { SummaryDropdownComponent } from "./summary-dropdown/summary-dropdown.component";
 import { Skeleton } from "primeng/skeleton";
+import type { SummaryFilterEvent } from "./summary-filter-event";
 
 const MOCK_IMPORTS = [
   MockComponent(MxevolveIconComponent),
@@ -149,7 +150,14 @@ const REQUIRED_INPUTS = {
   bpExecutionName: "my-bp-execution",
 };
 
-async function renderComponent(inputs: Partial<typeof REQUIRED_INPUTS> = {}) {
+async function renderComponent(
+  inputs: Partial<
+    typeof REQUIRED_INPUTS & {
+      hideIncidents: boolean;
+      externalFilter: SummaryFilterEvent[];
+    }
+  > = {}
+) {
   const result = await render(ScenarioRunsSummaryComponent, {
     inputs: { ...REQUIRED_INPUTS, ...inputs },
     imports: [RouterModule.forRoot([])],
@@ -213,6 +221,46 @@ describe("ScenarioRunsSummaryComponent", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Aggregated Incidents")).toBeTruthy();
+      });
+    });
+  });
+
+  describe("hideIncidents", () => {
+    it("hides the Aggregated Incidents panel when hideIncidents is true", async () => {
+      await renderComponent({ hideIncidents: true });
+
+      await waitFor(() => {
+        expect(screen.queryByText("Aggregated Incidents")).toBeNull();
+      });
+    });
+
+    it("shows the Aggregated Incidents panel when hideIncidents is false", async () => {
+      await renderComponent({ hideIncidents: false });
+
+      await waitFor(() => {
+        expect(screen.getByText("Aggregated Incidents")).toBeTruthy();
+      });
+    });
+
+    it("expands the Analysis Status panel to col-span-6 when hideIncidents is true", async () => {
+      const { fixture } = await renderComponent({ hideIncidents: true });
+
+      await waitFor(() => {
+        const panel = fixture.nativeElement.querySelector(
+          '[data-testid="analysis-status-panel"]'
+        );
+        expect(panel?.classList.contains("col-span-6")).toBe(true);
+      });
+    });
+
+    it("expands the Detections panel to col-span-6 when hideIncidents is true", async () => {
+      const { fixture } = await renderComponent({ hideIncidents: true });
+
+      await waitFor(() => {
+        const panel = fixture.nativeElement.querySelector(
+          '[data-testid="detections-panel"]'
+        );
+        expect(panel?.classList.contains("col-span-6")).toBe(true);
       });
     });
   });
@@ -468,7 +516,7 @@ describe("ScenarioRunsSummaryComponent", () => {
       );
     });
 
-    it("emits null when the same item is clicked again", async () => {
+    it("emits the event again when the same item is clicked again (parent handles deselection)", async () => {
       const { fixture } = await renderComponent();
       const emitSpy = jest.fn();
       fixture.componentInstance.filterClicked.subscribe(emitSpy);
@@ -482,7 +530,13 @@ describe("ScenarioRunsSummaryComponent", () => {
       ngMocks.output(findItemByLabel("Under Analysis"), "clicked").emit();
       fixture.detectChanges();
 
-      expect(emitSpy).toHaveBeenLastCalledWith(null);
+      expect(emitSpy).toHaveBeenCalledTimes(2);
+      expect(emitSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          type: "analysisStatus",
+          value: "Under Analysis",
+        })
+      );
     });
 
     it("closes open dropdown when a regular item is clicked", async () => {
@@ -665,50 +719,53 @@ describe("ScenarioRunsSummaryComponent", () => {
     });
   });
 
-  describe("active filter chip", () => {
-    it("returns null chip label when no filter is active", async () => {
+  describe("active filters (multi-filter)", () => {
+    it("activeFilters is empty when no externalFilter is set", async () => {
       const { fixture } = await renderComponent();
 
       await waitFor(() => {
         expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
       });
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBeNull();
+      expect(fixture.componentInstance.activeFilters()).toEqual([]);
     });
 
-    it("returns a chip label when a filter is activated", async () => {
-      const { fixture } = await renderComponent();
+    it("activeFilters reflects externalFilter input", async () => {
+      const filter = {
+        type: "analysisStatus" as const,
+        value: "Under Analysis",
+        label: "1 Under Analysis",
+      };
+      const { fixture } = await renderComponent({ externalFilter: [filter] });
 
       await waitFor(() => {
         expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
       });
 
-      ngMocks.output(findItemByLabel("Under Analysis"), "clicked").emit();
-      fixture.detectChanges();
+      expect(fixture.componentInstance.activeFilters()).toEqual([filter]);
+    });
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBe(
-        "1 Under Analysis"
+    it("isActive returns true for filter present in externalFilter", async () => {
+      const filter = {
+        type: "detection" as const,
+        value: "impacts",
+        label: "",
+      };
+      const { fixture } = await renderComponent({ externalFilter: [filter] });
+
+      await waitFor(() => {
+        expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
+      });
+
+      expect(fixture.componentInstance.isActive("detection", "impacts")).toBe(
+        true
       );
+      expect(
+        fixture.componentInstance.isActive("detection", "regressions")
+      ).toBe(false);
     });
 
-    it("clears the chip label when clearFilter is called", async () => {
-      const { fixture } = await renderComponent();
-
-      await waitFor(() => {
-        expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
-      });
-
-      ngMocks.output(findItemByLabel("Under Analysis"), "clicked").emit();
-      fixture.detectChanges();
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBeTruthy();
-
-      fixture.componentInstance.clearFilter();
-      fixture.detectChanges();
-
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBeNull();
-    });
-
-    it("emits null filter event when chip is removed", async () => {
+    it("emits filter event with computed label when item clicked", async () => {
       const { fixture } = await renderComponent();
       const emitSpy = jest.fn();
       fixture.componentInstance.filterClicked.subscribe(emitSpy);
@@ -720,10 +777,12 @@ describe("ScenarioRunsSummaryComponent", () => {
       ngMocks.output(findItemByLabel("Under Analysis"), "clicked").emit();
       fixture.detectChanges();
 
-      fixture.componentInstance.clearFilter();
-      fixture.detectChanges();
-
-      expect(emitSpy).toHaveBeenLastCalledWith(null);
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "analysisStatus",
+          value: "Under Analysis",
+        })
+      );
     });
   });
 
@@ -753,7 +812,7 @@ describe("ScenarioRunsSummaryComponent", () => {
   });
 
   describe("dropdown item deselection", () => {
-    it("clears filter when the same dropdown item is clicked again", async () => {
+    it("emits the event again when same dropdown item is clicked again (parent handles deselection)", async () => {
       const { fixture } = await renderComponent();
       const emitSpy = jest.fn();
       fixture.componentInstance.filterClicked.subscribe(emitSpy);
@@ -770,13 +829,18 @@ describe("ScenarioRunsSummaryComponent", () => {
       ngMocks.output(findDropdownByLabel("Done"), "itemClicked").emit("Passed");
       fixture.detectChanges();
 
-      expect(emitSpy).toHaveBeenLastCalledWith(null);
+      expect(emitSpy).toHaveBeenCalledTimes(2);
+      expect(emitSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({ type: "analysisStatus", value: "Passed" })
+      );
     });
   });
 
   describe("filter chip labels for all filter types", () => {
-    it("returns correct label for Incident Sent filter", async () => {
+    it("emits event with correct label for Incident Sent filter", async () => {
       const { fixture } = await renderComponent();
+      const emitSpy = jest.fn();
+      fixture.componentInstance.filterClicked.subscribe(emitSpy);
 
       await waitFor(() => {
         expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
@@ -785,13 +849,19 @@ describe("ScenarioRunsSummaryComponent", () => {
       ngMocks.output(findItemByLabel("Incident Sent"), "clicked").emit();
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBe(
-        "1 Incident Sent"
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "analysisStatus",
+          value: "Incident Sent",
+          label: "1 Incident Sent",
+        })
       );
     });
 
-    it("returns correct label for Regressions filter", async () => {
+    it("emits event with correct label for Regressions filter", async () => {
       const { fixture } = await renderComponent();
+      const emitSpy = jest.fn();
+      fixture.componentInstance.filterClicked.subscribe(emitSpy);
 
       await waitFor(() => {
         expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
@@ -800,13 +870,19 @@ describe("ScenarioRunsSummaryComponent", () => {
       ngMocks.output(findItemByLabel("Regressions"), "clicked").emit();
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBe(
-        "2 Regressions"
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "detection",
+          value: "regressions",
+          label: "2 Regressions",
+        })
       );
     });
 
-    it("returns correct label for Impacts filter", async () => {
+    it("emits event with correct label for Impacts filter", async () => {
       const { fixture } = await renderComponent();
+      const emitSpy = jest.fn();
+      fixture.componentInstance.filterClicked.subscribe(emitSpy);
 
       await waitFor(() => {
         expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
@@ -815,13 +891,19 @@ describe("ScenarioRunsSummaryComponent", () => {
       ngMocks.output(findItemByLabel("Impacts"), "clicked").emit();
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBe(
-        "3 Impacts"
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "detection",
+          value: "impacts",
+          label: "3 Impacts",
+        })
       );
     });
 
-    it("returns correct label for Closed Incidents filter", async () => {
+    it("emits event with correct label for Closed Incidents filter", async () => {
       const { fixture } = await renderComponent();
+      const emitSpy = jest.fn();
+      fixture.componentInstance.filterClicked.subscribe(emitSpy);
 
       await waitFor(() => {
         expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
@@ -830,13 +912,19 @@ describe("ScenarioRunsSummaryComponent", () => {
       ngMocks.output(findItemByLabel("Closed Incidents"), "clicked").emit();
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBe(
-        "1 Closed Incidents"
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "incident",
+          value: "closed",
+          label: "1 Closed Incidents",
+        })
       );
     });
 
-    it("returns correct label for Failed filter via dropdown", async () => {
+    it("emits event with correct label for Failed filter via dropdown", async () => {
       const { fixture } = await renderComponent();
+      const emitSpy = jest.fn();
+      fixture.componentInstance.filterClicked.subscribe(emitSpy);
 
       await waitFor(() => {
         expect(
@@ -847,13 +935,19 @@ describe("ScenarioRunsSummaryComponent", () => {
       ngMocks.output(findDropdownByLabel("Done"), "itemClicked").emit("Failed");
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBe(
-        "1 Failed"
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "analysisStatus",
+          value: "Failed",
+          label: "1 Failed",
+        })
       );
     });
 
-    it("returns correct label for Cancelled filter via dropdown", async () => {
+    it("emits event with correct label for Cancelled filter via dropdown", async () => {
       const { fixture } = await renderComponent();
+      const emitSpy = jest.fn();
+      fixture.componentInstance.filterClicked.subscribe(emitSpy);
 
       await waitFor(() => {
         expect(
@@ -866,13 +960,19 @@ describe("ScenarioRunsSummaryComponent", () => {
         .emit("Cancelled");
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBe(
-        "1 Cancelled"
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "analysisStatus",
+          value: "Cancelled",
+          label: "1 Cancelled",
+        })
       );
     });
 
-    it("returns correct label for Assigned filter via dropdown", async () => {
+    it("emits event with correct label for Assigned filter via dropdown", async () => {
       const { fixture } = await renderComponent();
+      const emitSpy = jest.fn();
+      fixture.componentInstance.filterClicked.subscribe(emitSpy);
 
       await waitFor(() => {
         expect(
@@ -885,13 +985,19 @@ describe("ScenarioRunsSummaryComponent", () => {
         .emit("Assigned");
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBe(
-        "1 Assigned"
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "analysisStatus",
+          value: "Assigned",
+          label: "1 Assigned",
+        })
       );
     });
 
-    it("returns correct label for Open Incidents breakdown filter", async () => {
+    it("emits event with correct label for Open Incidents breakdown filter", async () => {
       const { fixture } = await renderComponent();
+      const emitSpy = jest.fn();
+      fixture.componentInstance.filterClicked.subscribe(emitSpy);
 
       await waitFor(() => {
         expect(
@@ -904,36 +1010,67 @@ describe("ScenarioRunsSummaryComponent", () => {
         .emit("OPEN");
       fixture.detectChanges();
 
-      expect(fixture.componentInstance.activeFilterChipLabel()).toBe("1 OPEN");
+      expect(emitSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "incident",
+          value: "OPEN",
+          label: "1 OPEN",
+        })
+      );
     });
   });
 
   describe("externalFilter sync", () => {
-    it("clears internal highlight when externalFilter transitions to undefined", async () => {
+    it("clears internal highlights when externalFilter transitions to empty array", async () => {
       const { fixture } = await renderComponent();
 
       await waitFor(() => {
         expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
       });
 
-      // Activate a filter internally
-      ngMocks.output(findItemByLabel("Under Analysis"), "clicked").emit();
+      // Simulate parent setting externalFilter with a filter
+      fixture.componentRef.setInput("externalFilter", [
+        {
+          type: "analysisStatus",
+          value: "Under Analysis",
+          label: "1 Under Analysis",
+        },
+      ]);
       fixture.detectChanges();
-      expect(fixture.componentInstance.activeFilter()).not.toBeNull();
+      expect(fixture.componentInstance.activeFilters().length).toBe(1);
 
-      // Simulate parent setting externalFilter (chip is shown)
-      fixture.componentRef.setInput("externalFilter", {
-        type: "analysisStatus",
-        value: "Under Analysis",
-        label: "1 Under Analysis",
+      // Simulate parent clearing externalFilter (all chips removed)
+      fixture.componentRef.setInput("externalFilter", []);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.activeFilters()).toEqual([]);
+    });
+
+    it("reflects multiple active filters from externalFilter", async () => {
+      const filters = [
+        {
+          type: "analysisStatus" as const,
+          value: "Under Analysis",
+          label: "1 Under Analysis",
+        },
+        { type: "detection" as const, value: "impacts", label: "3 Impacts" },
+      ];
+      const { fixture } = await renderComponent({ externalFilter: filters });
+
+      await waitFor(() => {
+        expect(ngMocks.findAll(SummaryItemComponent).length).toBeGreaterThan(0);
       });
-      fixture.detectChanges();
 
-      // Simulate parent clearing externalFilter (chip removed)
-      fixture.componentRef.setInput("externalFilter", undefined);
-      fixture.detectChanges();
-
-      expect(fixture.componentInstance.activeFilter()).toBeNull();
+      expect(fixture.componentInstance.activeFilters()).toEqual(filters);
+      expect(
+        fixture.componentInstance.isActive("analysisStatus", "Under Analysis")
+      ).toBe(true);
+      expect(fixture.componentInstance.isActive("detection", "impacts")).toBe(
+        true
+      );
+      expect(
+        fixture.componentInstance.isActive("detection", "regressions")
+      ).toBe(false);
     });
   });
 });

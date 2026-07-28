@@ -1,42 +1,38 @@
 <mxevolve-business-process-content-container header="Test" [collapsable]="true">
-  @if (environmentId(); as envId) {
-  <mxevolve-environment-status-panel
-    class="col-span-12"
-    [projectId]="projectId()"
-    [environmentId]="envId"
-  >
-    <mxevolve-config-audit-button
-      extraActions
-      [projectId]="projectId()"
-      [environmentId]="envId"
-    />
-  </mxevolve-environment-status-panel>
-  }
-
-  @if (canRunTpk()) {
+  @if (canRunScenario()) {
   <div class="col-span-12">
-    <mxevolve-build-and-test-run-tpk
+    <mxevolve-run-scenario
       [projectId]="projectId()"
       [branchName]="branchName()!"
       [executionGroupId]="executionGroupId()!"
       [machineGroupId]="machineGroupId()"
+      [subContextId]="subContextId"
+      [warningMessageMap]="warningMessageMap"
+      [configurationAudit]="resolveMXConfigurationAuditSettings()"
       (scenarioPushed)="reloadExecution()"
-      (errorOccurred)="handleRunTpkError($event)"
+      (errorOccurred)="handleRunScenarioError($event)"
     />
   </div>
 
-  <div class="col-span-12 border-t border-surface-200 dark:border-surface-700"></div>
+  <div
+    class="col-span-12 border-t border-surface-200 dark:border-surface-700"
+  ></div>
   }
 
   <div class="col-span-12">
-    <h3 class="font-medium mb-2 text-lg">TPK Results</h3>
+    <h3 class="font-medium mb-2 text-lg">Test Results</h3>
     <mxevolve-scenario-runs
       [projectId]="projectId()"
       [contextId]="processId()"
       [subContextId]="subContextId"
       [warningMessageMap]="warningMessageMap"
-      [showHistory]="true"
+      [enableKeepServices]="true"
+      [showOpenConfigEditorAction]="true"
+      [showHistory]="false"
       [showHistorySummary]="true"
+      [hideEnvironmentPanelWhenCleaned]="true"
+      [sortPanelsByStartDateDesc]="true"
+      [showEnvironmentDetailsOnlyWhenExpanded]="true"
       (scenarioChanged)="reloadExecution()"
     />
   </div>

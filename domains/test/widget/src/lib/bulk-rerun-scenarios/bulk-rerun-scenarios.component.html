@@ -45,5 +45,9 @@
   [projectId]="projectId()"
   [factoryProductId]="preFilledFactoryProductId()"
   [loading]="bulkRerunLoading()"
+  [allowOfficialRerun]="allowOfficialRerun()"
+  [initialFinalProductId]="initialFinalProductId()"
+  [branch]="branch()"
+  [defaultRerunMode]="defaultRerunMode()"
   (rerunRequested)="onBulkRerunRequested($event)"
 />

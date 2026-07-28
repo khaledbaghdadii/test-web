@@ -1,0 +1,10 @@
+<p-card>
+  <mxevolve-validation-process-executions-table
+    [executions]="executions"
+    [projectId]="projectId()"
+    [isLoading]="isLoading"
+    [totalRecords]="totalRecords"
+    [businessProcessDefinitions]="businessProcessDefinitions"
+    (paginationParamsChangeEmitter)="filtersChanged($event)"
+  ></mxevolve-validation-process-executions-table>
+</p-card>

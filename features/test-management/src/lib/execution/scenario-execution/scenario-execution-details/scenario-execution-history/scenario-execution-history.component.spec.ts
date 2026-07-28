@@ -33,8 +33,8 @@ import {
   testUnitId1,
 } from "../../scenario-execution-test-utils";
 import { ScenarioExecutionStateManagementService } from "../scenario-execution-state-management.service";
-import { KeptExecutionDisabledPipe } from "../kept-execution-disabled/kept-execution-disabled.pipe";
-import { of } from "rxjs";
+import { KeepExecutionDisabledPipe } from "../keep-execution-disabled/keep-execution-disabled.pipe";
+import { of, Subject } from "rxjs";
 import {
   ComponentFixture,
   fakeAsync,
@@ -54,7 +54,7 @@ describe("ScenarioExecutionHistoryComponent", () => {
     disableKeepExecution: false,
     scenarioExecutions: generateTestUnitScenarioExecutions(),
   } as unknown as TestUnitModel;
-  const keptExecutionDisabledPipeTransform = jest.fn().mockReturnValue(false);
+  const keepExecutionDisabledPipeTransform = jest.fn().mockReturnValue(false);
   const testUnitMockSignal: WritableSignal<TestUnitModel | undefined> =
     signal(TEST_UNIT);
   const mockAppConfig = {
@@ -69,6 +69,9 @@ describe("ScenarioExecutionHistoryComponent", () => {
     stateService = {
       scenarioExecutionId: signal(scenarioExecutionId),
       testUnit: testUnitMockSignal,
+      refreshSelectedScenarioExecution$: jest
+        .fn()
+        .mockReturnValue(of(undefined)),
     } as unknown as jest.Mocked<ScenarioExecutionStateManagementService>;
 
     await TestBed.configureTestingModule({
@@ -81,7 +84,7 @@ describe("ScenarioExecutionHistoryComponent", () => {
       imports: [
         TableModule,
         ToggleSwitchModule,
-        MockPipe(KeptExecutionDisabledPipe, keptExecutionDisabledPipeTransform),
+        MockPipe(KeepExecutionDisabledPipe, keepExecutionDisabledPipeTransform),
         ShowElementIfAuthorizedDirective,
       ],
       providers: [
@@ -174,7 +177,7 @@ describe("ScenarioExecutionHistoryComponent", () => {
   });
 
   describe("keep execution", () => {
-    it("should not show kept execution header when keep execution flag is disabled for the test unit", () => {
+    it("should not show keep execution header when keep execution flag is disabled for the test unit", () => {
       testUnitMockSignal.set({
         ...TEST_UNIT,
         disableKeepExecution: true,
@@ -187,7 +190,7 @@ describe("ScenarioExecutionHistoryComponent", () => {
       expect(header).toBeNull();
     });
 
-    it("should show kept execution header when keep execution flag is enabled for the test unit", () => {
+    it("should show keep execution header when keep execution flag is enabled for the test unit", () => {
       testUnitMockSignal.set({
         ...TEST_UNIT,
         disableKeepExecution: false,
@@ -199,7 +202,7 @@ describe("ScenarioExecutionHistoryComponent", () => {
       expect(header).toBeTruthy();
     });
 
-    it("should not show kept execution row when the test unit is undefined", () => {
+    it("should not show keep execution row when the test unit is undefined", () => {
       testUnitMockSignal.set(undefined);
       fixture.detectChanges();
       const row = fixture.debugElement.query(By.css("#keep-execution-row"));
@@ -207,7 +210,7 @@ describe("ScenarioExecutionHistoryComponent", () => {
       expect(row).toBeNull();
     });
 
-    it("should not show kept execution row when keep execution flag is disabled for the test unit", () => {
+    it("should not show keep execution row when keep execution flag is disabled for the test unit", () => {
       testUnitMockSignal.set({
         ...TEST_UNIT,
         disableKeepExecution: true,
@@ -218,7 +221,7 @@ describe("ScenarioExecutionHistoryComponent", () => {
       expect(row).toBeNull();
     });
 
-    it("should show kept execution row when keep execution flag is enabled for the test unit", () => {
+    it("should show keep execution row when keep execution flag is enabled for the test unit", () => {
       testUnitMockSignal.set({
         ...TEST_UNIT,
         disableKeepExecution: false,
@@ -263,14 +266,14 @@ describe("ScenarioExecutionHistoryComponent", () => {
     });
   });
 
-  describe("kept execution toggle", () => {
-    it("should emit a kept execution toggled event", () => {
-      const emitSpy = jest.spyOn(component.keptExecutionToggled, "emit");
-      component.toggleKeptExecutionFlag("SCENARIO_EXECUTION");
+  describe("keep execution toggle", () => {
+    it("should emit a keep execution toggled event", () => {
+      const emitSpy = jest.spyOn(component.keepExecutionToggled, "emit");
+      component.toggleKeepExecutionFlag("SCENARIO_EXECUTION");
       expect(emitSpy).toHaveBeenCalledWith("SCENARIO_EXECUTION");
     });
 
-    it("should not show kept execution section when disable keep execution flag is true", () => {
+    it("should not show keep execution section when disable keep execution flag is true", () => {
       testUnitMockSignal.set({
         ...TEST_UNIT,
         disableKeepExecution: true,
@@ -284,7 +287,7 @@ describe("ScenarioExecutionHistoryComponent", () => {
       expect(keepExecutionSection).toBeNull();
     });
 
-    it("should show kept execution section when disable keep execution flag is false", () => {
+    it("should show keep execution section when disable keep execution flag is false", () => {
       testUnitMockSignal.set({
         ...TEST_UNIT,
         disableKeepExecution: false,
@@ -299,6 +302,20 @@ describe("ScenarioExecutionHistoryComponent", () => {
     });
   });
 
+  it("should refresh selected scenario execution and test unit when the clean button emits that the scenario is cleaned", () => {
+    const refresh$ = new Subject<void>();
+    stateService.refreshSelectedScenarioExecution$.mockReturnValue(refresh$);
+    fixture.detectChanges();
+
+    const cleanButton = fixture.debugElement.query(
+      By.css("mxevolve-clean-scenario-execution-button")
+    );
+    cleanButton.triggerEventHandler("scenarioCleaned");
+
+    expect(stateService.refreshSelectedScenarioExecution$).toHaveBeenCalled();
+    expect(refresh$.observed).toBe(true);
+  });
+
   function generateTestUnitScenarioExecutions(): TestUnitScenarioExecutionModel[] {
     return [
       {
@@ -310,7 +327,7 @@ describe("ScenarioExecutionHistoryComponent", () => {
         mxBuildId: "305c637b-c7dc-4810-9e4b-819b3a22134a",
         analysisObjects: {} as ScenarioExecutionAnalysisObjectsModel,
         environment: {} as ScenarioExecutionEnvironmentModel,
-        keptExecution: false,
+        keepExecution: false,
         startDate: "2024-01-01T10:00:00Z",
         endDate: "2024-01-01T10:30:00Z",
         factoryProductId: "factoryProductId",

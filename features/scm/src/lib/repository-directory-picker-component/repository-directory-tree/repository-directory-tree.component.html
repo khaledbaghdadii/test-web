@@ -1,7 +1,9 @@
 <p-tree
   [loading]="isLoading"
   [value]="directoriesTreeNode"
-  selectionMode="single"
+  [selectionMode]="this.input?.multiSelection === true ? 'checkbox' : 'single'"
+  [propagateSelectionDown]="false"
+  [propagateSelectionUp]="false"
   [(selection)]="selectedDirectory"
 >
   <ng-template let-node pTemplate="default">

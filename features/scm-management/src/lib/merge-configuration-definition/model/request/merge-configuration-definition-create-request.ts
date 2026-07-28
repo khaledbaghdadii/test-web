@@ -9,5 +9,6 @@ export interface MergeConfigurationDefinitionCreateRequest {
   automergeBulkSize: number;
   runFullMaintenance?: boolean;
   deltaConfigImportEnabled: boolean;
+  mxLintEnabled: boolean;
   infraResourceSettings: InfraResourceSettingsRequest;
 }

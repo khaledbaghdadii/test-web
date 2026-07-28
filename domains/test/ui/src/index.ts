@@ -7,3 +7,4 @@ export { AssigneeDisplayComponent } from "./lib/assignee-display/assignee-displa
 export { ScenarioRunStartDateCellRendererComponent } from "./lib/scenario-run-table/cell-renderers/scenario-run-start-date-cell-renderer.component";
 export { ScenarioRunCommitIdCellRendererComponent } from "./lib/scenario-run-table/cell-renderers/scenario-run-commit-id-cell-renderer.component";
 export { ScenarioRunStatusCellRendererComponent } from "./lib/scenario-run-table/cell-renderers/scenario-run-status-cell-renderer.component";
+export { ScenarioRunNameCellRendererComponent } from "./lib/scenario-run-table/cell-renderers/scenario-run-name-cell-renderer.component";

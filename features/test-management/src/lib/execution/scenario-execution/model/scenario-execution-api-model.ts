@@ -1,9 +1,10 @@
 import { TestExecutionMode } from "./test-execution-mode";
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
 
 export interface ScenarioExecutionApiModel {
   id: string;
   testUnitId: string;
-  cleaningStatus: string;
+  cleaningStatus: ScenarioExecutionHousekeepingStatus;
   scenarioDefinitionId: string;
   name: string;
   status: string;
@@ -33,11 +34,12 @@ export interface ScenarioExecutionApiModel {
   finalProductId?: string;
   rtpCommitId?: string;
   validation?: ValidationApiModel;
-  keptExecution: boolean;
+  keepExecution: boolean;
   supportReconActivities: boolean;
   businessProcesses: ScenarioExecutionBusinessProcessApiModel[];
   project: ScenarioExecutionProjectApiModel;
   qualityLevel?: string;
+  testUnitHead: boolean;
 }
 
 export class ScenarioExecutionBusinessProcessApiModel {

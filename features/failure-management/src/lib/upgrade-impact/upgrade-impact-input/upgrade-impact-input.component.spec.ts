@@ -1,9 +1,15 @@
 import { UpgradeImpactInputComponent } from "./upgrade-impact-input.component";
 import { UpgradeImpact } from "../model/upgrade-impact.model";
-import { MockBuilder, MockedComponentFixture, MockRender } from "ng-mocks";
+import {
+  MockBuilder,
+  MockedComponentFixture,
+  MockRender,
+  ngMocks,
+} from "ng-mocks";
 import { By } from "@angular/platform-browser";
 import { DomTestUtils } from "@mxevolve/testing";
 import { ButtonModule } from "primeng/button";
+import { Panel } from "primeng/panel";
 
 describe("UpgradeImpactInputComponent", () => {
   let component: UpgradeImpactInputComponent;
@@ -22,6 +28,15 @@ describe("UpgradeImpactInputComponent", () => {
   it("should show upgrade impact modal correclty", () => {
     component.showUpgradeImpactModal();
     expect(component.isUpgradeImpactModalVisible).toEqual(true);
+  });
+
+  it("should collapse the upgrade impact panel view by default", () => {
+    component.selectedUpgradeImpactId = getUpgradeImpact().id;
+    fixture.detectChanges();
+
+    const panel = ngMocks.find(fixture, Panel);
+
+    expect(ngMocks.input(panel, "collapsed")).toBe(true);
   });
 
   it("should write upgrade impact value correctly when a value is present", () => {
@@ -105,6 +120,14 @@ describe("UpgradeImpactInputComponent", () => {
     expect(component.selectedUpgradeImpact).toEqual(getUpgradeImpact());
   });
 
+  it("handle set selected upgrade impact emits the selected upgrade impact", () => {
+    const emitterSpy = jest.spyOn(component.upgradeImpactSelected, "emit");
+
+    component.handleSetSelectedUpgradeImpact(getUpgradeImpact());
+
+    expect(emitterSpy).toHaveBeenCalledWith(getUpgradeImpact());
+  });
+
   it("should reset selected upgrade impact when selected upgrade impact id is reset", () => {
     component.selectedUpgradeImpactId = "123";
     component.selectedUpgradeImpact = getUpgradeImpact();
@@ -112,6 +135,14 @@ describe("UpgradeImpactInputComponent", () => {
     component.selectedUpgradeImpactId = null;
     expect(component.selectedUpgradeImpact).toEqual(null);
   });
+
+  it.each([true, false])(
+    "should set the internal disabled flag equal to the value set by the control accessor",
+    () => {
+      component.setDisabledState(true);
+      expect(component.isDisabled).toBeTruthy();
+    }
+  );
 
   describe("disabling the component", () => {
     beforeEach(() => {
@@ -125,12 +156,42 @@ describe("UpgradeImpactInputComponent", () => {
       ).toBeTruthy();
     });
 
-    it("should disable the select button", () => {
-      expect(getBrowseButtonHarness().isDisabled()).toBeTruthy();
+    it("should show the placeholder for no upgrade impact selected", () => {
+      expect(
+        fixture.debugElement.query(By.css("input")).nativeElement.placeholder
+      ).toEqual("No Upgrade Impact Selected");
     });
 
-    it("should disable the clear button", () => {
-      expect(getClearButtonHarness().isDisabled()).toBeTruthy();
+    it("should not show the browse button", () => {
+      expect(
+        fixture.debugElement.query(
+          By.css('[data-testid="browse-upgrade-impacts-button"]')
+        )
+      ).toBeFalsy();
+    });
+
+    it("should not show the clear button", () => {
+      expect(
+        fixture.debugElement.query(
+          By.css('[data-testid="clear-upgrade-impact-button"]')
+        )
+      ).toBeFalsy();
+    });
+  });
+
+  describe("when the component is not disabled", () => {
+    it("should show the default placeholder", () => {
+      expect(
+        fixture.debugElement.query(By.css("input")).nativeElement.placeholder
+      ).toEqual("Select an Upgrade Impact");
+    });
+
+    it("should show the browse button", () => {
+      expect(getBrowseButtonHarness()).toBeTruthy();
+    });
+
+    it("should show the clear button", () => {
+      expect(getClearButtonHarness()).toBeTruthy();
     });
   });
 
@@ -156,6 +217,12 @@ describe("UpgradeImpactInputComponent", () => {
       const onTouchedSpy = jest.spyOn(component, "onTouched");
       getClearButtonHarness().click();
       expect(onTouchedSpy).toHaveBeenCalled();
+    });
+
+    it("should emit a null selected upgrade impact", () => {
+      const emitterSpy = jest.spyOn(component.upgradeImpactSelected, "emit");
+      getClearButtonHarness().click();
+      expect(emitterSpy).toHaveBeenCalledWith(null);
     });
   });
 

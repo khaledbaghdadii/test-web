@@ -6,6 +6,7 @@ import {
   OnDestroy,
   OnInit,
   Output,
+  signal,
 } from "@angular/core";
 
 import { FormsModule } from "@angular/forms";
@@ -25,10 +26,13 @@ import { IncidentsSelectionTableComponent } from "../incidents-selection-table/i
 import {
   AnalysisObject,
   AnalysisObjectSelectionState,
+  AnalysisObjectType,
   IncidentLinkingStateService,
 } from "@mxflow/features/analysis-objects";
 import { toObservable } from "@angular/core/rxjs-interop";
 import { ToastMessageService } from "@mxflow/ui/alert";
+import { PreviouslyLinkedDetectionToggleComponent } from "@mxevolve/domains/test/widget";
+import { PreviouslyLinkedFilter } from "@mxevolve/domains/test/model";
 
 @Component({
   selector: "mxevolve-link-incidents-modal-content",
@@ -37,6 +41,7 @@ import { ToastMessageService } from "@mxflow/ui/alert";
     ToggleButtonModule,
     FormsModule,
     IncidentsSelectionTableComponent,
+    PreviouslyLinkedDetectionToggleComponent,
   ],
   templateUrl: "./link-incidents-modal-content.component.html",
 })
@@ -47,6 +52,7 @@ export class LinkIncidentsModalContentComponent implements OnInit, OnDestroy {
   private readonly linkingStateService = inject(IncidentLinkingStateService);
   private readonly isLinking = this.linkingStateService.isLinking;
   refresh$ = new BehaviorSubject<boolean>(false);
+  showPreviouslyLinkedIncidents = signal(false);
   @Input()
   initiallySelectedIncidents: AnalysisObjectSelectionState<AnalysisObject>[] =
     [];
@@ -63,6 +69,7 @@ export class LinkIncidentsModalContentComponent implements OnInit, OnDestroy {
   @Input() selectedIncidentIdsLoading = false;
   @Input() createIncidentLink: () => Observable<string | undefined>;
   @Input() qualityLevel: string | undefined;
+  @Input() previouslyLinkedFilter?: PreviouslyLinkedFilter;
   correlationId$: Observable<string | undefined>;
 
   constructor() {
@@ -96,4 +103,6 @@ export class LinkIncidentsModalContentComponent implements OnInit, OnDestroy {
   ): void {
     this.selectedIncidentsChange.emit(selectedIncidents);
   }
+
+  protected readonly AnalysisObjectType = AnalysisObjectType;
 }

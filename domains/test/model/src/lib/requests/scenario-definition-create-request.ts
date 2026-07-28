@@ -1,5 +1,4 @@
 export interface TestCreateRequest {
-  full: boolean;
   testDefinitionId: string;
   testSelectionIds: string[];
 }

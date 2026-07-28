@@ -9,7 +9,7 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed, toSignal } from "@angular/core/rxjs-interop";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
-import { concatMap, of } from "rxjs";
+import { concatMap, map, of, Observable } from "rxjs";
 import { Button } from "primeng/button";
 import { Dialog } from "primeng/dialog";
 import {
@@ -23,6 +23,9 @@ import {
   QualityGateValidationService,
   SendChangesForReviewService,
   UpgradeProcessStateUpdaterService,
+  FactoryProductUpdateService,
+  FactoryProductUserAction,
+  UpdateFactoryProductResponse,
 } from "@mxevolve/domains/business-process/data-access";
 import {
   QualityGateValidationDecision,
@@ -39,6 +42,10 @@ import {
   KeepEnvironmentsTableComponent,
   KeepEnvironmentsSelection,
 } from "../keep-environments-table/keep-environments-table.component";
+import {
+  FactoryProductSubmissionFormComponent,
+  FactoryProductSubmissionValue,
+} from "../factory-product-submission-form/factory-product-submission-form.component";
 
 @Component({
   selector: "mxevolve-proceed-from-quality-gate-wizard",
@@ -52,12 +59,14 @@ import {
     QualityGateValidationFormComponent,
     MergeRequestDetailsFormComponent,
     KeepEnvironmentsTableComponent,
+    FactoryProductSubmissionFormComponent,
   ],
   providers: [
     QualityGateValidationService,
     SendChangesForReviewService,
     FurtherAnalysisService,
     UpgradeProcessStateUpdaterService,
+    FactoryProductUpdateService,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -70,6 +79,7 @@ export class ProceedFromQualityGateWizardComponent {
   readonly stageStatus = input.required<StageStatus>();
   readonly validationResult = input<QualityGateValidationResult | undefined>();
   readonly keptResourcesDecisionMade = input.required<boolean>();
+  readonly initialFactoryProductId = input<string | undefined>(undefined);
 
   private readonly qualityGateService = inject(QualityGateValidationService);
   private readonly sendChangesForReviewService = inject(
@@ -81,13 +91,24 @@ export class ProceedFromQualityGateWizardComponent {
   private readonly upgradeProcessStateUpdater = inject(
     UpgradeProcessStateUpdaterService
   );
+  private readonly factoryProductUpdateService = inject(
+    FactoryProductUpdateService
+  );
+
+  private step(
+    id: string,
+    title: string,
+    status: "active" | "completed" | "inactive"
+  ): StepDefinition {
+    return { id, title, status };
+  }
 
   readonly QualityGateValidationDecision = QualityGateValidationDecision;
 
   readonly dialogVisible = signal(false);
   readonly loading = signal(false);
   readonly displayedStep = signal<
-    "validate-qg" | "keep-environments" | "merge-request"
+    "validate-qg" | "factory-product" | "keep-environments" | "merge-request"
   >("validate-qg");
 
   readonly selectedEnvironments = signal<KeepEnvironmentsSelection>({
@@ -96,6 +117,8 @@ export class ProceedFromQualityGateWizardComponent {
   });
 
   readonly keepEnvironmentsMode = signal<"edit" | "readonly">("edit");
+
+  readonly factoryProductMode = signal<"edit" | "readonly">("edit");
 
   readonly buttonDisabled = computed(
     () => this.stageStatus() !== StageStatus.PENDING_INPUT
@@ -116,6 +139,9 @@ export class ProceedFromQualityGateWizardComponent {
   readonly mergeRequestControl =
     new FormControl<MergeRequestDetailsValue | null>(null);
 
+  readonly factoryProductSubmissionControl =
+    new FormControl<FactoryProductSubmissionValue | null>(null);
+
   readonly hasExistingPassedDecision = computed(
     () => this.validationResult()?.decision === "VALIDATION_PASSED"
   );
@@ -125,56 +151,36 @@ export class ProceedFromQualityGateWizardComponent {
 
     if (currentStep === "validate-qg") {
       return [
-        { id: "validate-qg", title: "Validate QG", status: "active" as const },
-        {
-          id: "keep-environments",
-          title: "Keep Environments",
-          status: "inactive" as const,
-        },
-        {
-          id: "merge-request",
-          title: "Merge Request",
-          status: "inactive" as const,
-        },
+        this.step("validate-qg", "Validate QG", "active"),
+        this.step("factory-product", "Factory Product Submission", "inactive"),
+        this.step("keep-environments", "Keep Environments", "inactive"),
+        this.step("merge-request", "Merge Request", "inactive"),
+      ];
+    }
+
+    if (currentStep === "factory-product") {
+      return [
+        this.step("validate-qg", "Validate QG", "completed"),
+        this.step("factory-product", "Factory Product Submission", "active"),
+        this.step("keep-environments", "Keep Environments", "inactive"),
+        this.step("merge-request", "Merge Request", "inactive"),
       ];
     }
 
     if (currentStep === "keep-environments") {
       return [
-        {
-          id: "validate-qg",
-          title: "Validate QG",
-          status: "completed" as const,
-        },
-        {
-          id: "keep-environments",
-          title: "Keep Environments",
-          status: "active" as const,
-        },
-        {
-          id: "merge-request",
-          title: "Merge Request",
-          status: "inactive" as const,
-        },
+        this.step("validate-qg", "Validate QG", "completed"),
+        this.step("factory-product", "Factory Product Submission", "completed"),
+        this.step("keep-environments", "Keep Environments", "active"),
+        this.step("merge-request", "Merge Request", "inactive"),
       ];
     }
 
     return [
-      {
-        id: "validate-qg",
-        title: "Validate QG",
-        status: "completed" as const,
-      },
-      {
-        id: "keep-environments",
-        title: "Keep Environments",
-        status: "completed" as const,
-      },
-      {
-        id: "merge-request",
-        title: "Merge Request",
-        status: "active" as const,
-      },
+      this.step("validate-qg", "Validate QG", "completed"),
+      this.step("factory-product", "Factory Product Submission", "completed"),
+      this.step("keep-environments", "Keep Environments", "completed"),
+      this.step("merge-request", "Merge Request", "active"),
     ];
   });
 
@@ -182,6 +188,8 @@ export class ProceedFromQualityGateWizardComponent {
     switch (this.displayedStep()) {
       case "validate-qg":
         return "Validate Quality Gate";
+      case "factory-product":
+        return "Factory Product Submission";
       case "keep-environments":
         return "Keep Environments";
       case "merge-request":
@@ -208,6 +216,8 @@ export class ProceedFromQualityGateWizardComponent {
     });
     this.qualityGateValidationControl.disable();
 
+    this.loadFactoryProductState();
+
     if (this.keptResourcesDecisionMade()) {
       this.keepEnvironmentsMode.set("readonly");
       this.displayedStep.set("merge-request");
@@ -221,9 +231,136 @@ export class ProceedFromQualityGateWizardComponent {
     this.qualityGateValidationControl.reset();
     this.qualityGateValidationControl.enable();
     this.mergeRequestControl.reset();
+    this.factoryProductSubmissionControl.reset();
     this.selectedEnvironments.set({ environmentIds: [], scenarioIds: [] });
     this.keepEnvironmentsMode.set("edit");
+    this.factoryProductMode.set("edit");
     this.displayedStep.set("validate-qg");
+    this.loadFactoryProductState();
+  }
+
+  goToFactoryProduct(): void {
+    this.displayedStep.set("factory-product");
+  }
+
+  private loadFactoryProductState(): void {
+    this.factoryProductUpdateService
+      .getFactoryProductUpdates(this.projectId(), this.processId())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => this.restoreFactoryProductState(response.actions),
+        error: () => this.applySystemSuggestedFactoryProductState(),
+      });
+  }
+
+  private restoreFactoryProductState(
+    actions: FactoryProductUserAction[]
+  ): void {
+    const latest = actions.at(0);
+
+    if (!latest) {
+      this.applySystemSuggestedFactoryProductState();
+      return;
+    }
+
+    switch (latest.actionType) {
+      case "SUBMIT_FAP":
+        this.restoreSubmitFapState(latest);
+        return;
+      case "SKIP_FAP_UPDATE":
+        this.restoreSkipFapUpdateState(latest);
+        return;
+      default:
+        this.applySystemSuggestedFactoryProductState();
+    }
+  }
+
+  private restoreSubmitFapState(action: FactoryProductUserAction): void {
+    switch (action.status) {
+      case "SUCCESS":
+        this.factoryProductMode.set("readonly");
+        this.factoryProductSubmissionControl.setValue(
+          this.toPrefilledSubmissionValue(action)
+        );
+        return;
+      case "FAILURE":
+        this.factoryProductMode.set("edit");
+        this.factoryProductSubmissionControl.setValue(
+          this.toPrefilledSubmissionValue(action)
+        );
+        return;
+      case "NA":
+        this.applySystemSuggestedFactoryProductState();
+        return;
+    }
+  }
+
+  private restoreSkipFapUpdateState(action: FactoryProductUserAction): void {
+    switch (action.status) {
+      case "SUCCESS":
+        this.factoryProductMode.set("readonly");
+        this.factoryProductSubmissionControl.setValue(
+          this.toSkippedSubmissionValue()
+        );
+        return;
+      case "FAILURE":
+        this.factoryProductMode.set("edit");
+        this.factoryProductSubmissionControl.setValue(
+          this.toSkippedSubmissionValue()
+        );
+        return;
+      case "NA":
+        this.applySystemSuggestedFactoryProductState();
+        return;
+    }
+  }
+
+  private applySystemSuggestedFactoryProductState(): void {
+    this.factoryProductMode.set("edit");
+    this.factoryProductSubmissionControl.setValue(
+      this.systemSuggestedSubmissionValue()
+    );
+  }
+
+  private systemSuggestedSubmissionValue(): FactoryProductSubmissionValue {
+    return {
+      factoryProductId: this.initialFactoryProductId(),
+      commitMessage: "",
+      selectedConfigurationFilePaths: [],
+      skipSubmission: false,
+    };
+  }
+
+  private toSkippedSubmissionValue(): FactoryProductSubmissionValue {
+    return {
+      ...this.systemSuggestedSubmissionValue(),
+      skipSubmission: true,
+    };
+  }
+
+  private toPrefilledSubmissionValue(
+    action: FactoryProductUserAction
+  ): FactoryProductSubmissionValue {
+    return {
+      factoryProductId:
+        (action.details["factoryProductId"] as string | undefined) ??
+        this.initialFactoryProductId(),
+      commitMessage: (action.details["commitMessage"] as string) ?? "",
+      selectedConfigurationFilePaths: this.extractFilePaths(action),
+      skipSubmission: false,
+    };
+  }
+
+  private extractFilePaths(action: FactoryProductUserAction): string[] {
+    const files = action.details["files"];
+    if (!Array.isArray(files)) {
+      return [];
+    }
+    return files
+      .map(
+        (f) => (f as { configurationFilePath?: string }).configurationFilePath
+      )
+      .filter((path): path is string => !!path);
   }
 
   goToKeepEnvironments(): void {
@@ -301,6 +438,8 @@ export class ProceedFromQualityGateWizardComponent {
       !this.keptResourcesDecisionMade() &&
       (selection.environmentIds.length > 0 || selection.scenarioIds.length > 0);
 
+    const factoryProductUpdate$ = this.buildFactoryProductUpdate$();
+
     if (this.hasExistingPassedDecision()) {
       const markResources$ = shouldMarkResources
         ? this.furtherAnalysisService.markResourcesForFurtherAnalysis(
@@ -313,8 +452,9 @@ export class ProceedFromQualityGateWizardComponent {
           )
         : of(undefined);
 
-      markResources$
+      factoryProductUpdate$
         .pipe(
+          concatMap(() => markResources$),
           concatMap(() =>
             this.sendChangesForReviewService.sendChangesForReview(
               mergeRequestPayload
@@ -323,19 +463,8 @@ export class ProceedFromQualityGateWizardComponent {
           takeUntilDestroyed(this.destroyRef)
         )
         .subscribe({
-          next: () => {
-            this.loading.set(false);
-            this.dialogVisible.set(false);
-            this.toastMessageService.showSuccess("Changes sent for review.");
-            this.upgradeProcessStateUpdater.reloadProcessDetails(
-              this.processId(),
-              this.projectId()
-            );
-          },
-          error: (error) => {
-            this.loading.set(false);
-            this.toastMessageService.showError(error.message);
-          },
+          next: () => this.onSendForReviewSuccess(),
+          error: (error) => this.onSendForReviewError(error),
         });
     } else {
       const markQgPassed$ = this.qualityGateService.markQualityGatePassed(
@@ -357,6 +486,7 @@ export class ProceedFromQualityGateWizardComponent {
 
       markQgPassed$
         .pipe(
+          concatMap(() => factoryProductUpdate$),
           concatMap(() => markResources$),
           concatMap(() =>
             this.sendChangesForReviewService.sendChangesForReview(
@@ -366,24 +496,69 @@ export class ProceedFromQualityGateWizardComponent {
           takeUntilDestroyed(this.destroyRef)
         )
         .subscribe({
-          next: () => {
-            this.loading.set(false);
-            this.dialogVisible.set(false);
-            this.toastMessageService.showSuccess("Changes sent for review.");
-            this.upgradeProcessStateUpdater.reloadProcessDetails(
-              this.processId(),
-              this.projectId()
-            );
-          },
-          error: (error) => {
-            this.loading.set(false);
-            this.toastMessageService.showError(error.message);
-            this.upgradeProcessStateUpdater.reloadProcessDetails(
-              this.processId(),
-              this.projectId()
-            );
-          },
+          next: () => this.onSendForReviewSuccess(),
+          error: (error) => this.onSendForReviewError(error, true),
         });
+    }
+  }
+
+  private buildFactoryProductUpdate$(): Observable<unknown> {
+    if (this.factoryProductMode() === "readonly") {
+      return of(undefined);
+    }
+
+    const value = this.factoryProductSubmissionControl.value;
+    if (!value) {
+      return of(undefined);
+    }
+
+    return this.factoryProductUpdateService
+      .updateFactoryProduct({
+        projectId: this.projectId(),
+        processId: this.processId(),
+        factoryProductId: value.factoryProductId ?? "",
+        commitMessage: value.commitMessage,
+        filesToUpdate: value.selectedConfigurationFilePaths,
+        skipUpdate: value.skipSubmission,
+      })
+      .pipe(
+        map((response) => {
+          if (!response.success) {
+            throw new Error(this.buildFileFailureMessage(response));
+          }
+          return response;
+        })
+      );
+  }
+
+  private buildFileFailureMessage(
+    response: UpdateFactoryProductResponse
+  ): string {
+    return response.files
+      .filter((file) => file.status === "FAILURE")
+      .map((file) => `${file.configurationFilePath}: ${file.failureMessage}`)
+      .join("\n");
+  }
+
+  private onSendForReviewSuccess(): void {
+    this.loading.set(false);
+    this.dialogVisible.set(false);
+    this.toastMessageService.showSuccess("Changes sent for review.");
+    this.upgradeProcessStateUpdater.reloadProcessDetails(
+      this.processId(),
+      this.projectId()
+    );
+  }
+
+  private onSendForReviewError(error: Error, reloadProcess = false): void {
+    this.loading.set(false);
+    this.toastMessageService.showError(error.message);
+
+    if (reloadProcess) {
+      this.upgradeProcessStateUpdater.reloadProcessDetails(
+        this.processId(),
+        this.projectId()
+      );
     }
   }
 }

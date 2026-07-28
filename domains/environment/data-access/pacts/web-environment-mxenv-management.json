@@ -4,17 +4,6 @@
   },
   "interactions": [
     {
-      "description": "a request to fetch environment that does not exist",
-      "providerState": "Environment does not exist",
-      "request": {
-        "method": "GET",
-        "path": "/projects/projectId/environments/environmentId"
-      },
-      "response": {
-        "status": 404
-      }
-    },
-    {
       "description": "a request to fetch environment by project and environment id",
       "providerState": "Environment exists",
       "request": {
@@ -43,10 +32,20 @@
               "name": "iloveorange"
             }
           ],
+          "environmentActions": [
+            "iloveorange"
+          ],
           "id": "iloveorange",
+          "isTools": [
+            {
+              "name": "iloveorange"
+            }
+          ],
           "outputsDirectoryUri": "iloveorange",
           "projectId": "iloveorange",
-          "status": "iloveorange"
+          "secureClientArtifactUri": "iloveorange",
+          "status": "iloveorange",
+          "webClientUrl": "iloveorange"
         },
         "headers": {
           "Content-Type": "application/json"
@@ -89,7 +88,21 @@
           "$.body.databases[*].name": {
             "match": "type"
           },
+          "$.body.environmentActions": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.environmentActions[*]": {
+            "match": "type"
+          },
           "$.body.id": {
+            "match": "type"
+          },
+          "$.body.isTools": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.isTools[*].name": {
             "match": "type"
           },
           "$.body.outputsDirectoryUri": {
@@ -98,10 +111,433 @@
           "$.body.projectId": {
             "match": "type"
           },
+          "$.body.secureClientArtifactUri": {
+            "match": "type"
+          },
           "$.body.status": {
+            "match": "type"
+          },
+          "$.body.webClientUrl": {
             "match": "type"
           }
         },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to exclude environment from daily shutdown",
+      "providerState": "Environment exists and can be excluded from daily shutdown",
+      "request": {
+        "method": "POST",
+        "path": "/projects/projectId/environments/environmentId/services/exclude-from-shutdown/true"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch environment services status",
+      "providerState": "Environment exists and services ready to be fetched",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/services/status"
+      },
+      "response": {
+        "body": {
+          "environmentId": "iloveorange",
+          "services": [
+            {
+              "description": "iloveorange",
+              "installationCode": "iloveorange",
+              "name": "iloveorange",
+              "nickname": "iloveorange",
+              "status": "iloveorange"
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.environmentId": {
+            "match": "type"
+          },
+          "$.body.services": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.services[*].description": {
+            "match": "type"
+          },
+          "$.body.services[*].installationCode": {
+            "match": "type"
+          },
+          "$.body.services[*].name": {
+            "match": "type"
+          },
+          "$.body.services[*].nickname": {
+            "match": "type"
+          },
+          "$.body.services[*].status": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to start an environment",
+      "providerState": "Environment exists and services ready to be started",
+      "request": {
+        "method": "POST",
+        "path": "/projects/projectId/environments/environmentId/start"
+      },
+      "response": {
+        "body": {
+          "startRequestId": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.startRequestId": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to stop an environment",
+      "providerState": "Environment exists and services ready to be stopped",
+      "request": {
+        "method": "POST",
+        "path": "/projects/projectId/environments/environmentId/stop"
+      },
+      "response": {
+        "body": {
+          "stopRequestId": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.stopRequestId": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch technical reseed execution group details",
+      "providerState": "Execution group details can be returned",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/technical-reseed-execution-groups/reseedExecutionGroupId"
+      },
+      "response": {
+        "body": {
+          "executionGroupId": "reseedExecutionGroupId",
+          "launchesAllowed": true,
+          "status": "ENABLED",
+          "technicalReseedOperations": [
+            {
+              "branch": "iloveorange",
+              "createdOn": "2015-08-06T16:53:10.123+01:00",
+              "dumpIds": [
+                "iloveorange"
+              ],
+              "environmentDefinitionId": "iloveorange",
+              "environmentId": "iloveorange",
+              "id": "iloveorange",
+              "maintenanceLevel": "Full",
+              "sourceCommit": "iloveorange",
+              "status": "PASSED",
+              "validationLevel": "MQG"
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.executionGroupId": {
+            "match": "type"
+          },
+          "$.body.launchesAllowed": {
+            "match": "type"
+          },
+          "$.body.status": {
+            "match": "type"
+          },
+          "$.body.technicalReseedOperations": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.technicalReseedOperations[*].branch": {
+            "match": "type"
+          },
+          "$.body.technicalReseedOperations[*].createdOn": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body.technicalReseedOperations[*].dumpIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.technicalReseedOperations[*].dumpIds[*]": {
+            "match": "type"
+          },
+          "$.body.technicalReseedOperations[*].environmentDefinitionId": {
+            "match": "type"
+          },
+          "$.body.technicalReseedOperations[*].environmentId": {
+            "match": "type"
+          },
+          "$.body.technicalReseedOperations[*].id": {
+            "match": "type"
+          },
+          "$.body.technicalReseedOperations[*].maintenanceLevel": {
+            "match": "type"
+          },
+          "$.body.technicalReseedOperations[*].sourceCommit": {
+            "match": "type"
+          },
+          "$.body.technicalReseedOperations[*].status": {
+            "match": "type"
+          },
+          "$.body.technicalReseedOperations[*].validationLevel": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to GET MX client details",
+      "providerState": "MX client details exist",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/mxclient-details"
+      },
+      "response": {
+        "body": {
+          "clientJar": {
+            "name": "iloveorange",
+            "type": "ARTIFACT",
+            "uri": "iloveorange"
+          },
+          "clientPackage": {
+            "name": "iloveorange",
+            "type": "PACKAGE",
+            "uri": "iloveorange"
+          },
+          "environmentId": "iloveorange",
+          "host": "iloveorange",
+          "port": 13
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.clientJar.name": {
+            "match": "type"
+          },
+          "$.body.clientJar.type": {
+            "match": "type"
+          },
+          "$.body.clientJar.uri": {
+            "match": "type"
+          },
+          "$.body.clientPackage.name": {
+            "match": "type"
+          },
+          "$.body.clientPackage.type": {
+            "match": "type"
+          },
+          "$.body.clientPackage.uri": {
+            "match": "type"
+          },
+          "$.body.environmentId": {
+            "match": "type"
+          },
+          "$.body.host": {
+            "match": "type"
+          },
+          "$.body.port": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to launch technical reseed",
+      "providerState": "Technical reseed operation can be launched",
+      "request": {
+        "body": {
+          "branch": "iloveorange",
+          "configurationCommitId": "iloveorange",
+          "environmentDefinitionId": "iloveorange",
+          "infraGroupId": "iloveorange",
+          "maintenanceConfiguration": {
+            "full": true
+          },
+          "targetBranch": "iloveorange",
+          "validationLevel": "MQG"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.branch": {
+            "match": "type"
+          },
+          "$.body.configurationCommitId": {
+            "match": "type"
+          },
+          "$.body.environmentDefinitionId": {
+            "match": "type"
+          },
+          "$.body.infraGroupId": {
+            "match": "type"
+          },
+          "$.body.maintenanceConfiguration.full": {
+            "match": "type"
+          },
+          "$.body.targetBranch": {
+            "match": "type"
+          },
+          "$.body.validationLevel": {
+            "match": "type"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/projectId/technical-reseed-execution-groups/reseedExecutionGroupId/launch-reseed"
+      },
+      "response": {
+        "body": {
+          "requestId": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.requestId": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch SCP connection URL",
+      "providerState": "can get application scp connection url",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/application/scp-connection"
+      },
+      "response": {
+        "body": {
+          "connectionUrl": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.connectionUrl": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch SCP connection URL with machine id",
+      "providerState": "can get application scp connection url",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/application/scp-connection/machineId"
+      },
+      "response": {
+        "body": {
+          "connectionUrl": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.connectionUrl": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch SSH connection URL",
+      "providerState": "can get application ssh connection url",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/application/ssh-connection"
+      },
+      "response": {
+        "body": {
+          "connectionUrl": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.connectionUrl": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch SSH connection URL with machine id",
+      "providerState": "can get application ssh connection url",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/application/ssh-connection/machineId"
+      },
+      "response": {
+        "body": {
+          "connectionUrl": "iloveorange"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.connectionUrl": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch SSH connection URL that fails",
+      "providerState": "environment SSH connection is not available",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/application/ssh-connection"
+      },
+      "response": {
+        "status": 500
+      }
+    },
+    {
+      "description": "a request to clean an environment",
+      "providerState": "environment can be cleaned",
+      "request": {
+        "method": "POST",
+        "path": "/projects/projectId/environments/environmentId/clean"
+      },
+      "response": {
         "status": 200
       }
     },
@@ -133,6 +569,17 @@
       },
       "response": {
         "status": 500
+      }
+    },
+    {
+      "description": "a request to fetch environment that does not exist",
+      "providerState": "environment does not exist",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId"
+      },
+      "response": {
+        "status": 404
       }
     },
     {
@@ -289,10 +736,20 @@
                   "name": "iloveorange"
                 }
               ],
+              "environmentActions": [
+                "iloveorange"
+              ],
               "id": "iloveorange",
+              "isTools": [
+                {
+                  "name": "iloveorange"
+                }
+              ],
               "outputsDirectoryUri": "iloveorange",
               "projectId": "iloveorange",
-              "status": "iloveorange"
+              "secureClientArtifactUri": "iloveorange",
+              "status": "iloveorange",
+              "webClientUrl": "iloveorange"
             }
           ],
           "totalElements": 13
@@ -342,7 +799,21 @@
           "$.body.content[*].databases[*].name": {
             "match": "type"
           },
+          "$.body.content[*].environmentActions": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].environmentActions[*]": {
+            "match": "type"
+          },
           "$.body.content[*].id": {
+            "match": "type"
+          },
+          "$.body.content[*].isTools": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.content[*].isTools[*].name": {
             "match": "type"
           },
           "$.body.content[*].outputsDirectoryUri": {
@@ -351,7 +822,13 @@
           "$.body.content[*].projectId": {
             "match": "type"
           },
+          "$.body.content[*].secureClientArtifactUri": {
+            "match": "type"
+          },
           "$.body.content[*].status": {
+            "match": "type"
+          },
+          "$.body.content[*].webClientUrl": {
             "match": "type"
           },
           "$.body.totalElements": {
@@ -359,6 +836,93 @@
           }
         },
         "status": 200
+      }
+    },
+    {
+      "description": "a request to retrieve management request metrics",
+      "providerState": "management request metrics exist",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/environments/environmentId/management-requests/managementRequestId/metrics"
+      },
+      "response": {
+        "body": [
+          {
+            "duration": "PT1H30M15S",
+            "endTime": "2015-08-06T16:53:10.123+01:00",
+            "environmentId": "iloveorange",
+            "id": "iloveorange",
+            "managementRequestId": "iloveorange",
+            "projectId": "iloveorange",
+            "startTime": "2015-08-06T16:53:10.123+01:00",
+            "taskName": "iloveorange"
+          }
+        ],
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].duration": {
+            "match": "regex",
+            "regex": "^PT(?:(\\d+H)?)(?:(\\d+M)?)(?:(\\d+S)?)$"
+          },
+          "$.body[*].endTime": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body[*].environmentId": {
+            "match": "type"
+          },
+          "$.body[*].id": {
+            "match": "type"
+          },
+          "$.body[*].managementRequestId": {
+            "match": "type"
+          },
+          "$.body[*].projectId": {
+            "match": "type"
+          },
+          "$.body[*].startTime": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body[*].taskName": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to abort a project environment",
+      "providerState": "project environments can be aborted",
+      "request": {
+        "body": {
+          "environmentIds": [
+            "iloveorange"
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.environmentIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.environmentIds[*]": {
+            "match": "type"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/projectId/environments/abort"
+      },
+      "response": {
+        "status": 201
       }
     }
   ],

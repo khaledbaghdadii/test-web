@@ -9,12 +9,13 @@ export interface IsToolsPage {
   number: number;
   last: boolean;
 }
+
 export interface IsTool {
   id: string;
   name: string;
   mavenBuild: MavenBuild;
   type: string;
-  mxDeployPackage: MxDeployPackageResponse;
+  mxDeployPackage?: MxDeployPackageResponse;
   asset: Asset;
   archived: boolean;
   createdOn: Date;
@@ -26,6 +27,7 @@ export interface FetchIsToolsFilter {
   pageIndex: number;
   type?: string;
   searchKey?: string;
+  archived?: boolean;
 }
 
 export interface MxDeployPackageResponse {

@@ -1022,6 +1022,38 @@ describe("Analysis Object Linking", () => {
   });
 
   describe("navigating to next step", () => {
+    it.each([
+      [AnalysisObjectType.BINARY_IMPACT, LinkBinaryImpactModalContentComponent],
+      [
+        AnalysisObjectType.BINARY_REGRESSION,
+        LinkBinaryRegressionModalContentComponent,
+      ],
+      [
+        AnalysisObjectType.CONFIGURATION_REGRESSION,
+        LinkConfigurationRegressionModalContentComponent,
+      ],
+      [
+        AnalysisObjectType.CONFIGURATION_IMPACT,
+        LinkConfigurationImpactModalContentComponent,
+      ],
+    ])(
+      "should not render analysis object linking content while on the first step",
+      (
+        analysisObjectType: AnalysisObjectType,
+        analysisObjectComponent: Type<unknown>
+      ) => {
+        component.analysisObjectType = analysisObjectType;
+        navigateToNextStep();
+        navigateToFirstStep();
+        expect(
+          DomTestUtils.getElementByType(
+            fixture,
+            analysisObjectComponent
+          ).isRendered()
+        ).toBeFalsy();
+      }
+    );
+
     it("next button should be enabled if test cases are selected", () => {
       component.selectedTestCaseExecutions.set([testCaseExecution1]);
       fixture.detectChanges();
@@ -1947,8 +1979,73 @@ describe("Analysis Object Linking", () => {
     });
   });
 
+  describe("previously linked binary impact filter", () => {
+    it("should populate external ids of the selected test case executions", () => {
+      component.selectedTestCaseExecutions.set([
+        testCaseExecution1,
+        testCaseExecution2,
+      ]);
+      expect(component.previouslyLinkedFilter().testCaseExternalIds).toEqual([
+        testCaseExecution1.externalId,
+        testCaseExecution2.externalId,
+      ]);
+    });
+
+    it("should populate an empty list of external ids when no test case executions are selected", () => {
+      component.selectedTestCaseExecutions.set([]);
+      expect(component.previouslyLinkedFilter().testCaseExternalIds).toEqual(
+        []
+      );
+    });
+
+    it("should populate the scenario definition id only when the scenario execution is checked", () => {
+      component.isScenarioExecutionChecked.set(true);
+      expect(component.previouslyLinkedFilter().scenarioDefinitionId).toBe(
+        scenarioExecution.scenarioDefinitionId
+      );
+    });
+
+    it("should populate an undefined scenario definition id when the scenario execution is not checked", () => {
+      component.isScenarioExecutionChecked.set(false);
+      expect(
+        component.previouslyLinkedFilter().scenarioDefinitionId
+      ).toBeUndefined();
+    });
+
+    it("should pass previously linked params to the binary impact modal content", () => {
+      component.analysisObjectType = AnalysisObjectType.BINARY_IMPACT;
+      component.selectedTestCaseExecutions.set([testCaseExecution1]);
+      component.isScenarioExecutionChecked.set(true);
+      navigateToNextStep();
+
+      const modalContent = getComponent(LinkBinaryImpactModalContentComponent);
+      expect(modalContent.previouslyLinkedFilter).toEqual({
+        testCaseExternalIds: [testCaseExecution1.externalId],
+        scenarioDefinitionId: scenarioExecution.scenarioDefinitionId,
+      });
+    });
+
+    it("should pass previously linked params to the incident modal content", () => {
+      component.analysisObjectType = AnalysisObjectType.INCIDENT;
+      component.selectedTestCaseExecutions.set([testCaseExecution1]);
+      component.isScenarioExecutionChecked.set(true);
+      navigateToNextStep();
+
+      const modalContent = getComponent(LinkIncidentsModalContentComponent);
+      expect(modalContent.previouslyLinkedFilter).toEqual({
+        testCaseExternalIds: [testCaseExecution1.externalId],
+        scenarioDefinitionId: scenarioExecution.scenarioDefinitionId,
+      });
+    });
+  });
+
   function navigateToNextStep() {
     getComponent(Stepper).value.set(2);
+    fixture.detectChanges();
+  }
+
+  function navigateToFirstStep() {
+    getComponent(Stepper).value.set(1);
     fixture.detectChanges();
   }
 

@@ -1,0 +1,184 @@
+<mxevolve-stage-container>
+  @if (stage().errorMessage) {
+  <mxevolve-business-process-content-container>
+    <p-message
+      class="col-span-12"
+      severity="error"
+      [text]="stage().errorMessage"
+      [closable]="false"
+    />
+  </mxevolve-business-process-content-container>
+  } @else {
+  <ng-container
+    *showElementIfAuthorized="{
+      action: 'view',
+      resource: 'analysis_object',
+      package: 'web',
+      attributes: {}
+    }"
+  >
+    <mxevolve-business-process-content-container
+      header="Summary"
+      [collapsable]="true"
+      [collapsed]="false"
+    >
+      @for (filter of activeFilters(); track filter.value) {
+      <p-chip
+        headerExtra
+        [label]="filter.label"
+        [removable]="true"
+        (onRemove)="removeFilter(filter)"
+      />
+      }
+      <mxevolve-scenario-runs-summary
+        class="col-span-12"
+        [projectId]="projectId()"
+        [contextId]="processId()"
+        subContextId="run_quality_gate"
+        [bpExecutionName]="processName()"
+        [externalFilter]="activeFilters()"
+        [hideIncidents]="true"
+        (filterClicked)="toggleFilter($event)"
+      />
+    </mxevolve-business-process-content-container>
+  </ng-container>
+
+  <mxevolve-business-process-content-container
+    header="Run Quality Gate"
+    [collapsable]="true"
+    [collapsed]="false"
+  >
+    @if (showRefreshInfo()) {
+    <div class="w-max">
+      <p-message>
+        Scenarios are currently being executed. Please refresh to see the latest
+        result.
+      </p-message>
+    </div>
+    }
+    <mxevolve-scenario-runs
+      class="col-span-12"
+      [projectId]="projectId()"
+      [contextId]="processId()"
+      subContextId="run_quality_gate"
+      [showEnvironmentDetails]="false"
+      [showEnvironmentLink]="true"
+      [showBulkRerun]="true"
+      [showTopBarActions]="true"
+      [allowOfficialRerun]="allowOfficialRerun()"
+      [initialFinalProductId]="finalProductId()"
+      [branch]="branch()"
+      [defaultRerunMode]="'official'"
+      [filter]="activeFilters()"
+      [hideIncidents]="true"
+      (scenarioChanged)="onScenarioChanged()"
+      (scenarioRunsFetched)="handleScenarioRunsFetched($event)"
+    >
+      <ng-template #topBar
+        >Below are the latest run results for each Scenario</ng-template
+      >
+    </mxevolve-scenario-runs>
+  </mxevolve-business-process-content-container>
+
+  @if (stage().validationResult) {
+  <mxevolve-business-process-content-container>
+    <mxevolve-quality-gate-validation-banner
+      class="col-span-12"
+      [validationResult]="stage().validationResult!"
+    />
+  </mxevolve-business-process-content-container>
+  } }
+  <mxevolve-business-process-content-container footer [clearBackground]="true">
+    @if (!stage().errorMessage) {
+    <p-button
+      class="col-span-2 col-start-6"
+      label="Next Step"
+      styleClass="w-full"
+      (onClick)="openValidateDialog()"
+      [disabled]="stageIsNotWaitingForValidation()"
+    />
+    }
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>
+
+<!-- Validate Quality Gate dialog -->
+<p-dialog
+  header="Validate Quality Gate"
+  [(visible)]="showValidateDialog"
+  [modal]="true"
+  [style]="{ width: '560px' }"
+>
+  <div class="flex flex-col gap-5">
+    <div>
+      <p class="font-medium mb-3">
+        Mark the quality gate as <span class="text-red-500">*</span>
+      </p>
+      <div class="flex gap-6">
+        <div class="flex items-center gap-2">
+          <p-radioButton
+            inputId="validate-passed"
+            [value]="QualityGateValidationDecision.VALIDATION_PASSED"
+            [ngModel]="validateDecision()"
+            (ngModelChange)="validateDecision.set($event)"
+          />
+          <label for="validate-passed">Passed and proceed</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <p-radioButton
+            inputId="validate-failed"
+            [value]="QualityGateValidationDecision.FAILED_AND_STOP_THE_PROCESS"
+            [ngModel]="validateDecision()"
+            (ngModelChange)="validateDecision.set($event)"
+          />
+          <label for="validate-failed">Failed and Stop the process</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-1">
+      <label for="validate-comment" class="font-medium">Comments</label>
+      <textarea
+        pTextarea
+        id="validate-comment"
+        class="w-full"
+        rows="4"
+        placeholder="Enter your comments"
+        [ngModel]="comment()"
+        (ngModelChange)="comment.set($event)"
+      ></textarea>
+    </div>
+
+    <div
+      class="flex flex-col gap-1"
+      [style.visibility]="
+        validateDecision() ===
+          QualityGateValidationDecision.FAILED_AND_STOP_THE_PROCESS && branch()
+          ? 'visible'
+          : 'hidden'
+      "
+    >
+      <div class="flex items-center gap-2">
+        <p-checkbox
+          inputId="validate-delete-branch"
+          [binary]="true"
+          [ngModel]="shouldDeleteBranch()"
+          (ngModelChange)="shouldDeleteBranch.set($event)"
+        />
+        <label for="validate-delete-branch">
+          Delete branch <strong>{{ branch() }}</strong> after changes are merged
+        </label>
+      </div>
+      <p class="text-surface-500 text-sm ml-6">
+        Note: if the branch is used by another process, it will not be deleted.
+      </p>
+    </div>
+    <div class="flex justify-center">
+      <p-button
+        label="Next"
+        (onClick)="submitValidation()"
+        [loading]="isSubmitting()"
+        [style]="{ width: '160px' }"
+      />
+    </div>
+  </div>
+</p-dialog>

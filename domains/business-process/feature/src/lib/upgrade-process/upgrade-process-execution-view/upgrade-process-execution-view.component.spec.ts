@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/angular";
 import { MockComponent, ngMocks } from "ng-mocks";
-import { Subject, of } from "rxjs";
+import { of, Subject } from "rxjs";
 import { userEvent } from "@testing-library/user-event";
 import { UpgradeProcessExecutionViewComponent } from "./upgrade-process-execution-view.component";
 import { ExecutionRunHeaderComponent } from "@mxevolve/domains/business-process/composite-widget";
@@ -11,8 +11,8 @@ import {
   UpgradeProcessExecution,
 } from "@mxevolve/domains/business-process/util";
 import {
-  MxevolveIllustrationComponent,
   MxevolveIconComponent,
+  MxevolveIllustrationComponent,
   StepComponent,
   StepperComponent,
 } from "@mxevolve/shared/ui/primitive";
@@ -159,7 +159,7 @@ describe("UpgradeProcessExecutionViewComponent", () => {
       await renderComponent();
 
       await waitFor(() =>
-        expect(screen.getByText("LOADING SCREEN COMING SOON")).toBeTruthy()
+        expect(screen.queryByTestId("skeleton")).toBeTruthy()
       );
     });
 
@@ -167,7 +167,7 @@ describe("UpgradeProcessExecutionViewComponent", () => {
       await renderComponent();
 
       await waitFor(() =>
-        expect(screen.queryByText("LOADING SCREEN COMING SOON")).toBeNull()
+        expect(screen.queryByTestId("skeleton")).toBeTruthy()
       );
     });
   });

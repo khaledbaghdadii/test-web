@@ -6,6 +6,7 @@ import {
   BuildAndTestUserInputService,
 } from "@mxevolve/domains/business-process/data-access";
 import { ExecutionStatus } from "@mxevolve/domains/business-process/util";
+import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 import { BuildAndTestBackportActionsComponent } from "./build-and-test-backport-actions.component";
 
 describe("BuildAndTestBackportActionsComponent", () => {
@@ -14,6 +15,10 @@ describe("BuildAndTestBackportActionsComponent", () => {
   };
   const stateUpdater = {
     reloadProcessDetails: jest.fn(),
+  };
+  const toastMessageService = {
+    showError: jest.fn(),
+    showSuccess: jest.fn(),
   };
 
   beforeEach(() => {
@@ -69,7 +74,11 @@ describe("BuildAndTestBackportActionsComponent", () => {
       },
       componentProviders: [
         { provide: BuildAndTestUserInputService, useValue: userInputService },
-        { provide: BuildAndTestProcessStateUpdaterService, useValue: stateUpdater },
+        {
+          provide: BuildAndTestProcessStateUpdaterService,
+          useValue: stateUpdater,
+        },
+        { provide: ToastMessageService, useValue: toastMessageService },
       ],
     });
   }

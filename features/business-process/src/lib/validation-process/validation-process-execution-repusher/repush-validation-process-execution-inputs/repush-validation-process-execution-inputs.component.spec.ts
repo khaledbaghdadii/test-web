@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from "@angular/core/testing";
 import { RepushValidationProcessExecutionInputsComponent } from "./repush-validation-process-execution-inputs.component";
 import { v4 as uuidv4 } from "uuid";
 import {
+  BusinessProcessOfficialStatus,
   DefinitionInputsValidators,
   InputValidationMode,
   ValidationProcessExecution,
@@ -958,6 +959,20 @@ describe("RepushValidationProcessExecutionInputs", () => {
         expect(componentInstance.forceShowTestParametersGroup).toBeTruthy();
       }
     );
+
+    it("the system should prefill the official status flag input with the value from the previous execution", () => {
+      const parentExecutionWithOfficial = {
+        ...parentExecution,
+        officiality: BusinessProcessOfficialStatus.OFFICIAL,
+      };
+      componentInstance.initializeForm(
+        PROJECT_ID,
+        [],
+        parentExecutionWithOfficial
+      );
+
+      expect(componentInstance.form.controls.official.value).toEqual(true);
+    });
   });
 
   it("given that the user filled the form, when the user decide to repush the process, then the system should use the inputs filled in the form", () => {

@@ -68,6 +68,29 @@
         ></ng-template>
       </div>
       <div class="gap-2 col-span-10 col-start-2 flex flex-col">
+        <label for="affectedVersions" class="block"
+          >Affected Versions <span class="text-red-500">*</span></label
+        >
+        @if (isFormLoading) {
+        <p-skeleton styleClass="mb-2 h-12"></p-skeleton>
+        } @if (!isFormLoading) {
+        <mxevolve-versions-multiselect-dropdown
+          data-testid="affected-versions-dropdown"
+          id="affectedVersions"
+          formControlName="affectedVersions"
+          [prefilledVersions]="prefilledAffectedVersions"
+          [dataParams]="affectedVersionsDropdownParams"
+          (failureEvent)="handleErrorOccurred($event)"
+        ></mxevolve-versions-multiselect-dropdown>
+        }
+        <ng-template
+          [ngTemplateOutlet]="errorTipTemplate"
+          [ngTemplateOutletContext]="{
+            $implicit: editBinaryImpactForm.controls.affectedVersions
+          }"
+        ></ng-template>
+      </div>
+      <div class="gap-2 col-span-10 col-start-2 flex flex-col">
         <label for="description" class="block"
           >Client Context Description <span class="text-red-500">*</span></label
         >

@@ -1,5 +1,6 @@
 import { Component, inject, input, OnInit } from "@angular/core";
 import { DatePipe } from "@angular/common";
+import { SafeResourceUrl } from "@angular/platform-browser";
 
 import { Button } from "primeng/button";
 import { Message } from "primeng/message";
@@ -36,6 +37,7 @@ export class RebaseWorkspaceContainerComponent implements OnInit {
   readonly clonedRepositoryId = input.required<string>();
   readonly projectRepositoryId = input.required<string>();
   readonly sourceBranchName = input.required<string>();
+  readonly mtsUrl = input<SafeResourceUrl | undefined>(undefined);
   readonly disabled = input(false);
 
   ngOnInit(): void {
@@ -44,6 +46,7 @@ export class RebaseWorkspaceContainerComponent implements OnInit {
       clonedRepositoryId: this.clonedRepositoryId(),
       projectRepositoryId: this.projectRepositoryId(),
       sourceBranchName: this.sourceBranchName(),
+      mtsUrl: this.mtsUrl(),
     });
   }
 

@@ -1,5 +1,6 @@
 export interface BinaryImpact {
   id: string;
+  objectId: string;
   owner: string;
   title: string;
   projectId: string;
@@ -16,6 +17,7 @@ export interface BinaryImpact {
   cbpmL1L2L3: ClientImpactNoteField[];
   cbpmL2Scope: ClientImpactNoteField[];
   cbpmL3L4: ClientImpactNoteField[];
+  affectedVersions: string[];
   impactedOutputs?: ClientImpactNoteField;
   propagationPattern?: string;
   configurationDesign?: string;

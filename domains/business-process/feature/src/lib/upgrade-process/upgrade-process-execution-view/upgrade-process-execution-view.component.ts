@@ -6,6 +6,7 @@ import {
   input,
   signal,
 } from "@angular/core";
+import { DatePipe } from "@angular/common";
 import { rxResource } from "@angular/core/rxjs-interop";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ExecutionRunHeaderComponent } from "@mxevolve/domains/business-process/composite-widget";
@@ -26,11 +27,12 @@ import { RunQualityGateStageComponent } from "../run-quality-gate-stage/run-qual
 import { IntegrateChangesStageComponent } from "../integrate-changes-stage/integrate-changes-stage.component";
 import { TagStageComponent } from "../tag-stage/tag-stage.component";
 import { ExecutionAlertDisplayComponent } from "@mxevolve/domains/business-process/ui";
+import { Skeleton } from "primeng/skeleton";
 
 @Component({
   selector: "mxevolve-upgrade-process-execution-view",
   templateUrl: "./upgrade-process-execution-view.component.html",
-  providers: [ExecutionFetcherService],
+  providers: [ExecutionFetcherService, DatePipe],
   imports: [
     ExecutionRunHeaderComponent,
     MxevolveIllustrationComponent,
@@ -41,6 +43,7 @@ import { ExecutionAlertDisplayComponent } from "@mxevolve/domains/business-proce
     IntegrateChangesStageComponent,
     TagStageComponent,
     ExecutionAlertDisplayComponent,
+    Skeleton,
   ],
   host: {
     style: "display: contents;",
@@ -53,6 +56,7 @@ export class UpgradeProcessExecutionViewComponent {
   private readonly executionFetcher = inject(ExecutionFetcherService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly datePipe = inject(DatePipe);
 
   readonly selectedStepId = signal<string | undefined>(
     this.route.snapshot.queryParams["step"]
@@ -123,12 +127,20 @@ export class UpgradeProcessExecutionViewComponent {
         status: this.mapStageStatusToStepStatus(
           execution.binaryConversionStage.status
         ),
+        tooltip: this.buildStageTooltip(
+          execution.binaryConversionStage.startDate,
+          execution.binaryConversionStage.endDate
+        ),
       },
       {
         id: "run-quality-gate",
         title: "Run Quality Gate",
         status: this.mapStageStatusToStepStatus(
           execution.executeQualityGateStage.status
+        ),
+        tooltip: this.buildStageTooltip(
+          execution.executeQualityGateStage.startDate,
+          execution.executeQualityGateStage.endDate
         ),
       },
       {
@@ -137,6 +149,10 @@ export class UpgradeProcessExecutionViewComponent {
         status: this.mapStageStatusToStepStatus(
           execution.integrateChangesStage.status
         ),
+        tooltip: this.buildStageTooltip(
+          execution.integrateChangesStage.startDate,
+          execution.integrateChangesStage.endDate
+        ),
       },
       {
         id: "tag",
@@ -144,9 +160,26 @@ export class UpgradeProcessExecutionViewComponent {
         status: this.mapStageStatusToStepStatus(
           execution.tagUpgradeBranchStage.status
         ),
+        tooltip: this.buildStageTooltip(
+          execution.tagUpgradeBranchStage.startDate,
+          execution.tagUpgradeBranchStage.endDate
+        ),
       },
     ] as StepDefinition[];
   });
+
+  private buildStageTooltip(
+    startDate: string | undefined,
+    endDate: string | undefined
+  ): string {
+    const start = startDate
+      ? this.datePipe.transform(startDate, "medium") ?? "-"
+      : "-";
+    const end = endDate
+      ? this.datePipe.transform(endDate, "medium") ?? "-"
+      : "-";
+    return `Start: ${start} | End: ${end}`;
+  }
 
   private mapStageStatusToStepStatus(status: StageStatus): StepStatus {
     switch (status) {

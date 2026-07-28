@@ -1,0 +1,74 @@
+<p-panel class="mt-4" [showHeader]="false">
+  <p-tabs value="applications">
+    <p-tablist>
+      <p-tab value="applications">Applications</p-tab>
+      <p-tab value="database">Databases</p-tab>
+      <p-tab value="client">Clients</p-tab>
+      <p-tab value="tests">Tests</p-tab>
+      <p-tab value="bundles">Bundles</p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+      <p-tabpanel value="applications">
+        <ag-grid-angular
+          class="ag-theme-quartz"
+          domLayout="autoHeight"
+          [rowData]="applicationRows()"
+          [columnDefs]="applicationColumnDefs()"
+          [defaultColDef]="defaultColDef()"
+          [noRowsOverlayComponent]="noRowsOverlayComponent"
+          [noRowsOverlayComponentParams]="{ message: 'No applications' }"
+          [loadingOverlayComponent]="loadingOverlayComponent"
+        />
+      </p-tabpanel>
+
+      <p-tabpanel value="database">
+        <ag-grid-angular
+          class="ag-theme-quartz"
+          domLayout="autoHeight"
+          [rowData]="databaseRows()"
+          [columnDefs]="databaseColumnDefs()"
+          [defaultColDef]="defaultColDef()"
+          [noRowsOverlayComponent]="noRowsOverlayComponent"
+          [noRowsOverlayComponentParams]="{ message: 'No databases' }"
+        />
+      </p-tabpanel>
+
+      <p-tabpanel value="client">
+        <ag-grid-angular
+          class="ag-theme-quartz"
+          domLayout="autoHeight"
+          [rowData]="clientRows()"
+          [columnDefs]="clientColumnDefs()"
+          [defaultColDef]="defaultColDef()"
+          [noRowsOverlayComponent]="noRowsOverlayComponent"
+          [noRowsOverlayComponentParams]="{ message: 'No clients' }"
+        />
+      </p-tabpanel>
+
+      <p-tabpanel value="tests">
+        <ag-grid-angular
+          class="ag-theme-quartz"
+          domLayout="autoHeight"
+          [rowData]="testRows()"
+          [columnDefs]="testColumnDefs()"
+          [defaultColDef]="defaultColDef()"
+          [noRowsOverlayComponent]="noRowsOverlayComponent"
+          [noRowsOverlayComponentParams]="{ message: 'No tests' }"
+        />
+      </p-tabpanel>
+
+      <p-tabpanel value="bundles">
+        <ag-grid-angular
+          class="ag-theme-quartz"
+          domLayout="autoHeight"
+          [rowData]="bundleRows()"
+          [columnDefs]="bundleColumnDefs()"
+          [defaultColDef]="defaultColDef()"
+          [noRowsOverlayComponent]="noRowsOverlayComponent"
+          [noRowsOverlayComponentParams]="{ message: 'No bundles' }"
+        />
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</p-panel>

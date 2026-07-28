@@ -1,0 +1,90 @@
+<p-panel [showHeader]="false">
+  <div class="flex flex-wrap items-center justify-between mt-3">
+    <div class="flex items-center">
+      <span
+        class="text-2xl font-bold text-surface-900 dark:text-surface-0 mr-2 ml-3"
+        data-testid="environment-name"
+      >
+        {{ environmentName() }}
+      </span>
+
+      <mxevolve-environment-status-display [status]="environment().status" />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <mxevolve-environment-clean-button
+        [projectId]="projectId()"
+        [environmentId]="environment().id"
+        (cleaned)="changed.emit()"
+      />
+
+      <mxevolve-environment-abort-button
+        [projectId]="projectId()"
+        [environmentId]="environment().id"
+        (aborted)="changed.emit()"
+      />
+    </div>
+  </div>
+
+  <p-divider class="my-2" />
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <mxevolve-service-actions-button
+        [projectId]="projectId()"
+        [environmentId]="environment().id"
+        [status]="environment().status"
+        [excludeFromShutdown]="environment().excludeFromShutdown ?? false"
+        [environmentActions]="environment().environmentActions ?? []"
+        (environmentChanged)="changed.emit()"
+      />
+
+      <mxevolve-open-client-button
+        [projectId]="projectId()"
+        [environmentId]="environment().id"
+        [status]="environment().status"
+        [environmentActions]="environment().environmentActions ?? []"
+        [webClientUrl]="environment().webClientUrl"
+        [secureClientArtifactUri]="environment().secureClientArtifactUri"
+      />
+
+      <mxevolve-connect-to-database-button
+        [projectId]="projectId()"
+        [environmentId]="environment().id"
+        [databases]="environment().databases"
+        [status]="environment().status"
+        (connectionError)="handleDatabaseConnectionError($event)"
+      />
+
+      <mxevolve-connect-applicative-button
+        [projectId]="projectId()"
+        [environmentId]="environment().id"
+        [status]="environment().status"
+        [primaryApplicative]="environment().primaryApplicative"
+        [secondaryApplicatives]="environment().secondaryApplicatives ?? []"
+        (connectionError)="handleApplicationConnectionError($event)"
+      />
+
+      <mxevolve-configure-mxtest-button
+        [projectId]="projectId()"
+        [outputsDirectoryUri]="environment().outputsDirectoryUri"
+        [bundles]="environment().bundles ?? []"
+        [isTools]="environment().isTools ?? []"
+        [status]="environment().status"
+      />
+
+      <mxevolve-open-config-editor-button
+        [projectId]="projectId()"
+        [environmentId]="environment().id"
+        [status]="environment().status"
+      ></mxevolve-open-config-editor-button>
+    </div>
+
+    @if (environment().allocationId; as allocationId) {
+    <mxevolve-environment-shutdown-policy-toggle
+      [projectId]="projectId()"
+      [allocationId]="allocationId"
+    />
+    }
+  </div>
+</p-panel>

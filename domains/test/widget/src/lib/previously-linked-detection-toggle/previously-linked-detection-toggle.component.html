@@ -1,0 +1,7 @@
+<p-selectButton
+  data-testid="previously-linked-detection-toggle"
+  allowEmpty="false"
+  [options]="options()"
+  [ngModel]="showPreviouslyLinked()"
+  (ngModelChange)="onShowPreviouslyLinkedChange($event)"
+/>

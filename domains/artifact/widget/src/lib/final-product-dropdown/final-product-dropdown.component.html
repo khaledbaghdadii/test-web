@@ -1,0 +1,14 @@
+<mxevolve-single-select-dropdown
+  [stateProvider]="stateProvider"
+  [dataParams]="dataParams()"
+  [config]="{
+    placeholder: placeholder(),
+    lazyLoad: true,
+    filter: true,
+    filterPlaceholder: 'Search by tag or commit ID',
+    disabled: disabled()
+  }"
+  (selectionChange)="onSelectionChange($event)"
+  (errorEvent)="onError($event)"
+  data-testid="final-product-dropdown"
+/>

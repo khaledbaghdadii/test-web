@@ -16,17 +16,20 @@ import {
   ExpiryChipComponent,
 } from "@mxevolve/domains/business-process/ui";
 import {
+  type BuildAndTestProcessExecution,
   ExecutionFamily,
   StageStatus,
-  type BuildAndTestProcessExecution,
 } from "@mxevolve/domains/business-process/util";
 import { BuildAndTestActivityRunDetailsComponent } from "@mxevolve/domains/business-process/widget";
+import { BreadcrumbComponent } from "@mxevolve/domains/analytics/widget";
 import { ExecutionAbortButtonComponent } from "../../execution-abort-button/execution-abort-button.component";
 import { BranchDetailsComponent } from "../../branch-details/branch-details.component";
 import { BuildAndTestProcessStateUpdaterService } from "@mxevolve/domains/business-process/data-access";
+import { BranchDetailsFacadeService } from "@mxevolve/domains/scm/composite-widget";
 import {
   CommitsService,
   DevelopmentService,
+  MergeRequestService,
 } from "@mxevolve/domains/scm/data-access";
 import {
   MxevolveIconComponent,
@@ -50,11 +53,14 @@ interface TabOption {
     ExecutionAbortButtonComponent,
     BranchDetailsComponent,
     MxevolveIconComponent,
+    BreadcrumbComponent,
   ],
   providers: [
     BuildAndTestProcessStateUpdaterService,
     DevelopmentService,
+    BranchDetailsFacadeService,
     CommitsService,
+    MergeRequestService,
     ToastMessageService,
   ],
   templateUrl: "./execution-run-header.component.html",
@@ -64,9 +70,11 @@ export class ExecutionRunHeaderComponent {
 
   readonly familyId = ExecutionFamily.USER_STORY_BUILD_AND_TEST;
 
-  private readonly stateUpdater = inject(BuildAndTestProcessStateUpdaterService);
+  private readonly stateUpdater = inject(
+    BuildAndTestProcessStateUpdaterService
+  );
   private readonly developmentService = inject(DevelopmentService);
-  private readonly commitsService = inject(CommitsService);
+  private readonly branchDetailsFacade = inject(BranchDetailsFacadeService);
   private readonly toastMessageService = inject(ToastMessageService);
 
   readonly branchCreationDetails = computed(() => {
@@ -109,18 +117,12 @@ export class ExecutionRunHeaderComponent {
   );
 
   private readonly commitsBehindResource = rxResource({
-    params: () => {
-      const dev = this.development();
-      if (!dev || dev.deleted || !dev.source || !dev.repository?.id)
-        return undefined;
-      return {
-        projectId: this.execution().projectId,
-        repositoryId: dev.repository.id,
-        sourceBranch: dev.source,
-        destinationBranch: dev.name,
-      };
-    },
-    stream: ({ params }) => this.commitsService.getCommitDifferences(params),
+    params: () =>
+      this.branchDetailsFacade.commitsBehindParams(
+        this.development(),
+        this.execution().projectId
+      ),
+    stream: ({ params }) => this.branchDetailsFacade.getCommitsBehind(params),
   });
 
   readonly commitsBehindCount = computed(() =>
@@ -162,7 +164,7 @@ export class ExecutionRunHeaderComponent {
     }
 
     tabs.push({
-      label: "Activity Run Details",
+      label: "Run Details",
       value: "activity-run-details",
     });
     return tabs;

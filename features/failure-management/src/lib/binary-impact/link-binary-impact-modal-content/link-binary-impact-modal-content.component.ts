@@ -30,6 +30,7 @@ import { toObservable } from "@angular/core/rxjs-interop";
 import {
   AnalysisObject,
   AnalysisObjectSelectionState,
+  AnalysisObjectType,
   BinaryImpactLinkingStateService,
 } from "@mxflow/features/analysis-objects";
 import { LiteBinaryImpact } from "../lite-binary-impact.model";
@@ -37,6 +38,8 @@ import { CreateBinaryImpactButtonComponent } from "../create-binary-impact-butto
 import { Message } from "primeng/message";
 import { FormsModule } from "@angular/forms";
 import { DetectionCategory, DetectionType } from "../../detections";
+import { PreviouslyLinkedDetectionToggleComponent } from "@mxevolve/domains/test/widget";
+import { PreviouslyLinkedFilter } from "@mxevolve/domains/test/model";
 
 @Component({
   selector: "mxevolve-link-binary-impact-modal-content",
@@ -48,6 +51,7 @@ import { DetectionCategory, DetectionType } from "../../detections";
     FormsModule,
     ValidationScopeSetterComponent,
     ShowDetectionWithNoDefectsToggleComponent,
+    PreviouslyLinkedDetectionToggleComponent,
   ],
   templateUrl: "./link-binary-impact-modal-content.component.html",
 })
@@ -63,6 +67,7 @@ export class LinkBinaryImpactModalContentComponent implements OnDestroy {
   isLinking = this.binaryImpactLinkingStateService.isLinking;
   refresh$ = new BehaviorSubject<boolean>(false);
   showImpactsWithoutDefects = signal(false);
+  showPreviouslyLinkedImpacts = signal(false);
 
   @Input()
   initiallySelectedImpacts: AnalysisObjectSelectionState<AnalysisObject>[] = [];
@@ -77,6 +82,7 @@ export class LinkBinaryImpactModalContentComponent implements OnDestroy {
   validationScope = model<ValidationScope | undefined>(undefined);
   initialValidationScope = input<ValidationScope | undefined>(undefined);
   @Input() warningMessage?: string;
+  @Input() previouslyLinkedFilter?: PreviouslyLinkedFilter;
 
   @Output() selectedBinaryImpactsChange = new EventEmitter<
     AnalysisObjectSelectionState<LiteBinaryImpact>[]
@@ -146,4 +152,5 @@ export class LinkBinaryImpactModalContentComponent implements OnDestroy {
 
   protected readonly DetectionCategory = DetectionCategory;
   protected readonly DetectionType = DetectionType;
+  protected readonly AnalysisObjectType = AnalysisObjectType;
 }

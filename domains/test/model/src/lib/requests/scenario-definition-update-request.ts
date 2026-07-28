@@ -1,5 +1,4 @@
 export interface TestUpdateRequest {
-  full: boolean;
   testDefinitionId: string;
   testSelectionIds: string[];
 }

@@ -1,6 +1,7 @@
 import { EnvironmentService } from "./environment.service";
 import { APP_CONFIG, AppConfig } from "@mxflow/config";
 import { provideHttpClient } from "@angular/common/http";
+import { DomSanitizer } from "@angular/platform-browser";
 import { throwError } from "rxjs";
 import {
   Environment,
@@ -31,6 +32,7 @@ describe("EnvironmentService", () => {
 
   let service: EnvironmentService;
   let controller: HttpTestingController;
+  let sanitizer: DomSanitizer;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -47,6 +49,7 @@ describe("EnvironmentService", () => {
 
     service = TestBed.inject(EnvironmentService);
     controller = TestBed.inject(HttpTestingController);
+    sanitizer = TestBed.inject(DomSanitizer);
   });
 
   afterEach(() => {
@@ -119,7 +122,9 @@ describe("EnvironmentService", () => {
       configurationEditorProperties: {
         disabled: false,
         testConfigurationApplication: {
-          url: "test-configuration-application-url",
+          url: sanitizer.bypassSecurityTrustResourceUrl(
+            "test-configuration-application-url"
+          ),
         },
       },
       clientRepositoryConfiguration: {

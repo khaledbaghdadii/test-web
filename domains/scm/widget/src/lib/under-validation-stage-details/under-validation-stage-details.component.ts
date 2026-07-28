@@ -1,4 +1,5 @@
-import { Component, computed, input } from "@angular/core";
+import { Component, computed, input, output } from "@angular/core";
+import { Message } from "primeng/message";
 import { Tag } from "primeng/tag";
 import { ScenarioRunsComponent } from "@mxevolve/domains/test/widget";
 import { PaginatedCommitsDifferenceComponent } from "../paginated-commits-difference/paginated-commits-difference.component";
@@ -34,6 +35,7 @@ export interface UnderValidationStageData {
   selector: "mxevolve-under-validation-stage-details",
   standalone: true,
   imports: [
+    Message,
     Tag,
     ScenarioRunsComponent,
     PaginatedCommitsDifferenceComponent,
@@ -46,6 +48,9 @@ export interface UnderValidationStageData {
 })
 export class UnderValidationStageDetailsComponent {
   readonly data = input.required<UnderValidationStageData>();
+
+  /** Emitted after the merge priority is updated so the parent can refresh. */
+  readonly priorityUpdated = output<void>();
 
   readonly isQueued = computed(
     () => this.data().mergeRequestState === "QUEUED"
@@ -70,11 +75,32 @@ export class UnderValidationStageDetailsComponent {
       this.data().failureReason !== FailureReason.REBASE_CONFLICT
   );
 
-  readonly scenarioRunIds = computed(
+  private readonly sortedScenarioBuilds = computed(() =>
+    [...(this.data().builds ?? [])]
+      .filter((b) => b.scenarioExecutionId)
+      .sort(
+        (a, b) =>
+          new Date(a.createdOn ?? 0).getTime() -
+          new Date(b.createdOn ?? 0).getTime()
+      )
+  );
+
+  readonly sequentialScenarioRunIds = computed(() =>
+    this.sortedScenarioBuilds()
+      .filter((b) => !b.bulkMode)
+      .map((b) => b.scenarioExecutionId!)
+  );
+
+  readonly bulkScenarioRunIds = computed(() =>
+    this.sortedScenarioBuilds()
+      .filter((b) => b.bulkMode)
+      .map((b) => b.scenarioExecutionId!)
+  );
+
+  readonly hasScenarioRuns = computed(
     () =>
-      this.data()
-        .builds?.filter((b) => b.scenarioExecutionId)
-        .map((b) => b.scenarioExecutionId!) ?? []
+      this.sequentialScenarioRunIds().length > 0 ||
+      this.bulkScenarioRunIds().length > 0
   );
 
   readonly mergeMode = computed(() => {
@@ -104,13 +130,28 @@ export class UnderValidationStageDetailsComponent {
     return "Successful";
   });
 
-  readonly rebaseFailureReason = computed(() => {
-    if (!this.isRebaseFailed()) return "-";
+  readonly validationFailureReasonMessage = computed(() => {
     const reason = this.data().failureReason as FailureReason | undefined;
-    if (reason === FailureReason.REBASE_CONFLICT) {
-      return "Lorem ipsum Lorem ipsum";
+    if (!reason) return "-";
+    switch (reason) {
+      case FailureReason.PR_UNAPPROVED:
+        return "Validation failed due to unapproved merge request";
+      case FailureReason.PR_DECLINED:
+        return "Validation failed due to declined merge request";
+      case FailureReason.PR_DELETED:
+      case FailureReason.MERGE_REQUEST_NOT_FOUND:
+        return "Validation failed due to deleted merge request";
+      case FailureReason.TECHNICAL_FAILURE:
+        return "Validation failed due to a technical failure";
+      case FailureReason.CQG_FAILURE:
+        return "Validation failed due to a CQG failure";
+      case FailureReason.PR_NOT_MERGEABLE:
+        return "Validation failed due to unmergeable merge request";
+      case FailureReason.SCENARIO_EXECUTION_TIMEOUT:
+        return "Validation failed due to scenario execution timeout";
+      default:
+        return reason;
     }
-    return "-";
   });
 
   readonly mergeRequestPriority = computed(() => {

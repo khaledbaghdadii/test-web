@@ -25,7 +25,7 @@ import { ProjectService } from "@mxflow/features/project";
 import { ScenarioExecutionDurationComponent } from "../../../properties-display/duration/scenario-execution-duration.component";
 import { toObservable } from "@angular/core/rxjs-interop";
 import { concatMap, of } from "rxjs";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 @Component({
   selector: "mxevolve-test-execution-grid",

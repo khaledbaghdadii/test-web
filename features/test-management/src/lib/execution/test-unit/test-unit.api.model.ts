@@ -2,6 +2,7 @@ import {
   ScenarioAnalysisStatus,
   ScenarioExecutionStatus,
 } from "@mxflow/test-management";
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
 
 export interface TestUnitApiModel {
   id: string;
@@ -31,11 +32,12 @@ export interface TestUnitScenarioExecutionApiModel {
   mxVersion: string;
   mxBuildId: string;
   factoryProductId: string;
-  keptExecution: boolean;
+  keepExecution: boolean;
   environment: ScenarioExecutionEnvironmentApiModel;
-  cleaningStatus: string;
+  cleaningStatus: ScenarioExecutionHousekeepingStatus;
   failed: boolean;
   finished: boolean;
+  testUnitHead: boolean;
 }
 
 export interface ScenarioExecutionAnalysisObjectsApiModel {

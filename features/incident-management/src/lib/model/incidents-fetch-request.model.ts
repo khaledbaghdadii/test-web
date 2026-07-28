@@ -15,4 +15,6 @@ export interface IncidentsApiRequest {
   externalIssueIdPhrase?: string;
   reporterPhrase?: string;
   assigneePhrase?: string;
+  testCaseExternalIds?: string[];
+  scenarioDefinitionId?: string;
 }

@@ -168,7 +168,7 @@
           data-testid="linked-impacts-header-filter"
           field="linkedImpacts"
           display="menu"
-          matchMode="arrayContainsDetection"
+          matchMode="arrayContainsImpact"
           [showMatchModes]="false"
           [showOperator]="false"
           [showAddButton]="false"
@@ -272,6 +272,8 @@
       <td
         class="max-w-64 truncate"
         data-testid="linked-impacts-data"
+        [pTooltip]="getLinkedImpactsTooltip(data.linkedImpacts)"
+        tooltipPosition="top"
         *showElementIfAuthorized="{
           action: 'view',
           attributes: {},
@@ -279,14 +281,27 @@
           resource: 'analysis_object',
         }"
       >
-        <mxevolve-analysis-object-links-display
-          data-testid="linked-impacts-display"
-          [pTooltip]="data.linkedImpacts | linkedDetection"
-          tooltipPosition="top"
-          [linkedDetectionsData]="data.linkedImpacts ? data.linkedImpacts : []"
-          [detectionCategory]="DetectionCategory.Impact"
+        @let linkedImpactDisplayItems =
+        getLinkedImpactDisplayItems(data.linkedImpacts); @if
+        (linkedImpactDisplayItems.length > 0) { @for (impactItem of
+        linkedImpactDisplayItems; track impactItem.id; let isLast = $last) {
+        <a
+          class="p-button-link"
+          target="_blank"
+          routerLink="{{
+            {
+              id: impactItem.linkContext.id,
+              projectId: impactItem.linkContext.projectId,
+              category: DetectionCategory.Impact,
+              type: impactItem.linkContext.analysisObjectType!
+            } | detectionUriBuilder
+          }}"
+          >{{ impactItem.label }}</a
         >
-        </mxevolve-analysis-object-links-display>
+        {{ isLast ? "" : ", " }}
+        } } @else {
+        <span>-</span>
+        }
       </td>
       <td
         class="max-w-64 truncate"

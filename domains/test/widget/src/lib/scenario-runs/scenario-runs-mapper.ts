@@ -30,6 +30,15 @@ export function mapExecutionToRun(
   execution: TestUnitScenarioExecutionApiModel,
   testUnit: TestUnitApiModel
 ): HeadScenarioRunViewModel {
+  const analysisObjects = execution.analysisObjects;
+  const binaryImpacts = analysisObjects?.binaryImpacts ?? [];
+  const configurationImpacts = analysisObjects?.configurationImpacts ?? [];
+  const binaryRegressions = analysisObjects?.binaryRegressions ?? [];
+  const configurationRegressions =
+    analysisObjects?.configurationRegressions ?? [];
+  const incidents = analysisObjects?.incidents ?? [];
+  const failureReasons = analysisObjects?.failureReasons ?? [];
+
   return {
     id: execution.scenarioExecutionId,
     name: testUnit.scenarioDefinitionName,
@@ -37,24 +46,17 @@ export function mapExecutionToRun(
     environmentId: execution.environment.environmentId,
     environmentStatus: execution.environment.status as EnvironmentStatus,
     analysisStatus: execution.analysisStatus,
-    numberOfImpacts: countArrayLengths(
-      execution.analysisObjects.binaryImpacts,
-      execution.analysisObjects.configurationImpacts
-    ),
+    numberOfImpacts: countArrayLengths(binaryImpacts, configurationImpacts),
     numberOfRegressions: countArrayLengths(
-      execution.analysisObjects.binaryRegressions,
-      execution.analysisObjects.configurationRegressions
+      binaryRegressions,
+      configurationRegressions
     ),
-    numberOfIncidents: execution.analysisObjects.incidents.length,
-    impactIds: [
-      ...execution.analysisObjects.binaryImpacts,
-      ...execution.analysisObjects.configurationImpacts,
-    ],
-    regressionIds: [
-      ...execution.analysisObjects.binaryRegressions,
-      ...execution.analysisObjects.configurationRegressions,
-    ],
-    incidentIds: execution.analysisObjects.incidents,
+    numberOfIncidents: incidents.length,
+    numberOfFailureReasons: failureReasons.length,
+    impactIds: [...binaryImpacts, ...configurationImpacts],
+    regressionIds: [...binaryRegressions, ...configurationRegressions],
+    incidentIds: incidents,
+    failureReasonIds: [...failureReasons],
     startDate: execution.startDate,
     endDate: execution.endDate,
     commitId: execution.commitId,
@@ -70,7 +72,7 @@ export function mapExecutionToRun(
     executionGroupId: testUnit.executionGroupId,
     repushable: testUnit.repushable,
     warningMessage:
-      !testUnit.disableKeepExecution && !execution.keptExecution
+      !testUnit.disableKeepExecution && !execution.keepExecution
         ? "After repushing a scenario that is not kept, the previous execution will be cleaned."
         : undefined,
   };
@@ -79,6 +81,15 @@ export function mapExecutionToRun(
 export function mapApiResponseToRun(
   response: ScenarioRunApiResponse
 ): HeadScenarioRunViewModel {
+  const detections = response.detections;
+  const binaryImpactIds = detections?.binaryImpactIds ?? [];
+  const configurationImpactIds = detections?.configurationImpactIds ?? [];
+  const binaryRegressionIds = detections?.binaryRegressionIds ?? [];
+  const configurationRegressionIds =
+    detections?.configurationRegressionIds ?? [];
+  const linkedIncidents = response.linkedIncidents ?? [];
+  const failureReasonIds = detections?.failureReasonIds ?? [];
+
   return {
     id: response.id,
     name: response.name,
@@ -86,24 +97,17 @@ export function mapApiResponseToRun(
     environmentId: response.envInfo.environmentId,
     environmentStatus: response.envInfo.status as EnvironmentStatus,
     analysisStatus: response.analysisStatus,
-    numberOfImpacts: countArrayLengths(
-      response.detections.binaryImpactIds,
-      response.detections.configurationImpactIds
-    ),
+    numberOfImpacts: countArrayLengths(binaryImpactIds, configurationImpactIds),
     numberOfRegressions: countArrayLengths(
-      response.detections.binaryRegressionIds,
-      response.detections.configurationRegressionIds
+      binaryRegressionIds,
+      configurationRegressionIds
     ),
-    numberOfIncidents: response.linkedIncidents.length,
-    impactIds: [
-      ...response.detections.binaryImpactIds,
-      ...response.detections.configurationImpactIds,
-    ],
-    regressionIds: [
-      ...response.detections.binaryRegressionIds,
-      ...response.detections.configurationRegressionIds,
-    ],
-    incidentIds: response.linkedIncidents.map((i) => i.id),
+    numberOfIncidents: linkedIncidents.length,
+    numberOfFailureReasons: failureReasonIds.length,
+    impactIds: [...binaryImpactIds, ...configurationImpactIds],
+    regressionIds: [...binaryRegressionIds, ...configurationRegressionIds],
+    incidentIds: linkedIncidents.map((i) => i.id),
+    failureReasonIds: [...failureReasonIds],
     startDate: response.startDate,
     endDate: response.endDate,
     commitId: response.commitId,
@@ -131,6 +135,9 @@ export function splitIntoHeadAndPreviousRuns(
     totalNumberOfRegressions: new Set(runs.flatMap((r) => r.regressionIds))
       .size,
     totalNumberOfIncidents: new Set(runs.flatMap((r) => r.incidentIds)).size,
+    totalNumberOfFailureReasons: new Set(
+      runs.flatMap((r) => r.failureReasonIds)
+    ).size,
   };
 }
 
@@ -220,10 +227,10 @@ export function collectUniqueAssigneeIds(
 }
 
 function countArrayLengths(
-  a: readonly unknown[],
-  b: readonly unknown[]
+  a: readonly unknown[] | undefined,
+  b: readonly unknown[] | undefined
 ): number {
-  return a.length + b.length;
+  return (a?.length ?? 0) + (b?.length ?? 0);
 }
 
 export function buildIncidentStatusesByRunId(
@@ -231,8 +238,11 @@ export function buildIncidentStatusesByRunId(
 ): Map<string, string[]> {
   const map = new Map<string, string[]>();
   for (const run of responses) {
-    if (run.linkedIncidents.length > 0) {
-      map.set(run.id, run.linkedIncidents.map((i) => i.status).filter(Boolean));
+    if (run.linkedIncidents?.length > 0) {
+      map.set(
+        run.id,
+        run.linkedIncidents?.map((i) => i.status).filter(Boolean)
+      );
     }
   }
   return map;
@@ -251,15 +261,19 @@ export function computeFilterDataFromTestUnit(
 
   for (const execution of testUnit.scenarioExecutions) {
     const ao = execution.analysisObjects;
-    if (ao.failureReasons.length > 0) hasWasteReasons = true;
+    if ((ao?.failureReasons?.length ?? 0) > 0) hasWasteReasons = true;
     if (
-      ao.binaryRegressions.length > 0 ||
-      ao.configurationRegressions.length > 0
-    )
+      (ao?.binaryRegressions?.length ?? 0) > 0 ||
+      (ao?.configurationRegressions?.length ?? 0) > 0
+    ) {
       hasRegressions = true;
-    if (ao.binaryImpacts.length > 0 || ao.configurationImpacts.length > 0)
+    }
+    if (
+      (ao?.binaryImpacts?.length ?? 0) > 0 ||
+      (ao?.configurationImpacts?.length ?? 0) > 0
+    )
       hasImpacts = true;
-    if (ao.incidents.length > 0) hasIncidents = true;
+    if ((ao?.incidents?.length ?? 0) > 0) hasIncidents = true;
     const statuses = incidentStatusesByRunId?.get(
       execution.scenarioExecutionId
     );
@@ -289,17 +303,20 @@ export function computeFilterDataFromApiResponses(
   const statusSet = new Set<string>();
 
   for (const response of responses) {
-    if (!response.detections) continue;
     const d = response.detections;
-    if (d.failureReasonIds.length > 0) hasWasteReasons = true;
+    if ((d?.failureReasonIds?.length ?? 0) > 0) hasWasteReasons = true;
     if (
-      d.binaryRegressionIds.length > 0 ||
-      d.configurationRegressionIds.length > 0
-    )
+      (d?.binaryRegressionIds?.length ?? 0) > 0 ||
+      (d?.configurationRegressionIds?.length ?? 0) > 0
+    ) {
       hasRegressions = true;
-    if (d.binaryImpactIds.length > 0 || d.configurationImpactIds.length > 0)
+    }
+    if (
+      (d?.binaryImpactIds?.length ?? 0) > 0 ||
+      (d?.configurationImpactIds?.length ?? 0) > 0
+    )
       hasImpacts = true;
-    if (response.linkedIncidents.length > 0) {
+    if (response.linkedIncidents?.length > 0) {
       hasIncidents = true;
       collectIncidentStatuses(response.linkedIncidents, statusSet);
     }

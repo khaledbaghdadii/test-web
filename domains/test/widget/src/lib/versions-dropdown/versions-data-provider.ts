@@ -29,7 +29,7 @@ export class VersionsDataProvider
       page: pageIndex ?? 0,
       size: pageSize ?? 20,
       versionTypes: params.versionTypes,
-      ...(params.active !== undefined ? { active: params.active } : {}),
+      ...(params?.active !== undefined ? { active: params.active } : {}),
       ...(trimmedSearchKey ? { namePhrase: trimmedSearchKey } : {}),
     };
 

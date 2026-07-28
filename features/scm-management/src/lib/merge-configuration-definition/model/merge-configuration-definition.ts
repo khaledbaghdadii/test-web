@@ -12,6 +12,7 @@ export interface MergeConfigurationDefinition {
   runFullMaintenance: boolean;
   automergeBulkSize: number;
   deltaConfigImportEnabled: boolean;
+  mxLintEnabled: boolean;
   infraResourceSettings: InfraResourceSettings;
 }
 

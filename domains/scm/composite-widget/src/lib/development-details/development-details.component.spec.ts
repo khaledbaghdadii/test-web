@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/angular";
+import { render } from "@testing-library/angular";
 import { MockComponent, ngMocks } from "ng-mocks";
 import {
   MergeRequestOverview,
@@ -35,7 +35,6 @@ async function renderComponent(
   inputs: Partial<{
     development: Development;
     mergeRequest: MergeRequestOverview;
-    commitsBehindCount: number;
   }> = {}
 ) {
   return render(DevelopmentDetailsComponent, {
@@ -96,6 +95,13 @@ describe("DevelopmentDetailsComponent", () => {
     expect(commitsDiff.componentInstance.mergeRequest).toBeUndefined();
   });
 
+  it("enables the commits-behind warning on the commits difference widget", async () => {
+    const { fixture } = await renderComponent();
+
+    const commitsDiff = ngMocks.find(fixture, MergeRequestCommitsComponent);
+    expect(commitsDiff.componentInstance.showCommitsBehindWarning).toBe(true);
+  });
+
   it("emits errorOccurred when the branch details card reports an error", async () => {
     const { fixture } = await renderComponent();
     const spy = jest.fn();
@@ -118,28 +124,5 @@ describe("DevelopmentDetailsComponent", () => {
       .componentInstance.errorOccurred.emit("commits error");
 
     expect(spy).toHaveBeenCalledWith("commits error");
-  });
-
-  describe("commits behind warning", () => {
-    it("shows warning message when commitsBehindCount > 0", async () => {
-      await renderComponent({ commitsBehindCount: 3 });
-
-      expect(screen.getByText(/You are/)).toBeTruthy();
-      expect(screen.getByText("3")).toBeTruthy();
-      expect(screen.getByText(/commits behind/)).toBeTruthy();
-      expect(screen.getByText(/main/)).toBeTruthy();
-    });
-
-    it('uses singular "commit" when commitsBehindCount is 1', async () => {
-      await renderComponent({ commitsBehindCount: 1 });
-
-      expect(screen.getByText(/commit behind/)).toBeTruthy();
-    });
-
-    it("does not show warning message when commitsBehindCount is 0", async () => {
-      await renderComponent({ commitsBehindCount: 0 });
-
-      expect(screen.queryByText(/You are/)).toBeNull();
-    });
   });
 });

@@ -1,9 +1,8 @@
-<div class="flex m-2">
-  <a (click)="back()" class="flex items-center cursor-pointer p-button-link">
-    <span class="pi pi-angle-left text-xl"></span>
-    <span>Back</span>
-  </a>
-</div>
+<mxevolve-breadcrumb
+  [resourceType]="'SCENARIO'"
+  [resourceId]="selectedScenarioExecutionId()"
+  [projectId]="projectId()"
+/>
 <mxevolve-card-container>
   <p-tabs [value]="tabIndex" (valueChange)="updateTabIndex(+($event ?? 0))">
     <p-tablist>
@@ -52,7 +51,7 @@
           [validationScopeEnabled]="validationScopeEnabled()"
           [incidentEnabled]="incidentEnabled()"
           (refreshAnalysisStatusEvent)="handleRefreshAnalysisStatusEvent()"
-          (keptExecutionToggled)="handleKeptExecutionToggled($event)"
+          (keepExecutionToggled)="handleKeepExecutionToggled($event)"
         ></mxevolve-execution-details>
 
         <p-divider></p-divider>
@@ -78,8 +77,9 @@
       <p-tabpanel [value]="3">
         @if (selectedScenarioExecution()) {
         <mxevolve-scenario-execution-history
+          [projectId]="projectId()"
           [assignee]="assignee?.displayName ?? '-'"
-          (keptExecutionToggled)="handleKeptExecutionToggled($event)"
+          (keepExecutionToggled)="handleKeepExecutionToggled($event)"
         ></mxevolve-scenario-execution-history>
         }
       </p-tabpanel>

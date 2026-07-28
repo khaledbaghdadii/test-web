@@ -7,7 +7,7 @@ import { provideHttpClient } from "@angular/common/http";
 import { APP_CONFIG } from "@mxflow/config";
 import { firstValueFrom } from "rxjs";
 import { DevelopmentService } from "./development.service";
-import { Development } from "./development.model";
+import { Development, Developments } from "./development.model";
 
 const GATEWAY_URL = "https://api.test.com/";
 
@@ -21,6 +21,15 @@ const MOCK_DEVELOPMENT: Development = {
   createdOn: "2026-01-01T00:00:00Z",
   parentCommitId: "parent123456",
   deleted: false,
+};
+
+const MOCK_DEVELOPMENTS: Developments = {
+  content: [MOCK_DEVELOPMENT],
+  totalElements: 1,
+  totalPages: 1,
+  size: 1,
+  empty: false,
+  last: true,
 };
 
 describe("DevelopmentService", () => {
@@ -114,5 +123,69 @@ describe("DevelopmentService", () => {
     const error = await result;
     expect(error).toBeInstanceOf(Error);
     expect(error.message).toContain("Internal Server Error");
+  });
+
+  it("lists developments with encoded repository and branch filters", async () => {
+    const result = firstValueFrom(
+      service.getDevelopments("project-1", {
+        repositoryId: "repo/one",
+        name: "feature/my branch",
+      })
+    );
+
+    const request = httpController.expectOne(
+      `${GATEWAY_URL}scm-management/projects/project-1/developments?repositoryId=repo%2Fone&name=feature%2Fmy%20branch`
+    );
+    expect(request.request.method).toBe("GET");
+    request.flush(MOCK_DEVELOPMENTS);
+
+    expect(await result).toEqual(MOCK_DEVELOPMENTS);
+  });
+
+  it("lists developments without a query string when no filters are supplied", async () => {
+    const result = firstValueFrom(service.getDevelopments("project-1", {}));
+
+    const request = httpController.expectOne(
+      `${GATEWAY_URL}scm-management/projects/project-1/developments`
+    );
+    expect(request.request.method).toBe("GET");
+    request.flush(MOCK_DEVELOPMENTS);
+
+    expect(await result).toEqual(MOCK_DEVELOPMENTS);
+  });
+
+  it("maps a development-list server error message", async () => {
+    const result = firstValueFrom(
+      service.getDevelopments("project-1", { repositoryId: "repo-1" })
+    ).catch((error) => error);
+
+    httpController
+      .expectOne(
+        `${GATEWAY_URL}scm-management/projects/project-1/developments?repositoryId=repo-1`
+      )
+      .flush(
+        { message: "Developments unavailable" },
+        { status: 500, statusText: "Internal Server Error" }
+      );
+
+    await expect(result).resolves.toMatchObject({
+      message: "Developments unavailable",
+    });
+  });
+
+  it("uses the generic development-list error message when the response has no detail", async () => {
+    const result = firstValueFrom(
+      service.getDevelopments("project-1", { name: "main" })
+    ).catch((error) => error);
+
+    httpController
+      .expectOne(
+        `${GATEWAY_URL}scm-management/projects/project-1/developments?name=main`
+      )
+      .flush(null, { status: 500, statusText: "Internal Server Error" });
+
+    await expect(result).resolves.toMatchObject({
+      message: expect.stringContaining("Internal Server Error"),
+    });
   });
 });

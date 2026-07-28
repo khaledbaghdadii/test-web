@@ -3,15 +3,21 @@ import {
   MockBuilder,
   MockedComponentFixture,
   MockRender,
+  ngMocks,
 } from "ng-mocks";
 import { LinkIncidentsModalContentComponent } from "./link-incidents-modal-content.component";
-import { IncidentLinkingStateService } from "@mxflow/features/analysis-objects";
+import {
+  AnalysisObjectType,
+  IncidentLinkingStateService,
+} from "@mxflow/features/analysis-objects";
 import { signal } from "@angular/core";
 import { fakeAsync, tick } from "@angular/core/testing";
 import { ToastMessageService } from "@mxflow/ui/alert";
 import { of, Subject } from "rxjs";
 import { CreateIncidentButtonComponent } from "@mxflow/features/incident-management";
 import { DomTestUtils } from "@mxevolve/testing";
+import { IncidentsSelectionTableComponent } from "../incidents-selection-table/incidents-selection-table.component";
+import { PreviouslyLinkedDetectionToggleComponent } from "@mxevolve/domains/test/widget";
 
 const BUSINESS_PROCESS_ID = "BUSINESS_PROCESS_ID";
 describe("LinkIncidentsModalContentComponent", () => {
@@ -145,6 +151,62 @@ describe("LinkIncidentsModalContentComponent", () => {
       const emitSpy = jest.spyOn(component.selectedIncidentsChange, "emit");
       component.onIncidentsSelectionChange([]);
       expect(emitSpy).toHaveBeenCalledWith([]);
+    });
+  });
+
+  describe("show previously linked incidents", () => {
+    const getSelectionTable = () =>
+      ngMocks.findInstance<IncidentsSelectionTableComponent>(
+        fixture,
+        IncidentsSelectionTableComponent
+      );
+
+    const emitPreviouslyLinkedToggleChange = (value: boolean) =>
+      ngMocks
+        .output(
+          "mxevolve-previously-linked-detection-toggle",
+          "showPreviouslyLinkedChange"
+        )
+        .emit(value);
+
+    it("should default show previously linked incidents signal to false", () => {
+      expect(component.showPreviouslyLinkedIncidents()).toBeFalsy();
+    });
+
+    it("should pass the incident type to the previously linked toggle", () => {
+      const toggle = ngMocks.find(
+        fixture,
+        PreviouslyLinkedDetectionToggleComponent
+      );
+
+      expect(ngMocks.input(toggle, "analysisObjectType")).toBe(
+        AnalysisObjectType.INCIDENT
+      );
+    });
+
+    it("should not use previously linked criteria when the toggle is off", () => {
+      component.previouslyLinkedFilter = {
+        testCaseExternalIds: ["ext1"],
+        scenarioDefinitionId: "scenarioDefinitionId",
+      };
+      emitPreviouslyLinkedToggleChange(false);
+      fixture.detectChanges();
+
+      expect(getSelectionTable().previouslyLinkedFilter).toBeUndefined();
+    });
+
+    it("should apply the previously linked criteria to the selection table when the toggle is on", () => {
+      component.previouslyLinkedFilter = {
+        testCaseExternalIds: ["ext1"],
+        scenarioDefinitionId: "scenarioDefinitionId",
+      };
+      emitPreviouslyLinkedToggleChange(true);
+      fixture.detectChanges();
+
+      expect(getSelectionTable().previouslyLinkedFilter).toEqual({
+        testCaseExternalIds: ["ext1"],
+        scenarioDefinitionId: "scenarioDefinitionId",
+      });
     });
   });
 

@@ -8,5 +8,6 @@ export interface MergeConfigurationDefinitionApiUpdateRequest {
   runFullMaintenance: boolean;
   automergeBulkSize: number;
   deltaConfigImportEnabled: boolean;
+  mxLintEnabled: boolean;
   infraResourceSettings: InfraResourceSettingsApiRequest;
 }

@@ -23,9 +23,14 @@ import { FetchBinaryImpactsQueryApiRequest } from "./fetch-binary-impacts-query-
 
 import { FetchBinaryImpactsQuery } from "./fetch-binary-impacts-query";
 import { BinaryImpactTestUtils } from "./binary-impact-test-utils";
+import { PrepareBinaryImpactFromUpgradeImpactResponse } from "./prepare-binary-impact-from-upgrade-impact-response.model";
+import { PrepareBinaryImpactFromUpgradeImpactApiRequest } from "./prepare-binary-impact-from-upgrade-impact-api-request.model";
+import { UpdateUpgradeImpactForBinaryImpactApiRequest } from "./update-upgrade-impact-for-binary-impact-api-request.model";
+import { UpdateUpgradeImpactForBinaryImpactRequest } from "./update-upgrade-impact-for-binary-impact-request.model";
 
 const PROJECT_ID = "projectId";
 const BINARY_IMPACT_ID = "binaryImpactId";
+const BINARY_IMPACT_OBJECT_ID = "PROJECT-BIMP-1";
 const BINARY_IMPACT_TITLE = "title";
 const BINARY_IMPACT_MX_VERSION = "mxVersion";
 const UPGRADE_IMPACT_ID = "upgradeImpactId";
@@ -49,6 +54,7 @@ const IMPACTED_OUTPUTS = "impactedOutputs";
 const CBPM_L1_L2_L3 = ["level1", "level2", "level3"];
 const CBPM_L2_SCOPE = ["scope1", "scope2"];
 const CBPM_L3_L4 = ["level3", "level4"];
+const AFFECTED_VERSIONS = ["version1", "version2"];
 
 describe("BinaryImpactsService", () => {
   let service: BinaryImpactService;
@@ -58,13 +64,14 @@ describe("BinaryImpactsService", () => {
   } as AppConfig;
 
   const baseUrl = `${appConfig.gatewayUrl}projects/${PROJECT_ID}/failure-management/impacts/binary`;
-  const fetchUrl = `${baseUrl}/fetch`;
+  const fetchAllUrl = `${appConfig.gatewayUrl}failure-management/impacts/binary/fetch`;
 
   beforeEach(() => {
     httpClientSpy = {
       post: jest.fn(),
       get: jest.fn(),
       put: jest.fn(),
+      patch: jest.fn(),
     } as unknown as HttpClient;
     TestBed.configureTestingModule({
       providers: [BinaryImpactService],
@@ -128,18 +135,18 @@ describe("BinaryImpactsService", () => {
     ).rejects.toHaveProperty("message", ERROR_MESSAGE);
   });
 
-  describe("fetchAll", () => {
+  describe("getAll", () => {
     it("should call http client correctly when fetching binary impacts without query params", async () => {
       jest
         .spyOn(httpClientSpy, "post")
         .mockReturnValue(of(buildFetchBinaryImpactsApiResponse()));
 
-      const data = await lastValueFrom(service.fetchAll(PROJECT_ID));
+      const data = await lastValueFrom(service.getAll({}));
 
       expect(data.binaryImpacts.content).toEqual([getLiteBinaryImpact()]);
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
       expect(httpClientSpy.post).toHaveBeenCalledWith(
-        fetchUrl,
+        fetchAllUrl,
         {},
         {
           params: new HttpParams({
@@ -158,12 +165,12 @@ describe("BinaryImpactsService", () => {
         .mockReturnValue(of(buildFetchBinaryImpactsApiResponse()));
 
       const data = await lastValueFrom(
-        service.fetchAll(PROJECT_ID, buildFetchBinaryImpactsQuery())
+        service.getAll(buildFetchBinaryImpactsQuery())
       );
       expect(data.binaryImpacts.content).toEqual([getLiteBinaryImpact()]);
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
       expect(httpClientSpy.post).toHaveBeenCalledWith(
-        fetchUrl,
+        fetchAllUrl,
         buildFetchBinaryImpactsApiQuery(),
         {
           params: new HttpParams({
@@ -182,16 +189,13 @@ describe("BinaryImpactsService", () => {
         .mockReturnValue(of(buildFetchBinaryImpactsApiResponse()));
 
       const data = await firstValueFrom(
-        service.fetchAll(
-          PROJECT_ID,
-          buildFetchBinaryImpactsQueryIncludingNoDefects()
-        )
+        service.getAll(buildFetchBinaryImpactsQueryIncludingNoDefects())
       );
 
       expect(data.binaryImpacts.content).toEqual([getLiteBinaryImpact()]);
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
       expect(httpClientSpy.post).toHaveBeenCalledWith(
-        fetchUrl,
+        fetchAllUrl,
         buildFetchBinaryImpactsApiQueryIncludingNoDefect(),
         {
           params: new HttpParams({
@@ -204,7 +208,7 @@ describe("BinaryImpactsService", () => {
       );
     });
 
-    it("should throw error correctly", async () => {
+    it("should throw error", async () => {
       const errorResponse = new HttpErrorResponse({
         error: ERROR_MESSAGE,
       });
@@ -212,25 +216,26 @@ describe("BinaryImpactsService", () => {
         .spyOn(httpClientSpy, "post")
         .mockReturnValue(throwError(() => errorResponse));
 
-      await expect(
-        lastValueFrom(service.fetchAll(PROJECT_ID))
-      ).rejects.toHaveProperty("message", ERROR_MESSAGE);
+      await expect(lastValueFrom(service.getAll())).rejects.toHaveProperty(
+        "message",
+        ERROR_MESSAGE
+      );
     });
 
-    it("should set warning message correctly when fetching binary impacts in scope", async () => {
+    it("should set warning message when fetching binary impacts in scope", async () => {
       jest
         .spyOn(httpClientSpy, "post")
         .mockReturnValue(of(buildFetchBinaryImpactsApiResponse()));
 
       const data = await firstValueFrom(
-        service.fetchAll(PROJECT_ID, buildFetchBinaryImpactsQuery())
+        service.getAll(buildFetchBinaryImpactsQuery())
       );
 
       expect(data.binaryImpacts.content).toEqual([getLiteBinaryImpact()]);
       expect(data.warningMessage).toEqual(WARNING_MESSAGE);
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
       expect(httpClientSpy.post).toHaveBeenCalledWith(
-        fetchUrl,
+        fetchAllUrl,
         buildFetchBinaryImpactsApiQuery(),
         {
           params: new HttpParams({
@@ -257,8 +262,11 @@ describe("BinaryImpactsService", () => {
       expect(result).toEqual([getLiteBinaryImpact()]);
       expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
       expect(httpClientSpy.post).toHaveBeenCalledWith(
-        fetchUrl,
-        { ids: ["1", "2"] } as FetchBinaryImpactsQueryApiRequest,
+        fetchAllUrl,
+        {
+          ids: ["1", "2"],
+          projectIds: [PROJECT_ID],
+        } as FetchBinaryImpactsQueryApiRequest,
         {
           params: new HttpParams({
             fromObject: {
@@ -290,15 +298,25 @@ describe("BinaryImpactsService", () => {
     const response = BinaryImpactTestUtils.getBinaryImpactApiModel(seed);
     jest.spyOn(httpClientSpy, "get").mockReturnValue(of(response));
 
-    const result = await lastValueFrom(
-      service.getById(PROJECT_ID, BINARY_IMPACT_ID)
-    );
+    const result = await lastValueFrom(service.getById(BINARY_IMPACT_ID));
 
     expect(result).toEqual(BinaryImpactTestUtils.getBinaryImpact(seed));
 
-    const url = baseUrl + "/binaryImpactId";
+    const url = `${appConfig.gatewayUrl}failure-management/impacts/binary/${BINARY_IMPACT_ID}`;
     expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     expect(httpClientSpy.get).toHaveBeenCalledWith(url);
+  });
+
+  it("should map the human-readable object id when getting binary impact by id", async () => {
+    const seed = uuidv4();
+    const response = BinaryImpactTestUtils.getBinaryImpactApiModel(seed, {
+      objectId: BINARY_IMPACT_OBJECT_ID,
+    });
+    jest.spyOn(httpClientSpy, "get").mockReturnValue(of(response));
+
+    const result = await lastValueFrom(service.getById(BINARY_IMPACT_ID));
+
+    expect(result.objectId).toEqual(BINARY_IMPACT_OBJECT_ID);
   });
 
   it("should get binary impact by id with optional fields empty", async () => {
@@ -313,9 +331,7 @@ describe("BinaryImpactsService", () => {
     });
     jest.spyOn(httpClientSpy, "get").mockReturnValue(of(response));
 
-    const result = await lastValueFrom(
-      service.getById(PROJECT_ID, BINARY_IMPACT_ID)
-    );
+    const result = await lastValueFrom(service.getById(BINARY_IMPACT_ID));
 
     expect(result).toEqual(
       BinaryImpactTestUtils.getBinaryImpact(seed, {
@@ -328,7 +344,7 @@ describe("BinaryImpactsService", () => {
       })
     );
 
-    const url = baseUrl + "/binaryImpactId";
+    const url = `${appConfig.gatewayUrl}failure-management/impacts/binary/${BINARY_IMPACT_ID}`;
     expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
     expect(httpClientSpy.get).toHaveBeenCalledWith(url);
   });
@@ -342,7 +358,7 @@ describe("BinaryImpactsService", () => {
       .mockReturnValue(throwError(() => errorResponse));
 
     await expect(
-      lastValueFrom(service.getById(PROJECT_ID, BINARY_IMPACT_ID))
+      lastValueFrom(service.getById(BINARY_IMPACT_ID))
     ).rejects.toHaveProperty("message", ERROR_MESSAGE);
   });
 
@@ -647,6 +663,94 @@ describe("BinaryImpactsService", () => {
     );
   });
 
+  describe("update upgrade impact for binary impact", () => {
+    it("should send the correct request to the server", async () => {
+      const url = baseUrl + `/${BINARY_IMPACT_ID}/upgrade-impact`;
+      jest.spyOn(httpClientSpy, "patch").mockReturnValue(of(null));
+
+      await lastValueFrom(
+        service.updateUpgradeImpact(
+          getUpdateUpgradeImpactForBinaryImpactRequest()
+        )
+      );
+
+      expect(httpClientSpy.patch).toHaveBeenCalledWith(
+        url,
+        getUpdateUpgradeImpactForBinaryImpactApiRequest()
+      );
+    });
+
+    it("should throw an error when the server fails", async () => {
+      jest.spyOn(httpClientSpy, "patch").mockReturnValue(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              error: ERROR_MESSAGE,
+            })
+        )
+      );
+
+      await expect(
+        lastValueFrom(
+          service.updateUpgradeImpact(
+            getUpdateUpgradeImpactForBinaryImpactRequest()
+          )
+        )
+      ).rejects.toHaveProperty("message", ERROR_MESSAGE);
+    });
+  });
+
+  describe("prepareFromUpgradeImpact", () => {
+    it("should call http client correctly when initializing from upgrade impact", async () => {
+      const response = getPrepareFromUpgradeImpactResponse();
+      jest.spyOn(httpClientSpy, "get").mockReturnValue(of(response));
+
+      await lastValueFrom(
+        service.prepareFromUpgradeImpact(
+          getPrepareFromUpgradeImpactApiRequest()
+        )
+      );
+
+      expect(httpClientSpy.get).toHaveBeenCalledWith(
+        `${baseUrl}/prepare-from-upgrade-impact`,
+        {
+          params: new HttpParams({
+            fromObject: { upgradeImpactId: UPGRADE_IMPACT_ID },
+          }),
+        }
+      );
+    });
+
+    it("should return the correct response when initializing from upgrade impact", async () => {
+      const response = getPrepareFromUpgradeImpactResponse();
+      jest.spyOn(httpClientSpy, "get").mockReturnValue(of(response));
+
+      const data = await lastValueFrom(
+        service.prepareFromUpgradeImpact(
+          getPrepareFromUpgradeImpactApiRequest()
+        )
+      );
+      expect(data).toEqual(response);
+    });
+
+    it("should handle error correctly when failing to prepare from upgrade impact", async () => {
+      const errorResponse = new HttpErrorResponse({
+        error: ERROR_MESSAGE,
+      });
+      jest
+        .spyOn(httpClientSpy, "get")
+        .mockReturnValue(throwError(() => errorResponse));
+
+      await expect(
+        lastValueFrom(
+          service.prepareFromUpgradeImpact(
+            getPrepareFromUpgradeImpactApiRequest()
+          )
+        )
+      ).rejects.toHaveProperty("message", ERROR_MESSAGE);
+    });
+  });
+
   describe("upload attachment", () => {
     it("should upload the attachment correctly", async () => {
       jest
@@ -672,7 +776,9 @@ describe("BinaryImpactsService", () => {
 
       await expect(
         lastValueFrom(service.upload(PROJECT_ID, BINARY_IMPACT_ID, FILE_1))
-      ).rejects.toMatchObject({ message: ERROR_MESSAGE });
+      ).rejects.toMatchObject({
+        message: ERROR_MESSAGE,
+      });
     });
   });
 });
@@ -694,6 +800,7 @@ function buildBinaryImpactApiPage(): BinaryImpactPageApiModel {
 function getLiteBinaryImpactApiResponse(): LiteBinaryImpactApiResponse {
   return {
     id: BINARY_IMPACT_ID,
+    objectId: BINARY_IMPACT_OBJECT_ID,
     owner: BINARY_IMPACT_OWNER,
     title: BINARY_IMPACT_TITLE,
     projectId: PROJECT_ID,
@@ -711,6 +818,7 @@ function getLiteBinaryImpactApiResponse(): LiteBinaryImpactApiResponse {
 function getLiteBinaryImpact(): LiteBinaryImpact {
   return {
     id: BINARY_IMPACT_ID,
+    objectId: BINARY_IMPACT_OBJECT_ID,
     owner: BINARY_IMPACT_OWNER,
     title: BINARY_IMPACT_TITLE,
     projectId: PROJECT_ID,
@@ -737,6 +845,9 @@ function buildFetchBinaryImpactsQuery(): FetchBinaryImpactsQuery {
     referenceVersion: "referenceVersion",
     currentVersion: "currentVersion",
     returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact: false,
+    testCaseExternalIds: ["tc1", "tc2"],
+    scenarioDefinitionId: "scenario def",
+    projectIds: [PROJECT_ID],
   } as FetchBinaryImpactsQuery;
 }
 
@@ -752,6 +863,7 @@ function buildFetchBinaryImpactsQueryIncludingNoDefects(): FetchBinaryImpactsQue
     referenceVersion: "referenceVersion",
     currentVersion: "currentVersion",
     returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact: true,
+    projectIds: [PROJECT_ID],
   } as FetchBinaryImpactsQuery;
 }
 
@@ -765,6 +877,9 @@ function buildFetchBinaryImpactsApiQuery(): FetchBinaryImpactsQueryApiRequest {
     referenceVersion: "referenceVersion",
     currentVersion: "currentVersion",
     returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact: false,
+    testCaseExternalIds: ["tc1", "tc2"],
+    scenarioDefinitionId: "scenario def",
+    projectIds: [PROJECT_ID],
   } as FetchBinaryImpactsQueryApiRequest;
 }
 
@@ -778,6 +893,7 @@ function buildFetchBinaryImpactsApiQueryIncludingNoDefect(): FetchBinaryImpactsQ
     referenceVersion: "referenceVersion",
     currentVersion: "currentVersion",
     returnBinaryImpactsNotLinkedToAnyDefectOrAnyUpgradeImpact: true,
+    projectIds: [PROJECT_ID],
   } as FetchBinaryImpactsQueryApiRequest;
 }
 
@@ -786,6 +902,7 @@ function getCreateBinaryImpactTrailingWhiteSpaceRequest(): CreateBinaryImpactReq
     title: BINARY_IMPACT_TITLE + " ",
     description: BINARY_IMPACT_DESCRIPTION,
     mxVersion: BINARY_IMPACT_MX_VERSION + " ",
+    affectedVersions: AFFECTED_VERSIONS,
     upgradeImpactId: UPGRADE_IMPACT_ID,
     attachmentIds: [ATTACHMENT_ID],
     correlationId: CORRELATION_ID,
@@ -822,6 +939,7 @@ function getCreateBinaryImpactRequest(): CreateBinaryImpactRequest {
     title: BINARY_IMPACT_TITLE,
     description: BINARY_IMPACT_DESCRIPTION,
     mxVersion: BINARY_IMPACT_MX_VERSION,
+    affectedVersions: AFFECTED_VERSIONS,
     upgradeImpactId: UPGRADE_IMPACT_ID,
     attachmentIds: [ATTACHMENT_ID],
     correlationId: CORRELATION_ID,
@@ -846,13 +964,13 @@ function getEditBinaryImpactRequest(): EditBinaryImpactRequest {
   return {
     title: BINARY_IMPACT_TITLE,
     description: BINARY_IMPACT_DESCRIPTION,
-    upgradeImpactId: UPGRADE_IMPACT_ID,
     region: REGION,
     stream: STREAM,
     sourceType: SOURCE_TYPE,
     resolutionType: RESOLUTION_TYPE,
     cbpmL1L2L3: CBPM_L1_L2_L3,
     cbpmL2Scope: CBPM_L2_SCOPE,
+    affectedVersions: AFFECTED_VERSIONS,
   };
 }
 
@@ -860,13 +978,13 @@ function getEditBinaryImpactTrailingWhiteSpaceRequest(): EditBinaryImpactRequest
   return {
     title: BINARY_IMPACT_TITLE + " ",
     description: BINARY_IMPACT_DESCRIPTION + " ",
-    upgradeImpactId: UPGRADE_IMPACT_ID,
     region: REGION,
     stream: STREAM,
     sourceType: SOURCE_TYPE,
     resolutionType: RESOLUTION_TYPE,
     cbpmL1L2L3: CBPM_L1_L2_L3,
     cbpmL2Scope: CBPM_L2_SCOPE,
+    affectedVersions: AFFECTED_VERSIONS,
   };
 }
 
@@ -874,4 +992,43 @@ function getAttachmentFormData() {
   const formData = new FormData();
   formData.append("file", FILE_1);
   return formData;
+}
+
+function getBinaryImpactAttachment() {
+  return {
+    attachmentId: ATTACHMENT_ID,
+    name: "name",
+    type: "image/png",
+    downloadLink: ATTACHMENT_LINK,
+  };
+}
+
+function getPrepareFromUpgradeImpactResponse(): PrepareBinaryImpactFromUpgradeImpactResponse {
+  return {
+    description: BINARY_IMPACT_DESCRIPTION,
+    attachments: [getBinaryImpactAttachment()],
+  };
+}
+
+function getPrepareFromUpgradeImpactApiRequest(): PrepareBinaryImpactFromUpgradeImpactApiRequest {
+  return {
+    projectId: PROJECT_ID,
+    upgradeImpactId: UPGRADE_IMPACT_ID,
+  };
+}
+
+function getUpdateUpgradeImpactForBinaryImpactApiRequest(): UpdateUpgradeImpactForBinaryImpactApiRequest {
+  return {
+    upgradeImpactId: UPGRADE_IMPACT_ID,
+    overrideFromUpgradeImpact: true,
+  };
+}
+
+function getUpdateUpgradeImpactForBinaryImpactRequest(): UpdateUpgradeImpactForBinaryImpactRequest {
+  return {
+    projectId: PROJECT_ID,
+    binaryImpactId: BINARY_IMPACT_ID,
+    upgradeImpactId: UPGRADE_IMPACT_ID,
+    overrideFromUpgradeImpact: true,
+  };
 }

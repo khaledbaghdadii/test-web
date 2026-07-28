@@ -7,11 +7,9 @@ import {
 } from "@mxevolve/domains/business-process/data-access";
 import { ExecutionStatus } from "@mxevolve/domains/business-process/util";
 import { AgGridAngular } from "ag-grid-angular";
-import {
-  BuildAndTestBackportExecutionsSummaryComponent,
-  BuildAndTestBackportLinkCellRendererComponent,
-  BuildAndTestBackportStatusCellRendererComponent,
-} from "./build-and-test-backport-executions-summary.component";
+import { BuildAndTestBackportExecutionsSummaryComponent } from "./build-and-test-backport-executions-summary.component";
+import { BuildAndTestBackportLinkCellRendererComponent } from "./cell-renderers/build-and-test-backport-link-cell-renderer.component";
+import { BuildAndTestBackportStatusCellRendererComponent } from "./cell-renderers/build-and-test-backport-status-cell-renderer.component";
 
 describe("BuildAndTestBackportExecutionsSummaryComponent", () => {
   const executionsService = {
@@ -102,9 +100,9 @@ describe("BuildAndTestBackportExecutionsSummaryComponent", () => {
     expect(fixture.componentInstance.backportExecutionRows()[0].href).toBe(
       "/app/project-1/business-process/build-and-test-processes/execution/user-story-build-and-test__exec-1"
     );
-    expect(fixture.componentInstance.failedBackportDefinitionRows()[0].href).toBe(
-      "/app/project-1/business-process/definition/details/definition-1"
-    );
+    expect(
+      fixture.componentInstance.failedBackportDefinitionRows()[0].href
+    ).toBe("/app/project-1/business-process/definition/details/definition-1");
   });
 
   it("preserves legacy family-prefixed execution routes", async () => {
@@ -127,7 +125,10 @@ describe("BuildAndTestBackportExecutionsSummaryComponent", () => {
     );
 
     const { fixture } = await renderComponent({
-      backportExecutionIds: ["binary-upgrade__exec-1", "master-validation__exec-2"],
+      backportExecutionIds: [
+        "binary-upgrade__exec-1",
+        "master-validation__exec-2",
+      ],
     });
 
     await waitFor(() =>
@@ -171,7 +172,9 @@ describe("BuildAndTestBackportExecutionsSummaryComponent", () => {
       ).toBeInTheDocument();
     });
 
-    expect(screen.getByText("On-Demand Backport Executions")).toBeInTheDocument();
+    expect(
+      screen.getByText("On-Demand Backport Executions")
+    ).toBeInTheDocument();
     expect(screen.getByText("Failed to Launch Backports")).toBeInTheDocument();
   });
 
@@ -222,7 +225,10 @@ describe("BuildAndTestBackportExecutionsSummaryComponent", () => {
       imports: [MockComponent(AgGridAngular)],
       componentProviders: [
         { provide: BuildAndTestExecutionsService, useValue: executionsService },
-        { provide: BusinessProcessDefinitionService, useValue: definitionService },
+        {
+          provide: BusinessProcessDefinitionService,
+          useValue: definitionService,
+        },
       ],
     });
   }

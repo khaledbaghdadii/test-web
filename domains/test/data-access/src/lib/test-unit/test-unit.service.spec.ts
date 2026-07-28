@@ -8,6 +8,7 @@ import { APP_CONFIG } from "@mxflow/config";
 import { firstValueFrom } from "rxjs";
 import { TestUnitService } from "./test-unit.service";
 import type { TestUnitApiModel } from "./test-unit-api-model";
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
 
 const GATEWAY_URL = "https://api.test.com/";
 
@@ -46,9 +47,9 @@ function createTestUnitApiModel(
         mxVersion: "3.1.64",
         mxBuildId: "build-1",
         factoryProductId: "",
-        keptExecution: false,
+        keepExecution: false,
         environment: { environmentId: "env-1", status: "CREATED" },
-        cleaningStatus: "",
+        cleaningStatus: ScenarioExecutionHousekeepingStatus.NOT_LAUNCHED,
         failed: false,
         finished: true,
       },

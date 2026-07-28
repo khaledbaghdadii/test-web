@@ -9,14 +9,13 @@ import {
   Signal,
 } from "@angular/core";
 import { TableLazyLoadEvent, TableModule } from "primeng/table";
-import { finalize, Observable, Subject, takeUntil } from "rxjs";
+import { Observable, Subject, takeUntil } from "rxjs";
 import { toObservable } from "@angular/core/rxjs-interop";
-import { IncidentService } from "../incident.service";
-import { IncidentsTableQuery } from "./incidents-table-query.model";
 import { Incident } from "../model/incident.model";
 
 import { FormsModule } from "@angular/forms";
 import {
+  FilterTranslatorService,
   TableCheckboxFilterComponent,
   TableEmptyMessageComponent,
 } from "@mxflow/ui/utils";
@@ -32,12 +31,9 @@ import {
 } from "@mxflow/features/analysis-objects";
 import { Checkbox, CheckboxChangeEvent } from "primeng/checkbox";
 import { Tooltip } from "primeng/tooltip";
-import { FilterMetadata } from "primeng/api";
-import {
-  IncidentsApiRequest,
-  IncidentsFetchRequest,
-  IncidentsQueryParams,
-} from "@mxflow/features/incident-management";
+import { IncidentsTableStateService } from "./incidents-table-state.service";
+import { PreviouslyLinkedFilter } from "@mxevolve/domains/test/model";
+import { IncidentsTableQuery } from "./incidents-table-query.model";
 
 @Component({
   selector: "mxevolve-incidents-selection-table",
@@ -52,36 +48,43 @@ import {
     Tooltip,
     SelectedAnalysisObjectsListingComponent,
   ],
+  providers: [IncidentsTableStateService, FilterTranslatorService],
   templateUrl: "./incidents-selection-table.component.html",
 })
 export class IncidentsSelectionTableComponent implements OnDestroy {
-  private readonly incidentService = inject(IncidentService);
+  private readonly stateService = inject(IncidentsTableStateService);
   private readonly toastMessageService = inject(ToastMessageService);
   private readonly analysisObjectTableSelectionStateService = inject(
     AnalysisObjectTableSelectionStateService
   );
+  private readonly filterTranslator = inject(FilterTranslatorService);
 
   private readonly destroy$ = new Subject();
   protected readonly Array = Array;
+  private _previouslyLinkedFilter?: PreviouslyLinkedFilter;
+
+  incidents = this.stateService.incidents;
+  total = this.stateService.total;
+  isTableLoading = this.stateService.isLoading;
+  statusOptions = this.stateService.statusOptions;
+  errorMessage = this.stateService.errorMessage;
+  statusesErrorMessage = this.stateService.statusesErrorMessage;
+  size = this.stateService.size;
+  firstRowIndex = computed(
+    () => this.stateService.page() * this.stateService.size()
+  );
+
+  selectedStatuses: string[] = [];
 
   @Input({ required: true })
   set refresh(refresh$: Observable<boolean>) {
     refresh$.pipe(takeUntil(this.destroy$)).subscribe((refresh) => {
       if (refresh) {
-        this.resetIncidentsQuery();
-        this.fetchTableData(this.mapToDomainRequest(this.incidentsQuery));
-        this.fetchStatusOptions();
+        this.stateService.refresh();
       }
     });
   }
-  isTableLoading = false;
-  total = 0;
-  statusOptions: { text: string; value: string }[] = [];
-  selectedStatuses: string[] = [];
-  incidentsQuery: IncidentsTableQuery = {
-    size: 10,
-    page: 0,
-  };
+
   private readonly _initiallySelectedIncidents = signal<
     AnalysisObjectSelectionState<AnalysisObject>[]
   >([]);
@@ -94,8 +97,16 @@ export class IncidentsSelectionTableComponent implements OnDestroy {
   }
 
   @Input() selectedIncidentIdsLoading = false;
+  @Input()
+  set previouslyLinkedFilter(value: PreviouslyLinkedFilter | undefined) {
+    this._previouslyLinkedFilter = value;
+    this.stateService.setPreviouslyLinkedFilterCriteria(value);
+  }
 
-  incidents = signal<Incident[]>([]);
+  get previouslyLinkedFilter(): PreviouslyLinkedFilter | undefined {
+    return this._previouslyLinkedFilter;
+  }
+
   selectedIncidents = model<AnalysisObjectSelectionState<Incident>[]>([]);
   selectedAnalysisObjects = computed(() => {
     return this.selectedIncidents().map(
@@ -112,31 +123,34 @@ export class IncidentsSelectionTableComponent implements OnDestroy {
 
   constructor() {
     this.initializeSelectedIncidents();
+    this.showErrorMessages();
   }
 
-  incidentSelections: Signal<IncidentTableRowSelectionState[]> = computed(() =>
-    this.incidents().map((incident) => {
-      const currentSelection = this.selectedIncidents().find(
-        (sel) => sel.analysisObject.id === incident.id
-      );
-      return {
-        incident,
-        selectionState: {
-          checked:
-            this.analysisObjectTableSelectionStateService.isAnalysisObjectFullySelected(
-              incident,
-              this.selectedIncidents()
-            ),
-          partialSelected:
-            this.analysisObjectTableSelectionStateService.isAnalysisObjectPartiallySelected(
-              incident,
-              this.selectedIncidents()
-            ),
-          selectionMessage: currentSelection?.selectionMessage,
-        },
-      };
-    })
-  );
+  incidentSelectionStates: Signal<Map<string, IncidentTableRowSelectionState>> =
+    computed(() => {
+      const selectionStates = new Map<string, IncidentTableRowSelectionState>();
+      this.incidents().forEach((incident) => {
+        const currentSelection = this.selectedIncidents().find(
+          (sel) => sel.analysisObject.id === incident.id
+        );
+        selectionStates.set(incident.id, {
+          selectionState: {
+            checked:
+              this.analysisObjectTableSelectionStateService.isAnalysisObjectFullySelected(
+                incident,
+                this.selectedIncidents()
+              ),
+            partialSelected:
+              this.analysisObjectTableSelectionStateService.isAnalysisObjectPartiallySelected(
+                incident,
+                this.selectedIncidents()
+              ),
+            selectionMessage: currentSelection?.selectionMessage,
+          },
+        });
+      });
+      return selectionStates;
+    });
 
   ngOnDestroy(): void {
     this.destroy$.next({});
@@ -144,144 +158,11 @@ export class IncidentsSelectionTableComponent implements OnDestroy {
   }
 
   handleTableQueryParamsChange(event: TableLazyLoadEvent) {
-    this.incidents.set([]);
-    this.updatePaginationParams(event);
-    this.updateQueryParams(event);
-    this.fetchTableData(this.mapToDomainRequest(this.incidentsQuery));
-  }
-
-  fetchTableData(fetchRequest: IncidentsFetchRequest) {
-    this.isTableLoading = true;
-    this.incidentService
-      .fetch(fetchRequest)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => (this.isTableLoading = false))
-      )
-      .subscribe({
-        next: (incidentPage) => {
-          this.incidents.set(incidentPage.content);
-          this.total = incidentPage.totalElements;
-        },
-        error: (error) => {
-          this.showErrorMessage(error.message);
-          this.selectedIncidents.set([]);
-        },
-      });
-  }
-
-  fetchStatusOptions() {
-    this.incidentService
-      .fetchAllStatuses()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (statuses) => {
-          this.statusOptions = statuses.map((status) => ({
-            text: status,
-            value: status,
-          }));
-        },
-        error: (error) => {
-          this.showErrorMessage(error.message);
-        },
-      });
-  }
-
-  private resetIncidentsQuery() {
-    this.incidentsQuery = {
-      size: 10,
-      page: 0,
-    };
-  }
-
-  private showErrorMessage(message: string) {
-    this.toastMessageService.showError(message);
-  }
-
-  private updateQueryParams(event: TableLazyLoadEvent) {
-    Object.entries(event.filters ?? {}).forEach(([key, filterValue]) => {
-      let value = this.extractArrayFilterValue(filterValue);
-
-      if (!value) {
-        value = this.extractSingleObjectFilterValue(filterValue);
-      }
-
-      if (value) {
-        this.updateQueryProperty(key, value);
-      } else {
-        this.deleteQueryProperty(key);
-      }
-    });
-  }
-
-  private extractArrayFilterValue(
-    filterValue: FilterMetadata | FilterMetadata[] | undefined
-  ): unknown {
-    if (Array.isArray(filterValue) && filterValue[0].value) {
-      return filterValue[0].value;
-    }
-
-    return undefined;
-  }
-
-  private extractSingleObjectFilterValue(
-    filterValue: FilterMetadata | FilterMetadata[] | undefined
-  ): unknown {
-    if (!Array.isArray(filterValue) && typeof filterValue === "object") {
-      return filterValue.value;
-    }
-
-    return undefined;
-  }
-
-  private updatePaginationParams(event: TableLazyLoadEvent) {
-    const pageIndex = Math.floor((event.first ?? 0) / (event.rows ?? 10));
-
-    this.incidentsQuery.size = event.rows ?? 10;
-
-    if (pageIndex !== this.incidentsQuery.page) {
-      this.incidentsQuery.page = pageIndex;
-    } else {
-      this.incidentsQuery.page = 0;
-    }
-  }
-
-  private updateQueryProperty(
-    key: keyof IncidentsTableQuery,
-    newValue?: IncidentsTableQuery[keyof IncidentsTableQuery]
-  ) {
-    if (newValue) {
-      this.incidentsQuery[key] = newValue;
-    }
-  }
-
-  private deleteQueryProperty(key: keyof IncidentsTableQuery) {
-    delete this.incidentsQuery[key];
-  }
-
-  private mapToDomainRequest(
-    incidentsTableQuery: IncidentsTableQuery
-  ): IncidentsFetchRequest {
-    const queryParams: IncidentsQueryParams = {
-      page: incidentsTableQuery.page,
-      size: incidentsTableQuery.size,
-    };
-
-    const filters: IncidentsApiRequest = {
-      titlePhrase: incidentsTableQuery.titlePhrase,
-      ...(incidentsTableQuery.statuses &&
-      incidentsTableQuery.statuses.length > 0
-        ? { statuses: incidentsTableQuery.statuses }
-        : {}),
-      externalIssueIdPhrase: incidentsTableQuery.externalIssueIdPhrase,
-      reporterPhrase: incidentsTableQuery.reporterPhrase,
-      assigneePhrase: incidentsTableQuery.assigneePhrase,
-    };
-
-    return {
-      queryParams: queryParams,
-      filters: filters,
-    };
+    const query =
+      this.filterTranslator.handleTableFiltersChange<IncidentsTableQuery>(
+        event
+      );
+    this.stateService.setIncidentsTableQuery(query);
   }
 
   handleSelectionChange(event: CheckboxChangeEvent, incident: Incident) {
@@ -319,10 +200,27 @@ export class IncidentsSelectionTableComponent implements OnDestroy {
       )
     );
   }
+
+  private showErrorMessages() {
+    toObservable(this.errorMessage)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((error) => {
+        if (error) {
+          this.toastMessageService.showError(error);
+        }
+      });
+
+    toObservable(this.statusesErrorMessage)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((error) => {
+        if (error) {
+          this.toastMessageService.showError(error);
+        }
+      });
+  }
 }
 
 export interface IncidentTableRowSelectionState {
-  incident: Incident;
   selectionState: {
     checked: boolean;
     partialSelected: boolean;

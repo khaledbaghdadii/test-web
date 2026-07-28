@@ -7,9 +7,7 @@
       </ng-template>
       {{ stage().errorMessage }}
     </p-message>
-    }
-
-    @if (shouldShowV1BackportInfo()) {
+    } @if (shouldShowV1BackportInfo()) {
     <p-message severity="info" class="col-span-12">
       <ng-template #icon>
         <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
@@ -77,21 +75,22 @@
   <mxevolve-business-process-content-container footer [clearBackground]="true">
     @if (latestMergeJobId() && mergeRequestResource.isLoading()) {
     <p-skeleton class="col-start-5 col-span-2" height="2.5rem" />
-    } @else if (canReopenMergeRequest()) {
-    <p-button
+    } @else if (showActions()) { @if (canReopenMergeRequest()) {
+    <mxevolve-build-and-test-merge-request-reopen
       class="col-start-5 col-span-2"
-      styleClass="w-full"
-      label="Reopen Merge Request"
-      [disabled]="actionsDisabled()"
-      [loading]="actionLoading()"
-      (onClick)="reopenMergeRequest()"
+      [areMergeRequestDetailsEditable]="false"
+      [projectId]="execution().projectId"
+      [processId]="execution().id"
+      [repositoryId]="execution().input.repositoryId"
+      [actionsDisabled]="actionLoading()"
+      (reopened)="reopenMergeRequest()"
     />
     } @else {
     <p-button
       class="col-start-5 col-span-2"
       styleClass="w-full"
-      label="Create a New Merge Request"
-      [disabled]="actionsDisabled()"
+      label="Merge"
+      [disabled]="actionLoading()"
       (onClick)="openSendForReview()"
     />
     }
@@ -99,55 +98,35 @@
     <p-button
       class="col-start-7 col-span-2"
       styleClass="w-full"
-      label="Fix Issues"
-      [disabled]="actionsDisabled()"
+      label="Fix"
+      [disabled]="actionLoading()"
       [loading]="actionLoading()"
       (onClick)="fixIssues()"
     />
+    }
   </mxevolve-business-process-content-container>
 </mxevolve-stage-container>
 
 <ng-template #integrateContent>
   <div class="flex flex-col gap-6">
-    @if (developmentResource.hasValue()) {
-    <p-panel header="Branch Details" [collapsed]="true" [toggleable]="true">
-      <mxevolve-development-details-widget
-        [development]="developmentResource.value()"
-      />
-    </p-panel>
-    }
-
-    <p-panel header="Merge Request" [toggleable]="true">
-      @if (latestMergeJobId()) {
-      <mxevolve-merge-request-stepper
-        [projectId]="execution().projectId"
-        [mergeRequestId]="latestMergeJobId()"
-      />
-      } @else {
-      <p-message severity="info">
-        <ng-template #icon>
-          <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
-        </ng-template>
-        Merge request has not been created yet.
-      </p-message>
-      }
-    </p-panel>
-
-    @if (shouldShowFinalProduct()) {
-    <p-panel header="Final Product Details" [toggleable]="true">
-      <mxevolve-final-product-details
-        [projectId]="execution().projectId"
-        [finalProductId]="stage().finalProductPublishing?.id"
-        [publishingStartDate]="
-          stage().finalProductPublishing?.publishingStartDate
-        "
-        [finalProductFailure]="stage().finalProductPublishing?.finalProductFailure"
-        (errorOccurred)="handleFinalProductError($event)"
-      />
-    </p-panel>
-    }
-
-    @if (showDecision()) {
+    @if (latestMergeJobId()) {
+    <mxevolve-merge-request-stepper
+      class="col-span-12"
+      [projectId]="execution().projectId"
+      [mergeRequestId]="latestMergeJobId()"
+      [showFinalProduct]="shouldShowFinalProduct()"
+      [finalProductId]="stage().finalProductPublishing?.id"
+      [finalProductPublishingFailed]="finalProductPublishingFailed()"
+      (finalProductFetchError)="failedToFetchFinalProduct($event)"
+    />
+    } @else {
+    <p-message severity="info" class="col-span-12">
+      <ng-template #icon>
+        <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+      </ng-template>
+      Merge request has not been created yet.
+    </p-message>
+    } @if (showDecision()) {
     <p-message severity="secondary">
       <ng-template #icon>
         <mxevolve-icon name="block" size="md" class="mr-2 mt-1" />
@@ -164,6 +143,7 @@
   [processId]="execution().id"
   [repositoryId]="execution().input.repositoryId"
   [developmentId]="execution().createBranchStage.developmentId!"
+  [sourceBranchName]="execution().input.configurationBranchName"
   [parentBranchName]="execution().input.configurationParentBranch"
   [supportsResourceManagement]="execution().supportsResourceManagement"
   [hasPredefinedMergeRequestInputs]="

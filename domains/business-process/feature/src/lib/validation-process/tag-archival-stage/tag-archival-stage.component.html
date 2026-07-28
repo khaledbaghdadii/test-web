@@ -1,0 +1,133 @@
+<mxevolve-stage-container>
+  @if (stage().errorMessage) {
+  <mxevolve-business-process-content-container [header]="stage().name">
+    <p-message
+      class="col-span-12"
+      severity="error"
+      [text]="stage().errorMessage"
+      [closable]="false"
+    />
+  </mxevolve-business-process-content-container>
+  } @else if (shouldShowTagIsInProgressBanner()) {
+  <!-- BC 2.4: tag-in-progress banner replaces all section content -->
+  <mxevolve-business-process-content-container [header]="stage().name">
+    <p-message
+      class="col-span-12"
+      severity="info"
+      text="Please wait, we are currently tagging the configuration and RTP commits, and will promote the validated final product."
+      [closable]="false"
+    />
+  </mxevolve-business-process-content-container>
+  } @else {
+  <!-- Section 1: Tag -->
+  <mxevolve-business-process-content-container
+    header="Tag"
+    [collapsable]="true"
+    [collapsed]="false"
+  >
+    <div class="col-span-12 flex flex-row items-start gap-6">
+      <!-- Configuration Tag -->
+      <div class="flex flex-col gap-3 flex-1">
+        <span class="font-medium text-lg">Configuration Tag</span>
+        <div class="flex flex-wrap items-stretch gap-6">
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-color">Tag Name</span>
+            <span class="font-semibold">{{
+              stage().configTagName ?? "-"
+            }}</span>
+          </div>
+          <p-divider layout="vertical" />
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-color">Tag Commit ID</span>
+            <span class="font-semibold">
+              <mxevolve-commit-id-display [commitId]="stage().configCommitId" />
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <p-divider layout="vertical" />
+
+      <!-- RTP Tag -->
+      <div class="flex flex-col gap-3 flex-1">
+        <span class="font-medium text-lg">RTP Tag</span>
+        <div class="flex flex-wrap items-stretch gap-6">
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-color">Tag Name</span>
+            <span class="font-semibold">{{ stage().rtpTagName ?? "-" }}</span>
+          </div>
+          <p-divider layout="vertical" />
+          <div class="flex flex-col gap-1">
+            <span class="text-muted-color">Tag Commit ID</span>
+            <span class="font-semibold">
+              <mxevolve-commit-id-display [commitId]="stage().rtpCommitId" />
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </mxevolve-business-process-content-container>
+
+  <!-- Section 2: User Story Archival — BC 2.3: flag + MQG + OFFICIAL only -->
+  @if (shouldShowUserStoriesArchival()) {
+  <mxevolve-business-process-content-container
+    header="User Story Archival"
+    [collapsable]="true"
+    [collapsed]="false"
+  >
+    <div class="col-span-12">
+      <mxevolve-validation-process-archival-user-stories
+        [archivalStatus]="stage().archivalUserStoriesUpdateStatus!"
+        [projectId]="execution().projectId"
+      />
+    </div>
+  </mxevolve-business-process-content-container>
+  }
+
+  <!-- Section 3: Promoted Final Product — BC 2.2: gated on input final product -->
+  @if (shouldShowPromotedFinalProduct()) {
+  <mxevolve-business-process-content-container
+    header="Promoted Final Product"
+    [collapsable]="true"
+    [collapsed]="false"
+  >
+    <div class="col-span-12">
+      @if (stage().promotionErrorMessage) {
+      <p-message
+        severity="error"
+        [text]="stage().promotionErrorMessage"
+        [closable]="false"
+      />
+      } @else {
+      <p class="text-muted-color text-sm italic mb-4">
+        The following final product was successfully promoted to
+        {{ execution().input.businessProcessQualityLevel }}
+      </p>
+      <mxevolve-final-product-details
+        [projectId]="execution().projectId"
+        [finalProductId]="stage().promotedFinalProductId"
+        (fetchError)="failedToFetchFinalProduct($event)"
+      />
+      }
+    </div>
+  </mxevolve-business-process-content-container>
+  } }
+
+  <!-- BC 2.5: proceed button visibility -->
+  <mxevolve-business-process-content-container footer [clearBackground]="true">
+    @if (!stage().errorMessage && !shouldShowTagIsInProgressBanner() &&
+    shouldShowProceedButton()) {
+    <mxevolve-validation-proceed-to-next-step
+      class="col-span-2 col-start-6"
+      [projectId]="execution().projectId"
+      [processId]="execution().id"
+      [stageStatus]="stage().status"
+      [developmentId]="execution().createBranchStage.developmentId"
+      [repositoryId]="execution().input.repositoryId"
+      [originBranch]="execution().input.archivalBranchName"
+      [parentBranchName]="execution().input.parentBranch"
+      [supportsResourceManagement]="execution().input.createBranch"
+    />
+    }
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>

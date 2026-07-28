@@ -120,4 +120,133 @@ describe("TechnicalReseedService", () => {
     expect(result).toBeInstanceOf(Error);
     expect(result.message).toBe("launch rejected");
   });
+
+  it("propagates backend error messages when fetching execution group details fails", async () => {
+    const resultPromise = firstValueFrom(
+      service.getExecutionGroupDetails(PROJECT_ID, EXECUTION_GROUP_ID)
+    ).catch((error) => error);
+
+    httpController
+      .expectOne(
+        `${GATEWAY_URL}projects/${PROJECT_ID}/technical-reseed-execution-groups/${EXECUTION_GROUP_ID}`
+      )
+      .flush(
+        { message: "group not found" },
+        { status: 404, statusText: "Not Found" }
+      );
+
+    const result = await resultPromise;
+
+    expect(result).toBeInstanceOf(Error);
+    expect(result.message).toBe("group not found");
+  });
+
+  it("falls back to the status text when fetching details fails without an error body message", async () => {
+    const resultPromise = firstValueFrom(
+      service.getExecutionGroupDetails(PROJECT_ID, EXECUTION_GROUP_ID)
+    ).catch((error) => error);
+
+    httpController
+      .expectOne(
+        `${GATEWAY_URL}projects/${PROJECT_ID}/technical-reseed-execution-groups/${EXECUTION_GROUP_ID}`
+      )
+      .flush(null, { status: 500, statusText: "Internal Server Error" });
+
+    const result = await resultPromise;
+
+    expect(result).toBeInstanceOf(Error);
+    expect(result.message).toContain("500");
+  });
+
+  it("falls back to the status text when launching fails without an error body message", async () => {
+    const resultPromise = firstValueFrom(
+      service.launchTechnicalReseed(PROJECT_ID, EXECUTION_GROUP_ID, {
+        infraGroupId: "infra-group-001",
+        branch: "release/branch",
+        configurationCommitId: "abc123",
+        environmentDefinitionId: "env-def-001",
+        maintenanceConfiguration: { full: true },
+        targetBranch: "target/branch",
+      })
+    ).catch((error) => error);
+
+    httpController
+      .expectOne(
+        `${GATEWAY_URL}projects/${PROJECT_ID}/technical-reseed-execution-groups/${EXECUTION_GROUP_ID}/launch-reseed`
+      )
+      .flush(null, { status: 500, statusText: "Internal Server Error" });
+
+    const result = await resultPromise;
+
+    expect(result).toBeInstanceOf(Error);
+    expect(result.message).toContain("500");
+  });
+
+  describe("Resume Technical Reseed", () => {
+    const OPERATION_ID = "operation-001";
+
+    it("posts to the resume endpoint", async () => {
+      const resultPromise = firstValueFrom(
+        service.resumeTechnicalReseed(
+          PROJECT_ID,
+          EXECUTION_GROUP_ID,
+          OPERATION_ID
+        )
+      );
+
+      const request = httpController.expectOne(
+        `${GATEWAY_URL}projects/${PROJECT_ID}/technical-reseed-execution-groups/${EXECUTION_GROUP_ID}/operations/${OPERATION_ID}/resume`
+      );
+      expect(request.request.method).toBe("POST");
+      expect(request.request.body).toEqual({});
+      request.flush(null);
+
+      await expect(resultPromise).resolves.toBeNull();
+    });
+
+    it("propagates backend error messages when resuming fails", async () => {
+      const resultPromise = firstValueFrom(
+        service.resumeTechnicalReseed(
+          PROJECT_ID,
+          EXECUTION_GROUP_ID,
+          OPERATION_ID
+        )
+      ).catch((error) => error);
+
+      httpController
+        .expectOne(
+          `${GATEWAY_URL}projects/${PROJECT_ID}/technical-reseed-execution-groups/${EXECUTION_GROUP_ID}/operations/${OPERATION_ID}/resume`
+        )
+        .flush(
+          { message: "operation not pausable" },
+          { status: 409, statusText: "Conflict" }
+        );
+
+      const result = await resultPromise;
+
+      expect(result).toBeInstanceOf(Error);
+      expect(result.message).toBe("operation not pausable");
+    });
+
+    it("falls back to the status text when resuming fails without an error body message", async () => {
+      const resultPromise = firstValueFrom(
+        service.resumeTechnicalReseed(
+          PROJECT_ID,
+          EXECUTION_GROUP_ID,
+          OPERATION_ID
+        )
+      ).catch((error) => error);
+
+      httpController
+        .expectOne(
+          `${GATEWAY_URL}projects/${PROJECT_ID}/technical-reseed-execution-groups/${EXECUTION_GROUP_ID}/operations/${OPERATION_ID}/resume`
+        )
+        .flush(null, { status: 500, statusText: "Internal Server Error" });
+
+      const result = await resultPromise;
+
+      expect(result).toBeInstanceOf(Error);
+      expect(result.message).toContain("500");
+    });
+  });
 });

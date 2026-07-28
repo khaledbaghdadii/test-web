@@ -1,29 +1,25 @@
-import { Component, computed, input, signal } from "@angular/core";
+import { Component, computed, inject, input, signal } from "@angular/core";
 import { rxResource } from "@angular/core/rxjs-interop";
 import {
-  BuildAndTestExecutionSummary,
   BuildAndTestExecutionsService,
+  BuildAndTestExecutionSummary,
   BusinessProcessDefinitionService,
 } from "@mxevolve/domains/business-process/data-access";
 import {
   ExecutionFamily,
   ExecutionStatus,
 } from "@mxevolve/domains/business-process/util";
-import { ExecutionStatusTagComponent } from "@mxevolve/domains/business-process/ui";
 import {
   BINARY_UPGRADE_MFE_PATH,
   BUILD_AND_TEST_PROCESS_PATH,
 } from "@mxevolve/shared/core/config";
 import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
-import { AgGridAngular, ICellRendererAngularComp } from "ag-grid-angular";
-import {
-  AllCommunityModule,
-  ColDef,
-  ICellRendererParams,
-  ModuleRegistry,
-} from "ag-grid-community";
+import { AgGridAngular } from "ag-grid-angular";
+import { AllCommunityModule, ColDef, ModuleRegistry } from "ag-grid-community";
 import { Message } from "primeng/message";
 import { catchError, of } from "rxjs";
+import { BuildAndTestBackportLinkCellRendererComponent } from "./cell-renderers/build-and-test-backport-link-cell-renderer.component";
+import { BuildAndTestBackportStatusCellRendererComponent } from "./cell-renderers/build-and-test-backport-status-cell-renderer.component";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -40,62 +36,6 @@ interface FailedBackportDefinitionRow {
   readonly id: string;
   readonly name: string;
   readonly href: string;
-}
-
-@Component({
-  selector: "mxevolve-build-and-test-backport-link-cell-renderer",
-  standalone: true,
-  template: `
-    <a
-      class="text-primary no-underline hover:underline"
-      [href]="href"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {{ label }}
-    </a>
-  `,
-})
-export class BuildAndTestBackportLinkCellRendererComponent
-  implements ICellRendererAngularComp
-{
-  label = "";
-  href = "";
-
-  agInit(params: ICellRendererParams<{ readonly href: string }>): void {
-    this.label = String(params.value ?? "");
-    this.href = params.data?.href ?? "";
-  }
-
-  refresh(params: ICellRendererParams<{ readonly href: string }>): boolean {
-    this.agInit(params);
-    return true;
-  }
-}
-
-@Component({
-  selector: "mxevolve-build-and-test-backport-status-cell-renderer",
-  standalone: true,
-  imports: [ExecutionStatusTagComponent],
-  template: `@if (status) {
-    <mxevolve-execution-status-tag [status]="status" />
-    } @else {
-    <span>-</span>
-    }`,
-})
-export class BuildAndTestBackportStatusCellRendererComponent
-  implements ICellRendererAngularComp
-{
-  status?: ExecutionStatus;
-
-  agInit(params: ICellRendererParams<BackportExecutionRow>): void {
-    this.status = params.value as ExecutionStatus | undefined;
-  }
-
-  refresh(params: ICellRendererParams<BackportExecutionRow>): boolean {
-    this.agInit(params);
-    return true;
-  }
 }
 
 @Component({
@@ -232,7 +172,7 @@ export class BuildAndTestBackportExecutionsSummaryComponent {
   readonly failedDefinitionColumnDefinitions: ColDef<FailedBackportDefinitionRow>[] =
     [
       {
-        headerName: "BP Definition Name",
+        headerName: "Process Template Name",
         field: "name",
         flex: 1,
         sortable: true,
@@ -246,10 +186,12 @@ export class BuildAndTestBackportExecutionsSummaryComponent {
     minWidth: 140,
   };
 
-  constructor(
-    private readonly buildAndTestExecutionsService: BuildAndTestExecutionsService,
-    private readonly businessProcessDefinitionService: BusinessProcessDefinitionService
-  ) {}
+  private readonly buildAndTestExecutionsService = inject(
+    BuildAndTestExecutionsService
+  );
+  private readonly businessProcessDefinitionService = inject(
+    BusinessProcessDefinitionService
+  );
 
   get executionFetchError(): string | undefined {
     return this.errorMessage();

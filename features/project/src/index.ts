@@ -1,4 +1,3 @@
-export * from "./lib/project-selector/project-selector.module";
 export * from "./lib/project.service";
 export * from "./lib/project";
 export * from "./lib/project-url.pipe";
@@ -11,3 +10,6 @@ export * from "./lib/project-view-multiselect/project-view-multiselect.component
 export * from "./lib/issue-tracking/issue-tracking.service";
 export * from "./lib/issue-tracking/jira/jira-details-request";
 export * from "./lib/issue-tracking/jira/jira-details-response";
+export * from "./lib/crm-project";
+export * from "./lib/response/crm-project-response";
+export * from "./lib/crm-project-single-select/crm-project-single-select.component";

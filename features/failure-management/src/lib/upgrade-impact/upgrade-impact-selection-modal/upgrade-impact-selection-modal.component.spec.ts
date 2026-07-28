@@ -1,312 +1,353 @@
-import { UpgradeImpactSelectionModalComponent } from "./upgrade-impact-selection-modal.component";
-import { ToastMessageService } from "@mxflow/ui/alert";
-import { CommonModule } from "@angular/common";
+import { render, screen, waitFor } from "@testing-library/angular";
+import userEvent from "@testing-library/user-event";
+import { MockComponent, ngMocks } from "ng-mocks";
+
+import { DialogModule } from "primeng/dialog";
 import { ButtonModule } from "primeng/button";
-import { Dialog, DialogModule } from "primeng/dialog";
-import { UpgradeImpactSelectionTableComponent } from "../upgrade-impact-selection-table/upgrade-impact-selection-table.component";
-import { By } from "@angular/platform-browser";
-import { provideNoopAnimations } from "@angular/platform-browser/animations";
-import { Message, MessageModule } from "primeng/message";
+import { MessageModule } from "primeng/message";
+import { ToggleSwitchModule } from "primeng/toggleswitch";
+import { Tooltip } from "primeng/tooltip";
 import { FormsModule } from "@angular/forms";
-import { MockBuilder, MockedComponentFixture, MockRender } from "ng-mocks";
+
+import { UpgradeImpactSelectionModalComponent } from "./upgrade-impact-selection-modal.component";
+import { UpgradeImpactSelectionTableComponent } from "../upgrade-impact-selection-table/upgrade-impact-selection-table.component";
+import { OverrideBinaryImpactDescriptionComponent } from "../../binary-impact/override-binary-impact-description/override-binary-impact-description.component";
 import {
   ShowDetectionWithNoDefectsToggleComponent,
+  ValidationScope,
   ValidationScopeSetterComponent,
 } from "@mxflow/features/validation-management";
-import { Tooltip } from "primeng/tooltip";
-import { DomTestUtils } from "@mxevolve/testing";
-import { Type } from "@angular/core";
-import { ToggleSwitch, ToggleSwitchModule } from "primeng/toggleswitch";
+import { ToastMessageService } from "@mxflow/ui/alert";
 
-const UPGRADE_IMPACT_ID = "id";
-const validationScope = {
+const DIALOG_TITLE = "Upgrade Impacts in Validation Scope";
+const SELECTED_UPGRADE_IMPACT_ID = "upgrade-impact-id";
+const VALIDATION_SCOPE: ValidationScope = {
   currentVersion: "currentVersion",
   referenceVersion: "referenceVersion",
 };
 
+const mockToastMessageService = {
+  showError: jest.fn(),
+};
+
+const MOCK_IMPORTS = [
+  DialogModule,
+  ButtonModule,
+  MessageModule,
+  ToggleSwitchModule,
+  Tooltip,
+  FormsModule,
+  MockComponent(UpgradeImpactSelectionTableComponent),
+  MockComponent(ValidationScopeSetterComponent),
+  MockComponent(ShowDetectionWithNoDefectsToggleComponent),
+  OverrideBinaryImpactDescriptionComponent,
+];
+
+interface ModalInputs {
+  isVisible: boolean;
+  hideSelection: boolean;
+  selectedUpgradeImpactId?: string;
+  showDescriptionOverrideOption: boolean;
+}
+
+async function renderComponent(inputs: Partial<ModalInputs> = {}) {
+  return render(UpgradeImpactSelectionModalComponent, {
+    inputs: {
+      isVisible: true,
+      ...inputs,
+    },
+    componentImports: MOCK_IMPORTS,
+    componentProviders: [
+      { provide: ToastMessageService, useValue: mockToastMessageService },
+    ],
+  });
+}
+
 describe("UpgradeImpactSelectionModalComponent", () => {
-  let toastMessageService: ToastMessageService;
-  let fixture: MockedComponentFixture<UpgradeImpactSelectionModalComponent>;
-  let component: UpgradeImpactSelectionModalComponent;
-
-  beforeEach(async () => {
-    toastMessageService = {
-      showError: jest.fn(),
-    } as unknown as ToastMessageService;
-
-    await MockBuilder(UpgradeImpactSelectionModalComponent)
-      .keep(DialogModule)
-      .keep(ButtonModule)
-      .keep(CommonModule)
-      .keep(MessageModule)
-      .keep(ToggleSwitchModule)
-      .mock(ToggleSwitch)
-      .mock(ShowDetectionWithNoDefectsToggleComponent)
-      .keep(FormsModule)
-      .keep(Tooltip)
-      .provide(provideNoopAnimations())
-      .mock(ToastMessageService, toastMessageService)
-      .mock(ValidationScopeSetterComponent)
-      .mock(UpgradeImpactSelectionTableComponent);
-
-    fixture = MockRender(UpgradeImpactSelectionModalComponent);
-    component = fixture.point.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("should update validation scope when validation scope setter changes it", () => {
-    component.isVisible = true;
-    expect(component.validationScope()).toBeFalsy();
-    getComponent(ValidationScopeSetterComponent).validationScopeChange.emit(
-      validationScope
-    );
-    expect(component.validationScope()).toEqual(validationScope);
-  });
+  describe("rendering", () => {
+    it("shows the dialog title", async () => {
+      await renderComponent();
 
-  it("should show the validation scope input", () => {
-    component.isVisible = true;
-    expect(getComponent(ValidationScopeSetterComponent)).toBeTruthy();
-  });
-
-  it("should default show impacts with no defects to false", () => {
-    expect(component.showUpgradeImpactsWithoutDefects()).toBe(false);
-  });
-
-  describe("selectedUpgradeImpactId", () => {
-    it("should select impact correctly", () => {
-      component.selectUpgradeImpactId(UPGRADE_IMPACT_ID);
-      expect(component.selectedUpgradeImpactId).toEqual(UPGRADE_IMPACT_ID);
+      expect(screen.getByText(DIALOG_TITLE)).toBeTruthy();
     });
 
-    it("should call select impact method on upgrade impact selection change", () => {
-      const handlerSpy = jest.spyOn(component, "selectUpgradeImpactId");
-      component.isVisible = true;
-
-      getComponent(
-        UpgradeImpactSelectionTableComponent
-      ).selectedUpgradeImpactIdChange.emit(UPGRADE_IMPACT_ID);
-      fixture.detectChanges();
-
-      expect(handlerSpy).toHaveBeenCalledWith(UPGRADE_IMPACT_ID);
-    });
-  });
-
-  describe("hiding the modal", () => {
-    it("should hide modal correctly", () => {
-      const emitSpy = jest.spyOn(component.isVisibleChange, "emit");
-      component.isVisible = true;
-      getComponent(Dialog).onHide.emit();
-      expect(component.isVisible).toEqual(false);
-      expect(emitSpy).toHaveBeenCalledWith(false);
-    });
-
-    it("should reset the selected upgrade impact id on hide", () => {
-      component.selectedUpgradeImpactId = UPGRADE_IMPACT_ID;
-      component.isVisible = true;
-      component.selectedUpgradeImpactId = "another-id";
-      getComponent(Dialog).onHide.emit();
-      expect(component.selectedUpgradeImpactId).toEqual(UPGRADE_IMPACT_ID);
-    });
-
-    it("should call hide modal on dialog hide", () => {
-      const handlerSpy = jest.spyOn(component, "handleCancel");
-      component.isVisible = true;
-      getComponent(Dialog).onHide.emit();
-      expect(handlerSpy).toHaveBeenCalled();
-    });
-
-    it("should set warning message to undefined when modal is hidden", () => {
-      component.isVisible = true;
-      component.warningMessage = "warning";
-      fixture.detectChanges();
-      const emitSpy = jest.spyOn(component.isVisibleChange, "emit");
-      getComponent(Dialog).onHide.emit();
-      expect(component.warningMessage).toBeUndefined();
-      expect(emitSpy).toHaveBeenCalledWith(false);
-    });
-  });
-
-  describe("clicking on cancel button", () => {
-    it("should reset selected upgrade impact id on cancel", () => {
-      component.selectedUpgradeImpactId = UPGRADE_IMPACT_ID;
-      component.isVisible = true;
-      component.selectedUpgradeImpactId = "another-id";
-      getButtonHarness("cancel-button").click();
-      expect(component.selectedUpgradeImpactId).toEqual(UPGRADE_IMPACT_ID);
-    });
-
-    it("should call handle cancel modal when user clicks the cancel btn", () => {
-      const handlerSpy = jest.spyOn(component, "handleCancel");
-      component.isVisible = true;
-      getButtonHarness("cancel-button").click();
-      expect(handlerSpy).toHaveBeenCalled();
-    });
-  });
-
-  describe("submit", () => {
-    it("should hide modal on submit", () => {
-      const emitSpy = jest.spyOn(component.isVisibleChange, "emit");
-      component.isVisible = true;
-      component.submit();
-      expect(component.isVisible).toEqual(false);
-      expect(emitSpy).toHaveBeenCalledWith(false);
-    });
-
-    it("should emit selected upgrade impact on submit", () => {
-      const emitSpy = jest.spyOn(
-        component.selectedUpgradeImpactIdChange,
-        "emit"
-      );
-      component.selectedUpgradeImpactId = UPGRADE_IMPACT_ID;
-
-      component.submit();
-
-      expect(emitSpy).toHaveBeenCalledWith(UPGRADE_IMPACT_ID);
-    });
-
-    it("should call submit method when user submits their selection", () => {
-      const handlerSpy = jest.spyOn(component, "submit");
-      component.isVisible = true;
-      component.selectedUpgradeImpactId = UPGRADE_IMPACT_ID;
-      getButtonHarness("submit-button").click();
-      expect(handlerSpy).toHaveBeenCalled();
-    });
-
-    it("should update the initial selection to the new selection on submit", () => {
-      component.isVisible = true;
-      component.selectedUpgradeImpactId = UPGRADE_IMPACT_ID;
-      getButtonHarness("submit-button").click();
-      getComponent(Dialog).onHide.emit();
-      component.isVisible = true;
-      expect(component.selectedUpgradeImpactId).toEqual(UPGRADE_IMPACT_ID);
-    });
-  });
-
-  describe("handleErrorOccurred", () => {
-    it("handleErrorOcurred should add error message", () => {
-      const message = "Error";
-
-      component.handleErrorOccurred(message);
-
-      expect(toastMessageService.showError).toHaveBeenCalledWith(message);
-    });
-
-    it("should call handler error method when upgrade impact table throws an error", () => {
-      const handlerSpy = jest.spyOn(component, "handleErrorOccurred");
-      const message = "Error";
-      component.isVisible = true;
-
-      getComponent(UpgradeImpactSelectionTableComponent).errorMessage.emit(
-        message
-      );
-      fixture.detectChanges();
-
-      expect(handlerSpy).toHaveBeenCalledWith(message);
-    });
-  });
-
-  describe("isVisible", () => {
-    it("should make the modal visible when true", () => {
-      component.isVisible = true;
-      expect(getComponent(Dialog).visible).toBeTruthy();
-    });
-  });
-
-  describe("handling warning message", () => {
-    it.each(["warning", undefined])(
-      "should display warning message in the modal",
-      (warningMessage?: string) => {
-        component.handleWarningMessage(warningMessage);
-        expect(component.warningMessage).toEqual(warningMessage);
-      }
-    );
-
-    it("should call handleWarningMessage on emitted warning messages", () => {
-      const handlerSpy = jest.spyOn(component, "handleWarningMessage");
-      const message = "warning";
-      component.isVisible = true;
-
-      getComponent(UpgradeImpactSelectionTableComponent).warningMessage.emit(
-        message
-      );
-      fixture.detectChanges();
-
-      expect(handlerSpy).toHaveBeenCalledWith(message);
-    });
-
-    it("should display a message in the modal", () => {
-      component.isVisible = true;
-      fixture.detectChanges();
-      component.handleWarningMessage("warningMessage");
-      fixture.detectChanges();
-      const message = getComponent(Message);
-      expect(message.severity).toEqual("warn");
-      expect(message.el.nativeElement.textContent).toContain("warningMessage");
-    });
-
-    it("should not call handleWarningMessage if warning message input is falsy", () => {
-      const handlerSpy = jest.spyOn(component, "handleWarningMessage");
-      component.warningMessage = undefined;
-      expect(handlerSpy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("handleRefresh", () => {
-    it("should call the table's fetch upgrade impacts method", () => {
-      component.isVisible = true;
-
-      const fetchUpgradeImpactSpy = jest.spyOn(
-        getComponent(UpgradeImpactSelectionTableComponent),
-        "fetchUpgradeImpacts"
-      );
-      fixture.detectChanges();
-      component.handleRefresh();
-      expect(fetchUpgradeImpactSpy).toHaveBeenCalled();
-    });
-
-    it("should call handleRefresh when refresh button is clicked", () => {
-      component.isVisible = true;
-      const handlerSpy = jest.spyOn(component, "handleRefresh");
-      getButtonHarness("refresh-button").click();
-      expect(handlerSpy).toHaveBeenCalled();
-    });
-  });
-
-  describe("hiding upgrade selection capability", () => {
-    it("should set the hideSelection input of the upgrade impacts table", () => {
-      component.isVisible = true;
-      component.hideSelection = true;
+    it("shows the validation scope setter", async () => {
+      const { fixture } = await renderComponent();
       expect(
-        getComponent(UpgradeImpactSelectionTableComponent).hideSelection
+        ngMocks.find(fixture, ValidationScopeSetterComponent).componentInstance
       ).toBeTruthy();
     });
 
-    it("should not display the modal's submit button if hideSelection is enabled", () => {
-      component.isVisible = true;
-      component.hideSelection = true;
-      fixture.detectChanges();
-      const submitButton = fixture.debugElement.query(
-        By.css('[data-testid="submit-button"]')
-      );
-      expect(submitButton).toBeFalsy();
-    });
+    it("shows the upgrade impact selection table", async () => {
+      const { fixture } = await renderComponent();
 
-    it("should not display the modal's cancel button if hideSelection is enabled", () => {
-      component.isVisible = true;
-      component.hideSelection = true;
-      fixture.detectChanges();
-      const cancelButton = fixture.debugElement.query(
-        By.css('[data-testid="cancel-button"]')
-      );
-      expect(cancelButton).toBeFalsy();
+      expect(
+        ngMocks.find(fixture, UpgradeImpactSelectionTableComponent)
+          .componentInstance
+      ).toBeTruthy();
     });
   });
 
-  function getButtonHarness(testId: string) {
-    return DomTestUtils.getButtonByTestId(fixture, testId);
-  }
+  describe("submit button state", () => {
+    it("disables the submit button when no upgrade impact is selected", async () => {
+      await renderComponent();
 
-  function getComponent<S>(type: Type<S>) {
-    return DomTestUtils.getElementByType(fixture, type).getInstance();
-  }
+      expect(
+        screen.getByRole<HTMLButtonElement>("button", { name: "Submit" })
+          .disabled
+      ).toBeTruthy();
+    });
+
+    it("enables the submit button when an upgrade impact is selected", async () => {
+      const { fixture } = await renderComponent();
+
+      ngMocks
+        .find(fixture, UpgradeImpactSelectionTableComponent)
+        .componentInstance.selectedUpgradeImpactIdChange.emit(
+          SELECTED_UPGRADE_IMPACT_ID
+        );
+      fixture.detectChanges();
+
+      expect(
+        screen.getByRole<HTMLButtonElement>("button", { name: "Submit" })
+          .disabled
+      ).toBeFalsy();
+    });
+
+    it("disables the submit button when the description override is offered but no option is chosen", async () => {
+      const { fixture } = await renderComponent({
+        showDescriptionOverrideOption: true,
+      });
+
+      ngMocks
+        .find(fixture, UpgradeImpactSelectionTableComponent)
+        .componentInstance.selectedUpgradeImpactIdChange.emit(
+          SELECTED_UPGRADE_IMPACT_ID
+        );
+      fixture.detectChanges();
+
+      expect(
+        screen.getByRole<HTMLButtonElement>("button", { name: "Submit" })
+          .disabled
+      ).toBeTruthy();
+    });
+
+    it("enables the submit button when the description override is offered and an option is chosen", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent({
+        showDescriptionOverrideOption: true,
+      });
+
+      ngMocks
+        .find(fixture, UpgradeImpactSelectionTableComponent)
+        .componentInstance.selectedUpgradeImpactIdChange.emit(
+          SELECTED_UPGRADE_IMPACT_ID
+        );
+      fixture.detectChanges();
+      await user.click(
+        screen.getByRole("radio", { name: "Keep Existing Description" })
+      );
+
+      await waitFor(() =>
+        expect(
+          screen.getByRole<HTMLButtonElement>("button", { name: "Submit" })
+            .disabled
+        ).toBeFalsy()
+      );
+    });
+  });
+
+  describe("submitting", () => {
+    it("emits the selected upgrade impact", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+      const emitSpy = jest.spyOn(
+        fixture.componentInstance.selectedUpgradeImpactIdChange,
+        "emit"
+      );
+      ngMocks
+        .find(fixture, UpgradeImpactSelectionTableComponent)
+        .componentInstance.selectedUpgradeImpactIdChange.emit(
+          SELECTED_UPGRADE_IMPACT_ID
+        );
+      fixture.detectChanges();
+
+      await user.click(screen.getByRole("button", { name: "Submit" }));
+
+      expect(emitSpy).toHaveBeenCalledWith(SELECTED_UPGRADE_IMPACT_ID);
+    });
+
+    it.each([
+      { optionLabel: "Keep Existing Description", overrideDescription: false },
+      { optionLabel: "Upgrade Impact Description", overrideDescription: true },
+    ])(
+      "emits the description override choice when one of the option is chosen",
+      async ({ optionLabel, overrideDescription }) => {
+        const user = userEvent.setup();
+        const { fixture } = await renderComponent({
+          showDescriptionOverrideOption: true,
+        });
+
+        const emitSpy = jest.spyOn(
+          fixture.componentInstance.overrideBinaryImpactDescriptionChange,
+          "emit"
+        );
+        ngMocks
+          .find(fixture, UpgradeImpactSelectionTableComponent)
+          .componentInstance.selectedUpgradeImpactIdChange.emit(
+            SELECTED_UPGRADE_IMPACT_ID
+          );
+        fixture.detectChanges();
+        await user.click(screen.getByRole("radio", { name: optionLabel }));
+
+        await user.click(screen.getByRole("button", { name: "Submit" }));
+
+        expect(emitSpy).toHaveBeenCalledWith(overrideDescription);
+      }
+    );
+
+    it("closes the dialog", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+      ngMocks
+        .find(fixture, UpgradeImpactSelectionTableComponent)
+        .componentInstance.selectedUpgradeImpactIdChange.emit(
+          SELECTED_UPGRADE_IMPACT_ID
+        );
+      fixture.detectChanges();
+
+      await user.click(screen.getByRole("button", { name: "Submit" }));
+
+      await waitFor(() => expect(screen.queryByText(DIALOG_TITLE)).toBeNull());
+    });
+  });
+
+  describe("cancelling", () => {
+    it("closes the dialog", async () => {
+      const user = userEvent.setup();
+      await renderComponent();
+
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+      await waitFor(() => expect(screen.queryByText(DIALOG_TITLE)).toBeNull());
+    });
+
+    it("resets the selected upgrade impact to the initial value", async () => {
+      const user = userEvent.setup();
+      const INITIAL_SELECTED_UPGRADE_IMPACT_ID =
+        "initial-selected-upgrade-impact-id";
+      const { fixture, rerender } = await renderComponent({
+        isVisible: false,
+        selectedUpgradeImpactId: INITIAL_SELECTED_UPGRADE_IMPACT_ID,
+      });
+
+      await rerender({
+        inputs: {
+          isVisible: true,
+          selectedUpgradeImpactId: INITIAL_SELECTED_UPGRADE_IMPACT_ID,
+        },
+      });
+
+      ngMocks
+        .find(fixture, UpgradeImpactSelectionTableComponent)
+        .componentInstance.selectedUpgradeImpactIdChange.emit(
+          SELECTED_UPGRADE_IMPACT_ID
+        );
+      fixture.detectChanges();
+
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(fixture.componentInstance.selectedUpgradeImpactId).toEqual(
+        INITIAL_SELECTED_UPGRADE_IMPACT_ID
+      );
+    });
+  });
+
+  describe("warning messages", () => {
+    it("shows a warning message reported by the table", async () => {
+      const { fixture } = await renderComponent();
+
+      const warningMessage = "Warning message";
+      ngMocks
+        .find(fixture, UpgradeImpactSelectionTableComponent)
+        .componentInstance.warningMessage.emit(warningMessage);
+      fixture.detectChanges();
+
+      expect(screen.getByText(warningMessage)).toBeTruthy();
+    });
+  });
+
+  describe("errors", () => {
+    it("shows an error toast when the table reports an error", async () => {
+      const { fixture } = await renderComponent();
+
+      ngMocks
+        .find(fixture, UpgradeImpactSelectionTableComponent)
+        .componentInstance.errorMessage.emit("Boom");
+      fixture.detectChanges();
+
+      expect(mockToastMessageService.showError).toHaveBeenCalledWith("Boom");
+    });
+  });
+
+  describe("refreshing", () => {
+    it("refreshes the table when the user clicks refresh", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+      const fetchSpy = jest.spyOn(
+        ngMocks.find(fixture, UpgradeImpactSelectionTableComponent)
+          .componentInstance,
+        "fetchUpgradeImpacts"
+      );
+
+      await user.click(screen.getByTestId("refresh-button"));
+
+      expect(fetchSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe("hiding the selection capability", () => {
+    it("hides the submit button", async () => {
+      await renderComponent({ hideSelection: true });
+
+      expect(screen.queryByRole("button", { name: "Submit" })).toBeNull();
+    });
+
+    it("hides the cancel button", async () => {
+      await renderComponent({ hideSelection: true });
+
+      expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+    });
+
+    it("hides the description override option", async () => {
+      const { fixture } = await renderComponent({
+        hideSelection: true,
+        showDescriptionOverrideOption: true,
+      });
+
+      expect(
+        ngMocks.find(fixture, OverrideBinaryImpactDescriptionComponent, null)
+      ).toBeNull();
+    });
+  });
+
+  describe("validation scope", () => {
+    it("passes the updated scope to the table when the setter emits a new scope", async () => {
+      const { fixture } = await renderComponent();
+
+      ngMocks
+        .find(fixture, ValidationScopeSetterComponent)
+        .componentInstance.validationScopeChange.emit(VALIDATION_SCOPE);
+      fixture.detectChanges();
+
+      expect(
+        ngMocks.find(fixture, UpgradeImpactSelectionTableComponent)
+          .componentInstance.validationScope
+      ).toEqual(VALIDATION_SCOPE);
+    });
+  });
 });

@@ -1,35 +1,35 @@
 import { TestBed } from "@angular/core/testing";
+import { EnvironmentConfigAuditService } from "./systematic-config-audit.service";
 import {
   HttpTestingController,
   provideHttpClientTesting,
 } from "@angular/common/http/testing";
 import { provideHttpClient } from "@angular/common/http";
-import { GATEWAY_CONFIG } from "@mxevolve/shared/core/config";
+import { APP_CONFIG } from "@mxflow/config";
 import { firstValueFrom } from "rxjs";
-import { SystematicConfigAuditService } from "./systematic-config-audit.service";
-import { SystematicConfigAuditOperationsResponseApiModel } from "./systematic-config-audit-api-model";
 import {
-  SystematicConfigAuditRequestResultType,
-  SystematicConfigAuditRequestStatus,
-} from "./systematic-config-audit";
+  RequestResultType,
+  RequestStatus,
+  SystematicConfigAuditOperationsResponse,
+} from "./systematic-config-audit.models";
 
-const GATEWAY_URL = "https://api.test.com/";
+const gatewayUrl = "https://gateway/";
 
-describe("SystematicConfigAuditService", () => {
-  let service: SystematicConfigAuditService;
+describe("Environment Config Audit Service", () => {
+  let configAuditService: EnvironmentConfigAuditService;
   let httpController: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
+        { provide: APP_CONFIG, useValue: { gatewayUrl } },
         provideHttpClient(),
         provideHttpClientTesting(),
-        SystematicConfigAuditService,
-        { provide: GATEWAY_CONFIG, useValue: { gatewayUrl: GATEWAY_URL } },
+        EnvironmentConfigAuditService,
       ],
     });
 
-    service = TestBed.inject(SystematicConfigAuditService);
+    configAuditService = TestBed.inject(EnvironmentConfigAuditService);
     httpController = TestBed.inject(HttpTestingController);
   });
 
@@ -37,92 +37,55 @@ describe("SystematicConfigAuditService", () => {
     httpController.verify();
   });
 
-  it("sends a GET to the systematic-config-audit endpoint and maps the response", async () => {
-    const apiResponse: SystematicConfigAuditOperationsResponseApiModel = {
-      operationId: "op-1",
-      environmentId: "env-001",
-      targetCommitId: "abc123",
-      baselineCommitId: "def456",
-      requestStatus: "ENDED",
-      requestResultStatus: "SUCCESS",
+  it("should call retrieve systematic config audits endpoint and return operation id", async () => {
+    const promise = firstValueFrom(
+      configAuditService.retrieveSystematicConfigAudits("project-1", "env-1")
+    );
+
+    const req = httpController.expectOne(
+      `${gatewayUrl}projects/project-1/environments/env-1/systematic-config-audit`
+    );
+    expect(req.request.method).toBe("GET");
+
+    const response = getSystematicConfigAuditOperationsResponse();
+
+    req.flush(response);
+    await expect(promise).resolves.toEqual(response);
+  });
+
+  it("should throw backend error message when retrieve systematic config audit call fails", async () => {
+    const promise = firstValueFrom(
+      configAuditService.retrieveSystematicConfigAudits("project-1", "env-1")
+    );
+
+    const req = httpController.expectOne(
+      `${gatewayUrl}projects/project-1/environments/env-1/systematic-config-audit`
+    );
+    req.flush(
+      { message: "failed to retrieve config audits" },
+      {
+        status: 400,
+        statusText: "Bad Request",
+      }
+    );
+
+    await expect(promise).rejects.toThrow("failed to retrieve config audits");
+  });
+
+  function getSystematicConfigAuditOperationsResponse(): SystematicConfigAuditOperationsResponse {
+    return {
+      baselineCommitId: "baselineCommitId",
       configurationLintingResult: {
-        resultStatus: "PASS",
-        artifacts: [
-          "https://storage/report.csv",
-          "https://storage/report.html",
-        ],
         mode: "DELTA",
-      },
-    };
-
-    const resultPromise = firstValueFrom(
-      service.retrieveSystematicConfigAudit("proj-001", "env-001")
-    );
-
-    const request = httpController.expectOne(
-      `${GATEWAY_URL}projects/proj-001/environments/env-001/systematic-config-audit`
-    );
-    expect(request.request.method).toBe("GET");
-    request.flush(apiResponse);
-
-    const result = await resultPromise;
-
-    expect(result.requestStatus).toBe(
-      SystematicConfigAuditRequestStatus.ENDED
-    );
-    expect(result.requestResultStatus).toBe(
-      SystematicConfigAuditRequestResultType.SUCCESS
-    );
-    expect(result.configurationLintingResult?.resultStatus).toBe("PASS");
-    expect(result.configurationLintingResult?.artifacts).toEqual([
-      "https://storage/report.csv",
-      "https://storage/report.html",
-    ]);
-    expect(result.configurationLintingResult?.mode).toBe("DELTA");
-  });
-
-  it("defaults artifacts to an empty array when omitted", async () => {
-    const apiResponse: SystematicConfigAuditOperationsResponseApiModel = {
-      operationId: "op-2",
-      environmentId: "env-001",
-      targetCommitId: "abc123",
-      requestStatus: "STARTED",
-      configurationLintingResult: {
         resultStatus: "PASS",
-        mode: "FULL",
       },
+      environmentId: "environmentId",
+      operationId: "operationId",
+      requestResultMessage: "requestResultMessage",
+      requestResultStatus: RequestResultType.SUCCESS,
+      requestStatus: RequestStatus.STARTED,
+      requestStatusMessage: "requestStatusMessage",
+      targetCommitId: "targetCommitId",
     };
-
-    const resultPromise = firstValueFrom(
-      service.retrieveSystematicConfigAudit("proj-001", "env-001")
-    );
-
-    const request = httpController.expectOne(
-      `${GATEWAY_URL}projects/proj-001/environments/env-001/systematic-config-audit`
-    );
-    request.flush(apiResponse);
-
-    const result = await resultPromise;
-
-    expect(result.configurationLintingResult?.artifacts).toEqual([]);
-  });
-
-  it("propagates errors as an Error", async () => {
-    const resultPromise = firstValueFrom(
-      service.retrieveSystematicConfigAudit("proj-001", "env-001")
-    ).catch((error) => error);
-
-    const request = httpController.expectOne(
-      `${GATEWAY_URL}projects/proj-001/environments/env-001/systematic-config-audit`
-    );
-    request.flush(
-      { message: "audit unavailable" },
-      { status: 500, statusText: "Internal Server Error" }
-    );
-
-    const result = await resultPromise;
-
-    expect(result).toBeInstanceOf(Error);
-    expect(result.message).toBe("audit unavailable");
-  });
+  }
 });

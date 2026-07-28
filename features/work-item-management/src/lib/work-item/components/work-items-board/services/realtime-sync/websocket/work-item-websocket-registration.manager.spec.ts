@@ -9,7 +9,6 @@ import {
 import { IMessage, StompSubscription } from "@stomp/stompjs";
 
 describe("WorkItemWebsocketRegistrationManager", () => {
-  const MOCK_TOKEN = "mock-jwt-token";
   const REGISTER_DESTINATION = "/workitem/register";
   const REGISTRATION_RESPONSE_DESTINATION = "/user/queue/registration";
   const TEST_SUCCESS_MESSAGE = "Successfully registered for real-time updates";

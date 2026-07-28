@@ -1,5 +1,6 @@
 import {
   Component,
+  computed,
   EventEmitter,
   inject,
   input,
@@ -23,6 +24,7 @@ import { FormsModule } from "@angular/forms";
 import { ToggleSwitchModule } from "primeng/toggleswitch";
 import { Tooltip } from "primeng/tooltip";
 import { DetectionCategory, DetectionType } from "../../detections";
+import { OverrideBinaryImpactDescriptionComponent } from "../../binary-impact/override-binary-impact-description/override-binary-impact-description.component";
 
 @Component({
   imports: [
@@ -35,6 +37,7 @@ import { DetectionCategory, DetectionType } from "../../detections";
     ValidationScopeSetterComponent,
     Tooltip,
     ShowDetectionWithNoDefectsToggleComponent,
+    OverrideBinaryImpactDescriptionComponent,
   ],
   selector: "mxevolve-upgrade-impact-selection-modal",
   templateUrl: "./upgrade-impact-selection-modal.component.html",
@@ -47,6 +50,7 @@ export class UpgradeImpactSelectionModalComponent {
   @Input() set isVisible(value: boolean) {
     this._isVisible = value;
     if (value) {
+      this.overrideBinaryImpactDescription.set(undefined);
       this.updateInitialSelection();
     }
   }
@@ -56,8 +60,20 @@ export class UpgradeImpactSelectionModalComponent {
   }
 
   @Input() hideSelection = false;
-  @Input() selectedUpgradeImpactId?: string;
+  private readonly currentSelectedUpgradeImpactId = signal<string | undefined>(
+    undefined
+  );
+
+  @Input() set selectedUpgradeImpactId(value: string | undefined) {
+    this.currentSelectedUpgradeImpactId.set(value);
+  }
+
+  get selectedUpgradeImpactId(): string | undefined {
+    return this.currentSelectedUpgradeImpactId();
+  }
+
   @Input() warningMessage?: string;
+  showDescriptionOverrideOption = input(false);
   validationScope = model<ValidationScope | undefined>(undefined);
   initialValidationScope = input<ValidationScope | undefined>(undefined);
 
@@ -65,10 +81,19 @@ export class UpgradeImpactSelectionModalComponent {
   @Output() selectedUpgradeImpactIdChange = new EventEmitter<
     string | undefined
   >();
+  @Output() overrideBinaryImpactDescriptionChange = new EventEmitter<boolean>();
   @ViewChild(UpgradeImpactSelectionTableComponent)
   upgradeImpactTable: UpgradeImpactSelectionTableComponent;
   refresh: boolean;
   showUpgradeImpactsWithoutDefects = signal(false);
+  overrideBinaryImpactDescription = signal<boolean | undefined>(undefined);
+
+  readonly isSubmitDisabled = computed(
+    () =>
+      !this.currentSelectedUpgradeImpactId() ||
+      (this.showDescriptionOverrideOption() &&
+        this.overrideBinaryImpactDescription() === undefined)
+  );
 
   selectUpgradeImpactId(impact: string) {
     this.selectedUpgradeImpactId = impact;
@@ -76,6 +101,11 @@ export class UpgradeImpactSelectionModalComponent {
 
   submit() {
     this.updateInitialSelection();
+    if (this.showDescriptionOverrideOption()) {
+      this.overrideBinaryImpactDescriptionChange.emit(
+        this.overrideBinaryImpactDescription()
+      );
+    }
     this.selectedUpgradeImpactIdChange.emit(this.selectedUpgradeImpactId);
     this.hideModal();
   }

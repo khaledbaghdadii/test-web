@@ -3,9 +3,11 @@ import {
   DestroyRef,
   inject,
   Injectable,
+  SecurityContext,
   signal,
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { delay, finalize, switchMap } from "rxjs";
 
 import { RemoteClonedRepositoryService } from "../remote-cloned-repository/remote-cloned-repository.service";
@@ -24,6 +26,7 @@ interface RebaseConfig {
   clonedRepositoryId: string;
   projectRepositoryId: string;
   sourceBranchName: string;
+  mtsUrl?: SafeResourceUrl | null;
 }
 
 interface FinishedRebaseAttempt {
@@ -38,6 +41,7 @@ export class RebaseWorkspaceStateService {
   );
   private readonly scmManagementService = inject(ScmManagementService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly sanitizer = inject(DomSanitizer);
 
   private config!: RebaseConfig;
 
@@ -165,6 +169,7 @@ export class RebaseWorkspaceStateService {
       payload: {
         sourceBranchName: this.config.sourceBranchName,
         targetBranchName: targetBranch,
+        mtsUrl: this.resolveMtsUrl(),
       },
     };
 
@@ -182,6 +187,16 @@ export class RebaseWorkspaceStateService {
           this.loadRebaseState();
         },
       });
+  }
+
+  private resolveMtsUrl(): string | null {
+    if (!this.config.mtsUrl) {
+      return null;
+    }
+    return this.sanitizer.sanitize(
+      SecurityContext.RESOURCE_URL,
+      this.config.mtsUrl
+    );
   }
 
   private resolveTargetBranchAndLoadState(): void {

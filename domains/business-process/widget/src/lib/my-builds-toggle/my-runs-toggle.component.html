@@ -1,0 +1,12 @@
+<div class="flex items-center gap-3">
+  <p-toggleSwitch
+    inputId="myBuildsToggle"
+    [ngModel]="enabled()"
+    (onChange)="onToggle($event)"
+  />
+  <label
+    for="myBuildsToggle"
+    class="text-base font-semibold cursor-pointer select-none"
+    >My Builds</label
+  >
+</div>

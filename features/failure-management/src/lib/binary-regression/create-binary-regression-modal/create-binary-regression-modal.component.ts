@@ -98,7 +98,7 @@ export class CreateBinaryRegressionModalComponent {
           WhitespaceValidators.notBlank(),
         ]),
         fix: new FormControl<string | null>(null, [Validators.maxLength(255)]),
-        incidentId: new FormControl<string | null>(null, []),
+        incidentId: new FormControl<string | null>(null, [Validators.required]),
       }
     );
   }
@@ -117,7 +117,7 @@ export class CreateBinaryRegressionModalComponent {
       defect: formValues.defect ?? undefined,
       mxVersion: formValues.mxVersion ?? "",
       fix: formValues.fix ?? undefined,
-      incidentId: formValues.incidentId ?? undefined,
+      incidentId: formValues.incidentId ?? "",
     };
     this.onSubmitCreateBinaryRegression(request);
   }

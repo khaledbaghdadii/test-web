@@ -17,6 +17,12 @@ function toManagementRequest(
     createdOn: apiModel.createdOn,
     startedOn: apiModel.startedOn,
     endedOn: apiModel.endedOn,
+    correlationId: apiModel.correlationId,
+    statusMessage: apiModel.statusMessage,
+    resultStatus: apiModel.result?.status,
     resultMessage: apiModel.result?.message,
+    abortedBy: apiModel.abortedBy,
+    hasMetrics: apiModel.hasMetrics,
+    artifacts: apiModel.artifacts,
   };
 }

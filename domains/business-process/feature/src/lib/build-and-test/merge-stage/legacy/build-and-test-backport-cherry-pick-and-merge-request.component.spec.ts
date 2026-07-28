@@ -32,7 +32,9 @@ describe("BuildAndTestBackportCherryPickAndMergeRequestComponent", () => {
   it("renders the backport merge request stepper once commits are picked", async () => {
     await renderComponent(CherryPickStatus.COMMITS_CHERRY_PICKED);
 
-    expect(document.querySelector("mxevolve-merge-request-stepper")).toBeTruthy();
+    expect(
+      document.querySelector("mxevolve-merge-request-stepper")
+    ).toBeTruthy();
   });
 
   function renderComponent(cherryPickStatus: CherryPickStatus) {

@@ -163,7 +163,7 @@ describe("Final product from existing branch", () => {
       archivalBranchInputComponent.initialInvalid.emit();
 
       expect(toastService.showError).toHaveBeenCalledWith(
-        "The branch name available in the BP definition doesn't exist in the repository. Please check the name and try again with an existing branch."
+        "The branch name available in the Process Template doesn't exist in the repository. Please check the name and try again with an existing branch."
       );
     });
   });
@@ -1035,6 +1035,23 @@ describe("Final product from existing branch", () => {
       tick();
 
       expect(component.configCommitIdFromControl.value).toEqual(undefined);
+    }));
+
+    it("When final product is already filled and fetched, then the final product input should stay displayed", fakeAsync(() => {
+      component.inputAccessMode = InputAccessMode.ACCESS_INVALID_INPUTS_ONLY;
+      component.ngOnInit();
+
+      component.archivalBranchNameFormControl.setValue("archivalBranchName");
+      tick();
+      fixture.detectChanges();
+
+      const finalProductInput = fixture.debugElement.query(
+        By.css("#finalProductInput")
+      ).componentInstance as MockDefinitionInputComponent;
+
+      expect(finalProductInput.inputAccessMode).toBe(
+        InputAccessMode.ACCESS_ALL_INPUTS
+      );
     }));
   });
 

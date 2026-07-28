@@ -1,10 +1,11 @@
-import { Component, OnDestroy, OnInit } from "@angular/core";
+import { Component, inject, OnDestroy, OnInit } from "@angular/core";
 import { TreeNode } from "primeng/api";
 import { DynamicDialogConfig, DynamicDialogRef } from "primeng/dynamicdialog";
 import { Subject, takeUntil } from "rxjs";
 import { RepositoryDirectoryTreeInput } from "./repository-directory-tree-input";
 import { ToastMessageService } from "@mxflow/ui/alert";
 import {
+  Directory,
   RepoItemType,
   RepositoryItem,
 } from "../../describe-repository/describe-repository-response";
@@ -15,7 +16,7 @@ import {
   standalone: false,
 })
 export class RepositoryDirectoryTreeComponent implements OnInit, OnDestroy {
-  private destroy$ = new Subject();
+  private readonly destroy$ = new Subject();
 
   input: RepositoryDirectoryTreeInput;
 
@@ -23,11 +24,9 @@ export class RepositoryDirectoryTreeComponent implements OnInit, OnDestroy {
   directoriesTreeNode: TreeNode[];
   selectedDirectory: any;
 
-  constructor(
-    private dynamicDialogRef: DynamicDialogRef,
-    private dynamicDialogConfig: DynamicDialogConfig,
-    private toastMessageService: ToastMessageService
-  ) {}
+  private readonly dynamicDialogRef = inject(DynamicDialogRef);
+  private readonly dynamicDialogConfig = inject(DynamicDialogConfig);
+  private readonly toastMessageService = inject(ToastMessageService);
 
   ngOnInit(): void {
     this.input = this.dynamicDialogConfig.data;
@@ -64,11 +63,7 @@ export class RepositoryDirectoryTreeComponent implements OnInit, OnDestroy {
     preSelectedDirectory: string | undefined
   ): TreeNode[] {
     return repositoryItems
-      .filter((repoItem) =>
-        !this.input.shouldReadFiles
-          ? repoItem.type === RepoItemType.DIRECTORY
-          : true
-      )
+      .filter((repoItem) => this.shouldIncludeRepoItem(repoItem))
       .map((repoItem) => {
         const fullDirectoryName = this.getFullDirectoryName(
           parentDirectory,
@@ -82,6 +77,31 @@ export class RepositoryDirectoryTreeComponent implements OnInit, OnDestroy {
         this.preSelectNodeIfPreSelected(treeNode);
         return treeNode;
       });
+  }
+
+  private shouldIncludeRepoItem(repoItem: RepositoryItem): boolean {
+    if (repoItem.type === RepoItemType.DIRECTORY) {
+      if (this.input.fileNameFilter) {
+        return this.directoryContainsMatchingFile(repoItem);
+      }
+      return true;
+    }
+    if (!this.input.shouldReadFiles) {
+      return false;
+    }
+    if (this.input.fileNameFilter) {
+      return repoItem.name === this.input.fileNameFilter;
+    }
+    return true;
+  }
+
+  private directoryContainsMatchingFile(directory: Directory): boolean {
+    return directory.children.some((child) => {
+      if (child.type === RepoItemType.DIRECTORY) {
+        return this.directoryContainsMatchingFile(child);
+      }
+      return child.name === this.input.fileNameFilter;
+    });
   }
 
   private getTreeNode(
@@ -127,25 +147,44 @@ export class RepositoryDirectoryTreeComponent implements OnInit, OnDestroy {
   }
 
   isTreeNodeExpanded(fullDirectoryName: string) {
-    return (
-      this.input.preSelectedDirectory !== undefined &&
-      this.input.preSelectedDirectory !== fullDirectoryName &&
-      this.input.preSelectedDirectory.startsWith(fullDirectoryName) &&
-      this.input.preSelectedDirectory.charAt(fullDirectoryName.length) === "/"
+    return this.getPreSelectedPaths().some(
+      (path) =>
+        path !== fullDirectoryName &&
+        path.startsWith(fullDirectoryName) &&
+        path.charAt(fullDirectoryName.length) === "/"
     );
   }
 
+  private getPreSelectedPaths(): string[] {
+    if (this.input.multiSelection) {
+      return this.input.preSelectedFiles ?? [];
+    }
+    return this.input.preSelectedDirectory
+      ? [this.input.preSelectedDirectory]
+      : [];
+  }
+
   private preSelectNodeIfPreSelected(treeNode: TreeNode) {
-    if (
-      this.input.preSelectedDirectory &&
-      this.input.preSelectedDirectory == treeNode.data
-    ) {
+    if (!this.getPreSelectedPaths().includes(treeNode.data)) {
+      return;
+    }
+    if (this.input.multiSelection) {
+      const currentSelection = Array.isArray(this.selectedDirectory)
+        ? this.selectedDirectory
+        : [];
+      this.selectedDirectory = [...currentSelection, treeNode];
+    } else {
       this.selectedDirectory = treeNode;
     }
   }
 
   select() {
-    this.dynamicDialogRef.close(this.selectedDirectory?.data);
+    if (this.input?.multiSelection === true) {
+      const selectedNodes = (this.selectedDirectory as TreeNode[]) ?? [];
+      this.dynamicDialogRef.close(selectedNodes.map((node) => node.data));
+    } else {
+      this.dynamicDialogRef.close(this.selectedDirectory?.data);
+    }
   }
 
   close() {
@@ -153,6 +192,9 @@ export class RepositoryDirectoryTreeComponent implements OnInit, OnDestroy {
   }
 
   isDirectoryNotSelected(): boolean {
+    if (Array.isArray(this.selectedDirectory)) {
+      return this.selectedDirectory.length === 0;
+    }
     return this.selectedDirectory === undefined;
   }
 

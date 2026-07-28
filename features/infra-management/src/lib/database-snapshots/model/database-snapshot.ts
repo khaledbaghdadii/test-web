@@ -11,6 +11,13 @@ export interface DatabaseSnapshot {
   databaseInstance?: DatabaseInstance;
   createdOn: Date;
   createdBy?: string;
+  activeDatabaseInstances?: ActiveDatabaseInstance[];
+}
+
+export interface ActiveDatabaseInstance {
+  allocationId: string;
+  databaseInstanceId: string;
+  environmentId?: string;
 }
 
 export interface Dump {

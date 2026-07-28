@@ -4,3 +4,4 @@ export { ExecutionAlertDisplayComponent } from "./lib/execution-alert-display/ex
 export { QualityGateValidationBannerComponent } from "./lib/quality-gate-validation-banner/quality-gate-validation-banner.component";
 export { BusinessProcessContentContainerComponent } from "./lib/business-process-content-container/business-process-content-container.component";
 export { StageContainerComponent } from "./lib/stage-container/stage-container.component";
+export { DefinitionInputComponent } from "./lib/definition-input/definition-input.component";

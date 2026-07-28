@@ -5,7 +5,10 @@ import {
   BusinessProcessContentContainerComponent,
   StageContainerComponent,
 } from "@mxevolve/domains/business-process/ui";
-import { ScenarioRunsComponent } from "@mxevolve/domains/test/widget";
+import {
+  ScenarioRunsComponent,
+  SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE,
+} from "@mxevolve/domains/test/widget";
 import { PrepareBuildStageComponent } from "./prepare-build-stage.component";
 
 const mockStateUpdater = {
@@ -14,9 +17,9 @@ const mockStateUpdater = {
 
 async function renderComponent() {
   return render(PrepareBuildStageComponent, {
-    imports: [
-      MockComponent(BusinessProcessContentContainerComponent),
-      MockComponent(StageContainerComponent),
+    componentImports: [
+      BusinessProcessContentContainerComponent,
+      StageContainerComponent,
       MockComponent(ScenarioRunsComponent),
     ],
     inputs: {
@@ -62,6 +65,10 @@ describe("PrepareBuildStageComponent", () => {
     expect(scenarioRuns.componentInstance.showHistorySummary).toBe(true);
     expect(scenarioRuns.componentInstance.showTopBarActions).toBe(false);
     expect(scenarioRuns.componentInstance.detailsExpandedByDefault).toBe(false);
+    expect(scenarioRuns.componentInstance.enableKeepServices).toBe(false);
+    expect(scenarioRuns.componentInstance.warningMessageMap).toEqual(
+      SCENARIO_EXECUTION_GROUP_PERMISSION_WARNING_MESSAGE
+    );
   });
 
   it("reloads the execution when a scenario changes", async () => {

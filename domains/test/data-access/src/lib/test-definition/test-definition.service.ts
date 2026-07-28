@@ -19,7 +19,7 @@ import { TestDefinitionApiModel } from "../api-models/test-definition-api-model"
 import { TestSelectionApiModel } from "../api-models/test-selection-api-model";
 import { PreconfiguredTestSelectionApiModel } from "../api-models/preconfigured-test-selection-api-model";
 
-@Injectable()
+@Injectable({ providedIn: "root" })
 export class TestDefinitionService {
   private readonly http = inject(HttpClient);
   config = inject<AppConfig>(APP_CONFIG);

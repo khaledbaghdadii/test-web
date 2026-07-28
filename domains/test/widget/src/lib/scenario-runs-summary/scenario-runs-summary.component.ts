@@ -55,10 +55,10 @@ export class ScenarioRunsSummaryComponent {
   readonly subContextId = input.required<string>();
   readonly bpExecutionName = input.required<string>();
 
-  /** Parent-controlled filter state; when cleared, internal highlight resets */
-  readonly externalFilter = input<SummaryFilterEvent | undefined>(undefined);
+  readonly externalFilter = input<SummaryFilterEvent[]>([]);
+  readonly hideIncidents = input(false);
 
-  readonly filterClicked = output<SummaryFilterEvent | null>();
+  readonly filterClicked = output<SummaryFilterEvent>();
 
   private readonly elementRef = inject(ElementRef);
   private readonly scenarioRunService = inject(ScenarioRunService);
@@ -171,19 +171,10 @@ export class ScenarioRunsSummaryComponent {
     }))
   );
 
-  /** Which filter is currently active (highlighted) — resets when parent clears externalFilter */
-  readonly activeFilter = linkedSignal<SummaryFilterEvent | null>(
-    () => this.externalFilter() ?? null
+  /** Mirrors parent-controlled filter array for internal use */
+  readonly activeFilters = linkedSignal<SummaryFilterEvent[]>(() =>
+    this.externalFilter()
   );
-
-  /** Label for the active filter chip (e.g., "1 Under Analysis") */
-  readonly activeFilterChipLabel = computed(() => {
-    const filter = this.activeFilter();
-    if (!filter) return null;
-    const count = this.getFilterCount(filter);
-    const label = this.getFilterLabel(filter);
-    return `${count} ${label}`;
-  });
 
   /** Which dropdown is open: 'notStarted' | 'done' | 'openIncidents' | null */
   readonly openDropdown = signal<
@@ -198,34 +189,37 @@ export class ScenarioRunsSummaryComponent {
   }
 
   isActive(type: SummaryFilterEvent["type"], value: string): boolean {
-    const f = this.activeFilter();
-    return f !== null && f.type === type && f.value === value;
+    return this.activeFilters().some(
+      (f) => f.type === type && f.value === value
+    );
   }
 
   isDropdownParentActive(
     dropdown: "notStarted" | "done" | "openIncidents"
   ): boolean {
-    const f = this.activeFilter();
-    if (!f) return false;
+    const filters = this.activeFilters();
     if (dropdown === "notStarted") {
-      return (
-        f.type === "analysisStatus" &&
-        (f.value === "NA" || f.value === "Assigned")
+      return filters.some(
+        (f) =>
+          f.type === "analysisStatus" &&
+          (f.value === "NA" || f.value === "Assigned")
       );
     }
     if (dropdown === "done") {
-      return (
-        f.type === "analysisStatus" &&
-        (f.value === "Passed" ||
-          f.value === "Failed" ||
-          f.value === "Cancelled")
+      return filters.some(
+        (f) =>
+          f.type === "analysisStatus" &&
+          (f.value === "Passed" ||
+            f.value === "Failed" ||
+            f.value === "Cancelled")
       );
     }
-    return (
-      f.type === "incident" &&
-      f.value !== "open" &&
-      f.value !== "closed" &&
-      f.value !== "total"
+    return filters.some(
+      (f) =>
+        f.type === "incident" &&
+        f.value !== "open" &&
+        f.value !== "closed" &&
+        f.value !== "total"
     );
   }
 
@@ -237,32 +231,24 @@ export class ScenarioRunsSummaryComponent {
 
   onFilterClick(type: SummaryFilterEvent["type"], value: string): void {
     this.openDropdown.set(null);
-    if (this.isActive(type, value)) {
-      this.clearFilter();
-    } else {
-      this.activeFilter.set({ type, value, label: "" });
-      const label = this.activeFilterChipLabel()!;
-      this.activeFilter.set({ type, value, label });
-      this.filterClicked.emit({ type, value, label });
-    }
+    const label = this.computeLabel(type, value);
+    this.filterClicked.emit({ type, value, label });
   }
 
   onDropdownItemClick(type: SummaryFilterEvent["type"], value: string): void {
-    if (this.isActive(type, value)) {
-      this.openDropdown.set(null);
-      this.clearFilter();
-    } else {
-      this.activeFilter.set({ type, value, label: "" });
-      const label = this.activeFilterChipLabel()!;
-      this.activeFilter.set({ type, value, label });
-      this.openDropdown.set(null);
-      this.filterClicked.emit({ type, value, label });
-    }
+    this.openDropdown.set(null);
+    const label = this.computeLabel(type, value);
+    this.filterClicked.emit({ type, value, label });
   }
 
-  clearFilter(): void {
-    this.activeFilter.set(null);
-    this.filterClicked.emit(null);
+  private computeLabel(
+    type: SummaryFilterEvent["type"],
+    value: string
+  ): string {
+    const dummy: SummaryFilterEvent = { type, value, label: "" };
+    const count = this.getFilterCount(dummy);
+    const label = this.getFilterLabel(dummy);
+    return `${count} ${label}`;
   }
 
   private getFilterCount(filter: SummaryFilterEvent): number {

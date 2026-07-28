@@ -16,6 +16,7 @@ export interface LaunchTechnicalReseedOperationRequest {
   maintenanceConfiguration: MaintenanceConfiguration;
   validationLevel?: string;
   targetBranch: string;
+  pauseForManualIntervention?: boolean;
 }
 
 export interface LaunchTechnicalReseedOperationResponse {
@@ -43,6 +44,7 @@ export enum TechnicalReseedStatus {
   PASSED = "PASSED",
   FAILED = "FAILED",
   ABORTED = "ABORTED",
+  PENDING_INPUT = "PENDING_INPUT",
 }
 
 export interface TechnicalReseedExecutionGroup {
@@ -73,7 +75,7 @@ export const TECHNICAL_RESEED_STATUS_CONFIGURATION: Record<
 > = {
   [TechnicalReseedStatus.PENDING]: {
     severity: "secondary",
-    icon: "pi pi-pause",
+    icon: "pi pi-pause-circle",
   },
   [TechnicalReseedStatus.RUNNING]: {
     severity: "info",
@@ -81,14 +83,18 @@ export const TECHNICAL_RESEED_STATUS_CONFIGURATION: Record<
   },
   [TechnicalReseedStatus.PASSED]: {
     severity: "success",
-    icon: "pi pi-check",
+    icon: "pi pi-check-circle",
   },
   [TechnicalReseedStatus.FAILED]: {
     severity: "danger",
-    icon: "pi pi-times",
+    icon: "pi pi-times-circle",
   },
   [TechnicalReseedStatus.ABORTED]: {
     severity: "warn",
-    icon: "pi pi-exclamation-triangle",
+    icon: "pi pi-exclamation-circle",
+  },
+  [TechnicalReseedStatus.PENDING_INPUT]: {
+    severity: "warn",
+    icon: "pi pi-pause-circle",
   },
 };

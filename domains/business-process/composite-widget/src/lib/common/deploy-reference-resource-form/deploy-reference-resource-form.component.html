@@ -1,0 +1,57 @@
+<p-dialog
+  header="Deploy Reference"
+  [(visible)]="visible"
+  [modal]="true"
+  [draggable]="false"
+  [dismissableMask]="true"
+  class="dialog-cols-6"
+>
+  <p class="mb-4 text-sm text-gray-500">
+    Use the dropdown to edit any properties.
+  </p>
+
+  <div class="grid-6">
+    <mxevolve-factory-product-input
+      class="col-span-6"
+      [projectId]="projectId()"
+      [requiredInput]="true"
+      [applyGridLayout]="true"
+      [factoryProductId]="initialFactoryProductId()"
+      (factoryProductIdChange)="onFactoryProductIdChange($event)"
+    />
+
+    <div class="col-span-3">
+      <p>Commit ID or Tag <span class="text-red-500">*</span></p>
+      <input
+        pInputText
+        type="text"
+        aria-label="Commit ID or Tag"
+        placeholder="Enter commit ID or tag"
+        [formControl]="form.controls.commitOrTag"
+        class="w-full"
+      />
+    </div>
+
+    <div class="col-span-3">
+      <p>Test scenario <span class="text-red-500">*</span></p>
+      <mxevolve-business-process-scenario-definition-selector
+        [projectId]="projectId()"
+        [testScenarioFormControl]="form.controls.scenarioDefinition"
+        testScenariosFormControlName="testScenarios"
+        [multiValue]="false"
+        [clearArchived]="true"
+      />
+    </div>
+  </div>
+
+  <ng-template #footer>
+    <div class="flex w-full justify-center">
+      <p-button
+        label="Deploy"
+        [disabled]="deployDisabled()"
+        [loading]="loading()"
+        (onClick)="deploy()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

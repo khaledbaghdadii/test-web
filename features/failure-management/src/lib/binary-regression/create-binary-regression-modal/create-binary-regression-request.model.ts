@@ -4,5 +4,5 @@ export interface CreateBinaryRegressionRequest {
   mxVersion: string;
   defect?: string;
   fix?: string;
-  incidentId?: string;
+  incidentId: string;
 }

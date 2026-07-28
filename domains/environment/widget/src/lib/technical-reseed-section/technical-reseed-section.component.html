@@ -1,0 +1,331 @@
+@if (executionGroupResource.status() === "error") {
+<p-message class="col-span-12" severity="error">
+  {{ executionGroupResource.error()?.message }}
+</p-message>
+} @else {
+<div class="col-span-12 flex items-center justify-between gap-4">
+  <h3 class="font-medium text-base m-0">List of Technical Reseed Executions</h3>
+  <p-button
+    label="Technical Reseed"
+    [disabled]="launchDisabled()"
+    [loading]="launchInProgress()"
+    [pTooltip]="launchTooltip()"
+    [tooltipDisabled]="!launchTooltip()"
+    (onClick)="openLaunchDialog()"
+  />
+</div>
+
+@if (executionGroupResource.isLoading()) {
+<div class="col-span-12 text-sm text-surface-500 dark:text-surface-300">
+  Loading technical reseed executions...
+</div>
+} @else if (hasOperations()) {
+<div class="col-span-12 flex flex-col gap-2">
+  @for (operation of operations(); track operation.id) {
+  <div
+    class="border border-surface-200 dark:border-surface-700 rounded-md bg-surface-50 dark:bg-surface-800 overflow-hidden"
+  >
+    <div class="relative">
+      <button
+        type="button"
+        class="absolute inset-0 w-full h-full border-0 bg-transparent cursor-pointer"
+        [attr.aria-expanded]="isOperationExpanded(operation.id)"
+        [attr.aria-label]="'Toggle ' + operation.displayName"
+        (click)="toggleOperation(operation.id)"
+      ></button>
+      <div
+        class="flex flex-wrap items-stretch gap-6 px-4 py-3 pointer-events-none"
+      >
+        <div class="flex items-center gap-3">
+          <mxevolve-icon
+            [name]="
+              isOperationExpanded(operation.id) ? 'expand_less' : 'expand_more'
+            "
+            size="md"
+            color="var(--p-primary-color)"
+          />
+          <div class="flex flex-col gap-1">
+            <span class="text-sm text-surface-500 dark:text-surface-300">
+              Name
+            </span>
+            <span class="font-semibold text-surface-900 dark:text-surface-0">
+              {{ operation.displayName }}
+            </span>
+          </div>
+        </div>
+
+        <p-divider layout="vertical" />
+
+        <div class="flex flex-col gap-1">
+          <span class="text-sm text-surface-500 dark:text-surface-300">
+            Status
+          </span>
+          <div class="flex items-center gap-2">
+            <p-tag
+              [severity]="statusSeverity(operation.status)"
+              [icon]="statusIcon(operation.status)"
+              [value]="statusLabel(operation.status)"
+            />
+            @if (statusTooltip(operation)) {
+            <button
+              type="button"
+              class="relative z-10 pointer-events-auto flex items-center border-0 bg-transparent p-0 cursor-pointer"
+              aria-label="Show message details"
+              pTooltip="Click to see more details"
+              tooltipPosition="top"
+              (click)="$event.stopPropagation(); openMessageDialog(operation)"
+            >
+              <mxevolve-icon
+                name="info"
+                size="sm"
+                color="var(--p-primary-color)"
+              />
+            </button>
+            }
+          </div>
+        </div>
+
+        <p-divider layout="vertical" />
+
+        <div class="flex flex-col gap-1">
+          <span class="text-sm text-surface-500 dark:text-surface-300">
+            Created On
+          </span>
+          <span class="font-semibold text-surface-900 dark:text-surface-0">
+            <mxevolve-date-display [date]="operation.createdOn" />
+          </span>
+        </div>
+
+        @if (isOperationExpanded(operation.id)) {
+        <p-divider layout="vertical" />
+
+        <div class="flex flex-col gap-1">
+          <span class="text-sm text-surface-500 dark:text-surface-300">
+            Commit ID
+          </span>
+          <span class="font-semibold text-surface-900 dark:text-surface-0">
+            <mxevolve-commit-id-display [commitId]="operation.sourceCommit" />
+          </span>
+        </div>
+
+        <p-divider layout="vertical" />
+
+        <div class="flex flex-col gap-1">
+          <span class="text-sm text-surface-500 dark:text-surface-300">
+            Branch Name
+          </span>
+          <span class="font-semibold text-surface-900 dark:text-surface-0">
+            {{ operation.branch }}
+          </span>
+        </div>
+        } @if (isPaused(operation)) {
+        <div
+          class="ml-auto flex items-center pointer-events-auto relative z-10"
+        >
+          <p-button
+            severity="warn"
+            size="small"
+            label="Resume"
+            pTooltip="The technical reseed execution is paused before DB dump generation for manual intervention."
+            tooltipPosition="top"
+            [disabled]="resumingOperationIds().has(operation.id)"
+            (onClick)="$event.stopPropagation(); onResume(operation)"
+          />
+        </div>
+        }
+      </div>
+    </div>
+
+    @if (isOperationExpanded(operation.id)) {
+    <div class="px-4 pb-3">
+      <p-divider class="!mt-2 !mb-4" />
+      <div class="flex flex-wrap items-stretch gap-6 pl-8">
+        <div class="flex flex-col gap-1">
+          <span class="text-surface-500 dark:text-surface-300 font-medium">
+            Validation Level
+          </span>
+          <span class="font-semibold text-surface-900 dark:text-surface-0">
+            {{ operation.validationLevel || "N/A" }}
+          </span>
+        </div>
+
+        <p-divider layout="vertical" />
+
+        <div class="flex flex-col gap-1">
+          <span class="text-surface-500 dark:text-surface-300 font-medium">
+            Environment Definition
+          </span>
+          <span class="font-semibold text-surface-900 dark:text-surface-0">
+            {{ operation.environmentDefinitionName }}
+          </span>
+        </div>
+
+        <p-divider layout="vertical" />
+
+        <div class="flex flex-col gap-1">
+          <span class="text-surface-500 dark:text-surface-300 font-medium">
+            Environment ID
+          </span>
+          <span class="font-semibold text-surface-900 dark:text-surface-0">
+            @if (operation.environmentId) {
+            <a
+              class="p-button-link"
+              [routerLink]="
+                '/app/' +
+                projectId() +
+                '/environments/' +
+                operation.environmentId
+              "
+              target="_blank"
+            >
+              {{ operation.environmentId }}
+            </a>
+            } @else { N/A }
+          </span>
+        </div>
+
+        <p-divider layout="vertical" />
+
+        <div class="flex flex-col gap-1">
+          <span class="text-surface-500 dark:text-surface-300 font-medium">
+            Dump IDs
+          </span>
+          <span class="font-semibold text-surface-900 dark:text-surface-0">
+            @if ((operation.dumpIds?.length ?? 0) > 0) {
+            <ul class="list-disc pl-5 m-0">
+              @for (id of visibleDumpIds(operation); track id) {
+              <li>{{ id }}</li>
+              }
+            </ul>
+            @if ((operation.dumpIds?.length ?? 0) > 1) {
+            <button
+              type="button"
+              class="font-semibold text-primary border-none bg-transparent cursor-pointer text-sm font-semibold p-0 mt-2"
+              (click)="toggleDumpIds(operation.id)"
+            >
+              {{ isDumpExpanded(operation.id) ? "see less" : "see more" }}
+            </button>
+            } } @else { N/A }
+          </span>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  }
+</div>
+} @else {
+<div class="col-span-12 flex flex-col items-center gap-3 py-8">
+  <mxevolve-illustration name="search_not_found" size="lg" />
+  <span class="text-sm text-surface-500 dark:text-surface-300">
+    There are no technical reseeds launched
+  </span>
+</div>
+} }
+<p-dialog
+  header="Technical Reseed"
+  class="dialog-cols-4"
+  [modal]="true"
+  [visible]="launchDialogVisible()"
+  (visibleChange)="launchDialogVisible.set($event)"
+  (onHide)="closeLaunchDialog()"
+>
+  <div class="flex flex-col gap-6">
+    <span class="text-surface-500 dark:text-surface-300">
+      Launch a new Technical Reseed operation
+    </span>
+
+    <form
+      [formGroup]="launchForm"
+      class="flex flex-col gap-5"
+      (ngSubmit)="launchTechnicalReseed()"
+    >
+      <div class="flex flex-col gap-2">
+        <label for="technical-reseed-final-product">Final Product Tag</label>
+        <mxevolve-final-product-dropdown
+          inputId="technical-reseed-final-product"
+          [projectId]="projectId()"
+          [labelMode]="FinalProductLabelMode.TAG_COMMIT_ID"
+          [validationLevelFilter]="['MQG', 'DQG']"
+          [stateFilter]="finalProductStateFilter"
+          [fetchParent]="finalProductFetchParent"
+          sort="createdOn,desc"
+          (selectedFinalProductChange)="
+            launchForm.controls.finalProduct.setValue($event)
+          "
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="technical-reseed-environment-definition">
+          Environment Definition
+        </label>
+        <mxevolve-environment-definition-dropdown
+          inputId="technical-reseed-environment-definition"
+          formControlName="environmentDefinition"
+          [projectId]="projectId()"
+        />
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="technical-reseed-maintenance-level">
+          Maintenance Level
+        </label>
+        <p-select
+          inputId="technical-reseed-maintenance-level"
+          formControlName="maintenanceConfiguration"
+          [options]="maintenanceOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select maintenance level"
+          appendTo="body"
+          [showClear]="true"
+          styleClass="w-full"
+        />
+      </div>
+
+      <div class="flex items-start">
+        <p-checkbox
+          id="pauseForManualIntervention"
+          name="pauseForManualIntervention"
+          formControlName="pauseForManualIntervention"
+          size="large"
+          [binary]="true"
+        />
+        <div class="flex flex-col items-start">
+          <label for="pauseForManualIntervention" class="ml-2 mt-0">
+            Pause after deployment for manual intervention
+          </label>
+          <small class="text-gray-500 text-sm ml-2">
+            If enabled, the process will wait for manual adjustments before
+            proceeding to export dumps.
+          </small>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-4 pt-4">
+        <p-button
+          type="submit"
+          label="Launch"
+          class="col-span-2 col-start-2"
+          styleClass="w-full"
+          [disabled]="launchForm.invalid"
+          [loading]="launchInProgress()"
+        />
+      </div>
+    </form>
+  </div>
+</p-dialog>
+
+<p-dialog
+  header="Message"
+  [modal]="true"
+  [visible]="messageDialogVisible()"
+  (visibleChange)="messageDialogVisible.set($event)"
+  [closeOnEscape]="true"
+  [dismissableMask]="true"
+  [style]="{ width: '50rem' }"
+  appendTo="body"
+>
+  <p>{{ dialogMessage() }}</p>
+</p-dialog>

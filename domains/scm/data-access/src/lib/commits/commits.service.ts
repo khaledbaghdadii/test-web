@@ -3,10 +3,14 @@ import { inject, Injectable } from "@angular/core";
 import { APP_CONFIG, AppConfig } from "@mxflow/config";
 import { catchError, map, Observable, throwError } from "rxjs";
 import { CommitDetails } from "./model/commit-details.model";
+import { CommitInfo } from "./model/commit-info.model";
 import { GetCommitsDifferenceRequest } from "./model/get-commits-difference-request.model";
+import { GetCommitsInfoRequest } from "./model/get-commits-info-request.model";
 import { GetPaginatedCommitsDifferenceRequest } from "./model/get-paginated-commits-difference-request.model";
 import { GetPullRequestCommitsRequest } from "./model/get-pull-request-commits-request.model";
 import { PaginatedCommitsPage } from "./model/paginated-commits-page.model";
+import { GetCommitRequest } from "./model/get-commit-request.model";
+import { ErrorHandler } from "@mxflow/features/scm";
 
 interface PullRequestCommitApiResponse {
   readonly id: string;
@@ -14,6 +18,28 @@ interface PullRequestCommitApiResponse {
   readonly authorTimestamp: string;
   readonly message: string;
   readonly url: string;
+}
+
+interface CommitUserApiResponse {
+  readonly displayName: string;
+  readonly emailAddress: string;
+  readonly name: string;
+}
+
+interface MinimalCommitIdApiResponse {
+  readonly id: string;
+  readonly displayId: string;
+}
+
+interface CommitInfoApiResponse {
+  readonly id: string;
+  readonly displayId: string;
+  readonly author: CommitUserApiResponse;
+  readonly authorTimestamp: string;
+  readonly committer: CommitUserApiResponse;
+  readonly committerTimestamp: string;
+  readonly message: string;
+  readonly parent?: MinimalCommitIdApiResponse;
 }
 
 interface PullRequestCommitsPaginatedResponse {
@@ -27,6 +53,25 @@ export class CommitsService {
 
   private get baseUrl(): string {
     return this.config.gatewayUrl + "scm-operations/";
+  }
+
+  getCommit(request: GetCommitRequest): Observable<CommitDetails> {
+    const url = `${this.baseUrl}projects/${request.projectId}/repositories/${request.repositoryId}/commits/${request.commitId}`;
+
+    return this.http
+      .get<CommitInfoApiResponse>(url, { params: new HttpParams() })
+      .pipe(
+        map((response) => ({
+          id: response.id,
+          committerDisplayName: response.committer.displayName,
+          committerDisplayEmail: response.committer.emailAddress,
+          timeStamp: response.committerTimestamp,
+          message: response.message,
+        })),
+        catchError((error) =>
+          throwError(() => ErrorHandler.createErrorWithStatus(error))
+        )
+      );
   }
 
   getCommitDifferences(
@@ -52,6 +97,38 @@ export class CommitsService {
           )
         )
       );
+  }
+
+  /**
+   * Batch-resolves commit messages for a set of commit ids.
+   *
+   * Copied verbatim (verb, URL and body shape) from the legacy
+   * `ScmService.getCommitsInfo` (`web/libs/features/scm/src/lib/scm.service.ts`):
+   * a POST whose body is the raw array of commit ids. Used to label
+   * commit-based dropdown options with their commit message.
+   */
+  getCommitsInfo(request: GetCommitsInfoRequest): Observable<CommitInfo[]> {
+    const url = `${this.baseUrl}projects/${request.projectId}/repositories/${request.repositoryId}/commits`;
+
+    return this.http.post<CommitInfoApiResponse[]>(url, request.commitIds).pipe(
+      map((response) =>
+        response.map((commit) => ({
+          id: commit.id,
+          displayId: commit.displayId,
+          message: commit.message,
+        }))
+      ),
+      catchError((error) =>
+        throwError(
+          () =>
+            new Error(
+              error?.error?.message ??
+                error?.message ??
+                "Failed to fetch commits info"
+            )
+        )
+      )
+    );
   }
 
   getPullRequestCommits(

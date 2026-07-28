@@ -49,6 +49,25 @@ describe("binary impact component", () => {
     ).toBeTruthy();
   });
 
+  it("should display the human-readable id link before the title", () => {
+    component.binaryImpacts = [
+      {
+        id: "1",
+        objectId: "PROJECT-BIMP-1",
+        projectId: "project-1",
+        title: "Impact Title",
+        upgradeImpact: null,
+      } as unknown as BinaryImpact,
+    ];
+    fixture.detectChanges();
+    expect(
+      DomTestUtils.getElementByTestId(
+        fixture,
+        "binary-impact-id-link"
+      ).isRendered()
+    ).toBeTruthy();
+  });
+
   it("should display upgrade impact link if upgrade impact is linked to binary impact", () => {
     component.binaryImpacts = [
       {

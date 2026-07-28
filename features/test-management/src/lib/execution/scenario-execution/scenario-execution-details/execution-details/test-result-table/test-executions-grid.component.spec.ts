@@ -25,7 +25,7 @@ import { ButtonModule } from "primeng/button";
 import { ProjectService } from "@mxflow/features/project";
 import { of } from "rxjs";
 import { DomTestUtils } from "@mxevolve/testing";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 const FIRST_TEST_EXECUTION = {
   id: "title",

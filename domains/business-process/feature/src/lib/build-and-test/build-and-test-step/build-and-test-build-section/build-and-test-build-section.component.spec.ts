@@ -1,14 +1,26 @@
 import { render, screen, waitFor } from "@testing-library/angular";
 import { MockComponent, ngMocks } from "ng-mocks";
+import { of } from "rxjs";
 import { BuildAndTestBuildSectionComponent } from "./build-and-test-build-section.component";
 import { EnvironmentStatusPanelComponent } from "@mxevolve/domains/environment/widget";
-import { Development } from "@mxevolve/domains/scm/data-access";
+import {
+  Development,
+  MergeRequestOverview,
+  MergeRequestState,
+} from "@mxevolve/domains/scm/data-access";
 import { MergeRequestCommitsComponent } from "@mxevolve/domains/scm/widget";
+import { BuildEnvironmentScenarioActionsComponent } from "@mxevolve/domains/business-process/widget";
+import { JiraDetailsService } from "@mxevolve/domains/business-process/data-access";
 
 const MOCK_IMPORTS = [
   MockComponent(EnvironmentStatusPanelComponent),
+  MockComponent(BuildEnvironmentScenarioActionsComponent),
   MockComponent(MergeRequestCommitsComponent),
 ];
+
+const mockJiraDetailsService = {
+  getJiraDetails: jest.fn(),
+};
 
 const DEVELOPMENT: Development = {
   id: "dev-001",
@@ -25,22 +37,34 @@ const DEVELOPMENT: Development = {
 async function renderComponent(
   inputs: Partial<{
     projectId: string;
+    processId: string;
     storyIds: string[];
     environmentId: string;
     automerge: boolean;
     development: Development;
-    latestScenarioExecutionId: string;
+    mergeRequest: MergeRequestOverview;
     showEnvironmentWaitingMessage: boolean;
     scenarioDetailsDisabled: boolean;
-  }> = {}
+  }> = {},
+  jiraBaseUrl = "https://jira.example.com"
 ) {
+  mockJiraDetailsService.getJiraDetails.mockReturnValue(
+    of({ projectId: "proj-001", jiraProjectId: "JP", jiraBaseUrl })
+  );
   return render(BuildAndTestBuildSectionComponent, {
     imports: MOCK_IMPORTS,
-    inputs: { projectId: "proj-001", ...inputs },
+    inputs: { projectId: "proj-001", processId: "proc-001", ...inputs },
+    providers: [
+      { provide: JiraDetailsService, useValue: mockJiraDetailsService },
+    ],
   });
 }
 
 describe("BuildAndTestBuildSectionComponent", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders the Build panel header", async () => {
     await renderComponent();
 
@@ -48,25 +72,50 @@ describe("BuildAndTestBuildSectionComponent", () => {
   });
 
   describe("story chips", () => {
-    it("renders a chip per story id", async () => {
+    it("renders a chip per story id beside the Build title", async () => {
       await renderComponent({ storyIds: ["VAL-125", "VAL-127"] });
 
-      await waitFor(() =>
-        expect(
-          screen.getByText("You are working on the following story")
-        ).toBeTruthy()
-      );
-      expect(screen.getByText("VAL-125")).toBeTruthy();
+      await waitFor(() => expect(screen.getByText("VAL-125")).toBeTruthy());
       expect(screen.getByText("VAL-127")).toBeTruthy();
     });
 
-    it("does not render the story section when there are no story ids", async () => {
+    it("renders each story chip as a link to its Jira issue", async () => {
+      await renderComponent({ storyIds: ["VAL-125"] });
+
+      expect(
+        await screen.findByRole("link", { name: "VAL-125" })
+      ).toHaveAttribute("href", "https://jira.example.com/browse/VAL-125");
+    });
+
+    it("adds spacing between the story chips and the Build title", async () => {
+      await renderComponent({ storyIds: ["VAL-125"] });
+
+      expect(await screen.findByRole("link", { name: "VAL-125" })).toHaveClass(
+        "ml-4"
+      );
+    });
+
+    it("shows a tooltip with the Jira issue on the story chip", async () => {
+      await renderComponent({ storyIds: ["VAL-125"] });
+
+      expect(
+        await screen.findByRole("link", { name: "VAL-125" })
+      ).toHaveAttribute("title", "View VAL-125 in Jira");
+    });
+
+    it("renders an empty link href when the jira base url is unavailable", async () => {
+      await renderComponent({ storyIds: ["VAL-125"] }, "");
+
+      await waitFor(() => expect(screen.getByText("VAL-125")).toBeTruthy());
+      const link = document.querySelector("a");
+      expect(link).toHaveAttribute("href", "");
+    });
+
+    it("does not render any story chips when there are no story ids", async () => {
       await renderComponent({ storyIds: [] });
 
       await waitFor(() => expect(screen.getByText("Build")).toBeTruthy());
-      expect(
-        screen.queryByText("You are working on the following story")
-      ).toBeNull();
+      expect(screen.queryByRole("link")).toBeNull();
     });
   });
 
@@ -120,56 +169,9 @@ describe("BuildAndTestBuildSectionComponent", () => {
       const panel = ngMocks.find(fixture, EnvironmentStatusPanelComponent);
       expect(panel.componentInstance.showOpenConfigEditorAction).toBe(false);
     });
-  });
 
-  describe("scenario details action", () => {
-    it("renders the scenario details icon link when the latest scenario execution id is available", async () => {
-      await renderComponent({
-        environmentId: "env-001",
-        latestScenarioExecutionId: "scenario-exec-001",
-      });
-
-      await waitFor(() =>
-        expect(
-          document.querySelector('a[aria-label="Open scenario details"]')
-        ).toBeTruthy()
-      );
-
-      expect(
-        document
-          .querySelector('a[aria-label="Open scenario details"]')
-          ?.getAttribute("href")
-      ).toBe("/app/proj-001/test/execution/details/scenario-exec-001");
-      expect(
-        document.querySelector('mxevolve-icon[name="visibility"]')
-      ).toBeTruthy();
-      expect(
-        document.querySelector('mxevolve-icon[name="description"]')
-      ).toBeNull();
-    });
-
-    it("disables the scenario details link when user intervention is disabled", async () => {
-      await renderComponent({
-        environmentId: "env-001",
-        latestScenarioExecutionId: "scenario-exec-001",
-        scenarioDetailsDisabled: true,
-      });
-
-      await waitFor(() =>
-        expect(
-          document.querySelector('a[aria-label="Open scenario details"]')
-        ).toBeTruthy()
-      );
-
-      const detailsLink = document.querySelector(
-        'a[aria-label="Open scenario details"]'
-      );
-      expect(detailsLink?.getAttribute("href")).toBeNull();
-      expect(detailsLink?.getAttribute("aria-disabled")).toBe("true");
-    });
-
-    it("does not render the scenario details icon link without a latest scenario execution id", async () => {
-      await renderComponent({ environmentId: "env-001" });
+    it("hides the deployment details row in the build section panel", async () => {
+      const { fixture } = await renderComponent({ environmentId: "env-001" });
 
       await waitFor(() =>
         expect(
@@ -177,8 +179,94 @@ describe("BuildAndTestBuildSectionComponent", () => {
         ).toBeTruthy()
       );
 
+      const panel = ngMocks.find(fixture, EnvironmentStatusPanelComponent);
+      expect(panel.componentInstance.showDeploymentDetails).toBe(false);
+    });
+  });
+
+  describe("scenario actions", () => {
+    it("projects the build-environment scenario actions when an environment id is available", async () => {
+      const { fixture } = await renderComponent({
+        environmentId: "env-001",
+        processId: "proc-123",
+      });
+
+      await waitFor(() =>
+        expect(
+          document.querySelector("mxevolve-build-environment-scenario-actions")
+        ).toBeTruthy()
+      );
+
+      const actions = ngMocks.find(
+        fixture,
+        BuildEnvironmentScenarioActionsComponent
+      );
+      expect(actions.componentInstance.projectId).toBe("proj-001");
+      expect(actions.componentInstance.processId).toBe("proc-123");
+    });
+
+    it("forwards the scenario details disabled flag to the scenario actions", async () => {
+      const { fixture } = await renderComponent({
+        environmentId: "env-001",
+        scenarioDetailsDisabled: true,
+      });
+
+      await waitFor(() =>
+        expect(
+          document.querySelector("mxevolve-build-environment-scenario-actions")
+        ).toBeTruthy()
+      );
+
+      const actions = ngMocks.find(
+        fixture,
+        BuildEnvironmentScenarioActionsComponent
+      );
+      expect(actions.componentInstance.scenarioDetailsDisabled).toBe(true);
+    });
+
+    it("re-emits the scenario rerun event from the projected actions", async () => {
+      mockJiraDetailsService.getJiraDetails.mockReturnValue(
+        of({
+          projectId: "proj-001",
+          jiraProjectId: "JP",
+          jiraBaseUrl: "https://jira.example.com",
+        })
+      );
+      const rerunSpy = jest.fn();
+      const { fixture } = await render(BuildAndTestBuildSectionComponent, {
+        imports: MOCK_IMPORTS,
+        inputs: {
+          projectId: "proj-001",
+          processId: "proc-001",
+          environmentId: "env-001",
+        },
+        on: { scenarioRerun: rerunSpy },
+        providers: [
+          { provide: JiraDetailsService, useValue: mockJiraDetailsService },
+        ],
+      });
+
+      await waitFor(() =>
+        expect(
+          document.querySelector("mxevolve-build-environment-scenario-actions")
+        ).toBeTruthy()
+      );
+
+      const actions = ngMocks.find(
+        fixture,
+        BuildEnvironmentScenarioActionsComponent
+      );
+      actions.componentInstance.scenarioRerun.emit();
+      expect(rerunSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not project the scenario actions without an environment id", async () => {
+      await renderComponent();
+
+      await waitFor(() => expect(screen.getByText("Build")).toBeTruthy());
+
       expect(
-        document.querySelector('a[aria-label="Open scenario details"]')
+        document.querySelector("mxevolve-build-environment-scenario-actions")
       ).toBeNull();
     });
   });
@@ -205,6 +293,39 @@ describe("BuildAndTestBuildSectionComponent", () => {
 
       const commits = ngMocks.find(fixture, MergeRequestCommitsComponent);
       expect(commits.componentInstance.development).toEqual(DEVELOPMENT);
+    });
+
+    it("enables the commits-behind warning on the commits table", async () => {
+      const { fixture } = await renderComponent({ development: DEVELOPMENT });
+
+      await waitFor(() =>
+        expect(
+          document.querySelector("mxevolve-merge-request-commits")
+        ).toBeTruthy()
+      );
+
+      const commits = ngMocks.find(fixture, MergeRequestCommitsComponent);
+      expect(commits.componentInstance.showCommitsBehindWarning).toBe(true);
+    });
+
+    it("passes the merge request to the commits table", async () => {
+      const mergeRequest: MergeRequestOverview = {
+        pullRequestId: "pr-1",
+        mergeRequestState: MergeRequestState.MERGED,
+      };
+      const { fixture } = await renderComponent({
+        development: DEVELOPMENT,
+        mergeRequest,
+      });
+
+      await waitFor(() =>
+        expect(
+          document.querySelector("mxevolve-merge-request-commits")
+        ).toBeTruthy()
+      );
+
+      const commits = ngMocks.find(fixture, MergeRequestCommitsComponent);
+      expect(commits.componentInstance.mergeRequest).toEqual(mergeRequest);
     });
   });
 });

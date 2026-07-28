@@ -1,5 +1,6 @@
 export interface LiteBinaryImpactApiResponse {
   id: string;
+  objectId: string;
   title: string;
   owner: string;
   mxVersion: string;

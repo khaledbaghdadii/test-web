@@ -1,7 +1,7 @@
 import { Component, EventEmitter, inject, Input, Output } from "@angular/core";
 import { Checkbox } from "primeng/checkbox";
 import { FormsModule } from "@angular/forms";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 @Component({
   selector: "mxevolve-keep-services-checkbox",

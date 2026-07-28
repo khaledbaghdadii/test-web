@@ -18,12 +18,49 @@ export interface Environment {
   environmentActions?: string[];
   webClientUrl?: string;
   secureClientArtifactUri?: string;
+  environmentDeploymentMode?: string;
+  environmentSource?: string;
+  environmentDefinition?: EnvironmentDefinitionRef;
+  configurationIdentifier?: EnvironmentConfigurationIdentifier;
+  maintenance?: EnvironmentMaintenance;
+  allocationId?: string;
+  clients?: EnvironmentMachineRef[];
+  tests?: EnvironmentMachineRef[];
+  clonedRepositoryPath?: string;
+}
+
+export interface EnvironmentDefinitionRef {
+  id?: string;
+  name: string;
+}
+
+export interface EnvironmentConfigurationIdentifier {
+  branch?: string;
+  revision?: string;
+}
+
+export interface EnvironmentMaintenance {
+  full?: boolean;
+}
+
+export interface EnvironmentMachineRef {
+  directory?: string;
+  allocation?: EnvironmentMachineRefAllocation;
+}
+
+export interface EnvironmentMachineRefAllocation {
+  machine?: EnvironmentMachineRefMachine;
+}
+
+export interface EnvironmentMachineRefMachine {
+  name: string;
 }
 
 export interface EnvironmentBundle {
   id: string;
   branch: string;
   version: string;
+  changelist?: string;
   type?: string;
 }
 
@@ -34,6 +71,17 @@ export interface EnvironmentIsTool {
 export interface EnvironmentDatabase {
   name: string;
   mxDbTypes: string[];
+  allocation?: EnvironmentDatabaseAllocation;
+}
+
+export interface EnvironmentDatabaseAllocation {
+  name?: string;
+  port?: string;
+  machine?: EnvironmentDatabaseMachine;
+}
+
+export interface EnvironmentDatabaseMachine {
+  name: string;
 }
 
 export interface Applicative {

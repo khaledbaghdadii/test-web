@@ -3,3 +3,7 @@ export interface UserApiResponse {
   readonly displayName: string;
   readonly mail: string;
 }
+
+export interface UserPageResponse {
+  readonly content: UserApiResponse[];
+}

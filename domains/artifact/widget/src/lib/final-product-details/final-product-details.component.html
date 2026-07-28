@@ -1,133 +1,177 @@
-@if (publishingNotStarted()) {
-<p-message severity="info">
-  <ng-template #icon>
-    <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
-  </ng-template>
-  Publishing will start after integrating changes passes
-</p-message>
-} @else if (awaitingPublishingRequest()) {
-<p-message severity="info">
-  <ng-template #icon>
-    <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
-  </ng-template>
-  Publishing will be requested
-</p-message>
-} @else if (shouldShowFailure()) {
-<p-message severity="error">
-  <ng-template #icon>
-    <mxevolve-icon name="cancel" size="md" class="mr-2 mt-1" />
-  </ng-template>
-  Something Went Wrong! Failed to request publishing a final product
-</p-message>
+@if (showError()) {
+<div class="w-full p-4">
+  <p-message
+    class="w-full"
+    styleClass="w-full"
+    severity="error"
+    text="Something Went Wrong! Failed to request publishing a final product"
+    [closable]="false"
+  ></p-message>
+</div>
+} @else if (isLoading()) {
+<div class="flex flex-wrap gap-6 p-4">
+  <p-skeleton width="12rem" height="2rem"></p-skeleton>
+  <p-skeleton width="12rem" height="2rem"></p-skeleton>
+  <p-skeleton width="12rem" height="2rem"></p-skeleton>
+</div>
+} @else if (finalProduct(); as finalProduct) {
+<div class="flex flex-col gap-6 p-4">
+  <h3 class="text-lg font-semibold">Final Product Creation</h3>
+
+  <!-- Row 1: Status, Validation Level, Failure Reason -->
+  <div
+    class="flex flex-wrap items-stretch gap-6"
+    data-testid="final-product-summary-row"
+  >
+    <div class="flex min-w-0 flex-col gap-1">
+      <span class="text-sm text-surface-500">Status</span>
+      <div class="flex items-center gap-2">
+        <mxevolve-final-product-status-badge
+          [state]="finalProduct.state"
+        ></mxevolve-final-product-status-badge>
+      </div>
+    </div>
+
+    <p-divider layout="vertical"></p-divider>
+
+    <div class="flex min-w-0 flex-col gap-1">
+      <span class="text-sm text-surface-500">Validation Level</span>
+      <div class="flex" data-testid="final-product-validation-level">
+        <p-tag [value]="finalProduct.validationLevel || 'N/A'"></p-tag>
+      </div>
+    </div>
+
+    <p-divider layout="vertical"></p-divider>
+
+    <div
+      class="flex min-w-0 flex-col gap-1"
+      data-testid="final-product-failure-reason"
+    >
+      <span class="text-sm text-surface-500">Failure Reason</span>
+      <span class="text-sm font-semibold break-words">
+        <mxevolve-expandable-message
+          [message]="finalProduct.failureMessage || '-'"
+          triggerAriaLabel="See full failure reason"
+        ></mxevolve-expandable-message>
+      </span>
+    </div>
+  </div>
+
+  <!-- Row 2: Final Product ID, Commit, Branch -->
+  <div
+    class="flex flex-wrap items-stretch gap-6"
+    data-testid="final-product-details-row"
+  >
+    <div class="flex min-w-0 flex-col gap-1">
+      <span class="text-sm text-surface-500">Final Product ID</span>
+      <span class="text-sm font-semibold break-words">{{
+        finalProduct.id
+      }}</span>
+    </div>
+
+    <p-divider layout="vertical"></p-divider>
+
+    <div class="flex min-w-0 flex-col gap-1">
+      <span class="text-sm text-surface-500">Commit</span>
+      <span class="text-sm font-semibold">
+        <mxevolve-commit-id-display
+          [commitId]="finalProduct.configurationCommitId"
+        ></mxevolve-commit-id-display>
+      </span>
+    </div>
+
+    <p-divider layout="vertical"></p-divider>
+
+    <div class="flex min-w-0 flex-col gap-1">
+      <span class="text-sm text-surface-500">Branch</span>
+      <span class="text-sm font-semibold break-words">{{
+        finalProduct.branch
+      }}</span>
+    </div>
+  </div>
+
+  <!-- Row 3: Factory Product -->
+  <div
+    class="flex flex-col gap-3"
+    data-testid="final-product-factory-product-row"
+  >
+    <span class="text-primary font-bold">Factory Product</span>
+
+    <div class="flex flex-wrap items-stretch gap-6 pl-4">
+      <div class="flex min-w-0 flex-col gap-1">
+        <span class="text-sm text-surface-500">ID</span>
+        <span
+          class="text-sm font-semibold whitespace-nowrap"
+          data-testid="factory-product-id"
+        >
+          {{ finalProduct.factoryProduct?.id || "N/A" }}
+        </span>
+      </div>
+
+      <p-divider layout="vertical"></p-divider>
+
+      <div class="flex min-w-0 flex-col gap-1">
+        <span class="text-sm text-surface-500">Type</span>
+        <span class="text-sm font-semibold whitespace-nowrap">
+          {{ finalProduct.factoryProduct?.type || "N/A" }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 4: Software Product -->
+  <div
+    class="flex flex-col gap-3"
+    data-testid="final-product-software-product-row"
+  >
+    <span class="text-primary font-bold">Software Product</span>
+
+    <div class="flex flex-wrap items-stretch gap-6 pl-4">
+      <div class="flex min-w-0 flex-col gap-1">
+        <span class="text-sm text-surface-500">ID</span>
+        <span class="text-sm font-semibold whitespace-nowrap">
+          {{ finalProduct.factoryProduct?.softwareProduct?.id || "N/A" }}
+        </span>
+      </div>
+
+      <p-divider layout="vertical"></p-divider>
+
+      <div class="flex min-w-0 flex-col gap-1">
+        <span class="text-sm text-surface-500">Version</span>
+        <span class="text-sm font-semibold whitespace-nowrap">
+          {{ finalProduct.factoryProduct?.softwareProduct?.version || "N/A" }}
+        </span>
+      </div>
+
+      <p-divider layout="vertical"></p-divider>
+
+      <div class="flex min-w-0 flex-col gap-1">
+        <span class="text-sm text-surface-500">Change List</span>
+        <span class="text-sm font-semibold whitespace-nowrap">
+          {{ finalProduct.factoryProduct?.softwareProduct?.revision || "N/A" }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+} @else if (isPublishingInProgress()) {
+<div class="w-full p-4">
+  <p-message
+    class="w-full"
+    styleClass="w-full"
+    severity="info"
+    text="Final product publishing is in progress."
+    [closable]="false"
+  ></p-message>
+</div>
 } @else {
-<div class="grid grid-cols-12 gap-4 bg-surface-0 dark:bg-surface-900">
-  <div class="col-span-12 md:col-span-6 p-4">
-    <div class="text-gray-500 font-medium mb-2">Final Product Id</div>
-    @if (loading()) {
-    <p-skeleton height="2rem" />
-    } @else {
-    <div class="text-surface-900 dark:text-surface-0">
-      {{ finalProduct()?.id ?? finalProductId() ?? "-" }}
-    </div>
-    }
-  </div>
-
-  <div class="col-span-12 md:col-span-6 p-4">
-    <div class="text-gray-500 font-medium mb-2">Branch</div>
-    @if (loading()) {
-    <p-skeleton height="2rem" />
-    } @else {
-    <div class="text-surface-900 dark:text-surface-0">
-      {{ finalProduct()?.branch ?? "-" }}
-    </div>
-    }
-  </div>
-
-  <div class="col-span-12 md:col-span-6 p-4">
-    <div class="text-gray-500 font-medium mb-2">Commit</div>
-    @if (loading()) {
-    <p-skeleton height="2rem" />
-    } @else {
-    <div class="text-surface-900 dark:text-surface-0">
-      {{ finalProduct()?.configurationCommitId ?? "-" }}
-    </div>
-    }
-  </div>
-
-  <div class="col-span-12 md:col-span-6 p-4">
-    <div class="text-gray-500 font-medium mb-2">Validation Level</div>
-    @if (loading()) {
-    <p-skeleton height="2rem" />
-    } @else {
-    <p-tag [value]="finalProduct()?.validationLevel ?? '-'" />
-    }
-  </div>
-
-  <div class="col-span-12 md:col-span-6 p-4">
-    <div class="text-gray-500 font-medium mb-2">Status</div>
-    @if (loading()) {
-    <p-skeleton height="2rem" />
-    } @else {
-    <p-tag [severity]="statusConfiguration().severity">
-      <div class="flex items-center gap-1 text-sm">
-        <mxevolve-icon
-          [name]="statusConfiguration().icon"
-          size="sm"
-          [spin]="statusConfiguration().spin ?? false"
-        />
-        <span>{{ statusConfiguration().label }}</span>
-      </div>
-    </p-tag>
-    }
-  </div>
-
-  <div class="col-span-12 md:col-span-6 p-4">
-    <div class="text-gray-500 font-medium mb-2">Factory Product</div>
-    @if (loading()) {
-    <p-skeleton height="2rem" />
-    } @else {
-    <div class="ml-8">
-      <div class="text-gray-500 font-normal mt-2">ID</div>
-      <div class="text-surface-900 dark:text-surface-0">
-        {{ finalProduct()?.factoryProduct?.id ?? "-" }}
-      </div>
-      <div class="text-gray-500 font-normal mt-2">Type</div>
-      <div class="text-surface-900 dark:text-surface-0">
-        {{ finalProduct()?.factoryProduct?.type ?? "-" }}
-      </div>
-    </div>
-    }
-  </div>
-
-  <div class="col-span-12 md:col-span-6 p-4">
-    <div class="text-gray-500 font-medium mb-2">Software Product</div>
-    @if (loading()) {
-    <p-skeleton height="2rem" />
-    } @else {
-    <div class="ml-8">
-      <div class="text-gray-500 font-normal mt-2">ID</div>
-      <div class="text-surface-900 dark:text-surface-0">
-        {{ finalProduct()?.factoryProduct?.softwareProduct?.id ?? "-" }}
-      </div>
-      <div class="text-gray-500 font-normal mt-2">Version</div>
-      <div class="text-surface-900 dark:text-surface-0">
-        {{ finalProduct()?.factoryProduct?.softwareProduct?.version ?? "-" }}
-      </div>
-      <div class="text-gray-500 font-normal mt-2">Change List</div>
-      <div class="text-surface-900 dark:text-surface-0">
-        {{ finalProduct()?.factoryProduct?.softwareProduct?.revision ?? "-" }}
-      </div>
-    </div>
-    }
-  </div>
-
-  @if (finalProduct()?.failureMessage) {
-  <div class="col-span-12 md:col-span-6 p-4">
-    <div class="text-gray-500 font-medium mb-2">Failure Message</div>
-    <div class="text-surface-900 dark:text-surface-0">
-      {{ finalProduct()?.failureMessage }}
-    </div>
-  </div>
-  }
+<div class="w-full p-4">
+  <p-message
+    class="w-full"
+    styleClass="w-full"
+    severity="error"
+    text="Something Went Wrong! Failed to request publishing a final product"
+    [closable]="false"
+  ></p-message>
 </div>
 }

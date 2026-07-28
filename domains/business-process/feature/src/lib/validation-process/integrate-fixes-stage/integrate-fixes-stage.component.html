@@ -1,0 +1,56 @@
+@if (stage().errorMessage) {
+<mxevolve-stage-container>
+  <mxevolve-business-process-content-container header="Integrate Changes">
+    <p-message
+      class="col-span-12"
+      severity="error"
+      [text]="stage().errorMessage"
+      [closable]="false"
+    />
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>
+} @else {
+<mxevolve-stage-container>
+  <mxevolve-business-process-content-container header="Merge">
+    <mxevolve-merge-request-stepper
+      class="col-span-12 flex flex-col"
+      [mergeRequestId]="stage().latestMergeJobId"
+      [projectId]="execution().projectId"
+      [showFinalProduct]="shouldShowFinalProduct()"
+      [finalProductId]="stage().finalProductPublishing.id"
+      [finalProductPublishingFailed]="finalProductPublishingFailed()"
+      (finalProductFetchError)="failedToFetchFinalProduct($event)"
+      (isReOpenable)="isReOpenable.set($event)"
+    />
+  </mxevolve-business-process-content-container>
+
+  <mxevolve-business-process-content-container footer [clearBackground]="true">
+    @if (!isStageStoppedOrSkipped()) { @if (!isReOpenable()) {
+    <mxevolve-validation-retry-merge-request
+      class="col-start-6 col-span-2"
+      [projectId]="execution().projectId"
+      [processId]="execution().id"
+      [developmentId]="execution().createBranchStage.developmentId"
+      [supportsResourceManagement]="execution().input.createBranch"
+      [parentBranchName]="execution().input.parentBranch"
+      [stageStatus]="stage().status"
+    />
+    } @else {
+    <mxevolve-validation-fix-issues
+      class="col-start-6 col-span-2"
+      [projectId]="execution().projectId"
+      [processId]="execution().id"
+      [stageStatus]="stage().status"
+    />
+    } } @else {
+    <div class="col-span-12">
+      <p-message
+        severity="info"
+        text="This stage was stopped or skipped."
+        [closable]="false"
+      />
+    </div>
+    }
+  </mxevolve-business-process-content-container>
+</mxevolve-stage-container>
+}

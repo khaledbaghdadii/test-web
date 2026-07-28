@@ -44,22 +44,6 @@
       <span class="text-surface-900 dark:text-surface-0">-</span>
       }
     </div>
-    <div class="my-6">
-      <div
-        class="text-surface-500 dark:text-surface-300 font-medium mb-2"
-        data-testid="affected-versions"
-      >
-        Affected Versions
-      </div>
-      @if ( upgradeImpactDetails.introducedInReleaseVersion &&
-      upgradeImpactDetails.introducedInReleaseVersion.length > 0) {
-      <span class="text-surface-900 dark:text-surface-0">{{
-        upgradeImpactDetails.introducedInReleaseVersion.join(", ")
-      }}</span>
-      } @else {
-      <span class="text-surface-900 dark:text-surface-0">-</span>
-      }
-    </div>
   </div>
   <div class="col-span-6">
     <div class="my-6">

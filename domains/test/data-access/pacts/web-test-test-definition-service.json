@@ -1,0 +1,118 @@
+{
+  "consumer": {
+    "name": "web-test"
+  },
+  "interactions": [
+    {
+      "description": "a request to get a non-existing scenario definition",
+      "providerState": "Scenario definition does not exist",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/test-scenario/scenarioDefinitionId"
+      },
+      "response": {
+        "headers": {
+          "Content-Type": "text/plain;charset=UTF-8"
+        },
+        "status": 404
+      }
+    },
+    {
+      "description": "a request to get a scenario definition by id",
+      "providerState": "Scenario definition exists",
+      "request": {
+        "method": "GET",
+        "path": "/projects/projectId/test-scenario/scenarioDefinitionId"
+      },
+      "response": {
+        "body": {
+          "archived": false,
+          "bpcs": [
+            "bpc"
+          ],
+          "environmentDefinitionId": "envDefId",
+          "heaviness": "LIGHT",
+          "id": "scenarioDefinitionId",
+          "idempotent": true,
+          "name": "scenario-name",
+          "nonFunctionalTest": false,
+          "tests": [
+            {
+              "full": true,
+              "testDefinitionId": "testDefId",
+              "testSelectionIds": [
+                "testSelectionId"
+              ]
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.archived": {
+            "match": "type"
+          },
+          "$.body.bpcs": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.bpcs[*]": {
+            "match": "type"
+          },
+          "$.body.environmentDefinitionId": {
+            "match": "type"
+          },
+          "$.body.heaviness": {
+            "match": "type"
+          },
+          "$.body.id": {
+            "match": "type"
+          },
+          "$.body.idempotent": {
+            "match": "type"
+          },
+          "$.body.name": {
+            "match": "type"
+          },
+          "$.body.nonFunctionalTest": {
+            "match": "type"
+          },
+          "$.body.tests": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.tests[*].full": {
+            "match": "type"
+          },
+          "$.body.tests[*].testDefinitionId": {
+            "match": "type"
+          },
+          "$.body.tests[*].testSelectionIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.tests[*].testSelectionIds[*]": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "12.5.2"
+    },
+    "pactRust": {
+      "ffi": "0.4.20",
+      "models": "1.2.0"
+    },
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  },
+  "provider": {
+    "name": "test-definition-service"
+  }
+}

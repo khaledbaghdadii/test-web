@@ -1,0 +1,73 @@
+.mxevolve-project-nav-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 280px;
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+}
+
+.mxevolve-project-nav-sidebar__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--p-text-muted-color, #64748b);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.mxevolve-project-nav-sidebar__item:hover {
+  color: var(--p-text-color, #1e293b);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.mxevolve-project-nav-sidebar__leaf--nested {
+  font-weight: 500;
+  padding-left: 1.5rem;
+  color: var(--p-text-muted-color, #94a3b8);
+}
+
+.mxevolve-project-nav-sidebar__item--active {
+  background: var(--p-content-background, #ffffff);
+  color: var(--p-text-color, #0f172a);
+  font-weight: 700;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.mxevolve-project-nav-sidebar__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mxevolve-project-nav-sidebar__chevron {
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.mxevolve-project-nav-sidebar__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mxevolve-project-nav-sidebar__group[hidden] {
+  display: none;
+}
+
+.mxevolve-project-nav-sidebar__section-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}

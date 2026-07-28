@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MockComponent } from "ng-mocks";
 import { Button } from "primeng/button";
 import { TooltipModule } from "primeng/tooltip";
-import { RouterLink, provideRouter } from "@angular/router";
+import { provideRouter, RouterLink } from "@angular/router";
 import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
 import { EnvironmentLinkButtonComponent } from "./environment-link-button.component";
 
@@ -47,6 +47,16 @@ describe("EnvironmentLinkButtonComponent", () => {
       "href",
       "/app/project-123/environments/env-456"
     );
+  });
+
+  it("opens the environment page in a new tab", async () => {
+    await renderComponent();
+
+    const button = screen.getByRole("button", {
+      name: "View environment details",
+    });
+    const link = button.closest("a");
+    expect(link).toHaveAttribute("target", "_blank");
   });
 
   it("renders the storage icon inside the button", async () => {

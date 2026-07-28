@@ -1,21 +1,27 @@
-import { Component, computed, input } from "@angular/core";
+import { Component, computed, inject, input, output } from "@angular/core";
+import { rxResource } from "@angular/core/rxjs-interop";
+import { catchError, of } from "rxjs";
 import { Chip } from "primeng/chip";
 import { ButtonModule } from "primeng/button";
 import { Message } from "primeng/message";
-import { TooltipModule } from "primeng/tooltip";
 import { EnvironmentStatusPanelComponent } from "@mxevolve/domains/environment/widget";
 import { BusinessProcessContentContainerComponent } from "@mxevolve/domains/business-process/ui";
-import { Development } from "@mxevolve/domains/scm/data-access";
+import {
+  Development,
+  MergeRequestOverview,
+} from "@mxevolve/domains/scm/data-access";
 import { MergeRequestCommitsComponent } from "@mxevolve/domains/scm/widget";
-import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
+import { BuildEnvironmentScenarioActionsComponent } from "@mxevolve/domains/business-process/widget";
+import { JiraDetailsService } from "@mxevolve/domains/business-process/data-access";
+import { JiraIssueUrlResolverPipe } from "@mxflow/features/business-process";
 
 /**
  * Build panel of the Build & Test step.
  *
  * Renders the build environment row, Jira story chips, and commit difference
- * table. The right-side scenario details icon follows the Figma action row; the
- * repush action is intentionally left out until its backend/source parity is
- * wired.
+ * table. The environment action row hosts the scenario repush controls (repush
+ * button, failure indicator and scenario details link) via the dedicated
+ * {@link BuildEnvironmentScenarioActionsComponent}.
  */
 @Component({
   selector: "mxevolve-build-and-test-build-section",
@@ -24,11 +30,11 @@ import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
     Chip,
     ButtonModule,
     Message,
-    TooltipModule,
     EnvironmentStatusPanelComponent,
     BusinessProcessContentContainerComponent,
     MergeRequestCommitsComponent,
-    MxevolveIconComponent,
+    BuildEnvironmentScenarioActionsComponent,
+    JiraIssueUrlResolverPipe,
   ],
   host: {
     style: "display: contents;",
@@ -36,6 +42,8 @@ import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
 })
 export class BuildAndTestBuildSectionComponent {
   readonly projectId = input.required<string>();
+  /** Process (execution) id used to resolve the build-environment scenario. */
+  readonly processId = input.required<string>();
   /** Jira/user story ids from the run input (e.g. ["VAL-125", "VAL-127"]). */
   readonly storyIds = input<string[]>([]);
   /** Optional until the build environment id is threaded through the model. */
@@ -44,15 +52,30 @@ export class BuildAndTestBuildSectionComponent {
   /** Hide the Open Config Editor action in automerge runs (parent decides). */
   readonly automerge = input<boolean>(false);
   readonly development = input<Development>();
-  readonly latestScenarioExecutionId = input<string>();
+  /** Latest merge request for the branch (drives the PR/merge commits table). */
+  readonly mergeRequest = input<MergeRequestOverview>();
   readonly scenarioDetailsDisabled = input<boolean>(false);
 
-  readonly hasStories = computed(() => this.storyIds().length > 0);
-  readonly showConfigEditor = computed(() => !this.automerge());
-  readonly scenarioDetailsLink = computed(() => {
-    const scenarioExecutionId = this.latestScenarioExecutionId();
-    return scenarioExecutionId
-      ? `/app/${this.projectId()}/test/execution/details/${scenarioExecutionId}`
-      : undefined;
+  readonly scenarioRerun = output<void>();
+
+  private readonly jiraDetailsService = inject(JiraDetailsService);
+
+  private readonly jiraDetailsResource = rxResource({
+    params: () => ({ projectId: this.projectId() }),
+    stream: ({ params }) =>
+      this.jiraDetailsService
+        .getJiraDetails(params.projectId)
+        .pipe(
+          catchError(() =>
+            of({ projectId: "", jiraProjectId: "", jiraBaseUrl: "" })
+          )
+        ),
   });
+
+  /** Jira base URL used to build clickable links for the story chips. */
+  readonly jiraBaseUrl = computed(
+    () => this.jiraDetailsResource.value()?.jiraBaseUrl
+  );
+
+  readonly showConfigEditor = computed(() => !this.automerge());
 }

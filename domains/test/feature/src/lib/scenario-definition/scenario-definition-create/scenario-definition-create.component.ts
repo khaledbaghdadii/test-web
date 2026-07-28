@@ -212,7 +212,6 @@ export class ScenarioDefinitionCreateComponent implements OnInit, OnDestroy {
       environmentDefinitionId: formValue.environmentDefinitionId as string,
       qualityLevel: formValue.qualityLevel as string,
       tests: this.tests.map((test) => ({
-        full: test.full,
         testDefinitionId: test.testDefinition.id,
         testSelectionIds: test.testSelections.map(
           (testSelection) => testSelection.id

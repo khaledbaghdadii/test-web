@@ -1,0 +1,54 @@
+<p-button
+  label="Next Step"
+  styleClass="w-full"
+  [disabled]="disabled()"
+  (onClick)="openDialog()"
+/>
+<p-dialog
+  header="Merge Request"
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  class="dialog-cols-6"
+>
+  <div class="grid-6 grid-rows-[auto_auto_1fr]">
+    <mxevolve-merge-request-details-form
+      [formControl]="mergeRequestControl"
+      [projectId]="projectId()"
+      [processId]="processId()"
+      [developmentId]="developmentId()"
+      [supportsResourceManagement]="supportsResourceManagement()"
+      [parentBranchName]="parentBranchName()"
+      [family]="ExecutionFamily.VALIDATION_PROCESS"
+    />
+
+    @if (canSkipIntegration()) {
+    <div class="col-span-6">
+      <p-message severity="warn">
+        <ng-template #icon>
+          <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
+        </ng-template>
+        There are no commit differences between your branch and the selected
+        destination branch. You can skip the integration step.
+      </p-message>
+    </div>
+
+    <p-button
+      styleClass="w-full"
+      label="Skip Integration"
+      severity="warn"
+      class="col-start-3 col-span-2 self-end"
+      (onClick)="skipIntegration()"
+      [loading]="loading()"
+    />
+    } @else {
+    <p-button
+      styleClass="w-full"
+      label="Send for Review"
+      class="col-start-3 col-span-2 self-end"
+      (onClick)="sendForReview()"
+      [loading]="loading()"
+      [disabled]="mergeRequestControl.invalid"
+    />
+    }
+  </div>
+</p-dialog>

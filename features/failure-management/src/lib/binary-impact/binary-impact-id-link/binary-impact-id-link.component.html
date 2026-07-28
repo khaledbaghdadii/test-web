@@ -1,0 +1,16 @@
+@if (readableId) {
+<a
+  class="p-button-link"
+  data-testid="binary-impact-id-link"
+  [routerLink]="[
+    '/app',
+    projectId,
+    'detections',
+    'impacts',
+    'binary',
+    binaryImpactId
+  ]"
+  target="_blank"
+  >{{ readableId }}</a
+>
+} @else { - }

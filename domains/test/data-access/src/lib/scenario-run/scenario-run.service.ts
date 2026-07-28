@@ -4,9 +4,11 @@ import { APP_CONFIG, AppConfig } from "@mxflow/config";
 import { catchError, map, Observable, throwError } from "rxjs";
 import { ScenarioRunApiResponse } from "../api-models/scenario-run-api-response";
 import {
+  BulkRerunFromFinalProductRequest,
   RepushPermission,
   RerunFromFactoryProductRequest,
   RerunFromFactoryProductResponse,
+  RerunFromFinalProductRequest,
   UpdateAssigneeRequest,
 } from "@mxevolve/domains/test/model";
 import { BulkRerunRequest } from "./bulk-rerun-request.model";
@@ -62,6 +64,15 @@ export class ScenarioRunService {
       );
   }
 
+  housekeepScenarioExecution(
+    projectId: string,
+    scenarioExecutionId: string
+  ): Observable<void> {
+    return this.http
+      .delete<void>(`${this.getBaseUrl(projectId)}/${scenarioExecutionId}`)
+      .pipe(catchError((error) => throwError(() => new Error(error.error))));
+  }
+
   rerunScenarioFromFactoryProduct(
     projectId: string,
     scenarioRunId: string,
@@ -99,6 +110,10 @@ export class ScenarioRunService {
       validationScopeEnabled: request.validationScopeEnabled,
       incidentEnabled: request.incidentEnabled,
       qualityLevel: request.qualityLevel,
+      configurationAuditing: request.configurationAuditing,
+      referenceFactoryProductId: request.referenceFactoryProductId,
+      cleanIfPassed: request.cleanIfPassed,
+      commitId: request.commitId,
     };
 
     return this.http
@@ -165,6 +180,44 @@ export class ScenarioRunService {
     return this.http
       .post<BulkRerunResponse>(
         `${this.getBaseUrl(projectId)}/repush/bulk`,
+        body
+      )
+      .pipe(catchError((error) => throwError(() => new Error(error.error))));
+  }
+
+  rerunScenarioFromFinalProduct(
+    projectId: string,
+    scenarioRunId: string,
+    request: RerunFromFinalProductRequest
+  ): Observable<RerunFromFactoryProductResponse> {
+    const body = {
+      finalProductId: request.finalProductId.trim(),
+      rtpCommitId: request.rtpCommitId.trim(),
+      executionGroupId: request.executionGroupId,
+      stopServices: request.stopServices,
+    };
+    return this.http
+      .post<RerunFromFactoryProductResponse>(
+        `${this.getBaseUrl(
+          projectId
+        )}/${scenarioRunId}/repush-from-final-product`,
+        body
+      )
+      .pipe(catchError((error) => throwError(() => new Error(error.error))));
+  }
+
+  bulkRerunFromFinalProduct(
+    projectId: string,
+    request: BulkRerunFromFinalProductRequest
+  ): Observable<BulkRerunResponse> {
+    const body = {
+      finalProductId: request.finalProductId.trim(),
+      rtpCommitId: request.rtpCommitId.trim(),
+      scenariosToBeRepushed: request.scenariosToBeRepushed,
+    };
+    return this.http
+      .post<BulkRerunResponse>(
+        `${this.getBaseUrl(projectId)}/bulk-repush-from-final-product`,
         body
       )
       .pipe(catchError((error) => throwError(() => new Error(error.error))));

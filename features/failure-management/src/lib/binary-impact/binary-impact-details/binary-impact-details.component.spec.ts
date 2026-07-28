@@ -97,6 +97,40 @@ describe("BinaryImpactDetailsComponent", () => {
     expect(component).toBeTruthy();
   });
 
+  it("should display the human-readable id as plain text before the title", () => {
+    jest.spyOn(binaryImpactService, "getById").mockReturnValue(
+      of({
+        ...BinaryImpactTestUtils.getBinaryImpact(uuidv4()),
+        objectId: "PROJECT-BIMP-1",
+      })
+    );
+
+    fixture.detectChanges();
+
+    const objectIdElement = fixture.debugElement.query(
+      By.css("[data-testid='binary-impact-object-id']")
+    );
+    expect(objectIdElement.nativeElement.textContent.trim()).toBe(
+      "PROJECT-BIMP-1"
+    );
+  });
+
+  it("should render the human-readable id without a hyperlink", () => {
+    jest.spyOn(binaryImpactService, "getById").mockReturnValue(
+      of({
+        ...BinaryImpactTestUtils.getBinaryImpact(uuidv4()),
+        objectId: "PROJECT-BIMP-1",
+      })
+    );
+
+    fixture.detectChanges();
+
+    const objectIdElement = fixture.debugElement.query(
+      By.css("[data-testid='binary-impact-object-id']")
+    );
+    expect(objectIdElement.query(By.css("a"))).toBeNull();
+  });
+
   describe("ngOnInit", () => {
     it("should fetch binary impact by id", () => {
       const binaryImpact = BinaryImpactTestUtils.getBinaryImpact(uuidv4());

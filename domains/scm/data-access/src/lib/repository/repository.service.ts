@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { inject, Injectable } from "@angular/core";
 import { APP_CONFIG, AppConfig } from "@mxflow/config";
-import { catchError, Observable, throwError } from "rxjs";
+import { catchError, map, Observable, throwError } from "rxjs";
 
 export interface RepositoryDetails {
   readonly id: string;
@@ -9,6 +9,16 @@ export interface RepositoryDetails {
   readonly url: string;
   readonly defaultBranch: string;
 }
+
+export interface RepositoryListItem {
+  readonly id: string;
+  readonly name: string;
+  readonly url: string;
+  readonly label: string;
+  readonly defaultBranch: string;
+}
+
+const TEST_REPOSITORY_LABEL = "test";
 
 @Injectable()
 export class RepositoryService {
@@ -31,6 +41,37 @@ export class RepositoryService {
                 error?.error?.message ??
                   error?.message ??
                   "Failed to fetch repository"
+              )
+          )
+        )
+      );
+  }
+
+  /**
+   * Migrated from the legacy `@mxflow/features/repository`
+   * `RepositoryService.getTestRepositories`: lists a project's repositories
+   * (GET projects/{projectId}/repositories) and keeps only those labelled
+   * "test". Used by the Build & Test / Validation / Upgrade repository selector.
+   */
+  getTestRepositories(projectId: string): Observable<RepositoryListItem[]> {
+    return this.http
+      .get<RepositoryListItem[]>(
+        `${this.config.gatewayUrl}projects/${projectId}/repositories`
+      )
+      .pipe(
+        map((repositories) =>
+          repositories.filter(
+            (repository) =>
+              repository.label?.toLowerCase() === TEST_REPOSITORY_LABEL
+          )
+        ),
+        catchError((error) =>
+          throwError(
+            () =>
+              new Error(
+                error?.error?.message ??
+                  error?.message ??
+                  "Failed to fetch repositories"
               )
           )
         )

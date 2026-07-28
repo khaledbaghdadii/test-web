@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/angular";
+import { render, screen, waitFor } from "@testing-library/angular";
 import { MockComponent, ngMocks } from "ng-mocks";
 import { ConvertBinaryStageComponent } from "./convert-binary-stage.component";
 import { ScenarioRunsComponent } from "@mxevolve/domains/test/widget";
@@ -9,12 +9,14 @@ import {
 import { UpgradeProcessStateUpdaterService } from "@mxevolve/domains/business-process/data-access";
 import { StageStatus } from "@mxevolve/domains/business-process/util";
 import { PickReferenceScenarioComponent } from "@mxevolve/domains/business-process/composite-widget";
+import { Message } from "primeng/message";
 
 const MOCK_IMPORTS = [
   MockComponent(ScenarioRunsComponent),
   MockComponent(PickReferenceScenarioComponent),
   StageContainerComponent,
   BusinessProcessContentContainerComponent,
+  Message,
 ];
 
 const REQUIRED_INPUTS = {
@@ -105,6 +107,42 @@ describe("ConvertBinaryStageComponent", () => {
       expect(
         mockUpgradeProcessStateUpdaterService.reloadProcessDetails
       ).toHaveBeenCalledWith("my-process", "my-project");
+    });
+  });
+
+  it("should display a warning in case no scenario runs were fetched", async () => {
+    const { fixture } = await renderComponent({
+      projectId: "my-project",
+      processId: "my-process",
+    });
+
+    const scenarioRunsComponent = ngMocks.find(fixture, ScenarioRunsComponent);
+    scenarioRunsComponent.componentInstance.scenarioRunsFetched.emit([]);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Scenarios are currently being executed. Please refresh to see the latest result."
+        )
+      ).toBeTruthy();
+    });
+  });
+
+  it("should not display a warning in case scenario runs were fetched", async () => {
+    const { fixture } = await renderComponent({
+      projectId: "my-project",
+      processId: "my-process",
+    });
+
+    const scenarioRunsComponent = ngMocks.find(fixture, ScenarioRunsComponent);
+    scenarioRunsComponent.componentInstance.scenarioRunsFetched.emit(["run-1"]);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(
+          "Scenarios are currently being executed. Please refresh to see the latest result."
+        )
+      ).toBeNull();
     });
   });
 });

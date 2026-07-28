@@ -1,0 +1,176 @@
+<p-panel
+  class="mt-4 p-0"
+  [showHeader]="false"
+  [pt]="{
+    content: '!p-0'
+  }"
+>
+  <p class="text-xl font-bold m-3">Environment Details</p>
+  <p-divider class="my-2"></p-divider>
+  <div class="flex flex-wrap items-start gap-6 m-4">
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">ID</span>
+      <span
+        class="text-sm font-semibold text-surface-900 dark:text-surface-0 flex items-center gap-1"
+      >
+        {{ environment().id }}
+        <span pTooltip="Copy environment ID" tooltipStyleClass="min-w-max">
+          <mxevolve-copy-to-clipboard [value]="environment().id" />
+        </span>
+      </span>
+    </div>
+
+    <p-divider
+      layout="vertical"
+      class="mx-8"
+      style="height: -webkit-fill-available"
+    ></p-divider>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Environment Definition Name
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        {{ definitionName() }}
+      </span>
+    </div>
+
+    <p-divider
+      layout="vertical"
+      class="mx-8"
+      style="height: -webkit-fill-available"
+    ></p-divider>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Deployment Source
+      </span>
+      @if (deploymentContext(); as deploymentContext) {
+
+      <div class="flex items-center gap-1">
+        <span class="flex items-center" data-testid="deployment-source-info">
+          <span
+            class="text-sm font-semibold text-surface-900 dark:text-surface-0"
+          >
+            {{ deploymentContext.source }}
+          </span>
+          <mxevolve-icon
+            [pTooltip]="deploymentContext.details"
+            tooltipPosition="bottom"
+            name="info"
+            size="sm"
+            class="ml-4"
+            [color]="'#007bff'"
+          />
+        </span>
+      </div>
+      } @else { - }
+    </div>
+
+    <p-divider
+      layout="vertical"
+      class="mx-8"
+      style="height: -webkit-fill-available"
+    ></p-divider>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">Branch</span>
+      @if (environment().configurationIdentifier?.branch; as branch) {
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        {{ branch }}
+      </span>
+      } @else { - }
+    </div>
+
+    <p-divider
+      layout="vertical"
+      class="mx-8"
+      style="height: -webkit-fill-available"
+    ></p-divider>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Commit ID
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        <mxevolve-commit-id-display
+          [commitId]="environment().configurationIdentifier?.revision"
+        />
+      </span>
+    </div>
+
+    <p-divider
+      layout="vertical"
+      class="mx-8"
+      style="height: -webkit-fill-available"
+    ></p-divider>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Maintenance
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        {{ maintenanceLabel() }}
+      </span>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-start gap-6 m-4">
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Infra Allocation
+      </span>
+      @if (infraAllocationLink(); as allocationLink) {
+
+      <span
+        class="text-sm font-semibold text-surface-900 dark:text-surface-0 flex items-center gap-1"
+      >
+        <a [routerLink]="allocationLink" class="p-button-link">
+          {{ environment().allocationId }}
+        </a>
+        <span pTooltip="Copy infra allocation ID" tooltipStyleClass="min-w-max">
+          <mxevolve-copy-to-clipboard [value]="environment().allocationId!" />
+        </span>
+      </span>
+      } @else {
+      <span data-testid="infra-allocation-dash"> - </span>
+      }
+    </div>
+
+    <p-divider
+      layout="vertical"
+      class="mx-8"
+      style="height: -webkit-fill-available"
+    ></p-divider>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Workspace Directory Path
+      </span>
+      @if (environment().clonedRepositoryPath; as workspaceDirectoryPath) {
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        {{ workspaceDirectoryPath }}
+      </span>
+      } @else { - }
+    </div>
+
+    @if (errorReason(); as errorReason) {
+    <p-divider
+      layout="vertical"
+      class="mx-8"
+      style="height: -webkit-fill-available"
+    ></p-divider>
+
+    <div class="flex flex-col gap-1">
+      <span class="text-sm text-surface-500 dark:text-surface-300">
+        Error Reason
+      </span>
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        <mxevolve-expandable-message
+          [message]="errorReason"
+          triggerAriaLabel="See full error reason"
+        />
+      </span>
+    </div>
+    }
+  </div>
+</p-panel>

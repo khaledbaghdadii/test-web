@@ -121,7 +121,7 @@ describe("ArtifactStorageService", () => {
       const encodedPath = encodeURIComponent(request.fullPath);
 
       const req = httpMock.expectOne(
-        `${MOCK_GATEWAY_URL}artifact-management/projects/${PROJECT_ID}/storages/lookup?fullPath=${encodedPath}`
+        `${MOCK_GATEWAY_URL}storage-management/projects/${PROJECT_ID}/storages/lookup?fullPath=${encodedPath}`
       );
       expect(req.request.method).toBe("GET");
       req.flush(response);
@@ -136,7 +136,7 @@ describe("ArtifactStorageService", () => {
       const encodedPath = encodeURIComponent(request.fullPath);
 
       const req = httpMock.expectOne(
-        `${MOCK_GATEWAY_URL}artifact-management/projects/${PROJECT_ID}/storages/lookup?fullPath=${encodedPath}`
+        `${MOCK_GATEWAY_URL}storage-management/projects/${PROJECT_ID}/storages/lookup?fullPath=${encodedPath}`
       );
       req.flush("Something went wrong", {
         status: 500,
@@ -154,7 +154,7 @@ describe("ArtifactStorageService", () => {
         });
 
       const req = httpMock.expectOne(
-        `${MOCK_GATEWAY_URL}artifact-management/storages?page=${MOCK_PAGE_INDEX}&size=${MOCK_PAGE_SIZE}&sort=createdOn,desc&storageType=${MOCK_STORAGE_TYPE}&searchKey=${encodeURIComponent(
+        `${MOCK_GATEWAY_URL}storage-management/storages?page=${MOCK_PAGE_INDEX}&size=${MOCK_PAGE_SIZE}&sort=createdOn,desc&storageType=${MOCK_STORAGE_TYPE}&searchKey=${encodeURIComponent(
           MOCK_FETCH_STORAGES_FILTER.searchKey
         )}&projectIds=${MOCK_PROJECT_ID}&projectIds=${MOCK_PROJECT_ID_2}&fetchGlobal=${MOCK_FETCH_GLOBAL}&useCases=${MOCK_USER_CASE_1}&useCases=${MOCK_USER_CASE_2}`
       );
@@ -170,7 +170,7 @@ describe("ArtifactStorageService", () => {
       });
 
       const req = httpMock.expectOne(
-        `${MOCK_GATEWAY_URL}artifact-management/storages?page=${MOCK_PAGE_INDEX}&size=${MOCK_PAGE_SIZE}&sort=createdOn,desc&storageType=${MOCK_STORAGE_TYPE}&searchKey=${encodeURIComponent(
+        `${MOCK_GATEWAY_URL}storage-management/storages?page=${MOCK_PAGE_INDEX}&size=${MOCK_PAGE_SIZE}&sort=createdOn,desc&storageType=${MOCK_STORAGE_TYPE}&searchKey=${encodeURIComponent(
           MOCK_FETCH_STORAGES_FILTER.searchKey
         )}&projectIds=${MOCK_PROJECT_ID}&projectIds=${MOCK_PROJECT_ID_2}&fetchGlobal=${MOCK_FETCH_GLOBAL}&useCases=${MOCK_USER_CASE_1}&useCases=${MOCK_USER_CASE_2}`
       );

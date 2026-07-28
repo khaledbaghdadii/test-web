@@ -1,11 +1,36 @@
 @if(loading()) {
-<div>LOADING SCREEN COMING SOON</div>
+<div>
+  <p-skeleton data-testid="skeleton"></p-skeleton>
+</div>
 } @else {
 <div class="flex-1 flex flex-col min-h-0">
   <div class="flex-1 flex flex-col gap-y-[16px] w-full">
     <mxevolve-build-and-test-run-header
       [execution]="executionDetails.value()!"
     />
+
+    @if ( executionDetails.value()!.source.type ===
+    BuildAndTestSourceType.BUSINESS_PROCESS ) {
+    <p-message severity="info">
+      This process was started by the following BP:
+      <a
+        class="p-button-link"
+        [routerLink]="
+          '/app/' +
+          projectId() +
+          '/business-process/' +
+          (executionDetails.value()!.source.id | businessProcessUriFactory)
+        "
+        target="_blank"
+      >
+        {{
+          executionDetails.value()!.source.id
+            | businessProcessName : projectId()
+            | async
+        }}
+      </a>
+    </p-message>
+    }
 
     <mxevolve-execution-alert-display
       [expiryDate]="executionDetails.value()!.expiryDate"
@@ -17,9 +42,6 @@
     @if(executionReadyForDisplay() || failedInBranchCreation()) {
     <div class="flex-1 flex flex-col w-full">
       <mxevolve-stepper [steps]="steps()" [(displayedStepId)]="selectedStepId">
-        <mxevolve-step stepId="create-branch">
-          <ng-template></ng-template>
-        </mxevolve-step>
         <mxevolve-step stepId="prepare-build">
           <ng-template>
             <mxevolve-prepare-build-stage

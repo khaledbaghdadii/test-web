@@ -1,5 +1,6 @@
 export interface BinaryImpactApiResponse {
   id: string;
+  objectId: string;
   title: string;
   owner: string;
   mxVersion: string;
@@ -16,6 +17,7 @@ export interface BinaryImpactApiResponse {
   cbpmL1L2L3: ClientImpactNoteFieldApiModel[];
   cbpmL2Scope: ClientImpactNoteFieldApiModel[];
   cbpmL3L4: ClientImpactNoteFieldApiModel[];
+  affectedVersions: string[];
   impactedOutputs?: ClientImpactNoteFieldApiModel;
   propagationPattern?: string;
   configurationDesign?: string;

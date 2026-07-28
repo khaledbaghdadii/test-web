@@ -21,6 +21,7 @@ const MOCK_IMPORTS = [
 
 const mockScenarioRunService = {
   rerunScenarioFromFactoryProduct: jest.fn(),
+  rerunScenarioFromFinalProduct: jest.fn(),
   isRepushAllowed: jest.fn(),
 };
 
@@ -42,6 +43,12 @@ async function renderComponent(
       executionGroupId: string;
       repushable: boolean;
       repushAllowed: boolean;
+      allowOfficialRerun: boolean;
+      initialFinalProductId: string;
+      branch: string;
+      enableKeepServices: boolean;
+      warningMessageMap: Record<string, string>;
+      defaultRerunMode: "official" | "unofficial";
     }
   > = {}
 ) {
@@ -112,6 +119,46 @@ describe("RerunScenarioButtonComponent", () => {
     expect(ngMocks.input(dialog, "warningMessage")).toBeUndefined();
   });
 
+  it("resolves a permission warning code through the warning message map", async () => {
+    mockScenarioRunService.isRepushAllowed.mockReturnValue(
+      of({
+        actionAllowed: true,
+        rejectionReasons: [],
+        warnings: ["SHOULD_HOUSKEEP_BEFORE_NEXT_LAUNCH"],
+      })
+    );
+    const { fixture } = await renderComponent({
+      executionGroupId: "eg-123",
+      warningMessageMap: {
+        SHOULD_HOUSKEEP_BEFORE_NEXT_LAUNCH: "Mapped warning text",
+      },
+    });
+
+    const dialog = ngMocks.find(fixture, RerunDialogComponent);
+    expect(ngMocks.input(dialog, "warningMessage")).toBe("Mapped warning text");
+  });
+
+  it("falls back to the raw warning code when it is unmapped", async () => {
+    mockScenarioRunService.isRepushAllowed.mockReturnValue(
+      of({
+        actionAllowed: true,
+        rejectionReasons: [],
+        warnings: ["SOME_UNMAPPED_WARNING"],
+      })
+    );
+    const { fixture } = await renderComponent({
+      executionGroupId: "eg-123",
+      warningMessageMap: {
+        SHOULD_HOUSKEEP_BEFORE_NEXT_LAUNCH: "Mapped warning text",
+      },
+    });
+
+    const dialog = ngMocks.find(fixture, RerunDialogComponent);
+    expect(ngMocks.input(dialog, "warningMessage")).toBe(
+      "SOME_UNMAPPED_WARNING"
+    );
+  });
+
   it("shows commit ID helper text", async () => {
     const { fixture } = await renderComponent();
 
@@ -166,6 +213,28 @@ describe("RerunScenarioButtonComponent", () => {
     });
 
     expect(scenarioRerunSpy).toHaveBeenCalled();
+  });
+
+  it("forwards stopServices to rerunScenarioFromFactoryProduct on unofficial rerun", async () => {
+    const { fixture } = await renderComponent({ executionGroupId: "eg-123" });
+    await openModal();
+
+    const dialog = ngMocks.find(fixture, RerunDialogComponent);
+    ngMocks.output(dialog, "rerunRequested").emit({
+      mode: "unofficial",
+      factoryProductId: "fp-123",
+      commitId: undefined,
+      stopServices: false,
+    });
+
+    expect(
+      mockScenarioRunService.rerunScenarioFromFactoryProduct
+    ).toHaveBeenCalledWith("project-123", "scenario-run-456", {
+      factoryProductId: "fp-123",
+      commitId: undefined,
+      executionGroupId: "eg-123",
+      stopServices: false,
+    });
   });
 
   it("shows an error toast when the rerun fails", async () => {
@@ -268,6 +337,132 @@ describe("RerunScenarioButtonComponent", () => {
           "Rerun"
         );
       });
+    });
+  });
+
+  describe("new inputs passed to dialog", () => {
+    it("passes allowOfficialRerun to the dialog", async () => {
+      const { fixture } = await renderComponent({ allowOfficialRerun: true });
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(dialog, "allowOfficialRerun")).toBe(true);
+    });
+
+    it("passes false for allowOfficialRerun to the dialog by default", async () => {
+      const { fixture } = await renderComponent();
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(dialog, "allowOfficialRerun")).toBe(false);
+    });
+
+    it("passes initialFinalProductId to the dialog", async () => {
+      const { fixture } = await renderComponent({
+        initialFinalProductId: "fp-initial-123",
+      });
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(dialog, "initialFinalProductId")).toBe(
+        "fp-initial-123"
+      );
+    });
+
+    it("passes branch to the dialog", async () => {
+      const { fixture } = await renderComponent({
+        branch: "feature/my-branch",
+      });
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(dialog, "branch")).toBe("feature/my-branch");
+    });
+
+    it("passes enableKeepServices to the dialog", async () => {
+      const { fixture } = await renderComponent({ enableKeepServices: true });
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(dialog, "enableKeepServices")).toBe(true);
+    });
+
+    it("passes defaultRerunMode to the dialog", async () => {
+      const { fixture } = await renderComponent({
+        defaultRerunMode: "official",
+      });
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(dialog, "defaultRerunMode")).toBe("official");
+    });
+
+    it("passes unofficial for defaultRerunMode to the dialog by default", async () => {
+      const { fixture } = await renderComponent();
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      expect(ngMocks.input(dialog, "defaultRerunMode")).toBe("unofficial");
+    });
+  });
+
+  describe("official rerun path", () => {
+    beforeEach(() => {
+      mockScenarioRunService.rerunScenarioFromFinalProduct.mockReturnValue(
+        of({ testExecutionId: "exec-final-1" })
+      );
+    });
+
+    it("calls rerunScenarioFromFinalProduct when official rerun is requested", async () => {
+      const { fixture } = await renderComponent();
+      await openModal();
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      ngMocks.output(dialog, "rerunRequested").emit({
+        mode: "official",
+        finalProductId: "fp-final-123",
+        rtpCommitId: "rtp-abc",
+        stopServices: true,
+      });
+
+      expect(
+        mockScenarioRunService.rerunScenarioFromFinalProduct
+      ).toHaveBeenCalledWith("project-123", "scenario-run-456", {
+        finalProductId: "fp-final-123",
+        rtpCommitId: "rtp-abc",
+        executionGroupId: undefined,
+        stopServices: true,
+      });
+    });
+
+    it("shows success toast after official rerun succeeds", async () => {
+      const { fixture } = await renderComponent();
+      await openModal();
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      ngMocks.output(dialog, "rerunRequested").emit({
+        mode: "official",
+        finalProductId: "fp-final-123",
+        rtpCommitId: "rtp-abc",
+        stopServices: true,
+      });
+
+      expect(mockToastService.showSuccess).toHaveBeenCalledWith(
+        "Scenario rerun requested successfully."
+      );
+    });
+
+    it("shows error toast when official rerun fails", async () => {
+      mockScenarioRunService.rerunScenarioFromFinalProduct.mockReturnValue(
+        throwError(() => new Error("Server error"))
+      );
+      const { fixture } = await renderComponent();
+      await openModal();
+
+      const dialog = ngMocks.find(fixture, RerunDialogComponent);
+      ngMocks.output(dialog, "rerunRequested").emit({
+        mode: "official",
+        finalProductId: "fp-final-123",
+        rtpCommitId: "rtp-abc",
+        stopServices: true,
+      });
+
+      expect(mockToastService.showError).toHaveBeenCalledWith(
+        "Failed to rerun scenario."
+      );
     });
   });
 });

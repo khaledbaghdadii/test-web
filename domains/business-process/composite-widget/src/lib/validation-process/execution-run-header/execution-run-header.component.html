@@ -1,0 +1,52 @@
+<mxevolve-breadcrumb
+  [resourceType]="'BUSINESS_PROCESS'"
+  [resourceId]="execution().id"
+  [projectId]="execution().projectId"
+/>
+<p-card class="bp-header-card">
+  <div class="flex items-center justify-between gap-4 flex-wrap pb-2">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl font-bold text-color">
+        {{ execution().name }}
+      </span>
+      <mxevolve-execution-status-tag [status]="execution().status" />
+      @if (execution().expiryDate && !execution().endDate) {
+      <mxevolve-expiry-chip [expiryDate]="execution().expiryDate" />
+      }
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-4">
+        @for (tab of tabOptions(); track tab.value) {
+        <span
+          [class]="
+            selectedTab() === tab.value
+              ? 'px-3 py-2 rounded text-muted-color bg-surface-100 cursor-pointer'
+              : 'px-3 py-2 rounded text-muted-color cursor-pointer hover:bg-surface-100'
+          "
+          (click)="selectTab(tab)"
+          (keyup)="selectTab(tab)"
+        >
+          {{ tab.label }}
+        </span>
+        }
+      </div>
+      <mxevolve-execution-abort-button
+        [projectId]="execution().projectId"
+        [processId]="execution().id"
+        [status]="execution().status"
+        [familyId]="familyId"
+        (aborted)="reloadProcess()"
+      />
+    </div>
+  </div>
+
+  @if (selectedTab()) {
+  <p-divider />
+  } @switch (selectedTab()) { @case ('activity-run-details') {
+  <mxevolve-validation-process-activity-run-details [execution]="execution()" />
+  } @case ('branch-details') {
+  <mxevolve-validation-process-branch-details [execution]="execution()" />
+  }
+  <!-- D4 extension point: add @case ('reference-environment') { ... } here when the RE tab is introduced -->
+  }
+</p-card>

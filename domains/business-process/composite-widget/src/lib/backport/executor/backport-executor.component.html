@@ -1,0 +1,157 @@
+<div class="flex flex-col gap-4 overflow-x-auto">
+  <section class="border border-surface rounded-md overflow-hidden">
+    <button
+      type="button"
+      class="flex w-full items-center justify-between gap-2 border-none cursor-pointer text-left px-4 py-3 bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700"
+      [attr.aria-expanded]="detailsExpanded()"
+      (click)="toggleDetails()"
+    >
+      <span class="font-semibold">{{ detailsTitle() }}</span>
+      <mxevolve-icon
+        [name]="detailsExpanded() ? 'expand_less' : 'expand_more'"
+        size="sm"
+      />
+    </button>
+    @if (detailsExpanded()) {
+    <div
+      class="border-t border-surface px-4 py-3 bg-surface-100 dark:bg-surface-800"
+    >
+      <mxevolve-backport-prefilled-inputs
+        [projectId]="projectId()"
+        [providedInputs]="prefilledInputs()"
+      />
+    </div>
+    }
+  </section>
+
+  <form class="flex flex-col gap-6" [formGroup]="form()" (ngSubmit)="build()">
+    <p class="mandatory-legend text-sm text-red-500 m-0">* Mandatory Field</p>
+
+    <div class="grid-2">
+      @if (visibility().name) {
+      <div class="field flex flex-col gap-1">
+        <label
+          for="backport-execution-name"
+          [class.required]="
+            form().controls.name.hasValidator(Validators.required)
+          "
+          >Execution Name</label
+        >
+        <input
+          id="backport-execution-name"
+          pInputText
+          class="w-full"
+          formControlName="name"
+          placeholder="Enter an on demand backport process execution name"
+        />
+      </div>
+      } @if (visibility().pullRequestId) {
+      <div class="field flex flex-col gap-1">
+        <label
+          for="backport-pull-request-id"
+          [class.required]="
+            form().controls.pullRequestId.hasValidator(Validators.required)
+          "
+          >Pull Request Id</label
+        >
+        <input
+          id="backport-pull-request-id"
+          pInputText
+          class="w-full"
+          formControlName="pullRequestId"
+          placeholder="Enter the pull request id"
+        />
+      </div>
+      }
+    </div>
+    @if (visibility().userStoryIds) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend
+        class="text-[0.95rem] font-bold text-primary p-0"
+        [class.required]="
+          form().controls.userStoryIds.hasValidator(Validators.required)
+        "
+      >
+        User Stories
+      </legend>
+      <mxevolve-user-story-input
+        [projectId]="projectId()"
+        [shouldValidate]="false"
+        [formControl]="form().controls.userStoryIds"
+      />
+    </fieldset>
+    }
+
+    <div class="grid-2">
+      @if (visibility().pullRequestTitle) {
+      <div class="field flex flex-col gap-1">
+        <label
+          for="backport-pull-request-title"
+          [class.required]="
+            form().controls.pullRequestTitle.hasValidator(Validators.required)
+          "
+          >Merge Request Title</label
+        >
+        <input
+          id="backport-pull-request-title"
+          pInputText
+          class="w-full"
+          formControlName="pullRequestTitle"
+          placeholder="Enter the merge request title"
+        />
+      </div>
+      } @if (visibility().pullRequestReviewers) {
+      <div class="field flex flex-col gap-1">
+        <label
+          for="backport-reviewers"
+          [class.required]="
+            form().controls.pullRequestReviewers.hasValidator(
+              Validators.required
+            )
+          "
+          >Reviewers</label
+        >
+        <mxevolve-autocomplete-reviewers
+          [projectId]="projectId()"
+          [repositoryId]="repositoryId()"
+          inputId="backport-reviewers"
+          [reviewersFormControl]="form().controls.pullRequestReviewers"
+        />
+      </div>
+      }
+    </div>
+
+    @if (visibility().notificationsRecipients) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">
+        Notifications
+      </legend>
+      <div class="grid-2">
+        <div class="field flex flex-col gap-1">
+          <label for="backport-notification-recipients"
+            >Expiry Date Notification Recipients</label
+          >
+          <mxevolve-notifications-recipients-input
+            [projectId]="projectId()"
+            inputId="backport-notification-recipients"
+            [notificationsRecipientsFormControl]="
+              form().controls.notificationsRecipients
+            "
+          />
+        </div>
+      </div>
+    </fieldset>
+    }
+
+    <div class="actions grid-6">
+      <p-button
+        type="submit"
+        label="Build"
+        class="col-start-3 col-span-2"
+        styleClass="w-full justify-center"
+        [disabled]="form().invalid || form().pending || executing()"
+        [loading]="executing()"
+      />
+    </div>
+  </form>
+</div>

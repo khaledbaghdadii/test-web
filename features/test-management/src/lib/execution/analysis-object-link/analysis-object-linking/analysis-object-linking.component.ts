@@ -61,6 +61,7 @@ import {
 import { TooltipModule } from "primeng/tooltip";
 import { LinkIncidentsModalContentComponent } from "@mxflow/features/incident-management";
 import { CreateCandidateAnalysisObjectLinksRequest } from "../candidate-analysis-object-link";
+import { PreviouslyLinkedFilter } from "@mxevolve/domains/test/model";
 
 @Component({
   selector: "mxevolve-analysis-object-linking",
@@ -139,6 +140,14 @@ export class AnalysisObjectLinkingComponent implements OnDestroy {
       .map((tc) => tc.title)
       .join(", ")
   );
+  previouslyLinkedFilter = computed<PreviouslyLinkedFilter>(() => ({
+    testCaseExternalIds: this.selectedTestCaseExecutions().map(
+      (tc) => tc.externalId
+    ),
+    scenarioDefinitionId: this.isScenarioExecutionChecked()
+      ? this.scenarioExecution().scenarioDefinitionId
+      : undefined,
+  }));
   statusFilterOptions = Object.values(TestCaseExecutionStatus)
     .filter((status) => status != TestCaseExecutionStatus.SKIPPED)
     .map((status) => ({

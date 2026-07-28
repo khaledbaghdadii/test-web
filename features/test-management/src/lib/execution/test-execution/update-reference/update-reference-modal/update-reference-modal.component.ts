@@ -37,6 +37,7 @@ import {
   UpdateReferenceFileRequest,
 } from "../trigger-update-reference-request";
 import {
+  AnalysisObjectType,
   AnalysisObjectSelectionState,
   AnalysisObjectSelectionType,
 } from "@mxflow/features/analysis-objects";
@@ -52,7 +53,9 @@ import {
   ValidationScope,
   ValidationScopeSetterComponent,
 } from "@mxflow/features/validation-management";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
+import { PreviouslyLinkedDetectionToggleComponent } from "@mxevolve/domains/test/widget";
+import { PreviouslyLinkedFilter } from "@mxevolve/domains/test/model";
 
 @Component({
   selector: "mxevolve-update-reference-modal",
@@ -72,6 +75,7 @@ import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/fe
     ShowDetectionWithNoDefectsToggleComponent,
     ValidationScopeSetterComponent,
     ShowDetectionWithNoDefectsToggleComponent,
+    PreviouslyLinkedDetectionToggleComponent,
   ],
   providers: [ScmService, UpdateReferenceService],
 })
@@ -93,7 +97,9 @@ export class UpdateReferenceModalComponent {
   @Input({ required: true }) referenceFilePathOnRepo: string;
   @Input({ required: true }) updatedReferenceFilePath: string;
   @Input() warningMessage?: string;
+  @Input() previouslyLinkedFilter?: PreviouslyLinkedFilter;
   showImpactsWithoutDefects = signal(false);
+  showPreviouslyLinkedImpacts = signal(false);
   validationScope = model<ValidationScope | undefined>(undefined);
   initialValidationScope = input<ValidationScope | undefined>(undefined);
 
@@ -159,7 +165,7 @@ export class UpdateReferenceModalComponent {
     if (this.selectedBinaryImpactsSignal().length > 0) {
       const ids = this.selectedBinaryImpactsSignal().map((item) => {
         const impact = item.analysisObject;
-        return impact.upgradeImpact?.externalIssue?.id ?? impact.title;
+        return impact.objectId;
       });
       return ` -Binary Impacts: ${ids.join(", ")}`;
     } else {
@@ -327,4 +333,5 @@ export class UpdateReferenceModalComponent {
 
   protected readonly DetectionType = DetectionType;
   protected readonly DetectionCategory = DetectionCategory;
+  protected readonly AnalysisObjectType = AnalysisObjectType;
 }

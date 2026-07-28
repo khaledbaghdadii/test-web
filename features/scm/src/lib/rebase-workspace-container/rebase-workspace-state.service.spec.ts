@@ -1,5 +1,6 @@
 import { TestBed } from "@angular/core/testing";
 import { DestroyRef } from "@angular/core";
+import { DomSanitizer, SafeResourceUrl } from "@angular/platform-browser";
 import { of, throwError } from "rxjs";
 
 import { RebaseWorkspaceStateService } from "./rebase-workspace-state.service";
@@ -21,12 +22,15 @@ describe("RebaseWorkspaceStateService", () => {
   const PROJECT_REPOSITORY_ID = "repo-1";
   const SOURCE_BRANCH = "feature-branch";
   const TARGET_BRANCH = "main";
+  const MTS_URL = "mts-url";
 
-  const CONFIG = {
-    projectId: PROJECT_ID,
-    clonedRepositoryId: CLONED_REPOSITORY_ID,
-    projectRepositoryId: PROJECT_REPOSITORY_ID,
-    sourceBranchName: SOURCE_BRANCH,
+  let sanitizer: DomSanitizer;
+  let CONFIG: {
+    projectId: string;
+    clonedRepositoryId: string;
+    projectRepositoryId: string;
+    sourceBranchName: string;
+    mtsUrl: SafeResourceUrl;
   };
 
   let service: RebaseWorkspaceStateService;
@@ -111,6 +115,15 @@ describe("RebaseWorkspaceStateService", () => {
     });
 
     service = TestBed.inject(RebaseWorkspaceStateService);
+
+    sanitizer = TestBed.inject(DomSanitizer);
+    CONFIG = {
+      projectId: PROJECT_ID,
+      clonedRepositoryId: CLONED_REPOSITORY_ID,
+      projectRepositoryId: PROJECT_REPOSITORY_ID,
+      sourceBranchName: SOURCE_BRANCH,
+      mtsUrl: sanitizer.bypassSecurityTrustResourceUrl(MTS_URL),
+    };
   });
 
   describe("initialize", () => {
@@ -731,6 +744,31 @@ describe("RebaseWorkspaceStateService", () => {
         payload: {
           sourceBranchName: SOURCE_BRANCH,
           targetBranchName: TARGET_BRANCH,
+          mtsUrl: MTS_URL,
+        },
+      });
+    });
+
+    it("should include mtsUrl null when mtsUrl is not provided in config", () => {
+      service.initialize({
+        projectId: PROJECT_ID,
+        clonedRepositoryId: CLONED_REPOSITORY_ID,
+        projectRepositoryId: PROJECT_REPOSITORY_ID,
+        sourceBranchName: SOURCE_BRANCH,
+        mtsUrl: null,
+      });
+
+      service.startRebase();
+
+      expect(
+        mockRemoteClonedRepoService.startRemoteClonedRepositoryFunctionalTechnicalRebase
+      ).toHaveBeenCalledWith({
+        projectId: PROJECT_ID,
+        remoteClonedRepositoryId: CLONED_REPOSITORY_ID,
+        payload: {
+          sourceBranchName: SOURCE_BRANCH,
+          targetBranchName: TARGET_BRANCH,
+          mtsUrl: null,
         },
       });
     });

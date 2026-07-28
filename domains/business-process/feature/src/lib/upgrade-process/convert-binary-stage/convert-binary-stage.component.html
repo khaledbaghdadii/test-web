@@ -1,5 +1,13 @@
 <mxevolve-stage-container>
   <mxevolve-business-process-content-container header="Convert Binary">
+    @if (showRefreshInfo()) {
+    <div class="w-max">
+      <p-message>
+        Scenarios are currently being executed. Please refresh to see the latest
+        result.
+      </p-message>
+    </div>
+    }
     <mxevolve-scenario-runs
       class="col-span-12"
       [projectId]="projectId()"
@@ -10,6 +18,7 @@
       [showHistorySummary]="true"
       [showTopBarActions]="false"
       (scenarioChanged)="reloadExecution()"
+      (scenarioRunsFetched)="handleScenarioRunsFetched($event)"
     >
       <ng-template #topBar>Latest Scenario Run</ng-template>
     </mxevolve-scenario-runs>

@@ -13,6 +13,7 @@ import {
 import { ScenarioExecutionStateManagementService } from "../../scenario-execution/scenario-execution-details/scenario-execution-state-management.service";
 import { ScenarioExecutionNameComponent } from "../../scenario-execution/properties-display/name/scenario-execution-name.component";
 import {
+  BinaryImpactIdLinkComponent,
   DetectionCategory,
   DetectionType,
   DetectionUriBuilderPipe,
@@ -24,6 +25,7 @@ interface TestCaseTestUnitLinkTableData {
   analysisObjectId: string;
   analysisObjectType: string;
   analysisObjectTitle: string;
+  analysisObjectReadableId?: string;
   analysisObjectLink: string;
   scenarioExecutionId: string;
 }
@@ -39,6 +41,7 @@ interface TestCaseTestUnitLinkTableData {
     AnalysisObjectTypeDisplayPipe,
     ScenarioExecutionNameComponent,
     TooltipModule,
+    BinaryImpactIdLinkComponent,
   ],
   providers: [DetectionUriBuilderPipe],
   templateUrl: "./test-case-test-unit-links-drawer.component.html",
@@ -96,6 +99,7 @@ export class TestCaseTestUnitLinksDrawerComponent {
             analysisObjectId: link.analysisObject.id,
             analysisObjectType: link.analysisObject.type,
             analysisObjectTitle: this.resolveTestUnitAnalysisObjectTitle(link),
+            analysisObjectReadableId: link.analysisObject.readableId,
             analysisObjectLink: this.resolveTestUnitAnalysisObjectLink(link),
             scenarioExecutionId: link.scenarioExecutionId,
           } as TestCaseTestUnitLinkTableData)

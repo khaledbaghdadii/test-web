@@ -45,7 +45,7 @@ export class ScenarioExecutionRepushModalComponent implements OnInit {
   projectId: string;
   scenarioExecutionRepushForm: UntypedFormGroup;
   input: ScenarioExecutionRepushModalInput;
-  isKeptExecution = false;
+  isKeepExecution = false;
   keepServices?: boolean;
 
   ngOnInit(): void {
@@ -64,7 +64,7 @@ export class ScenarioExecutionRepushModalComponent implements OnInit {
       .subscribe((value) => (this.projectId = value));
     this.showModal = true;
     this.input = input;
-    this.isKeptExecution = input.keptExecution;
+    this.isKeepExecution = input.keepExecution;
     this.initializeForm();
   }
 
@@ -139,5 +139,5 @@ export class ScenarioExecutionRepushModalInput {
   scenarioExecutionId: string;
   factoryProductId: string;
   executionGroupId?: string;
-  keptExecution: boolean;
+  keepExecution: boolean;
 }

@@ -1,0 +1,27 @@
+<div class="field flex flex-col gap-2">
+  @if (label()) {
+  <label
+    class="flex flex-row gap-2"
+    [for]="inputId()"
+    [class.required]="isRequired()"
+  >
+    {{ label() }} @if (tooltip()) {
+    <i
+      class="pi pi-info-circle icon-align"
+      [pTooltip]="tooltip()"
+      tooltipPosition="bottom"
+    ></i>
+    }
+  </label>
+  }
+  <ng-content />
+  @if (showDescription()) {
+  <small
+    [id]="inputId() + '-help'"
+    class="italic text-gray-500 text-sm text-wrap"
+    >{{ description() }}</small
+  >
+  } @else if (showValidationErrors()) {
+  <small class="text-sm text-red-500">{{ errorMessage() }}</small>
+  }
+</div>

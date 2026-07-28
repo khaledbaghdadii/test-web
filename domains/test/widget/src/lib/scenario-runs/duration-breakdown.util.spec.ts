@@ -17,6 +17,7 @@ const BASE_HEAD: HeadScenarioRunViewModel = {
   numberOfImpacts: 0,
   numberOfRegressions: 0,
   numberOfIncidents: 0,
+  numberOfFailureReasons: 0,
   startDate: "2024-01-01T10:00:00.000Z",
   endDate: "2024-01-01T11:00:00.000Z",
   commitId: "abc123",

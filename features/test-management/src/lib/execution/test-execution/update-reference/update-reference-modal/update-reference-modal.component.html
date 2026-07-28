@@ -3,7 +3,7 @@
   [modal]="true"
   [(visible)]="isVisible"
   (onHide)="onModalClose()"
-  [style]="{ width: '70rem' }"
+  [style]="{ width: '60%' }"
 >
   <p-stepper [(value)]="stepperValue">
     <p-step-panels>
@@ -43,6 +43,15 @@
                         ></mxevolve-show-detection-with-no-defects-toggle>
                       </div>
                     </div>
+                    <div class="flex items-center gap-2">
+                      <mxevolve-previously-linked-detection-toggle
+                        [analysisObjectType]="AnalysisObjectType.BINARY_IMPACT"
+                        [showPreviouslyLinked]="showPreviouslyLinkedImpacts()"
+                        (showPreviouslyLinkedChange)="
+                          showPreviouslyLinkedImpacts.set($event)
+                        "
+                      />
+                    </div>
                     @if (warningMessage) {
                     <p-message
                       data-testid="warning-message"
@@ -67,6 +76,11 @@
                     "
                     [validationScope]="validationScope()"
                     [showImpactsWithoutDefects]="showImpactsWithoutDefects()"
+                    [previouslyLinkedFilter]="
+                      showPreviouslyLinkedImpacts()
+                        ? previouslyLinkedFilter
+                        : undefined
+                    "
                     (warningMessageChange)="handleWarningMessage($event)"
                   ></mxevolve-binary-impacts-selection-table>
                 </p-tabpanel>

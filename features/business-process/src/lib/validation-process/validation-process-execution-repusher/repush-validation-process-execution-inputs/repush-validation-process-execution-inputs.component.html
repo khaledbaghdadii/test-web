@@ -9,7 +9,7 @@
       inputFormControlName="officialFormControl"
       [inputFormControl]="officialFormControl"
       [displayMode]="DisplayMode.MODAL"
-      [inputAccessMode]="InputAccessMode.ACCESS_INVALID_INPUTS_ONLY"
+      [inputAccessMode]="InputAccessMode.ACCESS_ALL_INPUTS"
     >
       <div class="flex flex-row gap-4 mt-2">
         <div class="flex flex-row gap-1">
@@ -19,7 +19,7 @@
             [value]="true"
             [formControl]="officialFormControl"
           ></p-radioButton>
-          <label for="officialValidationRepushInput">Official Execution</label>
+          <label for="officialValidationRepushInput">Official Run</label>
         </div>
         <div class="flex flex-row gap-1">
           <p-radioButton
@@ -28,9 +28,7 @@
             [value]="false"
             [formControl]="officialFormControl"
           ></p-radioButton>
-          <label for="unofficialValidationRepushInput"
-            >Unofficial Execution</label
-          >
+          <label for="unofficialValidationRepushInput">Unofficial Run</label>
         </div>
       </div>
     </mxevolve-definition-input>

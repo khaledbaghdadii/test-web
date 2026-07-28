@@ -8,8 +8,9 @@ import {
   model,
   output,
   signal,
+  untracked,
 } from "@angular/core";
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { rxResource, takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   FormControl,
   FormGroup,
@@ -29,6 +30,7 @@ import { ExecutionFamily } from "@mxevolve/domains/business-process/util";
 import {
   MergeConfiguration,
   MergeConfigurationService,
+  RepositoryService,
   Reviewer,
 } from "@mxevolve/domains/scm/data-access";
 import {
@@ -45,7 +47,7 @@ import { InputText } from "primeng/inputtext";
 import { Message } from "primeng/message";
 import { MultiSelectModule } from "primeng/multiselect";
 import { RadioButton } from "primeng/radiobutton";
-import { catchError, of } from "rxjs";
+import { catchError, map, of } from "rxjs";
 
 @Component({
   selector: "mxevolve-build-and-test-send-for-review",
@@ -66,6 +68,7 @@ import { catchError, of } from "rxjs";
     BuildAndTestUserInputService,
     BusinessProcessDefinitionService,
     MergeConfigurationService,
+    RepositoryService,
   ],
   templateUrl: "./build-and-test-send-for-review.component.html",
   host: {
@@ -77,6 +80,8 @@ export class BuildAndTestSendForReviewComponent {
   readonly processId = input.required<string>();
   readonly repositoryId = input.required<string>();
   readonly developmentId = input.required<string>();
+  /** Branch being merged from, used to build a clean "already up-to-date" error message. */
+  readonly sourceBranchName = input.required<string>();
   readonly parentBranchName = input.required<string>();
   readonly supportsResourceManagement = input.required<boolean>();
   readonly hasPredefinedMergeRequestInputs = input.required<boolean>();
@@ -90,12 +95,16 @@ export class BuildAndTestSendForReviewComponent {
   private readonly mergeConfigurationService = inject(
     MergeConfigurationService
   );
+  private readonly repositoryService = inject(RepositoryService);
   private readonly toastMessageService = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly submitLoading = signal(false);
+  readonly submitError = signal<string | null>(null);
   readonly backportDefinitionsLoading = signal(false);
   readonly backportMergeConfigurationsLoading = signal(false);
+  readonly backportDefinitionsLoaded = signal(false);
+  readonly backportMergeConfigurationsLoaded = signal(false);
 
   readonly backportDefinitions = signal<BusinessProcessDefinition[]>([]);
   readonly backportMergeConfigurations = signal<MergeConfiguration[]>([]);
@@ -130,10 +139,28 @@ export class BuildAndTestSendForReviewComponent {
 
   protected readonly ExecutionFamily = ExecutionFamily;
 
+  private readonly repositoryNameResource = rxResource({
+    params: () => ({
+      projectId: this.projectId(),
+      repositoryId: this.repositoryId(),
+    }),
+    stream: ({ params }) =>
+      this.repositoryService
+        .getRepository(params.projectId, params.repositoryId)
+        .pipe(
+          map((repository) => repository.name),
+          catchError(() => of(undefined))
+        ),
+  });
+
+  private readonly repositoryName = computed(
+    () => this.repositoryNameResource.value() ?? this.repositoryId()
+  );
+
   constructor() {
     effect(() => {
       if (this.visible()) {
-        this.loadBackportOptionsIfNeeded();
+        untracked(() => this.loadBackportOptionsIfNeeded());
       }
     });
 
@@ -179,6 +206,8 @@ export class BuildAndTestSendForReviewComponent {
   }
 
   submit(): void {
+    this.submitError.set(null);
+
     if (this.predefinedMode()) {
       this.proceedWithPredefinedInputs();
       return;
@@ -191,6 +220,10 @@ export class BuildAndTestSendForReviewComponent {
 
     const formValue = this.form.getRawValue();
     this.submitLoading.set(true);
+    const backportInputs = this.resolveBackportInputs(
+      formValue.backport,
+      formValue.backportDefinitions
+    );
     this.userInputService
       .sendChangesForReview({
         projectId: this.projectId(),
@@ -203,12 +236,7 @@ export class BuildAndTestSendForReviewComponent {
           formValue.backport && this.ciVersion() === 1
             ? formValue.backportMergeConfigurations.map((config) => config.id)
             : undefined,
-        backportInputs:
-          formValue.backport && this.ciVersion() === 2
-            ? this.extractBackportInputs(formValue.backportDefinitions)
-            : formValue.backport
-            ? undefined
-            : [],
+        backportInputs,
         shouldCleanDevelopment: this.shouldCleanDevelopment(),
         developmentId: this.developmentId(),
         supportsResourceManagement: this.supportsResourceManagement(),
@@ -222,10 +250,11 @@ export class BuildAndTestSendForReviewComponent {
 
   cancel(): void {
     this.visible.set(false);
-    this.resetForm();
+    this.submitError.set(null);
   }
 
   private proceedWithPredefinedInputs(): void {
+    this.submitError.set(null);
     this.submitLoading.set(true);
     this.userInputService
       .proceedWithPredefinedInputs({
@@ -252,7 +281,29 @@ export class BuildAndTestSendForReviewComponent {
 
   private handleError(message: string): void {
     this.submitLoading.set(false);
-    this.toastMessageService.showError(message);
+    this.submitError.set(this.normalizeSubmitError(message));
+  }
+
+  /**
+   * The SCM layer surfaces a raw, serialized conflict error (exception class
+   * name, retry metadata, nested details) when the source branch has no new
+   * commits to merge into the destination branch. Replace it with a single,
+   * user-friendly sentence; any other error message is left untouched.
+   */
+  private normalizeSubmitError(message: string): string {
+    if (!this.isBranchAlreadyUpToDateError(message)) return message;
+
+    const destinationBranchName =
+      this.form.controls.destinationBranch.value?.branchName ??
+      this.parentBranchName();
+
+    return `Branch "${this.sourceBranchName()}" is already up-to-date with branch "${destinationBranchName}" in repository "${this.repositoryName()}"`;
+  }
+
+  private isBranchAlreadyUpToDateError(message: string): boolean {
+    return /up[- ]?to[- ]?date|emptypullrequestexception|empty_merge_request/i.test(
+      message
+    );
   }
 
   private updateBackportValidators(backport: boolean): void {
@@ -286,7 +337,7 @@ export class BuildAndTestSendForReviewComponent {
   }
 
   private loadBackportDefinitions(): void {
-    if (this.backportDefinitions().length > 0 || this.backportDefinitionsLoading()) {
+    if (this.backportDefinitionsLoaded() || this.backportDefinitionsLoading()) {
       return;
     }
 
@@ -307,16 +358,18 @@ export class BuildAndTestSendForReviewComponent {
       .subscribe((definitions) => {
         this.backportDefinitions.set(
           definitions.filter(
-            (definition) => definition.sourceDefinitionId === "on-demand-backport"
+            (definition) =>
+              definition.sourceDefinitionId === "on-demand-backport"
           )
         );
         this.backportDefinitionsLoading.set(false);
+        this.backportDefinitionsLoaded.set(true);
       });
   }
 
   private loadBackportMergeConfigurations(): void {
     if (
-      this.backportMergeConfigurations().length > 0 ||
+      this.backportMergeConfigurationsLoaded() ||
       this.backportMergeConfigurationsLoading()
     ) {
       return;
@@ -348,7 +401,21 @@ export class BuildAndTestSendForReviewComponent {
       .subscribe((page) => {
         this.backportMergeConfigurations.set(page.content);
         this.backportMergeConfigurationsLoading.set(false);
+        this.backportMergeConfigurationsLoaded.set(true);
       });
+  }
+
+  private resolveBackportInputs(
+    backport: boolean,
+    backportDefinitions: BusinessProcessDefinition[]
+  ) {
+    if (!backport) {
+      return [];
+    }
+    if (this.ciVersion() === 2) {
+      return this.extractBackportInputs(backportDefinitions);
+    }
+    return undefined;
   }
 
   private extractBackportInputs(definitions: BusinessProcessDefinition[]) {
@@ -381,6 +448,7 @@ export class BuildAndTestSendForReviewComponent {
   }
 
   private resetForm(): void {
+    this.submitError.set(null);
     this.form.reset({
       mergeRequestTitle: "",
       destinationBranch: null,

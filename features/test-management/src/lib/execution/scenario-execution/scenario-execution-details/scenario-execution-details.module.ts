@@ -32,8 +32,8 @@ import { Menu } from "primeng/menu";
 import { Button, ButtonDirective } from "primeng/button";
 import { ToggleSwitch } from "primeng/toggleswitch";
 import { FormsModule } from "@angular/forms";
-import { KeptExecutionDisabledPipe } from "./kept-execution-disabled/kept-execution-disabled.pipe";
-import { KeptExecutionToggleComponent } from "../kept-execution-toggle/kept-execution-toggle.component";
+import { KeepExecutionDisabledPipe } from "./keep-execution-disabled/keep-execution-disabled.pipe";
+import { KeepExecutionToggleComponent } from "../keep-execution-toggle/keep-execution-toggle.component";
 import { AssigneeInputComponent } from "../assignee-input/assignee-input.component";
 import { UiCollapsibleMessageModule } from "@mxflow/ui/collapsible-message";
 import { DefectSelectionModalComponent } from "@mxflow/features/validation-management";
@@ -75,7 +75,13 @@ import { TestCaseExecutionAnalyzabilityService } from "../../test-case-execution
 import { DisableAbortPipe } from "../actions/abort/disable-abort.pipe";
 import { ShowCommentPipe } from "./execution-details/comment-input/show-comment-pipe";
 import { ShowTerminationMessagePipe } from "./execution-details/termination-message/show-termination-message-pipe";
-import { TransferToReconProgressTableComponent } from "@mxevolve/domains/test/widget";
+import {
+  CleanScenarioExecutionButtonComponent,
+  ScenarioExecutionHousekeepingStatusComponent,
+  TransferToReconProgressTableComponent,
+} from "@mxevolve/domains/test/widget";
+import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
+import { BreadcrumbComponent } from "@mxevolve/domains/analytics/widget";
 
 @NgModule({
   declarations: [
@@ -112,8 +118,8 @@ import { TransferToReconProgressTableComponent } from "@mxevolve/domains/test/wi
     Button,
     ToggleSwitch,
     FormsModule,
-    KeptExecutionDisabledPipe,
-    KeptExecutionToggleComponent,
+    KeepExecutionDisabledPipe,
+    KeepExecutionToggleComponent,
     CommitIdPipeModule,
     ScenarioAnalysisStatusComponent,
     AssigneeInputComponent,
@@ -146,6 +152,10 @@ import { TransferToReconProgressTableComponent } from "@mxevolve/domains/test/wi
     ShowTerminationMessagePipe,
     TestExecutionWebEngineReportComponent,
     TransferToReconProgressTableComponent,
+    ScenarioExecutionHousekeepingStatusComponent,
+    CleanScenarioExecutionButtonComponent,
+    MxevolveIconComponent,
+    BreadcrumbComponent,
   ],
   providers: [
     ScenarioExecutionStateManagementService,

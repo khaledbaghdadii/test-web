@@ -11,6 +11,8 @@ export interface ManagementRequestApiModel {
   type: string;
   abortedBy?: string;
   abortedOn?: string;
+  hasMetrics?: boolean;
+  artifacts?: string[];
 }
 
 export interface ManagementRequestResultApiModel {

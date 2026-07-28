@@ -86,4 +86,55 @@ describe("UserService", () => {
       await expect(result$).rejects.toMatchObject({ status: 404 });
     });
   });
+
+  describe("fetchUsersByEmails", () => {
+    it("fetches users by email in a given project", async () => {
+      const result$ = firstValueFrom(
+        service.fetchUsersByEmails("project-1", [
+          "alice@test.com",
+          "bob@test.com",
+        ])
+      );
+
+      const req = httpController.expectOne(
+        (r) =>
+          r.url === `${GATEWAY_URL}user-management/projects/project-1/users`
+      );
+      expect(req.request.params.getAll("userEmails")).toEqual([
+        "alice@test.com",
+        "bob@test.com",
+      ]);
+      req.flush({
+        content: [
+          { id: "user-1", displayName: "Alice", mail: "alice@test.com" },
+          { id: "user-2", displayName: "Bob", mail: "bob@test.com" },
+        ],
+      });
+
+      const result = await result$;
+
+      expect(result.content).toHaveLength(2);
+      expect(result.content[0].id).toBe("user-1");
+      expect(result.content[1].id).toBe("user-2");
+    });
+
+    it("throws an error when the fetch fails", async () => {
+      const result$ = firstValueFrom(
+        service.fetchUsersByEmails("project-1", ["alice@test.com"])
+      ).catch((e) => e);
+
+      httpController
+        .expectOne(
+          (r) =>
+            r.url === `${GATEWAY_URL}user-management/projects/project-1/users`
+        )
+        .flush("Not Found", {
+          status: 500,
+          statusText: "Internal Server Error",
+        });
+
+      const error = await result$;
+      expect(error).toBeInstanceOf(Error);
+    });
+  });
 });

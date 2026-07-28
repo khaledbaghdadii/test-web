@@ -80,4 +80,38 @@ describe("RepositoryService", () => {
     expect(error).toBeInstanceOf(Error);
     expect(error.message).toContain("Internal Server Error");
   });
+
+  it("should list only test-labelled repositories", async () => {
+    const result = firstValueFrom(service.getTestRepositories("project-1"));
+
+    const req = httpController.expectOne(
+      `${GATEWAY_URL}projects/project-1/repositories`
+    );
+    expect(req.request.method).toBe("GET");
+    req.flush([
+      { id: "r1", name: "cfg", url: "u1", label: "config", defaultBranch: "m" },
+      { id: "r2", name: "tst", url: "u2", label: "Test", defaultBranch: "m" },
+    ]);
+
+    expect(await result).toEqual([
+      { id: "r2", name: "tst", url: "u2", label: "Test", defaultBranch: "m" },
+    ]);
+  });
+
+  it("maps repository-list errors", async () => {
+    const result = firstValueFrom(
+      service.getTestRepositories("project-1")
+    ).catch((error) => error);
+
+    httpController
+      .expectOne(`${GATEWAY_URL}projects/project-1/repositories`)
+      .flush(
+        { message: "Repositories unavailable" },
+        { status: 500, statusText: "Internal Server Error" }
+      );
+
+    await expect(result).resolves.toMatchObject({
+      message: "Repositories unavailable",
+    });
+  });
 });

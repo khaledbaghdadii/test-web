@@ -15,4 +15,8 @@ export enum StageStatus {
   SKIPPED = "SKIPPED",
   STOPPED = "STOPPED",
   NA = "NA",
+  ON_HOLD = "ON_HOLD",
+  CANCELED = "CANCELED",
+  ABORTING = "ABORTING",
+  ABORTED = "ABORTED",
 }

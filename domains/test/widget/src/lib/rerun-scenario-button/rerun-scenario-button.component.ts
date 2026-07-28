@@ -18,7 +18,11 @@ import {
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
 import { RepushPermission } from "@mxevolve/domains/test/model";
-import { RerunDialogComponent } from "../rerun-dialog/rerun-dialog.component";
+import {
+  RerunDialogComponent,
+  type RerunMode,
+  type RerunRequestedEvent,
+} from "../rerun-dialog/rerun-dialog.component";
 
 @Component({
   selector: "mxevolve-rerun-scenario-button",
@@ -51,6 +55,11 @@ import { RerunDialogComponent } from "../rerun-dialog/rerun-dialog.component";
       [factoryProductId]="factoryProductId()"
       [warningMessage]="resolvedWarning()"
       [loading]="loading"
+      [allowOfficialRerun]="allowOfficialRerun()"
+      [initialFinalProductId]="initialFinalProductId()"
+      [branch]="branch()"
+      [enableKeepServices]="enableKeepServices()"
+      [defaultRerunMode]="defaultRerunMode()"
       (rerunRequested)="onRerunRequested($event)"
     />
   `,
@@ -64,6 +73,11 @@ export class RerunScenarioButtonComponent implements OnInit {
   warningMessageMap = input<Record<string, string>>();
   repushable = input(true);
   repushAllowed = input(true);
+  allowOfficialRerun = input(false);
+  initialFinalProductId = input<string>();
+  branch = input<string>();
+  enableKeepServices = input(false);
+  defaultRerunMode = input<RerunMode>("unofficial");
 
   scenarioRerun = output<void>();
 
@@ -120,28 +134,44 @@ export class RerunScenarioButtonComponent implements OnInit {
     this.showModal = true;
   }
 
-  onRerunRequested(event: { factoryProductId: string; commitId?: string }) {
+  onRerunRequested(event: RerunRequestedEvent) {
     this.loading = true;
-    this.scenarioRunService
-      .rerunScenarioFromFactoryProduct(this.projectId(), this.scenarioRunId(), {
-        factoryProductId: event.factoryProductId,
-        commitId: event.commitId,
-        executionGroupId: this.executionGroupId(),
-      })
-      .subscribe({
-        next: () => {
-          this.showModal = false;
-          this.loading = false;
-          this.toastMessageService.showSuccess(
-            "Scenario rerun requested successfully."
+    const request$ =
+      event.mode === "official"
+        ? this.scenarioRunService.rerunScenarioFromFinalProduct(
+            this.projectId(),
+            this.scenarioRunId(),
+            {
+              finalProductId: event.finalProductId,
+              rtpCommitId: event.rtpCommitId,
+              executionGroupId: this.executionGroupId(),
+              stopServices: event.stopServices,
+            }
+          )
+        : this.scenarioRunService.rerunScenarioFromFactoryProduct(
+            this.projectId(),
+            this.scenarioRunId(),
+            {
+              factoryProductId: event.factoryProductId,
+              commitId: event.commitId,
+              executionGroupId: this.executionGroupId(),
+              stopServices: event.stopServices,
+            }
           );
-          this.scenarioRerun.emit();
-        },
-        error: () => {
-          this.loading = false;
-          this.toastMessageService.showError("Failed to rerun scenario.");
-        },
-      });
+    request$.subscribe({
+      next: () => {
+        this.showModal = false;
+        this.loading = false;
+        this.toastMessageService.showSuccess(
+          "Scenario rerun requested successfully."
+        );
+        this.scenarioRerun.emit();
+      },
+      error: () => {
+        this.loading = false;
+        this.toastMessageService.showError("Failed to rerun scenario.");
+      },
+    });
   }
 
   private static readonly REJECTION_REASON_MESSAGES: Record<string, string> = {

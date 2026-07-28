@@ -82,4 +82,20 @@ describe("ValidationScopeStartCommitIdInputComponent", () => {
     component.onCommitIdSelected(null);
     expect(component.startCommitIdFormControl.value).toBeNull();
   });
+
+  it("should switch to customized mode when  start commit Id has an initial value", () => {
+    component.startCommitIdFormControl = new FormControl("existing-commit-abc");
+    component.ngOnInit();
+
+    expect(component.selectionModeControl.value).toBe(
+      ValidationScopeStartCommitIdInputSelectionMode.CUSTOMIZED
+    );
+  });
+
+  it("should prefill validation scope start commit Id when start commit Id has an initial value", () => {
+    component.startCommitIdFormControl = new FormControl("existing-commit-abc");
+    component.ngOnInit();
+
+    expect(component.customCommitIdControl.value).toBe("existing-commit-abc");
+  });
 });

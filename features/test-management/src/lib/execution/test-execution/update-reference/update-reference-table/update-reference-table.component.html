@@ -23,7 +23,14 @@
       <td>{{ updateReference.commitMessage }}</td>
 
       <td id="update-reference-table-linked-impacts">
-        @for (impact of updateReference.linkedImpacts; track $index) {
+        @if (updateReference.linkedBinaryImpacts.length) {
+        <mxevolve-binary-impact-id-links
+          [impacts]="updateReference.linkedBinaryImpacts"
+          [defaultProjectId]="projectId"
+        ></mxevolve-binary-impact-id-links>
+        @if (updateReference.linkedImpacts.length > 0) { , } } @else if
+        (!updateReference.linkedImpacts.length) { - } @for (impact of
+        updateReference.linkedImpacts; track $index) {
         <a
           [href]="impact.link"
           class="p-button-link"

@@ -1,0 +1,1237 @@
+{
+  "consumer": {
+    "name": "web-test"
+  },
+  "interactions": [
+    {
+      "description": "a request to update scenario execution assignee",
+      "providerState": "A scenario aggregation that can be assigned to a user exists",
+      "request": {
+        "body": {
+          "assignee": "user-1",
+          "contextId": "ctx-1",
+          "scenarioDefinitionId": "sd-1"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.assignee": {
+            "match": "type"
+          },
+          "$.body.contextId": {
+            "match": "type"
+          },
+          "$.body.scenarioDefinitionId": {
+            "match": "type"
+          }
+        },
+        "method": "PUT",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/assignee"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to get the scenario",
+      "providerState": "Scenario execution exists",
+      "request": {
+        "method": "GET",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/scenarioRunId"
+      },
+      "response": {
+        "body": {
+          "analysisStatus": "Passed",
+          "assignee": "shaker",
+          "branch": "branch",
+          "businessProcesses": [
+            {
+              "id": "businessProcessId",
+              "name": "businessProcessName"
+            }
+          ],
+          "cleaningStatus": "CLEANED",
+          "comment": "comment",
+          "commitId": "commitId",
+          "contextId": "processExecutionId",
+          "endDate": "2023-07-28T15:35:22.123Z",
+          "envInfo": {
+            "environmentId": "environmentId",
+            "status": "DEPLOYED"
+          },
+          "executionGroupId": "executionGroupId",
+          "factoryProductId": "FACTORY_PRODUCT_ID",
+          "failed": true,
+          "finalProductId": "finalProductId",
+          "fullMaintenance": true,
+          "id": "scenarioExecutionId",
+          "keptExecution": true,
+          "logFileUrl": "logFileUrl",
+          "mxBuildId": "mxBuildId",
+          "mxVersion": "mxVersio",
+          "name": "SCENARIO_DEFINITION_NAME",
+          "project": {
+            "id": "project_1",
+            "name": "projectName"
+          },
+          "qualityLevel": "MQG",
+          "repushable": true,
+          "rtpCommitId": "rtpCommitId",
+          "scenarioDefinitionId": "scenarioDefinitionId",
+          "startDate": "2023-07-28T14:35:22.123Z",
+          "status": "STATUS",
+          "subContextId": "subContextId",
+          "terminationMessage": "terminationMessage",
+          "testExecutions": [
+            {
+              "endDate": "2023-07-28T15:35:22.123Z",
+              "executionEnded": true,
+              "executionMode": "web",
+              "nameUponExecution": "nameUponExecution",
+              "report": {
+                "completeReportUrl": "completeReportUrl",
+                "hardwareMonitoringReportUrl": "hardwareMonitoringReportUrl",
+                "performanceReportUrl": "performanceReportUrl",
+                "uploading": true,
+                "url": "url"
+              },
+              "startDate": "2023-07-28T14:35:22.123Z",
+              "testExecutionStatus": "testExecutionStatus",
+              "testPackageDefinitionId": "testPackageDefinitionId",
+              "testPackageName": "testPackageName",
+              "testPackageRunLocation": "testPackageRunLocation",
+              "testSelectionNames": [
+                "testSelectionName"
+              ]
+            }
+          ],
+          "testUnitId": "testUnitId",
+          "validation": {
+            "jumpType": "long",
+            "scope": {
+              "referenceFactoryProductId": "referenceFactoryProductId",
+              "requestedFactoryProductId": "requestedFactoryProductId"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.analysisStatus": {
+            "match": "type"
+          },
+          "$.body.assignee": {
+            "match": "type"
+          },
+          "$.body.branch": {
+            "match": "type"
+          },
+          "$.body.businessProcesses": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.businessProcesses[*].id": {
+            "match": "type"
+          },
+          "$.body.businessProcesses[*].name": {
+            "match": "type"
+          },
+          "$.body.cleaningStatus": {
+            "match": "type"
+          },
+          "$.body.comment": {
+            "match": "type"
+          },
+          "$.body.commitId": {
+            "match": "type"
+          },
+          "$.body.contextId": {
+            "match": "type"
+          },
+          "$.body.endDate": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body.envInfo.environmentId": {
+            "match": "type"
+          },
+          "$.body.envInfo.status": {
+            "match": "type"
+          },
+          "$.body.executionGroupId": {
+            "match": "type"
+          },
+          "$.body.factoryProductId": {
+            "match": "type"
+          },
+          "$.body.failed": {
+            "match": "type"
+          },
+          "$.body.finalProductId": {
+            "match": "type"
+          },
+          "$.body.fullMaintenance": {
+            "match": "type"
+          },
+          "$.body.id": {
+            "match": "type"
+          },
+          "$.body.keptExecution": {
+            "match": "type"
+          },
+          "$.body.logFileUrl": {
+            "match": "type"
+          },
+          "$.body.mxBuildId": {
+            "match": "type"
+          },
+          "$.body.mxVersion": {
+            "match": "type"
+          },
+          "$.body.name": {
+            "match": "type"
+          },
+          "$.body.project.id": {
+            "match": "type"
+          },
+          "$.body.project.name": {
+            "match": "type"
+          },
+          "$.body.qualityLevel": {
+            "match": "type"
+          },
+          "$.body.repushable": {
+            "match": "type"
+          },
+          "$.body.rtpCommitId": {
+            "match": "type"
+          },
+          "$.body.scenarioDefinitionId": {
+            "match": "type"
+          },
+          "$.body.startDate": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body.status": {
+            "match": "type"
+          },
+          "$.body.subContextId": {
+            "match": "type"
+          },
+          "$.body.terminationMessage": {
+            "match": "type"
+          },
+          "$.body.testExecutions": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.testExecutions[*].endDate": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body.testExecutions[*].executionEnded": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].executionMode": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].nameUponExecution": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].report.completeReportUrl": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].report.hardwareMonitoringReportUrl": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].report.performanceReportUrl": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].report.uploading": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].report.url": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].startDate": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          },
+          "$.body.testExecutions[*].testExecutionStatus": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].testPackageDefinitionId": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].testPackageName": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].testPackageRunLocation": {
+            "match": "type"
+          },
+          "$.body.testExecutions[*].testSelectionNames": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.testExecutions[*].testSelectionNames[*]": {
+            "match": "type"
+          },
+          "$.body.testUnitId": {
+            "match": "type"
+          },
+          "$.body.validation.jumpType": {
+            "match": "type"
+          },
+          "$.body.validation.scope.referenceFactoryProductId": {
+            "match": "type"
+          },
+          "$.body.validation.scope.requestedFactoryProductId": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch scenario runs by context, subContext and statuses",
+      "providerState": "Scenario executions exist given filters",
+      "request": {
+        "matchingRules": {
+          "$.query.contextId": {
+            "match": "type"
+          },
+          "$.query.statuses": {
+            "match": "type"
+          },
+          "$.query.subContextId": {
+            "match": "type"
+          }
+        },
+        "method": "GET",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions",
+        "query": "contextId=ctx-1&statuses=PASSED&subContextId=sub-ctx-1"
+      },
+      "response": {
+        "body": [
+          {
+            "analysisStatus": "Passed",
+            "commitId": "abc123",
+            "detections": {
+              "binaryImpactIds": [
+                "impact-1"
+              ],
+              "binaryRegressionIds": [
+                "regression-1"
+              ],
+              "configurationImpactIds": [
+                "config-impact-1"
+              ],
+              "configurationRegressionIds": [
+                "config-regression-1"
+              ],
+              "failureReasonIds": [
+                "failure-reason-1"
+              ]
+            },
+            "id": "scenarioRunId",
+            "linkedIncidents": [
+              {
+                "assignee": "user-1",
+                "externalIssue": {
+                  "id": "ext-1",
+                  "link": "https://jira.example.com/EXT-1",
+                  "origin": "jira"
+                },
+                "id": "incident-1",
+                "reporter": "user-2",
+                "status": "Open",
+                "title": "Incident title"
+              }
+            ],
+            "mxBuildId": "build-001",
+            "mxVersion": "3.1.65",
+            "startDate": "2023-07-28T14:35:22.123Z"
+          }
+        ],
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].analysisStatus": {
+            "match": "type"
+          },
+          "$.body[*].commitId": {
+            "match": "type"
+          },
+          "$.body[*].detections.binaryImpactIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.binaryImpactIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].detections.binaryRegressionIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.binaryRegressionIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].detections.configurationImpactIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.configurationImpactIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].detections.configurationRegressionIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.configurationRegressionIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].detections.failureReasonIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.failureReasonIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].id": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].linkedIncidents[*].assignee": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].externalIssue.id": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].externalIssue.link": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].externalIssue.origin": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].id": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].reporter": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].status": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].title": {
+            "match": "type"
+          },
+          "$.body[*].mxBuildId": {
+            "match": "type"
+          },
+          "$.body[*].mxVersion": {
+            "match": "type"
+          },
+          "$.body[*].startDate": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch scenario runs by scenarioExecutionIds",
+      "providerState": "Scenario executions exist given filters",
+      "request": {
+        "matchingRules": {
+          "$.query.scenarioExecutionIds": {
+            "match": "type"
+          }
+        },
+        "method": "GET",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions",
+        "query": "scenarioExecutionIds=run-1%2crun-2"
+      },
+      "response": {
+        "body": [
+          {
+            "analysisStatus": "Passed",
+            "commitId": "abc123",
+            "detections": {
+              "binaryImpactIds": [
+                "impact-1"
+              ],
+              "binaryRegressionIds": [
+                "regression-1"
+              ],
+              "configurationImpactIds": [
+                "config-impact-1"
+              ],
+              "configurationRegressionIds": [
+                "config-regression-1"
+              ],
+              "failureReasonIds": [
+                "failure-reason-1"
+              ]
+            },
+            "id": "scenarioRunId",
+            "linkedIncidents": [
+              {
+                "assignee": "user-1",
+                "externalIssue": {
+                  "id": "ext-1",
+                  "link": "https://jira.example.com/EXT-1",
+                  "origin": "jira"
+                },
+                "id": "incident-1",
+                "reporter": "user-2",
+                "status": "Open",
+                "title": "Incident title"
+              }
+            ],
+            "mxBuildId": "build-001",
+            "mxVersion": "3.1.65",
+            "startDate": "2023-07-28T14:35:22.123Z"
+          }
+        ],
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].analysisStatus": {
+            "match": "type"
+          },
+          "$.body[*].commitId": {
+            "match": "type"
+          },
+          "$.body[*].detections.binaryImpactIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.binaryImpactIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].detections.binaryRegressionIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.binaryRegressionIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].detections.configurationImpactIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.configurationImpactIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].detections.configurationRegressionIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.configurationRegressionIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].detections.failureReasonIds": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].detections.failureReasonIds[*]": {
+            "match": "type"
+          },
+          "$.body[*].id": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].linkedIncidents[*].assignee": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].externalIssue.id": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].externalIssue.link": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].externalIssue.origin": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].id": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].reporter": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].status": {
+            "match": "type"
+          },
+          "$.body[*].linkedIncidents[*].title": {
+            "match": "type"
+          },
+          "$.body[*].mxBuildId": {
+            "match": "type"
+          },
+          "$.body[*].mxVersion": {
+            "match": "type"
+          },
+          "$.body[*].startDate": {
+            "match": "regex",
+            "regex": "^\\d{4}-[01]\\d-[0-3]\\dT[0-2]\\d:[0-5]\\d:[0-5]\\d\\.\\d+([+-][0-2]\\d(:?[0-5]\\d)?|Z)$"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to bulk rerun scenario executions",
+      "providerState": "a user is repushing a bulk of scenario executions",
+      "request": {
+        "body": {
+          "factoryProductId": "fp-1",
+          "testScenarioExecutions": [
+            "scenario-run-1"
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.factoryProductId": {
+            "match": "type"
+          },
+          "$.body.testScenarioExecutions": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.testScenarioExecutions[*]": {
+            "match": "type"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/repush/bulk"
+      },
+      "response": {
+        "body": {
+          "failedRepushes": [
+            "scenario-run-2"
+          ],
+          "successfulRepushes": [
+            {
+              "originalScenarioExecutionId": "scenario-run-1",
+              "repushedScenarioExecutionId": "new-scenario-run-1"
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.failedRepushes": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.failedRepushes[*]": {
+            "match": "type"
+          },
+          "$.body.successfulRepushes": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.successfulRepushes[*].originalScenarioExecutionId": {
+            "match": "type"
+          },
+          "$.body.successfulRepushes[*].repushedScenarioExecutionId": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to bulk rerun scenarios from a final product",
+      "providerState": "a user is repushing a bulk of scenario executions from final product",
+      "request": {
+        "body": {
+          "finalProductId": "final-product-1",
+          "rtpCommitId": "rtp-commit-123",
+          "scenariosToBeRepushed": [
+            "scenario-run-1"
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.finalProductId": {
+            "match": "type"
+          },
+          "$.body.rtpCommitId": {
+            "match": "type"
+          },
+          "$.body.scenariosToBeRepushed": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.scenariosToBeRepushed[*]": {
+            "match": "type"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/bulk-repush-from-final-product"
+      },
+      "response": {
+        "body": {
+          "failedRepushes": [
+            "scenario-run-2"
+          ],
+          "successfulRepushes": [
+            {
+              "originalScenarioExecutionId": "scenario-run-1",
+              "repushedScenarioExecutionId": "new-scenario-run-1"
+            }
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.failedRepushes": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.failedRepushes[*]": {
+            "match": "type"
+          },
+          "$.body.successfulRepushes": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.successfulRepushes[*].originalScenarioExecutionId": {
+            "match": "type"
+          },
+          "$.body.successfulRepushes[*].repushedScenarioExecutionId": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to rerun a scenario execution from a factory product",
+      "providerState": "a user is repushing a scenario execution",
+      "request": {
+        "body": {
+          "factoryProductId": "fp-1"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.factoryProductId": {
+            "match": "type"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/scenarioRunId/repush"
+      },
+      "response": {
+        "body": {
+          "testExecutionId": "exec-1"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.testExecutionId": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to rerun a scenario from a final product",
+      "providerState": "a user is repushing a scenario execution from final product",
+      "request": {
+        "body": {
+          "finalProductId": "final-product-1",
+          "rtpCommitId": "rtp-commit-123"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.finalProductId": {
+            "match": "type"
+          },
+          "$.body.rtpCommitId": {
+            "match": "type"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/scenarioRunId/repush-from-final-product"
+      },
+      "response": {
+        "body": {
+          "testExecutionId": "new-scenario-run-1"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.testExecutionId": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to run a scenario execution",
+      "providerState": "a user wants to start a scenario execution",
+      "request": {
+        "body": {
+          "branchName": "feature/temp-branch",
+          "disableConfigurationEditor": false,
+          "disableKeepExecution": true,
+          "executionGroupId": "executionGroupId",
+          "fullMaintenance": false,
+          "incidentEnabled": false,
+          "machineGroupId": "infra-group-1",
+          "scenarioDefinitionId": "scenario-definition-1",
+          "stopServices": true,
+          "subContextId": "BUILD_AND_TEST",
+          "supportReconActivities": false,
+          "validationScopeEnabled": false
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.branchName": {
+            "match": "type"
+          },
+          "$.body.disableConfigurationEditor": {
+            "match": "type"
+          },
+          "$.body.disableKeepExecution": {
+            "match": "type"
+          },
+          "$.body.executionGroupId": {
+            "match": "type"
+          },
+          "$.body.fullMaintenance": {
+            "match": "type"
+          },
+          "$.body.incidentEnabled": {
+            "match": "type"
+          },
+          "$.body.machineGroupId": {
+            "match": "type"
+          },
+          "$.body.scenarioDefinitionId": {
+            "match": "type"
+          },
+          "$.body.stopServices": {
+            "match": "type"
+          },
+          "$.body.subContextId": {
+            "match": "type"
+          },
+          "$.body.supportReconActivities": {
+            "match": "type"
+          },
+          "$.body.validationScopeEnabled": {
+            "match": "type"
+          }
+        },
+        "method": "POST",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/execute"
+      },
+      "response": {
+        "body": {
+          "testExecutionId": "test-execution-1"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.testExecutionId": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to abort a scenario run",
+      "providerState": "abort scenario execution by id",
+      "request": {
+        "body": {},
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "method": "POST",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/scenarioRunId/abort"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to abort a non existing scenario run",
+      "providerState": "abort scenario execution by id that does not exist",
+      "request": {
+        "body": {},
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "method": "POST",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/scenarioRunId/abort"
+      },
+      "response": {
+        "headers": {
+          "Content-Type": "text/plain;charset=UTF-8"
+        },
+        "status": 404
+      }
+    },
+    {
+      "description": "a request to abort a scenario run that fails",
+      "providerState": "failed to abort scenario execution by id",
+      "request": {
+        "body": {},
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "method": "POST",
+        "path": "/projects/project_1/test-execution-manager/scenario-executions/scenarioRunId/abort"
+      },
+      "response": {
+        "headers": {
+          "Content-Type": "text/plain;charset=UTF-8"
+        },
+        "status": 500
+      }
+    },
+    {
+      "description": "a request to fetch test units by context",
+      "providerState": "fetch test units",
+      "request": {
+        "method": "GET",
+        "path": "/projects/project_1/test-execution-manager/test-units",
+        "query": "contextId=ctx-1&scenarioDefinitionId=sd-1&scenarioExecutionIds=se-1&subContextId=sub-1"
+      },
+      "response": {
+        "body": [
+          {
+            "assignee": "user-1",
+            "branch": "main",
+            "contextId": "ctx-1",
+            "disableKeepExecution": false,
+            "headScenarioExecutionId": "se-1",
+            "id": "tu-1",
+            "incidentEnabled": false,
+            "repushable": false,
+            "scenarioDefinitionId": "sd-1",
+            "scenarioDefinitionName": "test-scenario",
+            "scenarioExecutions": [
+              {
+                "analysisObjects": {
+                  "binaryImpacts": [
+                    "bi-1"
+                  ],
+                  "binaryRegressions": [
+                    "br-1"
+                  ],
+                  "configurationImpacts": [
+                    "ci-1"
+                  ],
+                  "configurationRegressions": [
+                    "cr-1"
+                  ],
+                  "failureReasons": [
+                    "fr-1"
+                  ],
+                  "incidents": [
+                    "inc-1"
+                  ]
+                },
+                "analysisStatus": "Passed",
+                "cleaningStatus": "",
+                "commitId": "abc123",
+                "endDate": "2025-06-01T11:00:00Z",
+                "environment": {
+                  "environmentId": "env-1",
+                  "status": "CREATED"
+                },
+                "factoryProductId": "",
+                "failed": false,
+                "finished": true,
+                "keptExecution": false,
+                "mxBuildId": "build-1",
+                "mxVersion": "3.1.64",
+                "scenarioExecutionId": "se-1",
+                "startDate": "2025-06-01T10:00:00Z",
+                "status": "Passed"
+              }
+            ],
+            "validationScopeEnabled": false
+          }
+        ],
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].assignee": {
+            "match": "type"
+          },
+          "$.body[*].branch": {
+            "match": "type"
+          },
+          "$.body[*].contextId": {
+            "match": "type"
+          },
+          "$.body[*].disableKeepExecution": {
+            "match": "type"
+          },
+          "$.body[*].headScenarioExecutionId": {
+            "match": "type"
+          },
+          "$.body[*].id": {
+            "match": "type"
+          },
+          "$.body[*].incidentEnabled": {
+            "match": "type"
+          },
+          "$.body[*].repushable": {
+            "match": "type"
+          },
+          "$.body[*].scenarioDefinitionId": {
+            "match": "type"
+          },
+          "$.body[*].scenarioDefinitionName": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.binaryImpacts": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.binaryImpacts[*]": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.binaryRegressions": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.binaryRegressions[*]": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.configurationImpacts": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.configurationImpacts[*]": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.configurationRegressions": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.configurationRegressions[*]": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.failureReasons": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.failureReasons[*]": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.incidents": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body[*].scenarioExecutions[*].analysisObjects.incidents[*]": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].analysisStatus": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].cleaningStatus": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].commitId": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].endDate": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].environment.environmentId": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].environment.status": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].factoryProductId": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].failed": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].finished": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].keptExecution": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].mxBuildId": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].mxVersion": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].scenarioExecutionId": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].startDate": {
+            "match": "type"
+          },
+          "$.body[*].scenarioExecutions[*].status": {
+            "match": "type"
+          },
+          "$.body[*].validationScopeEnabled": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to fetch test units that returns empty",
+      "providerState": "no test units exist for context",
+      "request": {
+        "method": "GET",
+        "path": "/projects/project_1/test-execution-manager/test-units",
+        "query": "contextId=non-existent"
+      },
+      "response": {
+        "body": [],
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to check if repush is allowed",
+      "providerState": "scenario executions are allowed",
+      "request": {
+        "method": "GET",
+        "path": "/projects/project_1/test-execution-manager/execution-group/executionGroupId/scenario-execution/scenarioRunId/can-repush"
+      },
+      "response": {
+        "body": {
+          "actionAllowed": true,
+          "rejectionReasons": [
+            "reason"
+          ],
+          "warnings": [
+            "warning"
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.actionAllowed": {
+            "match": "type"
+          },
+          "$.body.rejectionReasons": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.rejectionReasons[*]": {
+            "match": "type"
+          },
+          "$.body.warnings": {
+            "match": "type",
+            "min": 1
+          },
+          "$.body.warnings[*]": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a request to check if scenario execution is allowed",
+      "providerState": "scenario executions are allowed under a certain execution group",
+      "request": {
+        "method": "GET",
+        "path": "/projects/project_1/test-execution-manager/execution-group/executionGroupId/scenario-execution/can-push"
+      },
+      "response": {
+        "body": {
+          "actionAllowed": true,
+          "rejectionReasons": [
+            "LIMIT_REACHED"
+          ],
+          "warnings": [
+            "SHOULD_HOUSKEEP_BEFORE_NEXT_LAUNCH"
+          ]
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "$.body.actionAllowed": {
+            "match": "type"
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "12.5.2"
+    },
+    "pactRust": {
+      "ffi": "0.4.20",
+      "models": "1.2.0"
+    },
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  },
+  "provider": {
+    "name": "test-execution-manager"
+  }
+}

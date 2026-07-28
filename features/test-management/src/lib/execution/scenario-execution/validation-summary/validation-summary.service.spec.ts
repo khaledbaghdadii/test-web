@@ -8,6 +8,7 @@ import {
   TestUnitScenarioExecutionModel,
 } from "@mxflow/test-management";
 import { Incident } from "@mxflow/features/incident-management";
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
 
 describe("Service: ValidationSummary", () => {
   const service = new ValidationSummaryService();
@@ -218,7 +219,7 @@ function getScenarioExecution(): TestUnitScenarioExecutionModel {
     mxVersion: "mxVersion",
     mxBuildId: "mxBuildId",
     factoryProductId: "factoryProductId",
-    keptExecution: true,
+    keepExecution: true,
     environment: {
       id: "environmentId",
       status: EnvironmentStatus.READY,
@@ -231,7 +232,7 @@ function getScenarioExecution(): TestUnitScenarioExecutionModel {
       failureReasons: ["failureReason1"],
       incidents: ["incident1"],
     },
-    cleaningStatus: "NOT_LAUNCHED",
+    cleaningStatus: ScenarioExecutionHousekeepingStatus.NOT_LAUNCHED,
     isFailed: false,
     isFinished: true,
   };

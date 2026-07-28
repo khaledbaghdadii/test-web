@@ -90,17 +90,27 @@ describe("MergeStageDetailsComponent", () => {
         failureReason: "PR_DECLINED",
       });
       expect(screen.getByTestId("merge-failure-reason").textContent).toContain(
-        "Merge failed due to declined pull request"
+        "Merge failed due to declined merge request"
       );
     });
 
-    it("shows same declined message for PR_UNAPPROVED", async () => {
+    it("shows conflict message for PR_CONFLICT", async () => {
+      await renderComponent({
+        mergeRequestState: "MERGE_FAILED",
+        failureReason: "PR_CONFLICT",
+      });
+      expect(screen.getByTestId("merge-failure-reason").textContent).toContain(
+        "Merge failed due to conflicting merge request"
+      );
+    });
+
+    it("shows unapproved message for PR_UNAPPROVED", async () => {
       await renderComponent({
         mergeRequestState: "MERGE_FAILED",
         failureReason: "PR_UNAPPROVED",
       });
       expect(screen.getByTestId("merge-failure-reason").textContent).toContain(
-        "Merge failed due to declined pull request"
+        "Merge failed due to unapproved merge request"
       );
     });
 

@@ -7,6 +7,21 @@
     />
   </mxevolve-business-process-content-container>
 
+  @if (finalProductId()) {
+  <mxevolve-business-process-content-container
+    header="Final Product Details"
+    [collapsable]="true"
+  >
+    <div class="col-span-12">
+      <mxevolve-final-product-details
+        [projectId]="projectId()"
+        [finalProductId]="finalProductId()"
+        (fetchError)="fetchError.emit($event)"
+      />
+    </div>
+  </mxevolve-business-process-content-container>
+  }
+
   <mxevolve-business-process-content-container footer [clearBackground]="true">
     <mxevolve-retry-merge-request
       class="col-start-5 col-span-2"

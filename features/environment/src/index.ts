@@ -43,7 +43,4 @@ export * from "./lib/clean/button/clean-environment-button.component";
 
 export * from "./lib/service/pipe/environment-uri-factory/environment-uri-factory.pipe";
 
-export * from "./lib/environment-config-audit/artifacts/config-audit-artifact-menu.builder";
-export * from "./lib/environment-config-audit/button/environment-config-audit-button.component";
-export * from "./lib/environment-config-audit/service/environment-config-audit.service";
-export * from "./lib/environment-config-audit/models/systematic-config-audit.models";
+export * from "./lib/configuration-files-picker/configuration-files-picker.component";

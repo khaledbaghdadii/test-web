@@ -1,0 +1,12 @@
+<mxevolve-single-select-dropdown
+  [stateProvider]="stateProvider"
+  [dataParams]="{ projectId: projectId() }"
+  [inputId]="inputId()"
+  [config]="{
+    placeholder: 'Select Scenario',
+    filter: true,
+    disabled: disabled()
+  }"
+  (selectionChange)="onSelectionChange($event)"
+  (errorEvent)="onError($event)"
+/>

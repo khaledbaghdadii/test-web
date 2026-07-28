@@ -39,6 +39,8 @@ import { BinaryImpactTableStateService } from "./binary-impact-table-state.servi
 import { toObservable } from "@angular/core/rxjs-interop";
 import { BinaryImpactTableSelectionStateService } from "./binary-impact-table-selection-state.service";
 import { ValidationScope } from "@mxflow/features/validation-management";
+import { BinaryImpactIdLinkComponent } from "../binary-impact-id-link/binary-impact-id-link.component";
+import { PreviouslyLinkedFilter } from "@mxevolve/domains/test/model";
 
 export interface BinaryImpactTableRowSelectionState {
   selectionState: {
@@ -62,6 +64,7 @@ export interface BinaryImpactTableRowSelectionState {
     TooltipModule,
     SelectedAnalysisObjectsListingComponent,
     TableChipsFilterComponent,
+    BinaryImpactIdLinkComponent,
   ],
   providers: [
     BinaryImpactTableStateService,
@@ -202,6 +205,15 @@ export class BinaryImpactsSelectionTableComponent implements OnDestroy {
   @Input() set showImpactsWithoutDefects(showImpactsWithoutDefects: boolean) {
     this.binaryImpactTableStateService.showImpactsWithoutDefects(
       showImpactsWithoutDefects
+    );
+  }
+
+  @Input() set previouslyLinkedFilter(
+    previouslyLinkedFilter: PreviouslyLinkedFilter | undefined
+  ) {
+    this.binaryImpactTableStateService.setPreviouslyLinkedFilter(
+      previouslyLinkedFilter?.testCaseExternalIds,
+      previouslyLinkedFilter?.scenarioDefinitionId
     );
   }
 

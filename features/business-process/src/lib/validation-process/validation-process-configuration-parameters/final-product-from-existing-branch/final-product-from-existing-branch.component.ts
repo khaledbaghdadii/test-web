@@ -160,7 +160,7 @@ export class FinalProductFromExistingBranchComponent
 
   showArchivalBranchError(): void {
     this.toastService.showError(
-      "The branch name available in the BP definition doesn't exist in the repository. Please check the name and try again with an existing branch."
+      "The branch name available in the Process Template doesn't exist in the repository. Please check the name and try again with an existing branch."
     );
   }
 
@@ -323,4 +323,6 @@ export class FinalProductFromExistingBranchComponent
       this.latestFinalProductFetchingFailed$.next(response);
     }
   }
+
+  protected readonly InputAccessMode = InputAccessMode;
 }

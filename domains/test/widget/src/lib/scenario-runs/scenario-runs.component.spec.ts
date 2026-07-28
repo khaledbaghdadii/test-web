@@ -2,6 +2,7 @@ import type { DebugElement, Provider } from "@angular/core";
 import { signal } from "@angular/core";
 import { NgTemplateOutlet } from "@angular/common";
 import { RouterLink, RouterModule } from "@angular/router";
+import { By } from "@angular/platform-browser";
 import {
   fireEvent,
   render,
@@ -103,6 +104,7 @@ const HEAD_DATA: HeadScenarioRunViewModel = {
   impactIds: [],
   incidentIds: [],
   regressionIds: [],
+  failureReasonIds: [],
   id: "run-head-001",
   name: "pricing-regression-test",
   status: ScenarioRunStatus.PASSED,
@@ -112,6 +114,7 @@ const HEAD_DATA: HeadScenarioRunViewModel = {
   numberOfImpacts: 3,
   numberOfRegressions: 1,
   numberOfIncidents: 2,
+  numberOfFailureReasons: 0,
   startDate: "2025-06-01T10:00:00Z",
   endDate: "2025-06-01T11:30:00Z",
   commitId: "abc123def",
@@ -186,6 +189,7 @@ const MOCK_FETCH_RESULT: ScenarioRunsPanelViewModel = {
   totalNumberOfImpacts: 3,
   totalNumberOfIncidents: 2,
   totalNumberOfRegressions: 1,
+  totalNumberOfFailureReasons: 5,
   head: HEAD_DATA,
   previousRuns: PREVIOUS_RUNS,
   filterData: DEFAULT_FILTER_DATA,
@@ -205,14 +209,21 @@ async function renderComponent(
     contextId: string;
     subContextId: string;
     scenarioRunIds: string[];
+    bpExecutionName: string;
     showEnvironmentDetails: boolean;
+    showEnvironmentDetailsOnlyWhenExpanded: boolean;
+    hideEnvironmentPanelWhenCleaned: boolean;
     showEnvironmentLink: boolean;
     showHistory: boolean;
     detailsExpandedByDefault: boolean;
+    showOpenConfigEditorAction: boolean;
     showBulkRerun: boolean;
     showTopBarActions: boolean;
     showActionButtons: boolean;
-    filter: SummaryFilterEvent;
+    showHistorySummary: boolean;
+    filter: SummaryFilterEvent[];
+    sortPanelsByStartDateDesc: boolean;
+    defaultRerunMode: "official" | "unofficial";
   }> = {},
   serviceOverride?: Partial<ScenarioRunsPanelFacadeService>,
   additionalProviders: Provider[] = []
@@ -299,6 +310,21 @@ describe("ScenarioRunsComponent", () => {
       });
     });
 
+    it("should emit an event when scenario runs are fetched", async () => {
+      const { fixture } = await renderComponent({
+        contextId: "ctx-1",
+        subContextId: "sub-1",
+      });
+      const scenarioRunsFetched = jest.fn();
+      fixture.componentInstance.scenarioRunsFetched.subscribe(
+        scenarioRunsFetched
+      );
+
+      fixture.componentInstance.ngOnInit();
+
+      expect(scenarioRunsFetched).toHaveBeenCalledTimes(1);
+    });
+
     it("renders details after data loads", async () => {
       await renderComponent();
 
@@ -377,6 +403,12 @@ describe("ScenarioRunsComponent", () => {
         expect(incidentsSection.tagName).toBe("SPAN");
         const incidentsLink = incidentsSection.querySelector("a");
         expect(incidentsLink?.textContent?.trim()).toBe("2");
+
+        expect(iconNames).toContain("nearby_error");
+        const wasteSection = screen.getByTestId("waste-count");
+        expect(wasteSection.tagName).toBe("SPAN");
+        const wasteLink = wasteSection.querySelector("a");
+        expect(wasteLink?.textContent?.trim()).toBe("5");
       });
     });
 
@@ -478,8 +510,45 @@ describe("ScenarioRunsComponent", () => {
         expect(passedSection.querySelector(".bg-green-500")).toBeTruthy();
         expect(
           passedSection.querySelector("span:last-child")?.textContent?.trim()
-        ).toBe("1");
+        ).toBe("2");
       });
+    });
+
+    it("hides the history summary section when showHistorySummary is false", async () => {
+      await renderComponent({ showHistorySummary: false });
+
+      await waitFor(() =>
+        expect(screen.queryByTestId("details-row-2")).toBeTruthy()
+      );
+      expect(screen.queryByTestId("history")).toBeNull();
+    });
+
+    it("shows the history summary section when showHistorySummary is true", async () => {
+      await renderComponent({ showHistorySummary: true });
+
+      await waitFor(() => expect(screen.queryByTestId("history")).toBeTruthy());
+    });
+
+    it("history summary link points to the run's detail page", async () => {
+      const { fixture } = await renderComponent();
+
+      expect(fixture.componentInstance.getHistoryLink(HEAD_DATA)).toBe(
+        "/app/project-123/test/execution/details/run-head-001"
+      );
+    });
+
+    it("history summary link includes the history tab query param", async () => {
+      const { fixture } = await renderComponent();
+
+      await waitFor(() => expect(screen.queryByTestId("history")).toBeTruthy());
+
+      const historySection = fixture.debugElement.query(
+        By.css("[data-testid='history']")
+      );
+      const navDivEl = historySection.query(By.directive(RouterLink));
+      const rl = navDivEl.injector.get(RouterLink);
+
+      expect(rl.queryParams).toEqual({ tab: "history" });
     });
   });
 
@@ -549,7 +618,84 @@ describe("ScenarioRunsComponent", () => {
         expect(ngMocks.input(environmentPanel, "environmentId")).toBe(
           "env-001"
         );
+        expect(
+          ngMocks.input(environmentPanel, "showOpenConfigEditorAction")
+        ).toBe(false);
       });
+    });
+
+    it("should pass showOpenConfigEditor action as true when set", async () => {
+      const { fixture } = await renderComponent({
+        showEnvironmentDetails: true,
+        showOpenConfigEditorAction: true,
+      });
+
+      await waitFor(() => {
+        expect(
+          document.querySelector("mxevolve-environment-status-panel")
+        ).toBeTruthy();
+        const environmentPanel = ngMocks.find(
+          fixture,
+          EnvironmentStatusPanelComponent
+        );
+        expect(ngMocks.input(environmentPanel, "projectId")).toBe(
+          "project-123"
+        );
+        expect(ngMocks.input(environmentPanel, "environmentId")).toBe(
+          "env-001"
+        );
+        expect(
+          ngMocks.input(environmentPanel, "showOpenConfigEditorAction")
+        ).toBe(true);
+      });
+    });
+
+    it("keeps the environment panel visible after it is cleaned when hideEnvironmentPanelWhenCleaned is false", async () => {
+      const { fixture } = await renderComponent({
+        showEnvironmentDetails: true,
+        hideEnvironmentPanelWhenCleaned: false,
+      });
+
+      await waitFor(() =>
+        expect(
+          document.querySelector("mxevolve-environment-status-panel")
+        ).toBeTruthy()
+      );
+
+      const environmentPanel = ngMocks.find(
+        fixture,
+        EnvironmentStatusPanelComponent
+      );
+      ngMocks.output(environmentPanel, "environmentCleaned").emit();
+      fixture.detectChanges();
+
+      expect(
+        document.querySelector("mxevolve-environment-status-panel")
+      ).toBeTruthy();
+    });
+
+    it("hides the environment panel after it is cleaned when hideEnvironmentPanelWhenCleaned is true", async () => {
+      const { fixture } = await renderComponent({
+        showEnvironmentDetails: true,
+        hideEnvironmentPanelWhenCleaned: true,
+      });
+
+      await waitFor(() =>
+        expect(
+          document.querySelector("mxevolve-environment-status-panel")
+        ).toBeTruthy()
+      );
+
+      const environmentPanel = ngMocks.find(
+        fixture,
+        EnvironmentStatusPanelComponent
+      );
+      ngMocks.output(environmentPanel, "environmentCleaned").emit();
+      fixture.detectChanges();
+
+      expect(
+        document.querySelector("mxevolve-environment-status-panel")
+      ).toBeNull();
     });
 
     it("hides the environment status field in scenario header when showEnvironmentDetails is true", async () => {
@@ -607,6 +753,124 @@ describe("ScenarioRunsComponent", () => {
       expect(
         document.querySelector("mxevolve-environment-status-panel")
       ).toBeNull();
+    });
+  });
+
+  describe("showEnvironmentDetailsOnlyWhenExpanded", () => {
+    it("passes showDeploymentDetails as true regardless of expand state when unset (default)", async () => {
+      const { fixture } = await renderComponent({
+        showEnvironmentDetails: true,
+        detailsExpandedByDefault: false,
+      });
+
+      await waitFor(() => {
+        expect(
+          document.querySelector("mxevolve-environment-status-panel")
+        ).toBeTruthy();
+        const environmentPanel = ngMocks.find(
+          fixture,
+          EnvironmentStatusPanelComponent
+        );
+        expect(ngMocks.input(environmentPanel, "showDeploymentDetails")).toBe(
+          true
+        );
+      });
+    });
+
+    it("passes showDeploymentDetails as false when the row is collapsed and the input is true", async () => {
+      const { fixture } = await renderComponent({
+        showEnvironmentDetails: true,
+        showEnvironmentDetailsOnlyWhenExpanded: true,
+        detailsExpandedByDefault: false,
+      });
+
+      await waitFor(() => {
+        expect(
+          document.querySelector("mxevolve-environment-status-panel")
+        ).toBeTruthy();
+        const environmentPanel = ngMocks.find(
+          fixture,
+          EnvironmentStatusPanelComponent
+        );
+        expect(ngMocks.input(environmentPanel, "showDeploymentDetails")).toBe(
+          false
+        );
+      });
+    });
+
+    it("passes showDeploymentDetails as true once the row is expanded and the input is true", async () => {
+      const { fixture } = await renderComponent({
+        showEnvironmentDetails: true,
+        showEnvironmentDetailsOnlyWhenExpanded: true,
+        detailsExpandedByDefault: false,
+      });
+
+      await waitFor(() =>
+        expect(screen.queryByTestId("collapse-button")).toBeTruthy()
+      );
+
+      fireEvent.click(screen.getByTestId("collapse-button"));
+      fixture.detectChanges();
+
+      await waitFor(() => {
+        const environmentPanel = ngMocks.find(
+          fixture,
+          EnvironmentStatusPanelComponent
+        );
+        expect(ngMocks.input(environmentPanel, "showDeploymentDetails")).toBe(
+          true
+        );
+      });
+    });
+  });
+
+  describe("sortPanelsByStartDateDesc", () => {
+    const PANEL_A: ScenarioRunsPanelViewModel = {
+      ...MOCK_FETCH_RESULT,
+      head: { ...HEAD_DATA, id: "run-a", startDate: "2025-06-01T10:00:00Z" },
+    };
+    const PANEL_B: ScenarioRunsPanelViewModel = {
+      ...MOCK_FETCH_RESULT,
+      head: { ...HEAD_DATA, id: "run-b", startDate: "2025-06-03T10:00:00Z" },
+    };
+    const PANEL_C: ScenarioRunsPanelViewModel = {
+      ...MOCK_FETCH_RESULT,
+      head: { ...HEAD_DATA, id: "run-c", startDate: "2025-06-02T10:00:00Z" },
+    };
+
+    function createMultiPanelService() {
+      return {
+        fetch: jest.fn().mockReturnValue(of([PANEL_A, PANEL_B, PANEL_C])),
+      };
+    }
+
+    it("preserves the original panel order when unset (default)", async () => {
+      const { fixture } = await renderComponent({}, createMultiPanelService());
+      const getScenarioRunId = (el: DebugElement) =>
+        ngMocks.input(el, "scenarioRunId");
+
+      await waitFor(() => {
+        const order = ngMocks
+          .findAll(fixture, ScenarioRunNameDisplayComponent)
+          .map(getScenarioRunId);
+        expect(order).toEqual(["run-a", "run-b", "run-c"]);
+      });
+    });
+
+    it("sorts panels by startDate descending when true", async () => {
+      const { fixture } = await renderComponent(
+        { sortPanelsByStartDateDesc: true },
+        createMultiPanelService()
+      );
+      const getScenarioRunId = (el: DebugElement) =>
+        ngMocks.input(el, "scenarioRunId");
+
+      await waitFor(() => {
+        const order = ngMocks
+          .findAll(fixture, ScenarioRunNameDisplayComponent)
+          .map(getScenarioRunId);
+        expect(order).toEqual(["run-b", "run-c", "run-a"]);
+      });
     });
   });
 
@@ -780,6 +1044,17 @@ describe("ScenarioRunsComponent", () => {
         expect(rerunWrapper).toBeTruthy();
       });
     });
+
+    it("passes defaultRerunMode to the rerun button", async () => {
+      const { fixture } = await renderComponent({
+        defaultRerunMode: "official",
+      });
+
+      await waitFor(() => {
+        const rerunButton = ngMocks.find(fixture, RerunScenarioButtonComponent);
+        expect(ngMocks.input(rerunButton, "defaultRerunMode")).toBe("official");
+      });
+    });
   });
 
   describe("environment link", () => {
@@ -821,6 +1096,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, environmentId: "" },
         previousRuns: PREVIOUS_RUNS,
         filterData: {
@@ -934,6 +1210,119 @@ describe("ScenarioRunsComponent", () => {
       await waitFor(() => {
         const el = screen.getByTestId("incidents-count");
         expect(el.getAttribute("ptooltip")).toBe("Incidents");
+      });
+    });
+
+    it("shows Waste tooltip on waste count", async () => {
+      await renderComponent();
+
+      await waitFor(() => {
+        const el = screen.getByTestId("waste-count");
+        expect(el.getAttribute("ptooltip")).toBe("Waste");
+      });
+    });
+  });
+
+  describe("test unit findings redirection", () => {
+    it("points impacts to the global detections dashboard", async () => {
+      const { fixture } = await renderComponent();
+
+      expect(fixture.componentInstance.getDetectionsDashboardLink()).toBe(
+        "/global-operations/detections"
+      );
+    });
+
+    it("filters the detections dashboard by project, scenario definition and Impact category", async () => {
+      const { fixture } = await renderComponent();
+
+      expect(
+        fixture.componentInstance.getDetectionsDashboardQueryParams(
+          HEAD_DATA,
+          "Impact"
+        )
+      ).toEqual({
+        projectIds: ["project-123"],
+        scenarioDefinitionNamePhrases: ["pricing-regression-test"],
+        category: "Impact",
+      });
+    });
+
+    it("filters the detections dashboard by Regression category", async () => {
+      const { fixture } = await renderComponent();
+
+      expect(
+        fixture.componentInstance.getDetectionsDashboardQueryParams(
+          HEAD_DATA,
+          "Regression"
+        )
+      ).toEqual({
+        projectIds: ["project-123"],
+        scenarioDefinitionNamePhrases: ["pricing-regression-test"],
+        category: "Regression",
+      });
+    });
+
+    it("points incidents to the global incidents dashboard", async () => {
+      const { fixture } = await renderComponent();
+
+      expect(fixture.componentInstance.getIncidentsDashboardLink()).toBe(
+        "/global-operations/incidents"
+      );
+    });
+
+    it("filters the incidents dashboard by project and scenario definition", async () => {
+      const { fixture } = await renderComponent();
+
+      expect(
+        fixture.componentInstance.getIncidentsDashboardQueryParams(HEAD_DATA)
+      ).toEqual({
+        projectIds: ["project-123"],
+        scenarioDefinitionNamePhrases: ["pricing-regression-test"],
+      });
+    });
+
+    it("includes the business process execution name in the detections redirect when provided", async () => {
+      const { fixture } = await renderComponent({
+        bpExecutionName: "my-bp-execution",
+      });
+
+      expect(
+        fixture.componentInstance.getDetectionsDashboardQueryParams(
+          HEAD_DATA,
+          "Impact"
+        )
+      ).toEqual({
+        projectIds: ["project-123"],
+        scenarioDefinitionNamePhrases: ["pricing-regression-test"],
+        businessProcessExecutionNamePhrase: "my-bp-execution",
+        category: "Impact",
+      });
+    });
+
+    it("includes the business process execution name in the incidents redirect when provided", async () => {
+      const { fixture } = await renderComponent({
+        bpExecutionName: "my-bp-execution",
+      });
+
+      expect(
+        fixture.componentInstance.getIncidentsDashboardQueryParams(HEAD_DATA)
+      ).toEqual({
+        projectIds: ["project-123"],
+        scenarioDefinitionNamePhrases: ["pricing-regression-test"],
+        businessProcessExecutionNamePhrase: "my-bp-execution",
+      });
+    });
+
+    it("points waste to the scenario detections tab", async () => {
+      const { fixture } = await renderComponent();
+
+      await waitFor(() => {
+        const wasteSection = fixture.debugElement.query(
+          By.css("[data-testid='waste-count']")
+        );
+        const linkEl = wasteSection.query(By.directive(RouterLink));
+        const routerLink = linkEl.injector.get(RouterLink);
+        expect(routerLink.queryParams).toEqual({ tab: "detections" });
       });
     });
   });
@@ -1073,6 +1462,7 @@ describe("ScenarioRunsComponent", () => {
       totalNumberOfImpacts: 0,
       totalNumberOfIncidents: 0,
       totalNumberOfRegressions: 0,
+      totalNumberOfFailureReasons: 0,
       head: {
         ...HEAD_DATA,
         id: "run-impacts",
@@ -1094,6 +1484,7 @@ describe("ScenarioRunsComponent", () => {
       totalNumberOfImpacts: 0,
       totalNumberOfIncidents: 0,
       totalNumberOfRegressions: 0,
+      totalNumberOfFailureReasons: 0,
       head: {
         ...HEAD_DATA,
         id: "run-regressions",
@@ -1115,6 +1506,7 @@ describe("ScenarioRunsComponent", () => {
       totalNumberOfImpacts: 0,
       totalNumberOfIncidents: 0,
       totalNumberOfRegressions: 0,
+      totalNumberOfFailureReasons: 0,
       head: {
         ...HEAD_DATA,
         id: "run-waste",
@@ -1136,6 +1528,7 @@ describe("ScenarioRunsComponent", () => {
       totalNumberOfImpacts: 0,
       totalNumberOfIncidents: 0,
       totalNumberOfRegressions: 0,
+      totalNumberOfFailureReasons: 0,
       head: {
         ...HEAD_DATA,
         id: "run-incidents",
@@ -1171,7 +1564,11 @@ describe("ScenarioRunsComponent", () => {
     it("filters panels by analysisStatus when filter is set", async () => {
       const service = createMultiPanelService();
       await renderComponent(
-        { filter: { type: "analysisStatus", value: "Under Analysis" } },
+        {
+          filter: [
+            { type: "analysisStatus", value: "Under Analysis", label: "" },
+          ],
+        },
         service
       );
 
@@ -1184,7 +1581,7 @@ describe("ScenarioRunsComponent", () => {
     it("filters panels by detection wasteReasons when filter is set", async () => {
       const service = createMultiPanelService();
       await renderComponent(
-        { filter: { type: "detection", value: "wasteReasons" } },
+        { filter: [{ type: "detection", value: "wasteReasons", label: "" }] },
         service
       );
 
@@ -1197,7 +1594,7 @@ describe("ScenarioRunsComponent", () => {
     it("filters panels by detection regressions when filter is set", async () => {
       const service = createMultiPanelService();
       await renderComponent(
-        { filter: { type: "detection", value: "regressions" } },
+        { filter: [{ type: "detection", value: "regressions", label: "" }] },
         service
       );
 
@@ -1210,7 +1607,7 @@ describe("ScenarioRunsComponent", () => {
     it("filters panels by detection impacts when filter is set", async () => {
       const service = createMultiPanelService();
       await renderComponent(
-        { filter: { type: "detection", value: "impacts" } },
+        { filter: [{ type: "detection", value: "impacts", label: "" }] },
         service
       );
 
@@ -1223,7 +1620,7 @@ describe("ScenarioRunsComponent", () => {
     it("filters panels by incidents when filter is set", async () => {
       const service = createMultiPanelService();
       await renderComponent(
-        { filter: { type: "incident", value: "total" } },
+        { filter: [{ type: "incident", value: "total", label: "" }] },
         service
       );
 
@@ -1236,7 +1633,7 @@ describe("ScenarioRunsComponent", () => {
     it("filters panels by closed incident status", async () => {
       const service = createMultiPanelService();
       await renderComponent(
-        { filter: { type: "incident", value: "closed" } },
+        { filter: [{ type: "incident", value: "closed", label: "" }] },
         service
       );
 
@@ -1252,6 +1649,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, id: "run-closed", name: "closed-scenario" },
         previousRuns: [],
         filterData: {
@@ -1269,7 +1667,7 @@ describe("ScenarioRunsComponent", () => {
           .mockReturnValue(of([PANEL_WITH_IMPACTS, panelWithClosedIncident])),
       };
       await renderComponent(
-        { filter: { type: "incident", value: "closed" } },
+        { filter: [{ type: "incident", value: "closed", label: "" }] },
         service
       );
 
@@ -1282,7 +1680,7 @@ describe("ScenarioRunsComponent", () => {
     it("filters panels by specific incident status", async () => {
       const service = createMultiPanelService();
       await renderComponent(
-        { filter: { type: "incident", value: "In Progress" } },
+        { filter: [{ type: "incident", value: "In Progress", label: "" }] },
         service
       );
 
@@ -1295,7 +1693,7 @@ describe("ScenarioRunsComponent", () => {
     it("shows no panels when filtering by a status not present in any panel", async () => {
       const service = createMultiPanelService();
       await renderComponent(
-        { filter: { type: "incident", value: "Draft" } },
+        { filter: [{ type: "incident", value: "Draft", label: "" }] },
         service
       );
 
@@ -1319,7 +1717,9 @@ describe("ScenarioRunsComponent", () => {
     it("shows no-match message when filter matches no panels", async () => {
       const service = createMultiPanelService();
       await renderComponent(
-        { filter: { type: "analysisStatus", value: "NonExistent" } },
+        {
+          filter: [{ type: "analysisStatus", value: "NonExistent", label: "" }],
+        },
         service
       );
 
@@ -1327,6 +1727,28 @@ describe("ScenarioRunsComponent", () => {
         expect(
           screen.getByText("No scenario runs match the current filters")
         ).toBeTruthy();
+      });
+    });
+
+    it("ORs multiple filters — shows panels matching any filter", async () => {
+      const service = {
+        fetch: jest
+          .fn()
+          .mockReturnValue(of([PANEL_WITH_IMPACTS, PANEL_WITH_REGRESSIONS])),
+      };
+      await renderComponent(
+        {
+          filter: [
+            { type: "detection", value: "impacts", label: "" },
+            { type: "detection", value: "regressions", label: "" },
+          ],
+        },
+        service
+      );
+
+      await waitFor(() => {
+        const panels = screen.getAllByTestId("scenario-runs-panel");
+        expect(panels).toHaveLength(2);
       });
     });
   });
@@ -1337,6 +1759,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, id: "a", name: "Alpha Test" },
         previousRuns: [],
         filterData: DEFAULT_FILTER_DATA,
@@ -1345,6 +1768,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, id: "b", name: "Beta Test" },
         previousRuns: [],
         filterData: DEFAULT_FILTER_DATA,
@@ -1376,6 +1800,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, id: "a", name: "Alpha Test" },
         previousRuns: [],
         filterData: DEFAULT_FILTER_DATA,
@@ -1384,6 +1809,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, id: "b", name: "Beta Test" },
         previousRuns: [],
         filterData: DEFAULT_FILTER_DATA,
@@ -1639,6 +2065,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, id, assigneeId },
         previousRuns: [],
         filterData: { ...DEFAULT_FILTER_DATA, businessProcessChainIds },
@@ -1780,6 +2207,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, id: "a", assigneeId: "", name: "pricing-test" },
         previousRuns: [],
         filterData: {
@@ -1794,6 +2222,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, id: "b", assigneeId: "", name: "pricing-other" },
         previousRuns: [],
         filterData: {
@@ -1808,6 +2237,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: { ...HEAD_DATA, id: "c", assigneeId: "", name: "unrelated-test" },
         previousRuns: [],
         filterData: {
@@ -1822,6 +2252,7 @@ describe("ScenarioRunsComponent", () => {
         totalNumberOfImpacts: 0,
         totalNumberOfIncidents: 0,
         totalNumberOfRegressions: 0,
+        totalNumberOfFailureReasons: 0,
         head: {
           ...HEAD_DATA,
           id: "d",
@@ -1843,10 +2274,12 @@ describe("ScenarioRunsComponent", () => {
       const { fixture } = await renderComponent(
         {
           showTopBarActions: true,
-          filter: {
-            type: "detection",
-            value: "regressions",
-          } as SummaryFilterEvent,
+          filter: [
+            {
+              type: "detection",
+              value: "regressions",
+            } as SummaryFilterEvent,
+          ],
         },
         service
       );

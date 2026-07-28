@@ -42,6 +42,10 @@
       <mxevolve-bulk-rerun-scenarios
         [projectId]="projectId()"
         [panels]="panels()"
+        [allowOfficialRerun]="allowOfficialRerun()"
+        [initialFinalProductId]="initialFinalProductId()"
+        [branch]="branch()"
+        [defaultRerunMode]="defaultRerunMode()"
         (rerunCompleted)="onBulkRerunCompleted()"
       />
       }
@@ -69,15 +73,19 @@
       </button>
       <div class="flex flex-col min-w-0 flex-1">
         <div class="flex items-start">
-          <div class="flex items-start min-w-0 flex-1">
+          <div class="flex items-stretch min-w-0 flex-1">
             <div
-              class="flex flex-col gap-1 min-w-0 flex-[1.5] pr-5"
+              class="flex flex-col gap-1 min-w-0 flex-1 pr-5"
               data-testid="scenario-name"
             >
               <span class="text-sm text-muted-color whitespace-nowrap"
                 >Name</span
               >
-              <span class="text-sm font-semibold truncate">
+              <span
+                class="text-sm font-semibold truncate"
+                [pTooltip]="panel.head.name"
+                tooltipPosition="top"
+              >
                 <mxevolve-scenario-run-name-display
                   [scenarioRunId]="panel.head.id"
                   [name]="panel.head.name || '-'"
@@ -148,7 +156,9 @@
                 <span class="text-sm text-muted-color whitespace-nowrap"
                   >Test Unit Findings</span
                 >
-                <div class="flex gap-4 items-center text-sm font-semibold">
+                <div
+                  class="flex flex-wrap gap-x-4 gap-y-1 items-center text-sm font-semibold"
+                >
                   <span
                     class="flex items-center gap-1"
                     data-testid="impacts-count"
@@ -162,8 +172,10 @@
                     />
                     <a
                       class="text-blue-500 cursor-pointer hover:text-blue-700 no-underline hover:underline"
-                      [routerLink]="getDetectionsLink(panel.head)"
-                      [queryParams]="{ tab: 'detections' }"
+                      [routerLink]="getDetectionsDashboardLink()"
+                      [queryParams]="
+                        getDetectionsDashboardQueryParams(panel.head, 'Impact')
+                      "
                       target="_blank"
                       >{{ panel.totalNumberOfImpacts }}</a
                     >
@@ -181,8 +193,13 @@
                     />
                     <a
                       class="text-blue-500 cursor-pointer hover:text-blue-700 no-underline hover:underline"
-                      [routerLink]="getDetectionsLink(panel.head)"
-                      [queryParams]="{ tab: 'detections' }"
+                      [routerLink]="getDetectionsDashboardLink()"
+                      [queryParams]="
+                        getDetectionsDashboardQueryParams(
+                          panel.head,
+                          'Regression'
+                        )
+                      "
                       target="_blank"
                       >{{ panel.totalNumberOfRegressions }}</a
                     >
@@ -198,12 +215,37 @@
                       size="sm"
                       color="var(--p-text-muted-color)"
                     />
+                    @if (hideIncidents()) {
+                    <span>{{ panel.totalNumberOfIncidents }}</span>
+                    } @else {
                     <a
                       class="text-blue-500 cursor-pointer hover:text-blue-700 no-underline hover:underline"
-                      [routerLink]="getIncidentsLink(panel.head)"
-                      [queryParams]="{ tab: 'incidents' }"
+                      [routerLink]="getIncidentsDashboardLink()"
+                      [queryParams]="
+                        getIncidentsDashboardQueryParams(panel.head)
+                      "
                       target="_blank"
                       >{{ panel.totalNumberOfIncidents }}</a
+                    >
+                    }
+                  </span>
+                  <span
+                    class="flex items-center gap-1"
+                    data-testid="waste-count"
+                    pTooltip="Waste"
+                    tooltipPosition="top"
+                  >
+                    <mxevolve-icon
+                      name="nearby_error"
+                      size="sm"
+                      color="var(--p-text-muted-color)"
+                    />
+                    <a
+                      class="text-blue-500 cursor-pointer hover:text-blue-700 no-underline hover:underline"
+                      [routerLink]="getDetectionsLink(panel.head)"
+                      [queryParams]="{ tab: 'detections' }"
+                      target="_blank"
+                      >{{ panel.totalNumberOfFailureReasons }}</a
                     >
                   </span>
                 </div>
@@ -211,22 +253,25 @@
             </ng-container>
 
             <div
-              class="flex flex-col gap-1 min-w-0 flex-1 px-5 border-l border-surface-200 dark:border-surface-700"
+              class="flex flex-col gap-1 min-w-0 flex-1 px-3 border-l border-surface-200 dark:border-surface-700"
               data-testid="duration"
-              (mouseenter)="showDurationPopover($event, durationPopover, panel)"
-              (mouseleave)="hideDurationPopover(durationPopover)"
             >
               <span class="text-sm text-muted-color whitespace-nowrap"
                 >Duration</span
               >
-              <span class="text-sm font-semibold truncate">
+              <span
+                class="text-sm font-semibold truncate"
+                [pTooltip]="durationTooltipTemplate"
+                [tooltipPosition]="'top'"
+                tooltipStyleClass="min-w-max"
+              >
                 <mxevolve-duration-display
                   [startDate]="panel.head.startDate"
                   [endDate]="panel.head.endDate"
                 />
               </span>
             </div>
-            <p-popover #durationPopover styleClass="duration-popover-no-arrow">
+            <ng-template #durationTooltipTemplate>
               @if (getDurationBreakdown(panel); as breakdown) {
               <p class="font-bold text-lg">Duration Breakdown</p>
               <div
@@ -236,26 +281,26 @@
                 <div class="gap-4">
                   <span class="font-semibold">{{ breakdown.testTime }}</span>
                   <br />
-                  <span class="text-muted-color">Test Time</span>
+                  <span style="color: darkgrey">Test Time</span>
                 </div>
                 <div class="gap-4">
                   <span class="font-semibold">{{
                     breakdown.deploymentTime
                   }}</span>
                   <br />
-                  <span class="text-muted-color">Deployment Time</span>
+                  <span style="color: darkgrey">Deployment Time</span>
                 </div>
                 <div class="gap-4">
                   <span class="font-semibold">{{ breakdown.other }}</span>
                   <br />
-                  <span class="text-muted-color">Other</span>
+                  <span style="color: darkgrey">Other</span>
                 </div>
               </div>
               }
-            </p-popover>
+            </ng-template>
 
             <div
-              class="flex flex-col gap-1 min-w-0 flex-1 px-5 border-l border-surface-200 dark:border-surface-700"
+              class="flex flex-col gap-1 min-w-0 flex-1 px-3 border-l border-surface-200 dark:border-surface-700"
               data-testid="commit-id"
             >
               <span class="text-sm text-muted-color whitespace-nowrap"
@@ -293,7 +338,7 @@
           </div>
 
           @if (showActionButtons()) {
-          <div class="flex items-center gap-3 shrink-0 pl-5">
+          <div class="flex items-center gap-1 shrink-0 pl-3">
             <div
               class="border-l border-surface-200 dark:border-surface-700 self-stretch"
             ></div>
@@ -306,16 +351,27 @@
                 [repushable]="panel.head.repushable ?? true"
                 [warningMessage]="panel.head.warningMessage"
                 [warningMessageMap]="warningMessageMap()"
+                [allowOfficialRerun]="allowOfficialRerun()"
+                [initialFinalProductId]="initialFinalProductId()"
+                [branch]="branch()"
+                [enableKeepServices]="enableKeepServices()"
+                [defaultRerunMode]="defaultRerunMode()"
                 (scenarioRerun)="onScenarioChanged()"
               />
             </div>
-            @if (showEnvironmentLink() && panel.head.environmentId) {
+            @if (showEnvironmentLink()) { @if (panel.head.environmentId) {
             <mxevolve-environment-link-button
               [projectId]="projectId()"
               [environmentId]="panel.head.environmentId"
               data-testid="environment-link"
             />
-            }
+            } @else {
+            <div
+              class="w-8 shrink-0"
+              aria-hidden="true"
+              data-testid="environment-link-placeholder"
+            ></div>
+            } }
             <div data-testid="abort-button">
               <mxevolve-abort-scenario-run-button
                 [projectId]="projectId()"
@@ -363,7 +419,12 @@
             <span class="text-sm text-muted-color whitespace-nowrap"
               >History</span
             >
-            <div class="flex items-center gap-3 text-sm font-semibold">
+            <a
+              class="flex items-center gap-3 text-sm font-semibold no-underline cursor-pointer"
+              [routerLink]="getHistoryLink(panel.head)"
+              [queryParams]="{ tab: 'history' }"
+              target="_blank"
+            >
               <span
                 class="flex items-center gap-1"
                 data-testid="history-failed"
@@ -371,7 +432,7 @@
                 <span
                   class="inline-block w-4 h-4 rounded-full bg-red-500"
                 ></span>
-                <span>{{ failedRunCount(panel.previousRuns) }}</span>
+                <span>{{ failedRunCount(panel) }}</span>
               </span>
               <span
                 class="flex items-center gap-1"
@@ -380,7 +441,7 @@
                 <span
                   class="inline-block w-4 h-4 rounded-full bg-yellow-500"
                 ></span>
-                <span>{{ underwayRunCount(panel.previousRuns) }}</span>
+                <span>{{ underwayRunCount(panel) }}</span>
               </span>
               <span
                 class="flex items-center gap-1"
@@ -389,26 +450,35 @@
                 <span
                   class="inline-block w-4 h-4 rounded-full bg-green-500"
                 ></span>
-                <span>{{ passedRunCount(panel.previousRuns) }}</span>
+                <span>{{ passedRunCount(panel) }}</span>
               </span>
-            </div>
+            </a>
           </div>
           }
         </div>
         }
       </div>
     </div>
-    @if (showEnvironmentDetails() && panel.head.environmentId) {
+    @if (showEnvironmentDetails() && panel.head.environmentId &&
+    !isEnvironmentPanelHidden(panel.head.environmentId)) {
     <div
       class="border-t border-surface-200 dark:border-surface-700 my-3"
       data-testid="environment-divider"
     ></div>
     <div class="ml-10 mt-2">
-      <mxevolve-environment-status-panel
-        [projectId]="projectId()"
-        [environmentId]="panel.head.environmentId"
-        data-testid="environment-panel"
-      />
+      <div class="surface-card px-4 py-3 border-round shadow-1">
+        <mxevolve-environment-status-panel
+          [projectId]="projectId()"
+          [environmentId]="panel.head.environmentId"
+          [showOpenConfigEditorAction]="showOpenConfigEditorAction()"
+          [showDeploymentDetails]="
+            !showEnvironmentDetailsOnlyWhenExpanded() ||
+            isDetailsExpanded(panel.head.id)
+          "
+          (environmentCleaned)="onEnvironmentCleaned(panel.head.environmentId)"
+          data-testid="environment-panel"
+        />
+      </div>
     </div>
     }
   </div>

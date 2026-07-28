@@ -1,0 +1,58 @@
+<nav class="mxevolve-project-nav-sidebar">
+  @for (item of items(); track item.label) { @if (isExpandable(item)) {
+  <div
+    class="mxevolve-project-nav-sidebar__section-wrapper"
+    routerLinkActive
+    #sectionActive="routerLinkActive"
+  >
+    <button
+      type="button"
+      class="mxevolve-project-nav-sidebar__item mxevolve-project-nav-sidebar__section"
+      [class.mxevolve-project-nav-sidebar__item--active]="
+        sectionActive.isActive
+      "
+      [attr.aria-expanded]="isExpanded(item)"
+      (click)="toggle(item)"
+    >
+      <span class="mxevolve-project-nav-sidebar__label">{{ item.label }}</span>
+      <i
+        class="pi mxevolve-project-nav-sidebar__chevron"
+        [class.pi-chevron-up]="isExpanded(item)"
+        [class.pi-chevron-down]="!isExpanded(item)"
+        aria-hidden="true"
+      ></i>
+    </button>
+
+    <div
+      class="mxevolve-project-nav-sidebar__group"
+      [hidden]="!isExpanded(item)"
+    >
+      @for (child of item.items; track child.label) {
+      <a
+        class="mxevolve-project-nav-sidebar__item mxevolve-project-nav-sidebar__leaf mxevolve-project-nav-sidebar__leaf--nested"
+        [routerLink]="child.routerLink"
+        routerLinkActive="mxevolve-project-nav-sidebar__item--active"
+        [routerLinkActiveOptions]="
+          child.routerLinkActiveOptions || { exact: false }
+        "
+        [title]="child.title || ''"
+      >
+        <span class="mxevolve-project-nav-sidebar__label">{{
+          child.label
+        }}</span>
+      </a>
+      }
+    </div>
+  </div>
+  } @else {
+  <a
+    class="mxevolve-project-nav-sidebar__item mxevolve-project-nav-sidebar__leaf"
+    [routerLink]="item.routerLink"
+    routerLinkActive="mxevolve-project-nav-sidebar__item--active"
+    [routerLinkActiveOptions]="item.routerLinkActiveOptions || { exact: false }"
+    [title]="item.title || ''"
+  >
+    <span class="mxevolve-project-nav-sidebar__label">{{ item.label }}</span>
+  </a>
+  } }
+</nav>

@@ -91,7 +91,7 @@ export const scenarioExecution = {
     },
     jumpType: jumpType,
   },
-  keptExecution: true,
+  keepExecution: true,
   disableKeepExecution: false,
   businessProcesses: [
     {
@@ -162,7 +162,7 @@ export const scenarioExecution2 = {
     },
     jumpType: jumpType,
   },
-  keptExecution: false,
+  keepExecution: false,
   disableKeepExecution: false,
   businessProcesses: [
     {

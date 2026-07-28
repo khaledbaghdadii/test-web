@@ -279,6 +279,16 @@ describe("EditBinaryRegressionModalComponent", () => {
 
       expect(component.editBinaryRegressionForm.valid).toBeTruthy();
     });
+
+    it("should mark the form as invalid when incidentId is null", () => {
+      component.editBinaryRegressionForm.patchValue(getFormData());
+
+      expect(component.editBinaryRegressionForm.valid).toBeTruthy();
+
+      component.editBinaryRegressionForm.patchValue({ incidentId: null });
+
+      expect(component.editBinaryRegressionForm.valid).toBeFalsy();
+    });
   });
 
   it("should emit close modal event on cancel", () => {

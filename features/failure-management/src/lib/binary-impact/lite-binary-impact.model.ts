@@ -1,6 +1,7 @@
 import { AnalysisObject } from "@mxflow/features/analysis-objects";
 
 export interface LiteBinaryImpact extends AnalysisObject {
+  objectId: string;
   owner: string;
   title: string;
   projectId: string;

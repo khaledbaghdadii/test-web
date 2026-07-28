@@ -12,6 +12,14 @@ import { PaginatedCommitsPage } from "./model/paginated-commits-page.model";
 
 const GATEWAY_URL = "https://api.test.com/";
 
+const MOCK_COMMIT: CommitDetails = {
+  id: "commit-1",
+  committerDisplayName: "John Doe",
+  committerDisplayEmail: "john@example.com",
+  timeStamp: "2026-03-01T10:00:00Z",
+  message: "fix: resolve issue",
+};
+
 const MOCK_COMMITS: CommitDetails[] = [
   {
     id: "commit-1",
@@ -30,6 +38,28 @@ const MOCK_COMMITS: CommitDetails[] = [
     url: "https://bitbucket.org/commits/commit-2",
   },
 ];
+
+const MOCK_COMMIT_INFO_API_RESPONSE = {
+  id: "commit-1",
+  displayId: "commit-1",
+  author: {
+    displayName: "John Doe",
+    emailAddress: "john@example.com",
+    name: "John Doe",
+  },
+  authorTimestamp: "2026-03-01T10:00:00Z",
+  committer: {
+    displayName: "John Doe",
+    emailAddress: "john@example.com",
+    name: "John Doe",
+  },
+  committerTimestamp: "2026-03-01T10:00:00Z",
+  message: "fix: resolve issue",
+  parent: {
+    id: "parent-commit-1",
+    displayId: "parent-commit-1",
+  },
+};
 
 describe("CommitsService", () => {
   let service: CommitsService;
@@ -51,6 +81,68 @@ describe("CommitsService", () => {
 
   afterEach(() => {
     httpController.verify();
+  });
+
+  it("should fetch a single commit by id", async () => {
+    const request = {
+      projectId: "project-1",
+      repositoryId: "repo-1",
+      commitId: "commit-1",
+    };
+
+    const result = firstValueFrom(service.getCommit(request));
+
+    const req = httpController.expectOne(
+      `${GATEWAY_URL}scm-operations/projects/project-1/repositories/repo-1/commits/commit-1`
+    );
+    expect(req.request.method).toBe("GET");
+    req.flush(MOCK_COMMIT_INFO_API_RESPONSE);
+
+    expect(await result).toEqual({
+      ...MOCK_COMMIT,
+    });
+  });
+
+  it("should map server error message on getCommit failure", async () => {
+    const request = {
+      projectId: "project-1",
+      repositoryId: "repo-1",
+      commitId: "commit-1",
+    };
+
+    const result = firstValueFrom(service.getCommit(request)).catch((e) => e);
+
+    httpController
+      .expectOne((r) => r.url.includes("commits/commit-1"))
+      .flush(
+        { message: "Commit not found" },
+        { status: 404, statusText: "Not Found" }
+      );
+
+    const error = await result;
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe("Commit not found");
+  });
+
+  it("should use response body message when no server response is 500", async () => {
+    const request = {
+      projectId: "p1",
+      repositoryId: "r1",
+      commitId: "c1",
+    };
+
+    const result = firstValueFrom(service.getCommit(request)).catch((e) => e);
+
+    httpController
+      .expectOne((r) => r.url.includes("commits/c1"))
+      .flush(
+        { status: 500, message: "Internal Server Error" },
+        { status: 500, statusText: "Internal Server Error" }
+      );
+
+    const error = await result;
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toContain("Internal Server Error");
   });
 
   it("should fetch commit differences with correct params", async () => {
@@ -224,6 +316,54 @@ describe("CommitsService", () => {
     const error = await result;
     expect(error).toBeInstanceOf(Error);
     expect(error.message).toContain("Internal Server Error");
+  });
+
+  it("should fetch commit messages for a batch of commit ids", async () => {
+    const request = {
+      projectId: "project-1",
+      repositoryId: "repo-1",
+      commitIds: ["commit-1", "commit-2"],
+    };
+
+    const result = firstValueFrom(service.getCommitsInfo(request));
+
+    const req = httpController.expectOne(
+      `${GATEWAY_URL}scm-operations/projects/project-1/repositories/repo-1/commits`
+    );
+    expect(req.request.method).toBe("POST");
+    expect(req.request.body).toEqual(["commit-1", "commit-2"]);
+    req.flush([
+      { id: "commit-1", displayId: "commit-1", message: "fix: resolve issue" },
+      { id: "commit-2", displayId: "commit-2", message: "feat: add feature" },
+    ]);
+
+    expect(await result).toEqual([
+      { id: "commit-1", displayId: "commit-1", message: "fix: resolve issue" },
+      { id: "commit-2", displayId: "commit-2", message: "feat: add feature" },
+    ]);
+  });
+
+  it("should surface the server message when the commits-info lookup fails", async () => {
+    const request = {
+      projectId: "project-1",
+      repositoryId: "repo-1",
+      commitIds: ["commit-1"],
+    };
+
+    const result = firstValueFrom(service.getCommitsInfo(request)).catch(
+      (e) => e
+    );
+
+    httpController
+      .expectOne((r) => r.method === "POST" && r.url.endsWith("/commits"))
+      .flush(
+        { message: "Error fetching commits info" },
+        { status: 500, statusText: "Internal Server Error" }
+      );
+
+    const error = await result;
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toBe("Error fetching commits info");
   });
 });
 

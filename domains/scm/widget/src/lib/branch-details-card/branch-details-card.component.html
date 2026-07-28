@@ -31,18 +31,20 @@
       <span class="text-sm text-surface-500 dark:text-surface-300">
         Parent Branch
       </span>
-      @if (dev.repository.url) {
-      <a
-        class="text-sm font-semibold text-primary no-underline hover:underline"
-        [href]="buildBranchUrl(dev.repository.url, dev.source)"
-        target="_blank"
-        >{{ dev.source }}</a
-      >
-      } @else {
-      <span class="text-sm font-semibold text-primary">
-        {{ dev.source }}
+      <span class="text-sm font-semibold text-surface-900 dark:text-surface-0">
+        @if (dev.repository.url) {
+        <a
+          class="text-sm font-semibold text-primary no-underline hover:underline"
+          [href]="buildBranchUrl(dev.repository.url, dev.source)"
+          target="_blank"
+          >{{ dev.source }}</a
+        >
+        } @else {
+        <span class="text-sm font-semibold text-primary">
+          {{ dev.source }}
+        </span>
+        }
       </span>
-      }
     </div>
 
     <div class="flex items-center justify-center px-3">

@@ -102,7 +102,7 @@ describe("scenario execution details component", () => {
       checkAnalysisStatusesEligibility: jest.fn(),
       updateComment: jest.fn(() => of(null)),
       updateAnalysisStatus: jest.fn(() => of(null)),
-      toggleKeptExecutionFlag: jest.fn(() => of(undefined)),
+      toggleKeepExecutionFlag: jest.fn(() => of(undefined)),
     } as unknown as ScenarioExecutionService;
     route = {
       params: routeParams$.asObservable(),
@@ -144,8 +144,8 @@ describe("scenario execution details component", () => {
       setLoading: jest.fn(),
       setValidationScope: jest.fn(),
       setValidationScopeWarningMessage: jest.fn(),
-      setKeptExecution: jest.fn(),
-      setKeptExecutionForTestUnitScenarioExecution: jest.fn(),
+      setKeepExecution: jest.fn(),
+      setKeepExecutionForTestUnitScenarioExecution: jest.fn(),
     };
 
     await MockBuilder(ScenarioExecutionDetailsComponent)
@@ -730,12 +730,6 @@ describe("scenario execution details component", () => {
     expect(stateService.setComment).toHaveBeenCalledWith(comment);
   });
 
-  it("should go back", () => {
-    const locationBackMock = jest.spyOn(location, "back");
-    component.back();
-    expect(locationBackMock).toHaveBeenCalled();
-  });
-
   describe("detection tab", () => {
     let tab: DebugElement;
 
@@ -863,130 +857,130 @@ describe("scenario execution details component", () => {
     });
   });
 
-  describe("handle kept execution toggled", () => {
+  describe("handle keep execution toggled", () => {
     beforeEach(fakeAsync(() => {
       stateService.testUnit.set({
         scenarioExecutions: [
           getUnkeptScenarioExecution(),
           {
             ...scenarioExecution2,
-            keptExecution: false,
+            keepExecution: false,
           },
         ],
       });
       stateService.scenarioExecution.set(getUnkeptScenarioExecution());
       tick();
       jest
-        .spyOn(scenarioExecutionService, "toggleKeptExecutionFlag")
+        .spyOn(scenarioExecutionService, "toggleKeepExecutionFlag")
         .mockReturnValue(of(undefined));
     }));
 
     it("should delegate call to scenario execution service", () => {
-      component.handleKeptExecutionToggled(scenarioExecutionId);
+      component.handleKeepExecutionToggled(scenarioExecutionId);
       expect(
-        scenarioExecutionService.toggleKeptExecutionFlag
+        scenarioExecutionService.toggleKeepExecutionFlag
       ).toHaveBeenCalledWith(projectId, scenarioExecutionId, true);
     });
 
-    it("should update the keptExecution flag of the scenario execution in the history if its keep execution is toggled", () => {
-      component.handleKeptExecutionToggled(scenarioExecution2.id);
+    it("should update the keepExecution flag of the scenario execution in the history if its keep execution is toggled", () => {
+      component.handleKeepExecutionToggled(scenarioExecution2.id);
       expect(
-        stateService.setKeptExecutionForTestUnitScenarioExecution
+        stateService.setKeepExecutionForTestUnitScenarioExecution
       ).toHaveBeenCalledWith(scenarioExecution2.id, true);
     });
 
-    it("should update the keptExecution flag of the scenario execution in the execution details if it is currently being viewed", () => {
-      component.handleKeptExecutionToggled(scenarioExecutionId);
-      expect(stateService.setKeptExecution).toHaveBeenCalledWith(true);
+    it("should update the keepExecution flag of the scenario execution in the execution details if it is currently being viewed", () => {
+      component.handleKeepExecutionToggled(scenarioExecutionId);
+      expect(stateService.setKeepExecution).toHaveBeenCalledWith(true);
     });
 
-    it("should display message on successfully updating kept execution flag to true", () => {
+    it("should display message on successfully updating keep execution flag to true", () => {
       stateService.testUnit.set({
         scenarioExecutions: [getUnkeptScenarioExecution()],
       });
       stateService.scenarioExecution.set(getUnkeptScenarioExecution());
-      component.handleKeptExecutionToggled(scenarioExecutionId);
+      component.handleKeepExecutionToggled(scenarioExecutionId);
       expect(toastMessageService.showSuccess).toHaveBeenCalledWith(
         "The execution has been marked as kept."
       );
     });
 
-    it("should display message on successfully updating kept execution flag to false", () => {
-      const keptExecution = {
+    it("should display message on successfully updating keep execution flag to false", () => {
+      const keepExecution = {
         ...getUnkeptScenarioExecution(),
-        keptExecution: true,
+        keepExecution: true,
       };
       stateService.testUnit.set({
-        scenarioExecutions: [keptExecution],
+        scenarioExecutions: [keepExecution],
       });
-      stateService.scenarioExecution.set(keptExecution);
-      component.handleKeptExecutionToggled(scenarioExecutionId);
+      stateService.scenarioExecution.set(keepExecution);
+      component.handleKeepExecutionToggled(scenarioExecutionId);
       expect(toastMessageService.showSuccess).toHaveBeenCalledWith(
         "The execution has been marked as not kept."
       );
     });
 
-    it("should revert kept execution flag for the scenario execution in the history on failure to update its kept execution flag", () => {
+    it("should revert keep execution flag for the scenario execution in the history on failure to update its keep execution flag", () => {
       jest
-        .spyOn(scenarioExecutionService, "toggleKeptExecutionFlag")
+        .spyOn(scenarioExecutionService, "toggleKeepExecutionFlag")
         .mockReturnValue(throwError(() => errorMessage));
-      component.handleKeptExecutionToggled(scenarioExecution2.id);
+      component.handleKeepExecutionToggled(scenarioExecution2.id);
       expect(
-        scenarioExecutionService.toggleKeptExecutionFlag
+        scenarioExecutionService.toggleKeepExecutionFlag
       ).toHaveBeenCalledWith(projectId, scenarioExecution2.id, true);
       expect(
-        stateService.setKeptExecutionForTestUnitScenarioExecution
+        stateService.setKeepExecutionForTestUnitScenarioExecution
       ).toHaveBeenCalledTimes(2);
       expect(
-        stateService.setKeptExecutionForTestUnitScenarioExecution
+        stateService.setKeepExecutionForTestUnitScenarioExecution
       ).toHaveBeenCalledWith(scenarioExecution2.id, true);
       expect(
-        stateService.setKeptExecutionForTestUnitScenarioExecution
+        stateService.setKeepExecutionForTestUnitScenarioExecution
       ).toHaveBeenCalledWith(scenarioExecution2.id, false);
     });
 
-    it("should revert kept execution for the scenario execution in the execution details if it is currently viewed on failure to update its kept execution flag", () => {
+    it("should revert keep execution for the scenario execution in the execution details if it is currently viewed on failure to update its keep execution flag", () => {
       jest
-        .spyOn(scenarioExecutionService, "toggleKeptExecutionFlag")
+        .spyOn(scenarioExecutionService, "toggleKeepExecutionFlag")
         .mockReturnValue(throwError(() => errorMessage));
-      component.handleKeptExecutionToggled(scenarioExecution.id);
+      component.handleKeepExecutionToggled(scenarioExecution.id);
       expect(
-        scenarioExecutionService.toggleKeptExecutionFlag
+        scenarioExecutionService.toggleKeepExecutionFlag
       ).toHaveBeenCalledWith(projectId, scenarioExecution.id, true);
-      expect(stateService.setKeptExecution).toHaveBeenCalledTimes(2);
-      expect(stateService.setKeptExecution).toHaveBeenCalledWith(true);
-      expect(stateService.setKeptExecution).toHaveBeenCalledWith(false);
+      expect(stateService.setKeepExecution).toHaveBeenCalledTimes(2);
+      expect(stateService.setKeepExecution).toHaveBeenCalledWith(true);
+      expect(stateService.setKeepExecution).toHaveBeenCalledWith(false);
     });
 
-    it("should display error toast message on failure to update kept execution flag", () => {
+    it("should display error toast message on failure to update keep execution flag", () => {
       jest
-        .spyOn(scenarioExecutionService, "toggleKeptExecutionFlag")
+        .spyOn(scenarioExecutionService, "toggleKeepExecutionFlag")
         .mockReturnValue(throwError(() => errorMessage));
-      component.handleKeptExecutionToggled(scenarioExecution.id);
+      component.handleKeepExecutionToggled(scenarioExecution.id);
       expect(toastMessageService.showError).toHaveBeenCalledWith(errorMessage);
     });
 
-    it("should not update the keptExecution flag of other executions in history when call to scenario execution service returns an error", () => {
+    it("should not update the keepExecution flag of other executions in history when call to scenario execution service returns an error", () => {
       jest
-        .spyOn(scenarioExecutionService, "toggleKeptExecutionFlag")
+        .spyOn(scenarioExecutionService, "toggleKeepExecutionFlag")
         .mockReturnValue(throwError(() => errorMessage));
       stateService.testUnit.set({
         scenarioExecutions: [scenarioExecution, scenarioExecution2],
       });
-      component.handleKeptExecutionToggled(scenarioExecution.id);
-      stateService.setKeptExecutionForTestUnitScenarioExecution.mock.calls.forEach(
+      component.handleKeepExecutionToggled(scenarioExecution.id);
+      stateService.setKeepExecutionForTestUnitScenarioExecution.mock.calls.forEach(
         (call: [string, boolean]) => {
           expect(call[0]).toBe(scenarioExecutionId);
         }
       );
     });
 
-    it("should not update the keptExecution flag of other executions in history when call to scenario execution service is successful", () => {
+    it("should not update the keepExecution flag of other executions in history when call to scenario execution service is successful", () => {
       stateService.testUnit.set({
         scenarioExecutions: [getUnkeptScenarioExecution(), scenarioExecution2],
       });
-      component.handleKeptExecutionToggled(scenarioExecutionId);
-      stateService.setKeptExecutionForTestUnitScenarioExecution.mock.calls.forEach(
+      component.handleKeepExecutionToggled(scenarioExecutionId);
+      stateService.setKeepExecutionForTestUnitScenarioExecution.mock.calls.forEach(
         (call: [string, boolean]) => {
           expect(call[0]).toBe(scenarioExecutionId);
         }
@@ -1034,7 +1028,7 @@ describe("scenario execution details component", () => {
         },
         jumpType: jumpType,
       },
-      keptExecution: false,
+      keepExecution: false,
     } as unknown as ScenarioExecution;
   }
 

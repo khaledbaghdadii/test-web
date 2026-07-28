@@ -3,6 +3,12 @@
     <mxflow-header-title
       >Binary Impact Details
       <div right-content>
+        <p-button
+          label="Edit Upgrade Impact"
+          [outlined]="true"
+          class="pr-2"
+          (onClick)="handleEditUpgradeImpact()"
+        ></p-button>
         <p-button label="Edit" (onClick)="handleEdit()"></p-button>
       </div>
     </mxflow-header-title>
@@ -38,3 +44,12 @@
   (closeModalEvent)="handleCloseModalEvent()"
   (binaryImpactEdited)="handleBinaryImpactEdited()"
 ></mxevolve-edit-binary-impact-modal>
+
+<mxevolve-upgrade-impact-selection-modal
+  [(isVisible)]="isUpgradeImpactSelectionModalVisible"
+  [showDescriptionOverrideOption]="true"
+  (overrideBinaryImpactDescriptionChange)="
+    handleOverrideBinaryImpactDescriptionSelection($event)
+  "
+  (selectedUpgradeImpactIdChange)="handleUpgradeImpactSelected($event)"
+></mxevolve-upgrade-impact-selection-modal>

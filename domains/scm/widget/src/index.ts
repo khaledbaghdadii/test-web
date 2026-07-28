@@ -6,6 +6,8 @@ export { MergeRequestPrioritySelectorComponent } from "./lib/merge-request-prior
 export { RepositoryNameComponent } from "./lib/repository-name/repository-name.component";
 export { MergeConfigurationDropdownComponent } from "./lib/merge-configuration-dropdown/merge-configuration-dropdown.component";
 export { ReviewersAutoCompleteComponent } from "./lib/reviewers-autocomplete/reviewers-autocomplete.component";
+export { BranchInputComponent } from "./lib/branch-input/branch-input.component";
+export { RepositorySelectorComponent } from "./lib/repository-selector/repository-selector.component";
 export {
   UnderValidationStageDetailsComponent,
   type UnderValidationStageData,
@@ -14,3 +16,8 @@ export {
   MergeStageDetailsComponent,
   type MergeStageData,
 } from "./lib/merge-stage-details/merge-stage-details.component";
+export {
+  CommitTestExecutionsDialogComponent,
+  CommitTestExecutionRow,
+} from "./lib/commit-test-executions-dialog/commit-test-executions-dialog.component";
+export { TestExecutionsByCommitIdService } from "./lib/test-executions-by-commit-id/test-executions-by-commit-id.service";

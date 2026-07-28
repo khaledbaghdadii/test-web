@@ -1,861 +1,718 @@
 import { IncidentsSelectionTableComponent } from "./incidents-selection-table.component";
-import { IncidentService } from "../incident.service";
-import { of, Subject, throwError } from "rxjs";
 import {
-  getFullyCheckedIncident,
   INCIDENT_1,
   INCIDENT_2,
-  INCIDENT_SECOND_PAGE,
   INCIDENT_STATUS_OPTIONS,
-  INCIDENT_STATUSES,
-  INCIDENT_TABLE_LAZY_LOAD_EVENT,
-  INCIDENTS,
-  INCIDENTS_QUERY,
 } from "../incident-test-utils";
-import { TableLazyLoadEvent, TableModule } from "primeng/table";
-import { IncidentPage } from "../model/incident-page.model";
+import { TableModule } from "primeng/table";
 import { ToastMessageService } from "@mxflow/ui/alert";
-import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { ComponentFixture } from "@angular/core/testing";
 import {
+  AnalysisObject,
   AnalysisObjectSelectionState,
   AnalysisObjectSelectionType,
   AnalysisObjectTableSelectionStateService,
-  SelectedAnalysisObject,
   SelectedAnalysisObjectsListingComponent,
 } from "@mxflow/features/analysis-objects";
-import { CheckboxChangeEvent } from "primeng/checkbox";
-import { Incident } from "../model/incident.model";
-import { CommonModule } from "@angular/common";
-import { PaginatorModule } from "primeng/paginator";
-import { NO_ERRORS_SCHEMA } from "@angular/core";
-import { provideNoopAnimations } from "@angular/platform-browser/animations";
+import { Checkbox } from "primeng/checkbox";
+import { Paginator, PaginatorModule } from "primeng/paginator";
+import { render, screen, waitFor, within } from "@testing-library/angular";
+import userEvent from "@testing-library/user-event";
+import { MockComponent, ngMocks } from "ng-mocks";
+import { signal } from "@angular/core";
+import { IncidentsTableStateService } from "./incidents-table-state.service";
+import { Skeleton, SkeletonModule } from "primeng/skeleton";
 import {
-  IncidentsFetchRequest,
-  IncidentsQueryParams,
-} from "@mxflow/features/incident-management";
-import { DomTestUtils } from "@mxevolve/testing";
+  TableCheckboxFilterComponent,
+  TableEmptyMessageComponent,
+} from "@mxflow/ui/utils";
+import { PreviouslyLinkedFilter } from "@mxevolve/domains/test/model";
+import { Tooltip } from "primeng/tooltip";
+import { Subject } from "rxjs";
 
 describe("IncidentsSelectionTableComponent", () => {
-  const refresh$ = new Subject<boolean>();
-  let component: IncidentsSelectionTableComponent;
-  let fixture: ComponentFixture<IncidentsSelectionTableComponent>;
-  let incidentService: jest.Mocked<IncidentService>;
-  let toastMessageService: jest.Mocked<ToastMessageService>;
-  let selectionStateService: AnalysisObjectTableSelectionStateService;
+  const incidentTableStateService = {
+    incidents: signal([INCIDENT_1, INCIDENT_2]),
+    page: signal(0),
+    size: signal(0),
+    total: signal(0),
+    isLoading: signal(false),
+    statusOptions: signal<{ text: string; value: string }[]>([]),
+    errorMessage: signal<string | undefined>(undefined),
+    statusesErrorMessage: signal<string | undefined>(undefined),
+    setPreviouslyLinkedFilterCriteria: jest.fn(),
+    setIncidentsTableQuery: jest.fn(),
+    refresh: jest.fn(),
+  };
 
-  beforeEach(async () => {
-    incidentService = {
-      fetch: jest.fn(() => of(INCIDENT_SECOND_PAGE)),
-      fetchAllStatuses: jest.fn(() => of(INCIDENT_STATUSES)),
-    } as unknown as jest.Mocked<IncidentService>;
+  const toastMessageService = {
+    showError: jest.fn(),
+  };
 
-    toastMessageService = {
-      showError: jest.fn(),
-    } as unknown as jest.Mocked<ToastMessageService>;
+  const refreshSubject = new Subject<boolean>();
 
-    selectionStateService = {
-      computeAnalysisObjectSelectionStatesAfterAnalysisObjectSelection: jest
-        .fn()
-        .mockImplementation((incident, selected) => [
-          ...selected,
-          { analysisObject: incident } as any,
-        ]),
-      isAnalysisObjectFullySelected: jest.fn().mockReturnValue(true),
-      isAnalysisObjectPartiallySelected: jest.fn().mockReturnValue(false),
-    } as unknown as AnalysisObjectTableSelectionStateService;
+  const INITIALLY_SELECTED_INCIDENTS: AnalysisObjectSelectionState<AnalysisObject>[] =
+    [
+      {
+        analysisObject: INCIDENT_1,
+        selectionType: AnalysisObjectSelectionType.FULL,
+      },
+      {
+        analysisObject: INCIDENT_2,
+        selectionType: AnalysisObjectSelectionType.PARTIAL,
+        selectionMessage: "Linked to some things",
+      },
+    ];
 
-    await TestBed.configureTestingModule({
-      imports: [
+  const REQUIRED_INPUTS = {
+    refresh: refreshSubject,
+  };
+
+  type RenderInputs = Partial<typeof REQUIRED_INPUTS> & {
+    initiallySelectedIncidents?: AnalysisObjectSelectionState<AnalysisObject>[];
+    previouslyLinkedFilter?: PreviouslyLinkedFilter;
+  };
+
+  async function renderComponent(inputs: RenderInputs = {}) {
+    return render(IncidentsSelectionTableComponent, {
+      inputs: { ...REQUIRED_INPUTS, ...inputs },
+      componentImports: [
         IncidentsSelectionTableComponent,
-        CommonModule,
-        TableModule,
+        Checkbox,
+        Tooltip,
         PaginatorModule,
+        TableCheckboxFilterComponent,
+        TableModule,
+        SkeletonModule,
+        MockComponent(SelectedAnalysisObjectsListingComponent),
+        MockComponent(TableEmptyMessageComponent),
       ],
-      providers: [
-        provideNoopAnimations(),
-        { provide: IncidentService, useValue: incidentService },
-        { provide: ToastMessageService, useValue: toastMessageService },
+      componentProviders: [
+        {
+          provide: IncidentsTableStateService,
+          useValue: incidentTableStateService,
+        },
         {
           provide: AnalysisObjectTableSelectionStateService,
-          useValue: selectionStateService,
+          useClass: AnalysisObjectTableSelectionStateService,
         },
       ],
-      schemas: [NO_ERRORS_SCHEMA],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(IncidentsSelectionTableComponent);
-    component = fixture.componentInstance;
-    component.refresh = refresh$;
-  });
-
-  it("should create", () => {
-    expect(component).toBeTruthy();
-  });
-
-  it("should initialize table total to 0", () => {
-    expect(component.total).toBe(0);
-  });
-
-  it("should initialize the initially selected incidents to empty array", () => {
-    expect(component.selectedIncidents()).toEqual([]);
-  });
-
-  it("should initialize the selected incidents to empty array", () => {
-    expect(component.incidents()).toEqual([]);
-  });
-
-  it("should initialize incident selections to empty array", () => {
-    expect(component.incidentSelections()).toEqual([]);
-  });
-
-  it("should initialize incidentsQuery with default values", () => {
-    expect(component.incidentsQuery).toEqual({
-      page: 0,
-      size: 10,
+      providers: [
+        { provide: ToastMessageService, useValue: toastMessageService },
+      ],
     });
-  });
-
-  function getTableHarness() {
-    return DomTestUtils.getTableByTestId(fixture, "all-incidents-table");
   }
 
-  it("should set the table loading state to true if isTableLoading is true", () => {
-    component.isTableLoading = true;
-    component.selectedIncidentIdsLoading = false;
-    expect(getTableHarness().isLoading()).toBe(true);
+  function getDataRows() {
+    return screen
+      .queryAllByRole("row")
+      .filter((row) => within(row).queryAllByRole("cell").length > 0);
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    incidentTableStateService.incidents.set([INCIDENT_1, INCIDENT_2]);
+    incidentTableStateService.statusOptions.set([]);
+    incidentTableStateService.isLoading.set(false);
+    incidentTableStateService.errorMessage.set(undefined);
+    incidentTableStateService.statusesErrorMessage.set(undefined);
+    incidentTableStateService.page.set(0);
+    incidentTableStateService.size.set(10);
+    incidentTableStateService.total.set(2);
   });
 
-  it("should set the table loading state to true if selectedIncidentIdsLoading is true", () => {
-    component.selectedIncidentIdsLoading = true;
-    component.isTableLoading = false;
-    expect(getTableHarness().isLoading()).toBe(true);
+  it("should create", async () => {
+    const { fixture } = await renderComponent();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it("should set the table loading state to false if both isTableLoading and selectedIncidentIdsLoading are false", () => {
-    component.isTableLoading = false;
-    component.selectedIncidentIdsLoading = false;
-    fixture.detectChanges();
-    expect(getTableHarness().isLoading()).toBe(false);
+  describe("column headers", () => {
+    it("renders the title column header", async () => {
+      await renderComponent();
+      expect(screen.getByRole("columnheader", { name: "Title" })).toBeTruthy();
+    });
+
+    it("renders the status column header", async () => {
+      await renderComponent();
+      expect(screen.getByRole("columnheader", { name: "Status" })).toBeTruthy();
+    });
+
+    it("renders the reporter column header", async () => {
+      await renderComponent();
+      expect(
+        screen.getByRole("columnheader", { name: "Reporter" })
+      ).toBeTruthy();
+    });
+
+    it("renders the assignee column header", async () => {
+      await renderComponent();
+      expect(
+        screen.getByRole("columnheader", { name: "Assignee" })
+      ).toBeTruthy();
+    });
+
+    it("renders the linked ticket id column header", async () => {
+      await renderComponent();
+      expect(
+        screen.getByRole("columnheader", { name: "Linked Ticket ID" })
+      ).toBeTruthy();
+    });
   });
 
-  it("should set the table value to empty if isTableLoading is true", () => {
-    component.isTableLoading = true;
-    component.selectedIncidentIdsLoading = false;
-    component.incidents.set(INCIDENTS);
-    expect(getTableHarness().getValues()).toEqual([]);
-  });
+  describe("data rows", () => {
+    it("renders a row for every incident", async () => {
+      await renderComponent();
+      await waitFor(() => expect(getDataRows()).toHaveLength(2));
+    });
 
-  it("should set the table value to empty if selectedIncidentIdsLoading is true", () => {
-    component.selectedIncidentIdsLoading = true;
-    component.isTableLoading = false;
-    component.incidents.set(INCIDENTS);
-    expect(getTableHarness().getValues()).toEqual([]);
-  });
-
-  it("should set the table value to incidentSelections when neither isTableLoading nor selectedIncidentIdsLoading are true", () => {
-    component.isTableLoading = false;
-    component.selectedIncidentIdsLoading = false;
-    component.incidents.set(INCIDENTS);
-    expect(getTableHarness().getValues()).toEqual([
-      getFullyCheckedIncident(INCIDENT_1),
-      getFullyCheckedIncident(INCIDENT_2),
-    ]);
-  });
-
-  describe("refresh$", () => {
-    it("should reset the query params when refresh is called", () => {
-      component.incidentsQuery = { page: 1, size: 20 };
-      refresh$.next(true);
-      expect(component.incidentsQuery).toEqual({
-        page: 0,
-        size: 10,
+    it("should display a checkbox in the first column for each incident", async () => {
+      await renderComponent();
+      const dataRows = getDataRows();
+      dataRows.forEach((row) => {
+        const checkbox = within(row).getAllByRole("checkbox")[0];
+        expect(checkbox).toBeTruthy();
       });
     });
 
-    it("should fetch and init table when refresh is true", () => {
-      refresh$.next(true);
-      expect(incidentService.fetch).toHaveBeenCalled();
+    it("renders the incident title", async () => {
+      await renderComponent();
+      const dataRows = getDataRows();
+
+      expect(
+        within(dataRows[0]).getAllByRole("cell")[1].textContent?.trim()
+      ).toBe(INCIDENT_1.title);
+      expect(
+        within(dataRows[1]).getAllByRole("cell")[1].textContent?.trim()
+      ).toBe(INCIDENT_2.title);
     });
 
-    it("given that incidents are already selected, when refresh is triggered, then selected incidents should be preserved", () => {
-      component.selectedIncidents.set([
-        { analysisObject: { id: "test" } } as any,
+    it("renders the incident status", async () => {
+      await renderComponent();
+      const dataRows = getDataRows();
+
+      expect(
+        within(dataRows[0]).getAllByRole("cell")[2].textContent?.trim()
+      ).toBe(INCIDENT_1.status);
+      expect(
+        within(dataRows[1]).getAllByRole("cell")[2].textContent?.trim()
+      ).toBe(INCIDENT_2.status);
+    });
+
+    it("renders a link with the external issue id", async () => {
+      await renderComponent();
+      const dataRows = getDataRows();
+
+      expect(
+        within(dataRows[0]).getByRole("link", {
+          name: INCIDENT_1.externalIssue.id,
+        })
+      ).toBeTruthy();
+      expect(
+        within(dataRows[1]).getByRole("link", {
+          name: INCIDENT_2.externalIssue.id,
+        })
+      ).toBeTruthy();
+    });
+
+    it("redirects to the external issue link when clicked", async () => {
+      await renderComponent();
+      const dataRows = getDataRows();
+
+      const link = within(dataRows[0]).getByRole("link", {
+        name: INCIDENT_1.externalIssue.id,
+      });
+      expect(link.getAttribute("href")).toBe(INCIDENT_1.externalIssue.link);
+    });
+
+    it("renders the incident reporter", async () => {
+      await renderComponent();
+      const dataRows = getDataRows();
+
+      expect(
+        within(dataRows[0]).getAllByRole("cell")[4].textContent?.trim()
+      ).toBe(INCIDENT_1.reporter);
+      expect(
+        within(dataRows[1]).getAllByRole("cell")[4].textContent?.trim()
+      ).toBe(INCIDENT_2.reporter);
+    });
+
+    it("shows a dash when the reporter is not available", async () => {
+      incidentTableStateService.incidents.set([
+        { ...INCIDENT_1, reporter: undefined },
       ]);
 
-      refresh$.next(true);
+      await renderComponent();
+      const dataRows = getDataRows();
 
-      expect(component.selectedIncidents()).toEqual([
-        { analysisObject: { id: "test" } },
+      expect(
+        within(dataRows[0]).getAllByRole("cell")[4].textContent?.trim()
+      ).toBe("-");
+    });
+
+    it("renders the incident assignee", async () => {
+      await renderComponent();
+      const dataRows = getDataRows();
+
+      expect(
+        within(dataRows[0]).getAllByRole("cell")[5].textContent?.trim()
+      ).toBe(INCIDENT_1.assignee);
+      expect(
+        within(dataRows[1]).getAllByRole("cell")[5].textContent?.trim()
+      ).toBe(INCIDENT_2.assignee);
+    });
+
+    it("shows a dash when the assignee is not available", async () => {
+      incidentTableStateService.incidents.set([
+        { ...INCIDENT_1, assignee: undefined },
       ]);
-    });
 
-    it("given that refresh is triggered, when table data is requested, then fetchTableData should be called", () => {
-      jest.spyOn(component, "fetchTableData");
+      await renderComponent();
+      const dataRows = getDataRows();
 
-      refresh$.next(true);
-
-      expect(component.fetchTableData).toHaveBeenCalledWith({
-        queryParams: component.incidentsQuery,
-        filters: {},
-      });
-    });
-
-    it("should not fetch and init table when refresh is false", () => {
-      refresh$.next(false);
-      expect(incidentService.fetch).not.toHaveBeenCalled();
-    });
-
-    it("should stop fetching the incidents after component is destroyed", () => {
-      component.ngOnDestroy();
-      refresh$.next(true);
-      expect(incidentService.fetch).not.toHaveBeenCalled();
-    });
-
-    it("should fetch all statuses when refresh is true", () => {
-      refresh$.next(true);
-      expect(incidentService.fetchAllStatuses).toHaveBeenCalled();
-    });
-
-    it("should not fetch all statuses when refresh is false", () => {
-      refresh$.next(false);
-      expect(incidentService.fetchAllStatuses).not.toHaveBeenCalled();
-    });
-
-    it("should stop fetching all statuses after component is destroyed", () => {
-      component.ngOnDestroy();
-      refresh$.next(true);
-      expect(incidentService.fetchAllStatuses).not.toHaveBeenCalled();
-    });
-
-    it("should set the fetched status options", () => {
-      refresh$.next(true);
-      expect(component.statusOptions).toEqual(INCIDENT_STATUS_OPTIONS);
-    });
-
-    it("should display an error message on failure to fetch statuses", () => {
-      const errorMessage = "Failed to fetch statuses";
-      jest
-        .spyOn(incidentService, "fetchAllStatuses")
-        .mockReturnValue(throwError(() => new Error(errorMessage)));
-      refresh$.next(true);
-      expect(toastMessageService.showError).toHaveBeenCalledWith(errorMessage);
+      expect(
+        within(dataRows[0]).getAllByRole("cell")[5].textContent?.trim()
+      ).toBe("-");
     });
   });
 
-  describe("handleTableQueryParamsChange", () => {
-    it("should reset the fetched incidents", () => {
-      const fetchSubject = new Subject<IncidentPage>();
-      jest
-        .spyOn(incidentService, "fetch")
-        .mockReturnValue(fetchSubject.asObservable());
-      component.incidents.set(INCIDENTS);
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.incidents()).toEqual([]);
+  describe("table loading state", () => {
+    it("displays table loading state when incidents are being fetched", async () => {
+      incidentTableStateService.isLoading.set(true);
+      await renderComponent();
+      expect(ngMocks.findAll(Skeleton)).toHaveLength(60);
     });
 
-    describe("generate fetch incidents query", () => {
-      it("should default page index to 0", () => {
-        const event: TableLazyLoadEvent = {
-          first: undefined,
-          rows: 10,
-        };
+    it("displays table loading state when selected incidents are being fetched", async () => {
+      incidentTableStateService.isLoading.set(true);
+      await renderComponent();
+      expect(ngMocks.findAll(Skeleton)).toHaveLength(60);
+    });
+  });
 
-        component.handleTableQueryParamsChange(event);
+  describe("empty table", () => {
+    it("should display empty table message when there are no incidents", async () => {
+      incidentTableStateService.incidents.set([]);
+      await renderComponent();
+      expect(ngMocks.findInstance(TableEmptyMessageComponent)).toBeTruthy();
+    });
+  });
 
-        const expectedQuery: IncidentsQueryParams = {
-          page: 0,
-          size: 10,
-        };
+  describe("table pagination", () => {
+    it("renders the paginator", async () => {
+      await renderComponent();
+      expect(ngMocks.findInstance(Paginator)).toBeTruthy();
+    });
 
-        expect(incidentService.fetch).toHaveBeenCalledWith(
-          expect.objectContaining({ queryParams: expectedQuery })
-        );
+    it("displays total number of incidents in the paginator", async () => {
+      incidentTableStateService.total.set(2);
+      await renderComponent();
+      const paginator = ngMocks.findInstance(Paginator);
+      expect(paginator.totalRecords).toBe(2);
+    });
+
+    it("displays the correct number of rows per page in the paginator", async () => {
+      incidentTableStateService.size.set(10);
+      await renderComponent();
+      const paginator = ngMocks.findInstance(Paginator);
+      expect(paginator.rows).toBe(10);
+    });
+  });
+
+  describe("filtering", () => {
+    async function applyTextFilter(
+      columnHeaderName: string | RegExp,
+      filterValue: string
+    ) {
+      const user = userEvent.setup();
+
+      const columnHeader = screen.getByRole("columnheader", {
+        name: columnHeaderName,
       });
+      await user.click(within(columnHeader).getByRole("button"));
 
-      it("should default the page size to 10", () => {
-        const event: TableLazyLoadEvent = {
-          first: 0,
-          rows: undefined,
-        };
+      const filterInput = await screen.findByRole("textbox");
+      await user.type(filterInput, filterValue);
+      await user.click(screen.getByRole("button", { name: "Apply" }));
+    }
 
-        component.handleTableQueryParamsChange(event);
-        const expectedQuery: IncidentsQueryParams = {
-          page: 0,
-          size: 10,
-        };
-        expect(incidentService.fetch).toHaveBeenCalledWith(
-          expect.objectContaining({ queryParams: expectedQuery })
-        );
+    async function applyCheckboxFilter(
+      columnHeaderName: string | RegExp,
+      optionText: string
+    ) {
+      const user = userEvent.setup();
+
+      const columnHeader = screen.getByRole("columnheader", {
+        name: columnHeaderName,
       });
+      await user.click(within(columnHeader).getByRole("button"));
 
-      it("should set the page index correctly when first is defined", () => {
-        const event: TableLazyLoadEvent = {
-          first: 20,
-          rows: 10,
-        };
+      const optionLabel = await screen.findByText(optionText);
+      const optionCheckbox = within(
+        optionLabel.closest(".field-checkbox") as HTMLElement
+      ).getByRole("checkbox");
+      await user.click(optionCheckbox);
+    }
 
-        component.handleTableQueryParamsChange(event);
+    it("should apply the title filter", async () => {
+      await renderComponent();
 
-        const expectedQuery: IncidentsQueryParams = {
-          page: 2,
-          size: 10,
-        };
-        expect(incidentService.fetch).toHaveBeenCalledWith(
-          expect.objectContaining({ queryParams: expectedQuery })
-        );
-      });
+      await applyTextFilter(/Title/, "title-1");
 
-      it("should set the page index correctly when first is not divisible by page size", () => {
-        const event: TableLazyLoadEvent = {
-          first: 15,
-          rows: 10,
-        };
-
-        component.handleTableQueryParamsChange(event);
-        const expectedQuery: IncidentsQueryParams = {
-          page: 1,
-          size: 10,
-        };
-        expect(incidentService.fetch).toHaveBeenCalledWith(
-          expect.objectContaining({ queryParams: expectedQuery })
-        );
-      });
-
-      it("should set the page size correctly when rows is defined", () => {
-        const event: TableLazyLoadEvent = {
-          first: 0,
-          rows: 5,
-        };
-
-        component.handleTableQueryParamsChange(event);
-
-        const expectedQuery: IncidentsQueryParams = {
-          page: 0,
-          size: 5,
-        };
-        expect(incidentService.fetch).toHaveBeenCalledWith(
-          expect.objectContaining({ queryParams: expectedQuery })
-        );
-      });
-
-      it("should query filter criteria correctly when filtering by title", () => {
-        const event: TableLazyLoadEvent = {
-          ...INCIDENT_TABLE_LAZY_LOAD_EVENT,
-          filters: {
-            titlePhrase: {
-              value: "title",
-            },
-          },
-        };
-
-        component.handleTableQueryParamsChange(event);
-
-        const expectedRequest: IncidentsFetchRequest = {
-          queryParams: INCIDENTS_QUERY,
-          filters: {
-            titlePhrase: "title",
-          },
-        };
-
-        expect(incidentService.fetch).toHaveBeenCalledWith(expectedRequest);
-      });
-
-      it("should set query filter criteria correctly when filtering by statuses", () => {
-        const event: TableLazyLoadEvent = {
-          ...INCIDENT_TABLE_LAZY_LOAD_EVENT,
-          filters: {
-            statuses: {
-              value: ["PASSED", "FAILED"],
-            },
-          },
-        };
-
-        component.handleTableQueryParamsChange(event);
-
-        const expectedRequest: IncidentsFetchRequest = {
-          queryParams: INCIDENTS_QUERY,
-          filters: {
-            statuses: ["PASSED", "FAILED"],
-          },
-        };
-
-        expect(incidentService.fetch).toHaveBeenCalledWith(expectedRequest);
-      });
-
-      it("should set query filter criteria correctly when filtering by external issue id", () => {
-        const event: TableLazyLoadEvent = {
-          ...INCIDENT_TABLE_LAZY_LOAD_EVENT,
-          filters: {
-            externalIssueIdPhrase: {
-              value: "id",
-            },
-          },
-        };
-
-        component.handleTableQueryParamsChange(event);
-
-        const expectedRequest: IncidentsFetchRequest = {
-          queryParams: INCIDENTS_QUERY,
-          filters: {
-            externalIssueIdPhrase: "id",
-          },
-        };
-
-        expect(incidentService.fetch).toHaveBeenCalledWith(expectedRequest);
-      });
-
-      it("should set the reporter in the query filter criteria when filtering by reporter", () => {
-        const event: TableLazyLoadEvent = {
-          ...INCIDENT_TABLE_LAZY_LOAD_EVENT,
-          filters: {
-            reporterPhrase: {
-              value: "Sam",
-            },
-          },
-        };
-
-        component.handleTableQueryParamsChange(event);
-
-        const expectedRequest: IncidentsFetchRequest = {
-          queryParams: INCIDENTS_QUERY,
-          filters: {
-            reporterPhrase: "Sam",
-          },
-        };
-
-        expect(incidentService.fetch).toHaveBeenCalledWith(expectedRequest);
-      });
-
-      it("should set the assignee in the query filter criteria when filtering by assignee", () => {
-        const event: TableLazyLoadEvent = {
-          ...INCIDENT_TABLE_LAZY_LOAD_EVENT,
-          filters: {
-            assigneePhrase: {
-              value: "Jane",
-            },
-          },
-        };
-
-        component.handleTableQueryParamsChange(event);
-
-        const expectedRequest: IncidentsFetchRequest = {
-          queryParams: INCIDENTS_QUERY,
-          filters: {
-            assigneePhrase: "Jane",
-          },
-        };
-
-        expect(incidentService.fetch).toHaveBeenCalledWith(expectedRequest);
-      });
-
-      it("should remove filter criteria from query if it was removed when filtering", () => {
-        component.incidentsQuery = {
-          ...INCIDENTS_QUERY,
-          titlePhrase: "title",
-          statuses: ["PASSED"],
-          externalIssueIdPhrase: "ext-id",
-          reporterPhrase: "reporter",
-          assigneePhrase: "assignee",
-        };
-
-        const event: TableLazyLoadEvent = {
-          ...INCIDENT_TABLE_LAZY_LOAD_EVENT,
-          filters: {
-            titlePhrase: undefined,
-            statuses: undefined,
-            externalIssueIdPhrase: undefined,
-            reporterPhrase: undefined,
-            assigneePhrase: undefined,
-          },
-        };
-        component.handleTableQueryParamsChange(event);
-
-        const expectedRequest: IncidentsFetchRequest = {
-          queryParams: INCIDENTS_QUERY,
-          filters: {},
-        };
-
-        expect(incidentService.fetch).toHaveBeenCalledWith(expectedRequest);
-      });
-
-      it("should remove status from filter criteria is the selected statuses list is empty", () => {
-        component.incidentsQuery = {
-          ...INCIDENTS_QUERY,
-          statuses: ["PASSED"],
-        };
-
-        const event: TableLazyLoadEvent = {
-          ...INCIDENT_TABLE_LAZY_LOAD_EVENT,
-          filters: {
-            statuses: {
-              value: [],
-            },
-          },
-        };
-        component.handleTableQueryParamsChange(event);
-
-        const expectedQuery: IncidentsQueryParams = {
-          page: 0,
-          size: 10,
-        };
-        expect(incidentService.fetch).toHaveBeenCalledWith(
-          expect.objectContaining({ queryParams: expectedQuery })
-        );
-      });
-
-      it("should set query filter criteria correctly when filtering all fields together", () => {
-        const event: TableLazyLoadEvent = {
-          first: 0,
-          rows: 5,
-          filters: {
-            externalIssueIdPhrase: {
-              value: "id",
-            },
-            statuses: {
-              value: ["PASSED", "FAILED"],
-            },
-            titlePhrase: {
-              value: "title",
-            },
-          },
-        };
-
-        component.handleTableQueryParamsChange(event);
-
-        const expectedRequest: IncidentsFetchRequest = {
-          queryParams: {
-            page: 0,
-            size: 5,
-          },
-          filters: {
-            externalIssueIdPhrase: "id",
-            titlePhrase: "title",
-            statuses: ["PASSED", "FAILED"],
-          },
-        };
-
-        expect(incidentService.fetch).toHaveBeenCalledWith(expectedRequest);
-      });
-
-      it("should set query filter criteria correctly when no filters are passed", () => {
-        const event: TableLazyLoadEvent = {
-          first: 0,
-          rows: 10,
-        };
-
-        component.handleTableQueryParamsChange(event);
-
-        const expectedQuery: IncidentsQueryParams = {
-          page: 0,
-          size: 10,
-        };
-        expect(incidentService.fetch).toHaveBeenCalledWith(
-          expect.objectContaining({ queryParams: expectedQuery })
+      await waitFor(() => {
+        expect(
+          incidentTableStateService.setIncidentsTableQuery
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            titlePhrase: "title-1",
+          })
         );
       });
     });
 
-    it("should set table loading to true when fetching data", () => {
-      const fetchSubject = new Subject<IncidentPage>();
-      jest
-        .spyOn(incidentService, "fetch")
-        .mockReturnValue(fetchSubject.asObservable());
-      component.isTableLoading = false;
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.isTableLoading).toBe(true);
+    it("should populate the status filter options", async () => {
+      const user = userEvent.setup();
+      incidentTableStateService.statusOptions.set(INCIDENT_STATUS_OPTIONS);
+
+      await renderComponent();
+
+      const statusHeader = screen.getByRole("columnheader", { name: /Status/ });
+      await user.click(within(statusHeader).getByRole("button"));
+
+      for (const option of INCIDENT_STATUS_OPTIONS) {
+        expect(await screen.findByText(option.text)).toBeTruthy();
+      }
     });
 
-    it("should set table loading to false when data is fetched", () => {
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.isTableLoading).toBe(false);
+    it("should update the incidents table query when a status filter is applied", async () => {
+      incidentTableStateService.statusOptions.set(INCIDENT_STATUS_OPTIONS);
+
+      await renderComponent();
+
+      await applyCheckboxFilter(/Status/, INCIDENT_STATUS_OPTIONS[0].text);
+
+      await waitFor(() => {
+        expect(
+          incidentTableStateService.setIncidentsTableQuery
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            statuses: [INCIDENT_STATUS_OPTIONS[0].value],
+          })
+        );
+      });
     });
 
-    it("should set incidents to the fetched page content", () => {
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.incidents()).toEqual(INCIDENT_SECOND_PAGE.content);
+    it("should apply the linked ticket id filter", async () => {
+      await renderComponent();
+
+      await applyTextFilter(/Linked Ticket ID/, "ticket-1");
+
+      await waitFor(() => {
+        expect(
+          incidentTableStateService.setIncidentsTableQuery
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            externalIssueIdPhrase: "ticket-1",
+          })
+        );
+      });
     });
 
-    it("should set total to the fetched page total elements", () => {
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.total).toBe(INCIDENT_SECOND_PAGE.totalElements);
+    it("should apply the reporter filter", async () => {
+      await renderComponent();
+
+      await applyTextFilter(/Reporter/, "reporter-1");
+
+      await waitFor(() => {
+        expect(
+          incidentTableStateService.setIncidentsTableQuery
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            reporterPhrase: "reporter-1",
+          })
+        );
+      });
     });
 
-    it("should emit error message on failure to fetch incidents", () => {
-      const errorMessage = "Failed to fetch incidents";
-      jest
-        .spyOn(incidentService, "fetch")
-        .mockReturnValue(throwError(() => new Error(errorMessage)));
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(toastMessageService.showError).toHaveBeenCalledWith(errorMessage);
+    it("should apply the assignee filter", async () => {
+      await renderComponent();
+
+      await applyTextFilter(/Assignee/, "assignee-1");
+
+      await waitFor(() => {
+        expect(
+          incidentTableStateService.setIncidentsTableQuery
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            assigneePhrase: "assignee-1",
+          })
+        );
+      });
     });
 
-    it("should empty the selected incidents if failed to fetch incidents", () => {
-      component.selectedIncidents.set([{} as any]);
-      const errorMessage = "Failed to fetch incidents";
-      jest
-        .spyOn(incidentService, "fetch")
-        .mockReturnValue(throwError(() => new Error(errorMessage)));
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.selectedIncidents()).toEqual([]);
+    it("should apply all filters together", async () => {
+      incidentTableStateService.statusOptions.set(INCIDENT_STATUS_OPTIONS);
+      await renderComponent();
+
+      await applyTextFilter(/Title/, "title-1");
+      await applyTextFilter(/Linked Ticket ID/, "ticket-1");
+      await applyTextFilter(/Reporter/, "reporter-1");
+      await applyTextFilter(/Assignee/, "assignee-1");
+      await applyCheckboxFilter(/Status/, INCIDENT_STATUS_OPTIONS[0].text);
+
+      await waitFor(() => {
+        expect(
+          incidentTableStateService.setIncidentsTableQuery
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            titlePhrase: "title-1",
+            externalIssueIdPhrase: "ticket-1",
+            reporterPhrase: "reporter-1",
+            assigneePhrase: "assignee-1",
+            statuses: [INCIDENT_STATUS_OPTIONS[0].value],
+          })
+        );
+      });
+    });
+  });
+
+  describe("upon refresh", () => {
+    it("should update the incidents table when refresh is true", async () => {
+      await renderComponent();
+      refreshSubject.next(true);
+      await waitFor(() => {
+        expect(incidentTableStateService.refresh).toHaveBeenCalledWith();
+      });
     });
 
-    it("should set table loading to false on failure to fetch incidents", () => {
-      const errorMessage = "Failed to fetch incidents";
-      jest
-        .spyOn(incidentService, "fetch")
-        .mockReturnValue(throwError(() => new Error(errorMessage)));
-      component.isTableLoading = true;
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.isTableLoading).toBe(false);
+    it("should not fetch the incidents again if refresh is false", async () => {
+      await renderComponent();
+      refreshSubject.next(false);
+      await waitFor(() => {
+        expect(incidentTableStateService.refresh).not.toHaveBeenCalled();
+      });
     });
 
-    it("should be called when the table emits a lazy load event", () => {
-      const spy = jest.spyOn(component, "handleTableQueryParamsChange");
-      const event: TableLazyLoadEvent = {
-        first: 1,
-        rows: 20,
+    it("should not fetch the incidents again if the component is destroyed", async () => {
+      const { fixture } = await renderComponent();
+      fixture.destroy();
+      refreshSubject.next(true);
+      await waitFor(() => {
+        expect(incidentTableStateService.refresh).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe("upon setting previously linked filter input", () => {
+    it("should set the previously linked filter criteria in the state service", async () => {
+      const previouslyLinkedFilter: PreviouslyLinkedFilter = {
+        testCaseExternalIds: ["test-case-1", "test-case-2"],
+        scenarioDefinitionId: "scenario-1",
       };
-      getTableHarness().emitLazyLoadEvent(event);
-      expect(spy).toHaveBeenCalledWith(event);
-    });
-
-    it("should add initially selected incidents not already present to selectedIncidents after fetching data", () => {
-      const initialIncident = { analysisObject: { id: "1" } } as any;
-      const newIncident = { analysisObject: { id: "2" } } as any;
-      component.initiallySelectedIncidents = [initialIncident, newIncident];
-      fixture.detectChanges();
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      const selected = component.selectedIncidents();
-      expect(selected.length).toBe(2);
-      expect(selected.some((sel) => sel.analysisObject.id === "1")).toBe(true);
-      expect(selected.some((sel) => sel.analysisObject.id === "2")).toBe(true);
-    });
-
-    it("should not add any incidents if initiallySelectedIncidents is empty", () => {
-      component.initiallySelectedIncidents = [];
-      fixture.detectChanges();
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.selectedIncidents()).toEqual([]);
-    });
-
-    it("should not add duplicates if all initiallySelectedIncidents are already present", () => {
-      const incident = { analysisObject: { id: "1" } } as any;
-      component.initiallySelectedIncidents = [incident];
-      fixture.detectChanges();
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.selectedIncidents()).toEqual([incident]);
-    });
-
-    it("should handle incidents with missing or undefined analysisObject.id", () => {
-      const incidentWithNoId = { analysisObject: {} } as any;
-      component.initiallySelectedIncidents = [incidentWithNoId];
-      fixture.detectChanges();
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.selectedIncidents()).toEqual([incidentWithNoId]);
-    });
-
-    it("should add all initiallySelectedIncidents if selectedIncidents is initially empty", () => {
-      const inc1 = { analysisObject: { id: "1" } } as any;
-      const inc2 = { analysisObject: { id: "2" } } as any;
-      component.initiallySelectedIncidents = [inc1, inc2];
-      fixture.detectChanges();
-      component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT);
-      expect(component.selectedIncidents().length).toBe(2);
-    });
-
-    it("should not throw if initiallySelectedIncidents is null or undefined", () => {
-      component.initiallySelectedIncidents = null as any;
-      component.selectedIncidents.set([]);
-      expect(() =>
-        component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT)
-      ).not.toThrow();
-
-      component.initiallySelectedIncidents = undefined as any;
-      expect(() =>
-        component.handleTableQueryParamsChange(INCIDENT_TABLE_LAZY_LOAD_EVENT)
-      ).not.toThrow();
+      await renderComponent({ previouslyLinkedFilter: previouslyLinkedFilter });
+      expect(
+        incidentTableStateService.setPreviouslyLinkedFilterCriteria
+      ).toHaveBeenCalledWith(previouslyLinkedFilter);
     });
   });
 
-  describe("handleSelectionChange", () => {
-    const incident = { id: "incident-1" } as Incident;
-
-    it("should add incident to selection when checkbox is checked", () => {
-      const event = { checked: true } as CheckboxChangeEvent;
-      component.selectedIncidents.set([]);
-      component.handleSelectionChange(event, incident);
-      expect(
-        component
-          .selectedIncidents()
-          .some((sel) => sel.analysisObject.id === incident.id)
-      ).toBe(true);
-    });
-
-    it("should remove incident from selection when checkbox is unchecked", () => {
-      const event = { checked: false } as CheckboxChangeEvent;
-      component.selectedIncidents.set([{ analysisObject: incident } as any]);
-      component.handleSelectionChange(event, incident);
-      expect(
-        component
-          .selectedIncidents()
-          .some((sel) => sel.analysisObject.id === incident.id)
-      ).toBe(false);
-    });
-
-    it("should remove incident from initial selection when checkbox is unchecked", () => {
-      component.initiallySelectedIncidents = [
-        { analysisObject: incident } as any,
-      ];
-      fixture.detectChanges();
-
-      component.handleSelectionChange(
-        { checked: false } as CheckboxChangeEvent,
-        incident
-      );
-
-      expect(
-        component
-          .selectedIncidents()
-          .some((sel) => sel.analysisObject.id === incident.id)
-      ).toBe(false);
-    });
-
-    it("should do nothing if removing an incident not in selection", () => {
-      const event = { checked: false } as CheckboxChangeEvent;
-      component.selectedIncidents.set([]);
-      expect(() =>
-        component.handleSelectionChange(event, incident)
-      ).not.toThrow();
-      expect(component.selectedIncidents()).toEqual([]);
-    });
-
-    it("should handle incident with undefined id gracefully", () => {
-      const event = { checked: true } as CheckboxChangeEvent;
-      const incidentNoId = {} as Incident;
-      component.selectedIncidents.set([]);
-      component.handleSelectionChange(event, incidentNoId);
-      expect(component.selectedIncidents().length).toBe(1);
-      component.handleSelectionChange(
-        { checked: false } as CheckboxChangeEvent,
-        incidentNoId
-      );
-      expect(component.selectedIncidents().length).toBe(0);
-    });
-
-    describe("selected analysis objects", () => {
-      it("should initialize the selected analysis object to empty array if none are selected", () => {
-        expect(component.selectedAnalysisObjects()).toEqual([]);
-      });
-
-      it("should initialize the selected analysis object correctly if some initially selected", () => {
-        const selectionMessage = "selection message";
-        component.initiallySelectedIncidents = [
-          {
-            analysisObject: INCIDENT_1,
-            selectionType: AnalysisObjectSelectionType.FULL,
-            selectionMessage: selectionMessage,
-          } as AnalysisObjectSelectionState<Incident>,
-        ];
-        fixture.detectChanges();
-        refresh$.next(true);
-        expect(component.selectedAnalysisObjects()).toEqual([
-          {
-            id: INCIDENT_1.id,
-            title: INCIDENT_1.title,
-            selectionType: AnalysisObjectSelectionType.FULL,
-            selectionMessage: selectionMessage,
-          } as SelectedAnalysisObject,
-        ]);
-      });
-
-      it("should initialize the selected analysis object correctly if none initially selected but added later", () => {
-        const selectionMessage = "selection message";
-        component.initiallySelectedIncidents = [];
-        fixture.detectChanges();
-        refresh$.next(true);
-        component.selectedIncidents.set([
-          {
-            analysisObject: INCIDENT_1,
-            selectionType: AnalysisObjectSelectionType.FULL,
-            selectionMessage: selectionMessage,
-          } as AnalysisObjectSelectionState<Incident>,
-        ]);
-        expect(component.selectedAnalysisObjects()).toEqual([
-          {
-            id: INCIDENT_1.id,
-            title: INCIDENT_1.title,
-            selectionType: AnalysisObjectSelectionType.FULL,
-            selectionMessage: selectionMessage,
-          } as SelectedAnalysisObject,
-        ]);
-      });
-
-      it("should initialize the selected analysis object correctly if some initially selected and some added later", () => {
-        const selectionMessage = "selection message";
-        component.initiallySelectedIncidents = [
-          {
-            analysisObject: INCIDENT_1,
-            selectionType: AnalysisObjectSelectionType.FULL,
-            selectionMessage: selectionMessage,
-          } as AnalysisObjectSelectionState<Incident>,
-        ];
-        fixture.detectChanges();
-        refresh$.next(true);
-        component.selectedIncidents.update((current) => {
-          return [
-            ...current,
-            {
-              analysisObject: INCIDENT_2,
-              selectionType: AnalysisObjectSelectionType.PARTIAL,
-            } as AnalysisObjectSelectionState<Incident>,
-          ];
-        });
-        expect(component.selectedAnalysisObjects()).toEqual([
-          {
-            id: INCIDENT_1.id,
-            title: INCIDENT_1.title,
-            selectionType: AnalysisObjectSelectionType.FULL,
-            selectionMessage: selectionMessage,
-          } as SelectedAnalysisObject,
-          {
-            id: INCIDENT_2.id,
-            title: INCIDENT_2.title,
-            selectionType: AnalysisObjectSelectionType.PARTIAL,
-          } as SelectedAnalysisObject,
-        ]);
-      });
-
-      it("should update selected incidents when analysis object removed event is emitted", () => {
-        component.selectedIncidents.set([
-          {
-            analysisObject: INCIDENT_1,
-            selectionType: AnalysisObjectSelectionType.PARTIAL,
-          } as AnalysisObjectSelectionState<Incident>,
-        ]);
-        getAnalysisObjectListingComponent().analysisObjectRemoved.emit(
-          INCIDENT_1.id
+  describe("upon errors when fetching the data", () => {
+    it("should display an error message when there is an error fetching incidents", async () => {
+      incidentTableStateService.incidents.set([]);
+      incidentTableStateService.errorMessage.set("Error fetching incidents");
+      await renderComponent();
+      await waitFor(() => {
+        expect(toastMessageService.showError).toHaveBeenCalledWith(
+          "Error fetching incidents"
         );
-        expect(component.selectedIncidents()).toEqual([]);
       });
-      it("should update selected analysis objects when analysis object removed event is emitted", () => {
-        component.selectedIncidents.set([
-          {
-            analysisObject: INCIDENT_1,
-            selectionType: AnalysisObjectSelectionType.FULL,
-          } as AnalysisObjectSelectionState<Incident>,
-        ]);
-        getAnalysisObjectListingComponent().analysisObjectRemoved.emit(
-          INCIDENT_1.id
+    });
+
+    it("should display an error message when there is an error fetching statuses", async () => {
+      incidentTableStateService.statusesErrorMessage.set(
+        "Error fetching statuses"
+      );
+      await renderComponent();
+      await waitFor(() => {
+        expect(toastMessageService.showError).toHaveBeenCalledWith(
+          "Error fetching statuses"
         );
-        expect(component.selectedAnalysisObjects()).toEqual([]);
       });
     });
   });
 
-  function getAnalysisObjectListingComponent() {
-    return DomTestUtils.getElementByType(
-      fixture,
-      SelectedAnalysisObjectsListingComponent
-    ).getInstance();
+  describe("table selection", () => {
+    it("should initialize the selected incidents if they are fully selected", async () => {
+      const { fixture } = await renderComponent({
+        initiallySelectedIncidents: INITIALLY_SELECTED_INCIDENTS,
+      });
+      expect(isIncidentFullySelected(fixture, INCIDENT_1.id)).toBe(true);
+    });
+
+    it("should initialize the selected incidents if they are partially selected", async () => {
+      const { fixture } = await renderComponent({
+        initiallySelectedIncidents: INITIALLY_SELECTED_INCIDENTS,
+      });
+      expect(isIncidentPartiallySelected(fixture, INCIDENT_2.id)).toBe(true);
+    });
+
+    it("should display a tooltip for a selected incident when its checkbox is hovered over and a selection message exists", async () => {
+      await renderComponent({
+        initiallySelectedIncidents: INITIALLY_SELECTED_INCIDENTS,
+      });
+      const dataRows = getDataRows();
+      const checkbox = within(dataRows[1]).getAllByRole("checkbox")[0];
+      const user = userEvent.setup();
+      await user.hover(checkbox);
+      await waitFor(() => {
+        expect(screen.getByText("Linked to some things")).toBeTruthy();
+      });
+    });
+
+    it("should not display a tooltip for a selected incident when its checkbox is hovered over and no selection message exists", async () => {
+      await renderComponent({
+        initiallySelectedIncidents: INITIALLY_SELECTED_INCIDENTS,
+      });
+      const dataRows = getDataRows();
+      const checkbox = within(dataRows[0]).getAllByRole("checkbox")[0];
+      const user = userEvent.setup();
+      await user.hover(checkbox);
+      await waitFor(() => {
+        expect(screen.queryByText("Linked to some things")).toBeNull();
+      });
+    });
+
+    it("should select an incident when its checkbox is clicked", async () => {
+      const { fixture } = await renderComponent();
+      await selectIncidentRow(0);
+      await selectIncidentRow(1);
+      await waitFor(() => {
+        expect(isIncidentFullySelected(fixture, INCIDENT_1.id)).toBe(true);
+        expect(isIncidentFullySelected(fixture, INCIDENT_2.id)).toBe(true);
+      });
+    });
+
+    it("should deselect an incident when its checkbox is clicked again", async () => {
+      const { fixture } = await renderComponent();
+      await selectIncidentRow(0);
+      await selectIncidentRow(1);
+      await selectIncidentRow(0);
+      await waitFor(() => {
+        expect(isIncidentFullySelected(fixture, INCIDENT_1.id)).toBe(false);
+        expect(isIncidentFullySelected(fixture, INCIDENT_2.id)).toBe(true);
+      });
+    });
+  });
+
+  describe("selected analysis objects listing", () => {
+    it("should pass the mapped selected incidents to the listing component", async () => {
+      const { fixture } = await renderComponent({
+        initiallySelectedIncidents: INITIALLY_SELECTED_INCIDENTS,
+      });
+
+      const listingComponent = ngMocks.find(
+        fixture,
+        SelectedAnalysisObjectsListingComponent
+      );
+
+      expect(
+        ngMocks.input(listingComponent, "selectedAnalysisObjects")
+      ).toEqual([
+        {
+          id: INCIDENT_1.id,
+          title: INCIDENT_1.title,
+          selectionType: AnalysisObjectSelectionType.FULL,
+        },
+        {
+          id: INCIDENT_2.id,
+          title: INCIDENT_2.title,
+          selectionType: AnalysisObjectSelectionType.PARTIAL,
+          selectionMessage: "Linked to some things",
+        },
+      ]);
+    });
+
+    it("should update the listing component when the selected incidents change", async () => {
+      const { fixture } = await renderComponent();
+
+      const listingComponent = ngMocks.find(
+        fixture,
+        SelectedAnalysisObjectsListingComponent
+      );
+      expect(
+        ngMocks.input(listingComponent, "selectedAnalysisObjects")
+      ).toEqual([]);
+
+      await selectIncidentRow(0);
+
+      await waitFor(() => {
+        expect(
+          ngMocks.input(listingComponent, "selectedAnalysisObjects")
+        ).toEqual([expect.objectContaining({ id: INCIDENT_1.id })]);
+      });
+
+      await selectIncidentRow(1);
+
+      await waitFor(() => {
+        expect(
+          ngMocks.input(listingComponent, "selectedAnalysisObjects")
+        ).toEqual([
+          expect.objectContaining({ id: INCIDENT_1.id }),
+          expect.objectContaining({ id: INCIDENT_2.id }),
+        ]);
+      });
+    });
+
+    it("should remove the incident from the selection when an incident is removed from the listing component", async () => {
+      const { fixture } = await renderComponent();
+
+      const listingComponent = ngMocks.find(
+        fixture,
+        SelectedAnalysisObjectsListingComponent
+      );
+
+      await selectIncidentRow(0);
+      await selectIncidentRow(1);
+
+      ngMocks
+        .output(listingComponent, "analysisObjectRemoved")
+        .emit(INCIDENT_1.id);
+
+      await waitFor(() => {
+        expect(isIncidentFullySelected(fixture, INCIDENT_1.id)).toBe(false);
+        expect(isIncidentFullySelected(fixture, INCIDENT_2.id)).toBe(true);
+      });
+    });
+  });
+
+  function isIncidentFullySelected(
+    fixture: ComponentFixture<IncidentsSelectionTableComponent>,
+    incidentId: string
+  ): boolean | undefined {
+    return (
+      fixture.componentInstance
+        .selectedIncidents()
+        .find((incident) => incident.analysisObject.id === incidentId)
+        ?.selectionType === AnalysisObjectSelectionType.FULL
+    );
+  }
+
+  function isIncidentPartiallySelected(
+    fixture: ComponentFixture<IncidentsSelectionTableComponent>,
+    incidentId: string
+  ): boolean | undefined {
+    return (
+      fixture.componentInstance
+        .selectedIncidents()
+        .find((incident) => incident.analysisObject.id === incidentId)
+        ?.selectionType === AnalysisObjectSelectionType.PARTIAL
+    );
+  }
+
+  async function selectIncidentRow(incidentRow: number) {
+    const user = userEvent.setup();
+    await user.click(
+      within(getDataRows()[incidentRow]).getAllByRole("checkbox")[0]
+    );
+    return user;
   }
 });

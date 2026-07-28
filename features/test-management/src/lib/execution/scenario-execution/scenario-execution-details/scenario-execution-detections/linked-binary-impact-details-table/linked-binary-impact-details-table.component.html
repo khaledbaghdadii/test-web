@@ -6,6 +6,7 @@
 >
   <ng-template pTemplate="header">
     <tr>
+      <th scope="col" class="w-2/12">ID</th>
       <th scope="col" class="w-3/12">Impact Title</th>
       <th scope="col" class="w-2/12">Upgrade Impact</th>
       <th scope="col" class="w-2/12">MX Version</th>
@@ -15,6 +16,13 @@
   </ng-template>
   <ng-template pTemplate="body" let-binaryImpact>
     <tr>
+      <td>
+        <mxevolve-binary-impact-id-link
+          [binaryImpactId]="binaryImpact.id"
+          [readableId]="binaryImpact.objectId"
+          [projectId]="binaryImpact.projectId"
+        ></mxevolve-binary-impact-id-link>
+      </td>
       <td>
         <a
           class="p-button-link"
@@ -64,7 +72,7 @@
   <ng-template pTemplate="loadingbody">
     @for (row of Array(3); track row) {
     <tr>
-      @for (col of Array(5); track col) {
+      @for (col of Array(6); track col) {
       <td>
         <p-skeleton></p-skeleton>
       </td>
@@ -74,7 +82,7 @@
   </ng-template>
   <ng-template pTemplate="emptymessage">
     <tr>
-      <td colspan="9" class="py-4">
+      <td colspan="10" class="py-4">
         <mxflow-table-empty-message></mxflow-table-empty-message>
       </td>
     </tr>

@@ -1,0 +1,11 @@
+@if (run(); as row) {
+<div class="flex items-center justify-end gap-1">
+  <mxevolve-execution-abort-button
+    [projectId]="row.projectId"
+    [processId]="row.processId"
+    [status]="abortStatus()"
+    [familyId]="row.familyId"
+    (aborted)="onAborted()"
+  />
+</div>
+}

@@ -1,4 +1,11 @@
-import { Component, computed, inject, input, OnInit, signal } from "@angular/core";
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  OnInit,
+  signal,
+} from "@angular/core";
 import { ButtonModule } from "primeng/button";
 import { TooltipModule } from "primeng/tooltip";
 import { EnvironmentStatus } from "@mxevolve/domains/environment/util";
@@ -37,9 +44,7 @@ export class OpenConfigEditorButtonComponent implements OnInit {
 
   readonly featureEnabled = signal(false);
 
-  readonly disabled = computed(
-    () => this.status() !== EnvironmentStatus.READY
-  );
+  readonly disabled = computed(() => this.status() !== EnvironmentStatus.READY);
 
   readonly tooltip = computed(() =>
     this.disabled() ? "Environment is not in a ready state." : undefined

@@ -15,6 +15,8 @@ export interface TestUnitApiModel {
   readonly incidentEnabled: boolean;
 }
 
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
+
 export interface TestUnitScenarioExecutionApiModel {
   readonly scenarioExecutionId: string;
   readonly analysisObjects: ScenarioExecutionAnalysisObjectsApiModel;
@@ -26,9 +28,9 @@ export interface TestUnitScenarioExecutionApiModel {
   readonly mxVersion: string;
   readonly mxBuildId: string;
   readonly factoryProductId: string;
-  readonly keptExecution: boolean;
+  readonly keepExecution: boolean;
   readonly environment: ScenarioExecutionEnvironmentApiModel;
-  readonly cleaningStatus: string;
+  readonly cleaningStatus: ScenarioExecutionHousekeepingStatus;
   readonly failed: boolean;
   readonly finished: boolean;
 }

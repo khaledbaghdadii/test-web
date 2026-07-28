@@ -5,7 +5,7 @@ import { CopyableModule } from "@mxflow/directive";
 import { TagModule } from "primeng/tag";
 import { DurationPipeModule, FormatDatePipeModule } from "@mxflow/pipe";
 import { AuthorizationUtilsModule } from "@mxflow/core/auth";
-import { SyncState, getSyncStateDisplayLabel } from "../../model/final-product";
+import { getSyncStateDisplayLabel, SyncState } from "../../model/final-product";
 import {
   MXEvolveShowMoreLessModule,
   ShowMoreLessTextComponent,
@@ -77,6 +77,14 @@ export class FinalProductSyncDetailsComponent {
 
   getStateDisplayLabel(state: string): string {
     return getSyncStateDisplayLabel(state);
+  }
+
+  isSyncUnstable(syncState: SyncState): boolean {
+    return syncState.toLowerCase() === SyncState.UNSTABLE.toLowerCase();
+  }
+
+  getUnstableSyncStateToolTip(): string {
+    return "This state indicates the package was generated successfully. However, the changelog could not be created due to a technical issue.";
   }
 
   protected readonly SyncState = SyncState;

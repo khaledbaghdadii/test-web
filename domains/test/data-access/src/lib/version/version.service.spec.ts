@@ -43,6 +43,7 @@ describe("VersionService", () => {
       versionTypes: [VersionType.ARCHIVAL, VersionType.RELEASE_FORECAST],
       active: true,
       namePhrase: "archival",
+      names: ["version-1", "version-2"],
     };
     const resultPromise = firstValueFrom(
       service.fetchVersions(queryWithAllParams)
@@ -58,6 +59,10 @@ describe("VersionService", () => {
     ]);
     expect(req.request.params.get("active")).toBe("true");
     expect(req.request.params.get("namePhrase")).toBe("archival");
+    expect(req.request.params.getAll("names")).toEqual([
+      "version-1",
+      "version-2",
+    ]);
     req.flush(getPagedVersionsResponse());
 
     expect(await resultPromise).toEqual(getPagedVersionsResponse());
@@ -74,6 +79,7 @@ describe("VersionService", () => {
     expect(req.request.params.has("versionTypes")).toBe(false);
     expect(req.request.params.has("active")).toBe(false);
     expect(req.request.params.has("namePhrase")).toBe(false);
+    expect(req.request.params.has("names")).toBe(false);
     req.flush(getPagedVersionsResponse());
 
     await resultPromise;

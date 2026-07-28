@@ -1,0 +1,22 @@
+<div class="activity-runs-table flex flex-col gap-2 w-full">
+  <div class="activity-runs-table__header">
+    <ng-content select="[activityRunsTableHeader]"></ng-content>
+  </div>
+
+  <ag-grid-angular
+    class="ag-theme-quartz activity-runs-table__grid w-full"
+    rowModelType="serverSide"
+    [pagination]="true"
+    [paginationPageSize]="pageSize()"
+    [paginationPageSizeSelector]="pageSizeOptions()"
+    [cacheBlockSize]="pageSize()"
+    [columnDefs]="effectiveColumnDefs()"
+    [defaultColDef]="defaultColDef"
+    [context]="gridContext"
+    [noRowsOverlayComponent]="noRowsOverlayComponent"
+    [noRowsOverlayComponentParams]="noRowsOverlayParams()"
+    [loadingOverlayComponent]="loadingOverlayComponent"
+    domLayout="autoHeight"
+    (gridReady)="onGridReady($event)"
+  />
+</div>

@@ -89,20 +89,13 @@ describe("FinalProductSyncDetailsComponent", () => {
     fixture.detectChanges();
   });
 
-  it('should map SUCCESS to "success"', () => {
-    expect(component.getStateSeverity(SyncState.SUCCESS)).toBe("success");
-  });
-
-  it('should map FAILED to "danger"', () => {
-    expect(component.getStateSeverity(SyncState.FAILED)).toBe("danger");
-  });
-
-  it('should map IN_PROGRESS to "secondary"', () => {
-    expect(component.getStateSeverity(SyncState.IN_PROGRESS)).toBe("secondary");
-  });
-
-  it('should map UNSTABLE to "warn"', () => {
-    expect(component.getStateSeverity(SyncState.UNSTABLE)).toBe("warn");
+  it.each([
+    [SyncState.SUCCESS, "success"],
+    [SyncState.FAILED, "danger"],
+    [SyncState.IN_PROGRESS, "secondary"],
+    [SyncState.UNSTABLE, "warn"],
+  ])('should map %s to "%s"', (state, expectedSeverity) => {
+    expect(component.getStateSeverity(state)).toBe(expectedSeverity);
   });
 
   it("should assign input finalProductSyncDetails correctly", () => {
@@ -681,37 +674,124 @@ describe("Warning field rendering", () => {
     fixture.componentRef.setInput("showEnvironmentDefinitionNames", true);
     fixture.detectChanges();
 
-    const warningLabel = fixture.nativeElement.textContent;
-    expect(warningLabel).toContain("Warning");
+    const warningSection = fixture.debugElement.query(
+      By.css('[data-testid="warning-section"]')
+    );
+    expect(warningSection).toBeTruthy();
   });
 
-  it("should not show Warning field when state is SUCCESS", () => {
-    const syncDetails = getFinalProductSyncDetails();
-    syncDetails.syncRequestDetails.state = SyncState.SUCCESS;
-    syncDetails.syncRequestDetails.failureMessage = undefined;
+  it.each([
+    [SyncState.SUCCESS, undefined],
+    [SyncState.FAILED, undefined],
+    [SyncState.IN_PROGRESS, undefined],
+    [SyncState.UNSTABLE, undefined],
+  ])(
+    "should not show Warning field when state is %s and failureMessage is absent",
+    (state, failureMessage) => {
+      const syncDetails = getFinalProductSyncDetails();
+      syncDetails.syncRequestDetails.state = state;
+      syncDetails.syncRequestDetails.failureMessage = failureMessage;
 
+      fixture.componentRef.setInput("finalProductSyncDetails", syncDetails);
+      fixture.componentRef.setInput("environmentDefinitions", []);
+      fixture.componentRef.setInput("fetchEnvironmentsLoading", false);
+      fixture.componentRef.setInput("showEnvironmentDefinitionNames", true);
+      fixture.detectChanges();
+
+      const warningSection = fixture.debugElement.query(
+        By.css('[data-testid="warning-section"]')
+      );
+      expect(warningSection).toBeNull();
+    }
+  );
+
+  it.each([SyncState.SUCCESS, SyncState.FAILED, SyncState.IN_PROGRESS])(
+    "should not show Warning field when state is %s even with a failureMessage",
+    (state) => {
+      const syncDetails = getFinalProductSyncDetails();
+      syncDetails.syncRequestDetails.state = state;
+      syncDetails.syncRequestDetails.failureMessage = "Some message";
+
+      fixture.componentRef.setInput("finalProductSyncDetails", syncDetails);
+      fixture.componentRef.setInput("environmentDefinitions", []);
+      fixture.componentRef.setInput("fetchEnvironmentsLoading", false);
+      fixture.componentRef.setInput("showEnvironmentDefinitionNames", true);
+      fixture.detectChanges();
+
+      const warningSection = fixture.debugElement.query(
+        By.css('[data-testid="warning-section"]')
+      );
+      expect(warningSection).toBeNull();
+    }
+  );
+});
+
+describe("UNSTABLE state info icon and tooltip", () => {
+  let component: FinalProductSyncDetailsComponent;
+  let fixture: ComponentFixture<FinalProductSyncDetailsComponent>;
+  let mockAuthorizationService: jest.Mocked<
+    Pick<AuthorizationService, "isAuthorized">
+  >;
+
+  beforeEach(async () => {
+    mockAuthorizationService = {
+      isAuthorized: jest.fn().mockReturnValue(of(true)),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [FinalProductSyncDetailsComponent, FormsModule],
+      providers: [
+        { provide: AuthorizationService, useValue: mockAuthorizationService },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(FinalProductSyncDetailsComponent);
+    component = fixture.componentInstance;
+  });
+
+  function setupComponent(state: SyncState): void {
+    const syncDetails = getFinalProductSyncDetails();
+    syncDetails.syncRequestDetails.state = state;
     fixture.componentRef.setInput("finalProductSyncDetails", syncDetails);
     fixture.componentRef.setInput("environmentDefinitions", []);
     fixture.componentRef.setInput("fetchEnvironmentsLoading", false);
     fixture.componentRef.setInput("showEnvironmentDefinitionNames", true);
     fixture.detectChanges();
+  }
 
-    const warningLabel = fixture.nativeElement.textContent;
-    expect(warningLabel).not.toContain("Warning");
+  it.each([
+    [SyncState.SUCCESS, false],
+    [SyncState.FAILED, false],
+    [SyncState.IN_PROGRESS, false],
+    [SyncState.UNSTABLE, true],
+  ])("isSyncUnstable(%s) should return %s", (state, expected: boolean) => {
+    expect(component.isSyncUnstable(state)).toBe(expected);
   });
 
-  it("should not show Warning field when state is UNSTABLE but failureMessage is null", () => {
-    const syncDetails = getFinalProductSyncDetails();
-    syncDetails.syncRequestDetails.state = SyncState.UNSTABLE;
-    syncDetails.syncRequestDetails.failureMessage = undefined;
-
-    fixture.componentRef.setInput("finalProductSyncDetails", syncDetails);
-    fixture.componentRef.setInput("environmentDefinitions", []);
-    fixture.componentRef.setInput("fetchEnvironmentsLoading", false);
-    fixture.componentRef.setInput("showEnvironmentDefinitionNames", true);
-    fixture.detectChanges();
-
-    const warningLabel = fixture.nativeElement.textContent;
-    expect(warningLabel).not.toContain("Warning");
+  it("should return the correct unstable tooltip message", () => {
+    expect(component.getUnstableSyncStateToolTip()).toBe(
+      "This state indicates the package was generated successfully. However, the changelog could not be created due to a technical issue."
+    );
   });
+
+  it("should render the info icon when state is UNSTABLE", () => {
+    setupComponent(SyncState.UNSTABLE);
+
+    const infoIcon = fixture.debugElement.query(
+      By.css(".pi.pi-info-circle.pr-1")
+    );
+    expect(infoIcon).toBeTruthy();
+  });
+
+  it.each([SyncState.SUCCESS, SyncState.FAILED, SyncState.IN_PROGRESS])(
+    "should not render the info icon when state is %s",
+    (state) => {
+      setupComponent(state);
+
+      const infoIcon = fixture.debugElement.query(
+        By.css(".pi.pi-info-circle.pr-1")
+      );
+      expect(infoIcon).toBeNull();
+    }
+  );
 });

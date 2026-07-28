@@ -28,11 +28,7 @@
     <mxevolve-final-product-details
       [projectId]="projectId()"
       [finalProductId]="backport().finalProductPublishing?.id"
-      [publishingStartDate]="
-        backport().finalProductPublishing?.publishingStartDate
-      "
-      [finalProductFailure]="backport().finalProductPublishing?.finalProductFailure"
-      (errorOccurred)="handleFinalProductError($event)"
+      (fetchError)="handleFinalProductError($event)"
     />
   </p-panel>
   }

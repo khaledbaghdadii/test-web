@@ -2,6 +2,7 @@
 <p-skeleton class="h-12"></p-skeleton>
 } @else {
 <p-autocomplete
+  [inputId]="inputId()"
   [suggestions]="listOfReviewerSuggestions"
   [virtualScroll]="true"
   [emptyMessage]="isLoadingData() ? 'Loading...' : 'No Results Found'"

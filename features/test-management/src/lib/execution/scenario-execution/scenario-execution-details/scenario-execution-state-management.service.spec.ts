@@ -545,19 +545,19 @@ describe("ScenarioExecutionStateManagementService", () => {
 
     it.each([false, true])(
       "#setKeepExecution should update the keepExecution flag",
-      fakeAsync((keptExecution: boolean) => {
-        service.setKeptExecution(keptExecution);
+      fakeAsync((keepExecution: boolean) => {
+        service.setKeepExecution(keepExecution);
         tick();
-        expect(service.scenarioExecution().keptExecution).toEqual(
-          keptExecution
+        expect(service.scenarioExecution().keepExecution).toEqual(
+          keepExecution
         );
       })
     );
 
-    describe("setKeptExecutionForTestUnitScenarioExecution", () => {
+    describe("setKeepExecutionForTestUnitScenarioExecution", () => {
       it("should return undefined if testunit is undefined", () => {
         service["_testUnit"].set(undefined);
-        service.setKeptExecutionForTestUnitScenarioExecution(
+        service.setKeepExecutionForTestUnitScenarioExecution(
           scenarioExecutionId,
           true
         );
@@ -572,7 +572,7 @@ describe("ScenarioExecutionStateManagementService", () => {
           })
         );
         await lastValueFrom(service.initialize(scenarioExecutionId));
-        service.setKeptExecutionForTestUnitScenarioExecution(
+        service.setKeepExecutionForTestUnitScenarioExecution(
           scenarioExecutionId,
           true
         );
@@ -594,17 +594,17 @@ describe("ScenarioExecutionStateManagementService", () => {
           .spyOn(testUnitService, "fetchById")
           .mockReturnValue(of(testUnitWithScenarioExecutions));
         await lastValueFrom(service.initialize(scenarioExecutionId));
-        service.setKeptExecutionForTestUnitScenarioExecution(
+        service.setKeepExecutionForTestUnitScenarioExecution(
           "anotherScenarioExecutionId",
           true
         );
         expect(service.testUnit()).toEqual(testUnitWithScenarioExecutions);
       });
 
-      it("should update the kept execution flag for the matching scenario execution in the test unit", async () => {
+      it("should update the keep execution flag for the matching scenario execution in the test unit", async () => {
         const testUnitScenarioExecution = {
           id: scenarioExecutionId,
-          keptExecution: false,
+          keepExecution: false,
         } as unknown as TestUnitScenarioExecutionModel;
         const testUnitWithScenarioExecutions = {
           ...TEST_UNIT,
@@ -614,7 +614,7 @@ describe("ScenarioExecutionStateManagementService", () => {
           .spyOn(testUnitService, "fetchById")
           .mockReturnValue(of(testUnitWithScenarioExecutions));
         await lastValueFrom(service.initialize(scenarioExecutionId));
-        service.setKeptExecutionForTestUnitScenarioExecution(
+        service.setKeepExecutionForTestUnitScenarioExecution(
           scenarioExecutionId,
           true
         );
@@ -623,20 +623,20 @@ describe("ScenarioExecutionStateManagementService", () => {
           scenarioExecutions: [
             {
               ...testUnitScenarioExecution,
-              keptExecution: true,
+              keepExecution: true,
             },
           ],
         });
       });
 
-      it("should not update the kept execution flag for non-matching scenario executions", async () => {
+      it("should not update the keep execution flag for non-matching scenario executions", async () => {
         const testUnitScenarioExecution1 = {
           id: scenarioExecutionId,
-          keptExecution: false,
+          keepExecution: false,
         } as unknown as TestUnitScenarioExecutionModel;
         const testUnitScenarioExecution2 = {
           id: "scenarioExecutionId2",
-          keptExecution: false,
+          keepExecution: false,
         } as unknown as TestUnitScenarioExecutionModel;
         const testUnitWithScenarioExecutions = {
           ...TEST_UNIT,
@@ -649,7 +649,7 @@ describe("ScenarioExecutionStateManagementService", () => {
           .spyOn(testUnitService, "fetchById")
           .mockReturnValue(of(testUnitWithScenarioExecutions));
         await lastValueFrom(service.initialize(scenarioExecutionId));
-        service.setKeptExecutionForTestUnitScenarioExecution(
+        service.setKeepExecutionForTestUnitScenarioExecution(
           scenarioExecutionId,
           true
         );
@@ -658,7 +658,7 @@ describe("ScenarioExecutionStateManagementService", () => {
           scenarioExecutions: [
             {
               ...testUnitScenarioExecution1,
-              keptExecution: true,
+              keepExecution: true,
             },
             testUnitScenarioExecution2,
           ],

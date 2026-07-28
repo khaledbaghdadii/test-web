@@ -1,0 +1,254 @@
+<div class="flex flex-col gap-4 overflow-x-auto">
+  <section class="border border-surface rounded-md overflow-hidden">
+    <button
+      type="button"
+      class="flex w-full items-center justify-between gap-2 border-none cursor-pointer text-left px-4 py-3 bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700"
+      [attr.aria-expanded]="detailsExpanded()"
+      (click)="toggleDetails()"
+    >
+      <span class="font-semibold">{{ detailsTitle() }}</span>
+      <mxevolve-icon
+        [name]="detailsExpanded() ? 'expand_less' : 'expand_more'"
+        size="sm"
+      />
+    </button>
+    @if (detailsExpanded()) {
+    <div
+      class="border-t border-surface px-4 py-3 bg-surface-100 dark:bg-surface-800"
+    >
+      <mxevolve-build-and-test-prefilled-inputs
+        [projectId]="projectId()"
+        [providedInputs]="prefilledInputs()"
+      />
+    </div>
+    }
+  </section>
+
+  <form class="flex flex-col gap-6" [formGroup]="form()" (ngSubmit)="build()">
+    <p class="mandatory-legend text-sm text-red-500 m-0">* Mandatory Field</p>
+
+    @if (visibility().name) {
+    <div class="grid-2">
+      <div class="field flex flex-col gap-1">
+        <label
+          for="bt-execution-name"
+          [class.required]="
+            form().controls.name.hasValidator(Validators.required)
+          "
+          >Execution Name</label
+        >
+        <input
+          id="bt-execution-name"
+          pInputText
+          class="w-full"
+          formControlName="name"
+          placeholder="Enter a build and test process execution name"
+        />
+      </div>
+    </div>
+    } @if (showConfigurationGroup()) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">
+        Configuration Parameters
+      </legend>
+      <div class="grid-2">
+        @if (visibility().repositoryId) {
+        <div class="field flex flex-col gap-1">
+          <label
+            for="bt-repository"
+            [class.required]="
+              form().controls.repositoryId.hasValidator(Validators.required)
+            "
+            >Repository</label
+          >
+          <mxevolve-repository-selector
+            [projectId]="projectId()"
+            inputId="bt-repository"
+            [formControl]="form().controls.repositoryId"
+            (repositoryChanged)="onRepositoryChanged()"
+          />
+        </div>
+        } @if (visibility().configurationBranchName &&
+        form().controls.repositoryId.value) {
+        <div class="field flex flex-col gap-1">
+          <label
+            for="bt-config-branch"
+            [class.required]="
+              form().controls.configurationBranchName.hasValidator(
+                Validators.required
+              )
+            "
+            >Configuration Branch Name</label
+          >
+          <mxevolve-branch-input
+            [projectId]="projectId()"
+            [repositoryId]="form().controls.repositoryId.value ?? ''"
+            [branchShouldExist]="false"
+            inputId="bt-config-branch"
+            [branchNameFormControl]="form().controls.configurationBranchName"
+            [initialValue]="form().controls.configurationBranchName.value ?? ''"
+            (initialInvalid)="showConfigBranchError()"
+          />
+        </div>
+        } @if (visibility().configurationParentBranch &&
+        form().controls.repositoryId.value) {
+        <div class="field flex flex-col gap-1">
+          <label
+            for="bt-config-parent-branch"
+            [class.required]="
+              form().controls.configurationParentBranch.hasValidator(
+                Validators.required
+              )
+            "
+            >Configuration Parent Branch</label
+          >
+          <mxevolve-branch-input
+            [projectId]="projectId()"
+            [repositoryId]="form().controls.repositoryId.value ?? ''"
+            [branchShouldExist]="true"
+            inputId="bt-config-parent-branch"
+            [branchNameFormControl]="form().controls.configurationParentBranch"
+            [initialValue]="
+              form().controls.configurationParentBranch.value ?? ''
+            "
+            (initialInvalid)="showParentBranchError()"
+          />
+        </div>
+        }
+      </div>
+    </fieldset>
+    }
+
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">
+        Build Scenario
+      </legend>
+      <div class="grid-2">
+        <div class="field flex flex-col gap-1 self-end">
+          <span class="font-medium">Build Environment</span>
+          <div class="flex items-center gap-2">
+            <p-checkbox
+              inputId="bt-skip-environment"
+              [binary]="true"
+              formControlName="skipEnvironmentDeployment"
+            />
+            <label for="bt-skip-environment"
+              >Skip Build Environment Deployment</label
+            >
+          </div>
+        </div>
+        @if (visibility().buildScenarioDefinitionId &&
+        !skipEnvironmentDeployment()) {
+        <div class="field flex flex-col gap-1">
+          <label
+            for="bt-build-scenario"
+            [class.required]="
+              form().controls.buildScenarioDefinitionId.hasValidator(
+                Validators.required
+              )
+            "
+            >Build Scenario Definition</label
+          >
+          <mxevolve-scenario-definition-dropdown
+            [projectId]="projectId()"
+            inputId="bt-build-scenario"
+            [formControl]="form().controls.buildScenarioDefinitionId"
+          />
+        </div>
+        }
+      </div>
+    </fieldset>
+
+    @if (visibility().userStoryIds) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend
+        class="text-[0.95rem] font-bold text-primary p-0"
+        [class.required]="
+          form().controls.userStoryIds.hasValidator(Validators.required)
+        "
+      >
+        User Stories
+      </legend>
+      <mxevolve-user-story-input
+        [projectId]="projectId()"
+        [shouldValidate]="true"
+        [formControl]="form().controls.userStoryIds"
+      />
+    </fieldset>
+    } @if (showInfrastructureGroup()) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">
+        Infrastructure Parameters
+      </legend>
+      <div class="grid-2">
+        @if (visibility().buildEnvironmentInfraGroup) {
+        <div class="field flex flex-col gap-1">
+          <label
+            for="bt-build-environment-infra-group"
+            [class.required]="
+              form().controls.buildEnvironmentInfraGroup.hasValidator(
+                Validators.required
+              )
+            "
+            >Build Environment Infra Group</label
+          >
+          <mxevolve-business-process-infra-group-selector
+            [projectId]="projectId()"
+            infraGroupFormControlName="bt-build-environment-infra-group"
+            [infraGroupFormControl]="form().controls.buildEnvironmentInfraGroup"
+          />
+        </div>
+        } @if (visibility().buildAndTestInfraGroup) {
+        <div class="field flex flex-col gap-1">
+          <label
+            for="bt-build-and-test-infra-group"
+            [class.required]="
+              form().controls.buildAndTestInfraGroup.hasValidator(
+                Validators.required
+              )
+            "
+            >Build and Test Infra Group</label
+          >
+          <mxevolve-business-process-infra-group-selector
+            [projectId]="projectId()"
+            infraGroupFormControlName="bt-build-and-test-infra-group"
+            [infraGroupFormControl]="form().controls.buildAndTestInfraGroup"
+          />
+        </div>
+        }
+      </div>
+    </fieldset>
+    } @if (visibility().notificationsRecipients) {
+    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
+      <legend class="text-[0.95rem] font-bold text-primary p-0">
+        Notifications
+      </legend>
+      <div class="grid-2">
+        <div class="field flex flex-col gap-1">
+          <label for="bt-notification-recipients"
+            >Expiry Date Notification Recipients</label
+          >
+          <mxevolve-notifications-recipients-input
+            [projectId]="projectId()"
+            inputId="bt-notification-recipients"
+            [notificationsRecipientsFormControl]="
+              form().controls.notificationsRecipients
+            "
+          />
+        </div>
+      </div>
+    </fieldset>
+    }
+
+    <div class="actions grid-6">
+      <p-button
+        type="submit"
+        label="Build"
+        class="col-start-3 col-span-2"
+        styleClass="w-full justify-center"
+        [disabled]="form().invalid || form().pending || executing()"
+        [loading]="executing()"
+      />
+    </div>
+  </form>
+</div>

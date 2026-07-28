@@ -62,6 +62,7 @@ describe("RepositoryService contract tests", () => {
           id: Matchers.string(REPOSITORY_ID),
           name: Matchers.string("repository-name"),
           url: Matchers.string("https://example.com/repo.git"),
+          defaultBranch: Matchers.string("main"),
         },
       },
     });
@@ -74,6 +75,39 @@ describe("RepositoryService contract tests", () => {
     expect(repository.id).toBeTruthy();
     expect(repository.name).toBeTruthy();
     expect(repository.url).toBeTruthy();
+    expect(repository.defaultBranch).toBeTruthy();
+  });
+
+  test("should fetch test repositories", async () => {
+    await provider.addInteraction({
+      state: "repositories exists for a project",
+      uponReceiving: "a request to get repositories for a project",
+      withRequest: {
+        method: "GET",
+        path: `/projects/${PROJECT_ID}/repositories`,
+      },
+      willRespondWith: {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: Matchers.eachLike({
+          id: Matchers.string(REPOSITORY_ID),
+          name: Matchers.string("repository-name"),
+          url: Matchers.string("https://example.com/repo.git"),
+          label: "test",
+          defaultBranch: Matchers.string("main"),
+        }),
+      },
+    });
+
+    const repositories = await lastValueFrom(
+      service.getTestRepositories(PROJECT_ID)
+    );
+
+    expect(repositories).toHaveLength(1);
+    expect(repositories[0].label).toBe("test");
+    expect(repositories[0].defaultBranch).toBeTruthy();
   });
 
   test("should fail when the repository does not exist", async () => {

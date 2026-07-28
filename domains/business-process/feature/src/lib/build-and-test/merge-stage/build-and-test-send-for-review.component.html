@@ -1,15 +1,22 @@
 <p-dialog
-  header="Create Merge Request"
+  header="Merge Request"
   [visible]="visible()"
   (visibleChange)="visible.set($event)"
   [modal]="true"
-  class="dialog-cols-6"
+  class="dialog-cols-4"
   (onHide)="cancel()"
 >
-  @if (visible()) {
-  @if (predefinedMode()) {
-  <form [formGroup]="form" class="grid-6">
-    <div class="col-span-6">
+  @if (visible()) { @if (predefinedMode()) {
+  <form [formGroup]="form" class="grid-4">
+    @if (submitError(); as error) {
+    <p-message severity="error" class="col-span-4 m-1">
+      <ng-template #icon>
+        <mxevolve-icon name="cancel" size="md" class="mr-2 mt-1" />
+      </ng-template>
+      <span class="break-words whitespace-normal">{{ error }}</span>
+    </p-message>
+    }
+    <div class="col-span-4">
       <p-message severity="info">
         <ng-template #icon>
           <mxevolve-icon name="info" size="md" class="mr-2 mt-1" />
@@ -21,7 +28,7 @@
 
     @if (supportsResourceManagement()) {
     <mxevolve-delete-development-checkbox
-      class="col-span-6"
+      class="col-span-4"
       [projectId]="projectId()"
       [processId]="processId()"
       [familyId]="ExecutionFamily.USER_STORY_BUILD_AND_TEST"
@@ -31,13 +38,21 @@
     }
   </form>
   } @else {
-  <form [formGroup]="form" class="grid-6">
-    <div class="col-span-3">
-      <p>Suggested Merge Request Name <span class="text-red-500">*</span></p>
+  <form [formGroup]="form" class="grid-4">
+    @if (submitError(); as error) {
+    <p-message severity="error" class="col-span-4 m-1">
+      <ng-template #icon>
+        <mxevolve-icon name="cancel" size="md" class="mr-2 mt-1" />
+      </ng-template>
+      <span class="break-words whitespace-normal">{{ error }}</span>
+    </p-message>
+    }
+    <div class="col-span-2">
+      <p>Merge Request Name <span class="text-red-500">*</span></p>
       <input
         pInputText
         type="text"
-        aria-label="Suggested Merge Request Name"
+        aria-label="Merge Request Name"
         placeholder="Enter a title for your merge request"
         class="w-full"
         formControlName="mergeRequestTitle"
@@ -48,7 +63,7 @@
       }
     </div>
 
-    <div class="col-span-3">
+    <div class="col-span-2">
       <p>Destination Branch <span class="text-red-500">*</span></p>
       <mxevolve-merge-configuration-dropdown
         [projectId]="projectId()"
@@ -57,7 +72,7 @@
       />
     </div>
 
-    <div class="col-span-6">
+    <div class="col-span-4">
       <p>Suggested Reviewers Names</p>
       <mxevolve-autocomplete-reviewers
         [projectId]="projectId()"
@@ -67,7 +82,7 @@
       />
     </div>
 
-    <div class="col-span-6">
+    <div class="col-span-4">
       <p>
         Do you want to Backport your Changes?
         <span class="text-red-500">*</span>
@@ -95,7 +110,7 @@
     </div>
 
     @if (form.controls.backport.value && ciVersion() === 1) {
-    <div class="col-span-6">
+    <div class="col-span-4">
       <p>
         Select the destination branch that you wish to backport your changes
         into <span class="text-red-500">*</span>
@@ -113,7 +128,7 @@
       />
     </div>
     } @else if (form.controls.backport.value) {
-    <div class="col-span-6">
+    <div class="col-span-4">
       <p>
         Select the Run definition for on-demand backport
         <span class="text-red-500">*</span>
@@ -130,11 +145,9 @@
         styleClass="w-full"
       />
     </div>
-    }
-
-    @if (supportsResourceManagement()) {
+    } @if (supportsResourceManagement()) {
     <mxevolve-delete-development-checkbox
-      class="col-span-6"
+      class="col-span-4"
       [projectId]="projectId()"
       [processId]="processId()"
       [familyId]="ExecutionFamily.USER_STORY_BUILD_AND_TEST"
@@ -146,12 +159,15 @@
   } }
 
   <ng-template pTemplate="footer">
-    <p-button
-      label="Send"
-      (onClick)="submit()"
-      [loading]="submitLoading()"
-      [disabled]="!predefinedMode() && form.invalid"
-    />
-    <p-button label="Cancel" [outlined]="true" (onClick)="cancel()" />
+    <div class="grid-4">
+      <p-button
+        class="col-start-2 col-span-2"
+        styleClass="w-full"
+        label="Send"
+        (onClick)="submit()"
+        [loading]="submitLoading()"
+        [disabled]="!predefinedMode() && form.invalid"
+      />
+    </div>
   </ng-template>
 </p-dialog>

@@ -34,7 +34,7 @@ export class ArtifactStorageService {
   ): string {
     return (
       this.apiUrl +
-      `artifact-management/projects/${projectId}/storages/lookup?fullPath=${encodeURIComponent(
+      `storage-management/projects/${projectId}/storages/lookup?fullPath=${encodeURIComponent(
         request.fullPath
       )}`
     );
@@ -42,7 +42,7 @@ export class ArtifactStorageService {
 
   getFilteredStorages(filters: FetchStoragesFilter): Observable<StoragePage> {
     return this.http
-      .get<StoragePage>(this.apiUrl + `artifact-management/storages`, {
+      .get<StoragePage>(this.apiUrl + `storage-management/storages`, {
         params: this.buildFetchStoragesQueryParams(filters),
       })
       .pipe(catchError((error) => throwError(() => error)));

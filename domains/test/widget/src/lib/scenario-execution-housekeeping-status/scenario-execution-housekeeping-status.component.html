@@ -1,0 +1,42 @@
+<div>
+  @switch (status) { @case (ScenarioExecutionHousekeepingStatus.PASSED) {
+  <p-tag severity="success">
+    <div class="flex gap-2 items-center">
+      <mxevolve-icon name="cleaning_services" size="sm"></mxevolve-icon>
+      <span class="text-sm">{{ displayValue[status] }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionHousekeepingStatus.FAILED) {
+  <p-tag severity="danger">
+    <div class="flex gap-2 items-center">
+      <mxevolve-icon name="cleaning_services" size="sm"></mxevolve-icon>
+      <span class="text-sm">{{ displayValue[status] }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionHousekeepingStatus.UNDERWAY) {
+  <p-tag severity="warn">
+    <div class="flex gap-2 items-center">
+      <mxevolve-icon
+        name="progress_activity"
+        size="sm"
+        [spin]="true"
+      ></mxevolve-icon>
+      <span class="text-sm">{{ displayValue[status] }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionHousekeepingStatus.NOT_LAUNCHED) {
+  <p-tag severity="secondary">
+    <div class="flex gap-2 items-center">
+      <mxevolve-icon name="do_not_disturb_on" size="sm"></mxevolve-icon>
+      <span class="text-sm">{{ displayValue[status] }}</span>
+    </div>
+  </p-tag>
+  } @case (ScenarioExecutionHousekeepingStatus.SCHEDULED_FOR_CLEANING) {
+  <p-tag severity="info">
+    <div class="flex gap-2 items-center">
+      <mxevolve-icon name="schedule" size="sm"></mxevolve-icon>
+      <span class="text-sm">{{ displayValue[status] }}</span>
+    </div>
+  </p-tag>
+  } }
+</div>

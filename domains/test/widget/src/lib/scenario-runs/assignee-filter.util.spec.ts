@@ -109,6 +109,7 @@ function createPanel(
     totalNumberOfImpacts: 0,
     totalNumberOfIncidents: 0,
     totalNumberOfRegressions: 0,
+    totalNumberOfFailureReasons: 0,
     head: {
       id: "run-1",
       name: "test",
@@ -119,6 +120,7 @@ function createPanel(
       numberOfImpacts: 0,
       numberOfRegressions: 0,
       numberOfIncidents: 0,
+      numberOfFailureReasons: 0,
       startDate: "2025-01-01T00:00:00Z",
       commitId: "abc",
       assigneeId,
@@ -129,6 +131,7 @@ function createPanel(
       impactIds: [],
       regressionIds: [],
       incidentIds: [],
+      failureReasonIds: [],
     },
     previousRuns: [],
     filterData: {

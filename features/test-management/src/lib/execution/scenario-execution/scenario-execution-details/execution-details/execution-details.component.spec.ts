@@ -30,24 +30,12 @@ import {
   signal,
   Type,
 } from "@angular/core";
-
-@Component({
-  selector: "p-menu",
-  template: "",
-  standalone: true,
-})
-class MockMenuComponent {
-  @Input() model: MenuItem[] | undefined;
-  @Input() popup: boolean = false;
-  @Input() appendTo: HTMLElement | "body" | undefined;
-  visible = false;
-  toggle = jest.fn();
-}
+import { ScenarioExecutionHousekeepingStatusComponent } from "@mxevolve/domains/test/widget";
 import { CommitIdShortnerPipe, DurationPipe } from "@mxflow/pipe";
 import { of, throwError } from "rxjs";
 import { ShowElementIfAuthorizedDirective } from "@mxflow/core/auth";
 import { By } from "@angular/platform-browser";
-import { KeptExecutionDisabledPipe } from "../kept-execution-disabled/kept-execution-disabled.pipe";
+import { KeepExecutionDisabledPipe } from "../keep-execution-disabled/keep-execution-disabled.pipe";
 import { ScenarioExecutionStateManagementService } from "../scenario-execution-state-management.service";
 import {
   projectId,
@@ -63,13 +51,26 @@ import {
   IncidentLinkingStateService,
 } from "@mxflow/features/analysis-objects";
 import { AnalysisObjectLink, TestUnitModel } from "@mxflow/test-management";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 import { DomTestUtils } from "@mxevolve/testing";
 import { DisableAbortPipe } from "../../actions/abort/disable-abort.pipe";
 import { Button } from "primeng/button";
 import { ShowCommentPipe } from "./comment-input/show-comment-pipe";
 import { ShowTerminationMessagePipe } from "./termination-message/show-termination-message-pipe";
 import { ButtonHarness } from "../../../../../../../../core/testing/src/lib/dom-test-utils/button/button-harness";
+
+@Component({
+  selector: "p-menu",
+  template: "",
+  standalone: true,
+})
+class MockMenuComponent {
+  @Input() model: MenuItem[] | undefined;
+  @Input() popup: boolean = false;
+  @Input() appendTo: HTMLElement | "body" | undefined;
+  visible = false;
+  toggle = jest.fn();
+}
 
 const comment = "user comment on scenario execution";
 const newComment = "new user comment on scenario execution";
@@ -88,13 +89,14 @@ describe("Scenario execution details component test", () => {
   let fixture: ComponentFixture<ExecutionDetailsComponent>;
   let component: ExecutionDetailsComponent;
 
-  const keptExecutionDisabledPipeTransform = jest.fn().mockReturnValue(false);
+  const keepExecutionDisabledPipeTransform = jest.fn().mockReturnValue(false);
   const disableAbortPipeTransform = jest.fn();
   const showTerminationMessagePipeTransform = jest.fn();
 
   beforeEach(() => {
     analyticsTrackerService = {
       trackValidationScope: jest.fn(),
+      trackLinkAnalysisObject: jest.fn(),
     } as unknown as jest.Mocked<TestManagementAnalyticsTrackerService>;
     scenarioExecutionService = {
       getScenarioExecutions: jest.fn(),
@@ -108,7 +110,7 @@ describe("Scenario execution details component test", () => {
     stateService = {
       projectId: signal(projectId),
       scenarioExecution: signal<ScenarioExecution | undefined>(
-        scenarioExecution
+        scenarioExecution as unknown as ScenarioExecution
       ),
       validationScope: signal<ValidationScope | undefined>(undefined),
       validationScopeWarningMessage: signal(""),
@@ -129,13 +131,14 @@ describe("Scenario execution details component test", () => {
         ToggleSwitchModule,
         Button,
         MockDirective(ShowElementIfAuthorizedDirective),
-        MockPipe(KeptExecutionDisabledPipe, keptExecutionDisabledPipeTransform),
+        MockPipe(KeepExecutionDisabledPipe, keepExecutionDisabledPipeTransform),
         MockPipe(DisableAbortPipe, disableAbortPipeTransform),
         MockPipe(
           ShowTerminationMessagePipe,
           showTerminationMessagePipeTransform
         ),
         MockComponent(AnalysisObjectLinkingComponent),
+        MockComponent(ScenarioExecutionHousekeepingStatusComponent),
         MockMenuComponent,
       ],
       declarations: [
@@ -345,7 +348,7 @@ describe("Scenario execution details component test", () => {
   });
 
   describe("ngOnInit", () => {
-    it("should initialize regression and impact options correctly", () => {
+    it("should initialize link to regressions options correctly", () => {
       const showAnalysisObjectsLinkingModalSpy = jest.spyOn(
         fixture.componentInstance,
         "showAnalysisObjectsLinkingModal"
@@ -358,6 +361,33 @@ describe("Scenario execution details component test", () => {
         { label: "Binary Regression", command: expect.any(Function) },
       ]);
 
+      const mockEvent = {} as MenuItemCommandEvent;
+
+      component.linkToRegressionOptions[0].command?.(mockEvent);
+      expect(showAnalysisObjectsLinkingModalSpy).toHaveBeenCalledWith(
+        AnalysisObjectType.CONFIGURATION_REGRESSION
+      );
+      expect(
+        analyticsTrackerService.trackLinkAnalysisObject
+      ).toHaveBeenCalledWith(AnalysisObjectType.CONFIGURATION_REGRESSION);
+
+      component.linkToRegressionOptions[1].command?.(mockEvent);
+      expect(showAnalysisObjectsLinkingModalSpy).toHaveBeenCalledWith(
+        AnalysisObjectType.BINARY_REGRESSION
+      );
+      expect(
+        analyticsTrackerService.trackLinkAnalysisObject
+      ).toHaveBeenCalledWith(AnalysisObjectType.BINARY_REGRESSION);
+    });
+
+    it("should initialize link to impacts options correctly", () => {
+      const showAnalysisObjectsLinkingModalSpy = jest.spyOn(
+        fixture.componentInstance,
+        "showAnalysisObjectsLinkingModal"
+      );
+
+      component.ngOnInit();
+
       expect(component.linkToImpactOptions).toEqual([
         { label: "Configuration Impact", command: expect.any(Function) },
         { label: "Binary Impact", command: expect.any(Function) },
@@ -365,29 +395,21 @@ describe("Scenario execution details component test", () => {
 
       const mockEvent = {} as MenuItemCommandEvent;
 
-      if (component.linkToRegressionOptions) {
-        component.linkToRegressionOptions[0].command?.(mockEvent);
-        expect(showAnalysisObjectsLinkingModalSpy).toHaveBeenCalledWith(
-          AnalysisObjectType.CONFIGURATION_REGRESSION
-        );
+      component.linkToImpactOptions[0].command?.(mockEvent);
+      expect(showAnalysisObjectsLinkingModalSpy).toHaveBeenCalledWith(
+        AnalysisObjectType.CONFIGURATION_IMPACT
+      );
+      expect(
+        analyticsTrackerService.trackLinkAnalysisObject
+      ).toHaveBeenCalledWith(AnalysisObjectType.CONFIGURATION_IMPACT);
 
-        component.linkToRegressionOptions[1].command?.(mockEvent);
-        expect(showAnalysisObjectsLinkingModalSpy).toHaveBeenCalledWith(
-          AnalysisObjectType.BINARY_REGRESSION
-        );
-      }
-
-      if (component.linkToImpactOptions) {
-        component.linkToImpactOptions[0].command?.(mockEvent);
-        expect(showAnalysisObjectsLinkingModalSpy).toHaveBeenCalledWith(
-          AnalysisObjectType.CONFIGURATION_IMPACT
-        );
-
-        component.linkToImpactOptions[1].command?.(mockEvent);
-        expect(showAnalysisObjectsLinkingModalSpy).toHaveBeenCalledWith(
-          AnalysisObjectType.BINARY_IMPACT
-        );
-      }
+      component.linkToImpactOptions[1].command?.(mockEvent);
+      expect(showAnalysisObjectsLinkingModalSpy).toHaveBeenCalledWith(
+        AnalysisObjectType.BINARY_IMPACT
+      );
+      expect(
+        analyticsTrackerService.trackLinkAnalysisObject
+      ).toHaveBeenCalledWith(AnalysisObjectType.BINARY_IMPACT);
     });
 
     it("should initialize view validation scope options", () => {
@@ -756,6 +778,13 @@ describe("Scenario execution details component test", () => {
     );
   });
 
+  it("should track the link button click with the failure reason analysis object type when marking analysis status as cancelled", () => {
+    component.handleMarkAnalysisStatusAsCancelled();
+    expect(
+      analyticsTrackerService.trackLinkAnalysisObject
+    ).toHaveBeenCalledWith(AnalysisObjectType.FAILURE_REASON);
+  });
+
   describe("getIneligibilityReasonMessage", () => {
     it("should return correct reason when scenario is underway", () => {
       expect(
@@ -942,21 +971,21 @@ describe("Scenario execution details component test", () => {
     });
   });
 
-  describe("kept execution", () => {
-    it("should emit a kept execution toggled event when the scenario execution is defined", () => {
-      const emitSpy = jest.spyOn(component.keptExecutionToggled, "emit");
-      component.toggleKeptExecutionFlag();
+  describe("keep execution", () => {
+    it("should emit a keep execution toggled event when the scenario execution is defined", () => {
+      const emitSpy = jest.spyOn(component.keepExecutionToggled, "emit");
+      component.toggleKeepExecutionFlag();
       expect(emitSpy).toHaveBeenCalledWith(scenarioExecution.id);
     });
 
-    it("should not emit a kept execution toggled event when the scenario execution is undefined", () => {
+    it("should not emit a keep execution toggled event when the scenario execution is undefined", () => {
       stateService.scenarioExecution.set(undefined);
-      const emitSpy = jest.spyOn(component.keptExecutionToggled, "emit");
-      component.toggleKeptExecutionFlag();
+      const emitSpy = jest.spyOn(component.keepExecutionToggled, "emit");
+      component.toggleKeepExecutionFlag();
       expect(emitSpy).not.toHaveBeenCalled();
     });
 
-    it("should not show kept execution section when disable keep execution flag is true", () => {
+    it("should not show keep execution section when disable keep execution flag is true", () => {
       stateService.scenarioExecution.set({
         ...scenarioExecution,
         disableKeepExecution: true,
@@ -970,7 +999,7 @@ describe("Scenario execution details component test", () => {
       expect(keepExecutionSection).toBeNull();
     });
 
-    it("should show kept execution section when disable keep execution flag is false", () => {
+    it("should show keep execution section when disable keep execution flag is false", () => {
       stateService.testUnit.set({
         ...TEST_UNIT,
         disableKeepExecution: false,
@@ -978,7 +1007,7 @@ describe("Scenario execution details component test", () => {
       fixture.detectChanges();
 
       const keepExecutionSection = fixture.debugElement.query(
-        By.css("#kept-execution-section")
+        By.css("#keep-execution-section")
       );
 
       expect(keepExecutionSection).toBeTruthy();
@@ -991,6 +1020,13 @@ describe("Scenario execution details component test", () => {
       expect(incidentLinkingStateService.setIsLinking).toHaveBeenCalledWith(
         true
       );
+    });
+
+    it("should track the link button click with the incident analysis object type", () => {
+      component.showIncidentsLinkingModal();
+      expect(
+        analyticsTrackerService.trackLinkAnalysisObject
+      ).toHaveBeenCalledWith(AnalysisObjectType.INCIDENT);
     });
 
     it("should set the incident linking state to false when closing the incident modal", () => {
@@ -1248,6 +1284,29 @@ describe("Scenario execution details component test", () => {
     );
     expect(viewEnvironmentLink).toBeTruthy();
     expect(emptyContent).toBeFalsy();
+  });
+
+  it("should not render housekeeping status component when loading", () => {
+    stateService.scenarioExecution.set(scenarioExecution);
+    component.isLoading = true;
+    fixture.detectChanges();
+
+    const housekeepingElem = fixture.debugElement.query(
+      By.directive(ScenarioExecutionHousekeepingStatusComponent)
+    );
+    expect(housekeepingElem).toBeNull();
+  });
+
+  it("should render housekeeping status component with correct status when not loading", () => {
+    stateService.scenarioExecution.set(scenarioExecution);
+    component.isLoading = false;
+    fixture.detectChanges();
+
+    const housekeeping = getComponent(
+      ScenarioExecutionHousekeepingStatusComponent
+    );
+    expect(housekeeping).toBeTruthy();
+    expect(housekeeping.status).toEqual(scenarioExecution.cleaningStatus);
   });
 
   it("should track validation scope clicks", () => {

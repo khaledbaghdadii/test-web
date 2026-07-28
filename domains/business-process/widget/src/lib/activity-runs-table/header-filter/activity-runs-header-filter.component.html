@@ -1,0 +1,79 @@
+<div class="flex items-center gap-1 w-full">
+  <span
+    class="flex-1 truncate"
+    [class.cursor-pointer]="sortable()"
+    (click)="onSortClicked($event)"
+    (keydown.enter)="onSortClicked($any($event))"
+    [attr.role]="sortable() ? 'button' : null"
+    [attr.tabindex]="sortable() ? 0 : null"
+  >
+    {{ displayName() }}
+    @if (sortDirection() === "asc") {
+    <mxevolve-icon name="arrow_upward" size="xs" />
+    } @else if (sortDirection() === "desc") {
+    <mxevolve-icon name="arrow_downward" size="xs" />
+    }
+  </span>
+
+  <button
+    type="button"
+    class="ag-header-icon"
+    [attr.aria-label]="'Filter ' + displayName()"
+    (click)="filterPopover.toggle($event)"
+  >
+    <mxevolve-icon
+      name="filter_alt"
+      size="xs"
+      [class.text-primary]="active()"
+    />
+  </button>
+</div>
+
+<p-popover #filterPopover>
+  <div class="flex flex-col gap-2" style="min-width: 16rem">
+    @switch (filterType()) { @case ("text") {
+    <input
+      pInputText
+      type="text"
+      [placeholder]="placeholder()"
+      [ngModel]="textValue()"
+      (ngModelChange)="textValue.set($event)"
+    />
+    } @case ("multiselect") {
+    <p-multiselect
+      [options]="options()"
+      optionLabel="label"
+      optionValue="value"
+      [placeholder]="placeholder()"
+      [ngModel]="multiselectValue()"
+      (ngModelChange)="multiselectValue.set($event)"
+      [showClear]="true"
+      appendTo="body"
+    ></p-multiselect>
+    } @case ("dateRange") {
+    <p-datepicker
+      selectionMode="range"
+      [readonlyInput]="true"
+      [showButtonBar]="true"
+      [placeholder]="placeholder()"
+      [ngModel]="dateRangeValue()"
+      (ngModelChange)="dateRangeValue.set($event)"
+      appendTo="body"
+    ></p-datepicker>
+    } }
+
+    <div class="flex justify-end gap-2">
+      <p-button
+        label="Clear"
+        size="small"
+        [text]="true"
+        (onClick)="clear(); filterPopover.hide()"
+      ></p-button>
+      <p-button
+        label="Apply"
+        size="small"
+        (onClick)="apply(); filterPopover.hide()"
+      ></p-button>
+    </div>
+  </div>
+</p-popover>

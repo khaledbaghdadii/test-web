@@ -6,4 +6,5 @@ export interface FetchVersionsQuery {
   versionTypes?: VersionType[];
   active?: boolean;
   namePhrase?: string;
+  names?: string[];
 }

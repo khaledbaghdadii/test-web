@@ -6,14 +6,16 @@ import { ConfirmDialogModule } from "primeng/confirmdialog";
 import { ConfirmationService } from "primeng/api";
 import { TooltipModule } from "primeng/tooltip";
 import { MockComponent } from "ng-mocks";
-import { ScenarioRunService } from "@mxevolve/domains/test/data-access";
+import {
+  ScenarioRunService,
+  TestManagementAnalyticsTrackerService,
+} from "@mxevolve/domains/test/data-access";
 import { ScenarioRunStatus } from "@mxevolve/domains/test/model";
 import {
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
 import { AbortScenarioRunButtonComponent } from "./abort-scenario-run-button.component";
-import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/feature";
 
 const MOCK_IMPORTS = [
   Button,

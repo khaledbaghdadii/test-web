@@ -9,6 +9,7 @@ export interface UpgradeProcessExecution {
   readonly familyName: string;
   readonly processName: string;
   readonly description?: string;
+  readonly owner: string;
   readonly startDate?: string;
   readonly endDate?: string;
   readonly expiryDate?: string;
@@ -25,6 +26,7 @@ export interface UpgradeProcessExecution {
   readonly tagUpgradeBranchStage: UpgradeProcessTagStage;
   readonly integrateChangesStage: UpgradeProcessIntegrateChangesStage;
   readonly referenceEnvironmentDeployment: ReferenceEnvironmentDeployment;
+  readonly scenarioExecutionGroupId?: string;
 }
 
 export interface UpgradeProcessInput {
@@ -43,6 +45,9 @@ export interface UpgradeProcessInput {
   readonly binaryConversionInfraGroupId: string;
   readonly qualityGateExecutionInfraGroupId: string;
   readonly binaryConversionTestScenarioId: string;
+  readonly referenceCommitId?: string;
+  readonly referenceFactoryProductId?: string;
+  readonly referenceEnvironmentInfraGroupId?: string;
 }
 
 export interface UpgradeProcessCreateBranchStage extends Stage {

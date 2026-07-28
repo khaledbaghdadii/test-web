@@ -1,0 +1,11 @@
+@if (impacts.length) { @for (impact of impacts; track $index; let isLast =
+$last) {
+<span
+  ><mxevolve-binary-impact-id-link
+    [binaryImpactId]="impact.binaryImpactId"
+    [readableId]="impact.readableId"
+    [projectId]="impact.projectId ?? defaultProjectId"
+  ></mxevolve-binary-impact-id-link
+  >{{ isLast ? "" : ", " }}</span
+>
+} } @else { - }

@@ -20,6 +20,7 @@ import { ScenarioExecutionService } from "@mxflow/test-management";
 import { Chip } from "primeng/chip";
 import { PanelModule } from "primeng/panel";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import { MessageModule } from "primeng/message";
 
 @Component({
   selector: "mxevolve-run-quality-gate-stage",
@@ -36,6 +37,7 @@ import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
     BusinessProcessContentContainerComponent,
     StageContainerComponent,
     QualityGateValidationBannerComponent,
+    MessageModule,
   ],
   providers: [
     UpgradeProcessStateUpdaterService,
@@ -56,8 +58,29 @@ export class RunQualityGateStageComponent {
   >();
   readonly referenceScenarioExecutionId = input.required<string>();
   readonly keptResourcesDecisionMade = input.required<boolean>();
+  readonly factoryProductId = input.required<string>();
 
-  readonly activeFilter = signal<SummaryFilterEvent | undefined>(undefined);
+  readonly activeFilters = signal<SummaryFilterEvent[]>([]);
+  showRefreshInfo = signal(false);
+
+  toggleFilter(event: SummaryFilterEvent): void {
+    this.activeFilters.update((filters) => {
+      const idx = filters.findIndex(
+        (f) => f.type === event.type && f.value === event.value
+      );
+      return idx >= 0
+        ? filters.filter((_, i) => i !== idx)
+        : [...filters, event];
+    });
+  }
+
+  removeFilter(filter: SummaryFilterEvent): void {
+    this.activeFilters.update((filters) =>
+      filters.filter(
+        (f) => !(f.type === filter.type && f.value === filter.value)
+      )
+    );
+  }
 
   private readonly stateUpdater = inject(UpgradeProcessStateUpdaterService);
   private readonly scenarioExecutionService = inject(ScenarioExecutionService);
@@ -87,5 +110,13 @@ export class RunQualityGateStageComponent {
 
   reloadExecution() {
     this.stateUpdater.reloadProcessDetails(this.processId(), this.projectId());
+  }
+
+  handleScenarioRunsFetched(headScenarioRunIds: string[]) {
+    if (headScenarioRunIds.length == 0) {
+      this.showRefreshInfo.set(true);
+    } else {
+      this.showRefreshInfo.set(false);
+    }
   }
 }

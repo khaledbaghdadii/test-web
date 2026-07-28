@@ -2,6 +2,7 @@ import { Component, inject, Input } from "@angular/core";
 import { ToastMessageService } from "@mxflow/ui/alert";
 import { ScenarioExecutionStateManagementService } from "../scenario-execution-state-management.service";
 import { AnalysisObjectType } from "@mxflow/features/analysis-objects";
+import { TestManagementAnalyticsTrackerService } from "@mxevolve/domains/test/data-access";
 
 @Component({
   selector: "mxevolve-scenario-execution-incidents",
@@ -9,9 +10,14 @@ import { AnalysisObjectType } from "@mxflow/features/analysis-objects";
   standalone: false,
 })
 export class ScenarioExecutionIncidentsComponent {
-  private toastMessageService = inject(ToastMessageService);
+  private readonly toastMessageService = inject(ToastMessageService);
+  private readonly analyticsTrackerService = inject(
+    TestManagementAnalyticsTrackerService
+  );
+  private readonly stateService = inject(
+    ScenarioExecutionStateManagementService
+  );
 
-  stateService = inject(ScenarioExecutionStateManagementService);
   linkedIncidents = this.stateService.linkedIncidents;
   protected readonly AnalysisObjectType = AnalysisObjectType;
   isUnlinkModalVisible = false;
@@ -45,6 +51,9 @@ export class ScenarioExecutionIncidentsComponent {
   openUnlinkModal(incidentId: string) {
     this.incidentId = incidentId;
     this.isUnlinkModalVisible = true;
+    this.analyticsTrackerService.trackUnlinkAnalysisObject(
+      AnalysisObjectType.INCIDENT
+    );
   }
 
   isVisibleChange(isUnlinkModalVisible: boolean) {

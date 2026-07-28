@@ -110,6 +110,7 @@ export class FinalProductDropdownInputComponent implements OnInit {
   selectedOption = this.finalProductStateService.selectedOption;
   searchKey = this.finalProductStateService.searchKey;
   isLoadingData = this.finalProductStateService.isLoadingData;
+  isLoadingCommitsInfo = this.finalProductStateService.isLoadingCommitsInfo;
   errorMessage = this.finalProductStateService.errorMessage;
 
   itemsSize = this.finalProductStateService.dropDownItemsSize;
@@ -230,6 +231,7 @@ export class FinalProductDropdownInputComponent implements OnInit {
       first &&
       last &&
       !this.isLoadingData() &&
+      !this.isLoadingCommitsInfo() &&
       !this.isLastPage() &&
       this.lastFetchedElement() < last
     );

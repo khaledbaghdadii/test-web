@@ -1,0 +1,81 @@
+@if (loading) {
+<div
+  class="flex justify-center items-center pattern-details-placeholder"
+  data-testid="pattern-details-loading"
+>
+  <p>Loading...</p>
+</div>
+} @else if (patternDetails) {
+<ul class="pattern-details-list">
+  <li class="list-item">
+    <strong>Pattern Version:</strong> {{ patternDetails.versionNumber }}
+  </li>
+  <li class="list-item">
+    <strong>Description:</strong> {{ patternDetails.description }}
+  </li>
+  <li class="list-item">
+    <strong>Pattern Type:</strong> {{ patternDetails.patternType }}
+  </li>
+  <li class="list-item">
+    <strong>Difference Type:</strong> {{ patternDetails.differenceTypes }}
+  </li>
+  <li class="list-item">
+    <strong>Impacted Columns:</strong>
+    <ul>
+      @for (group of patternDetails.impactedGroups; track group) {
+      <li>{{ group }}</li>
+      }
+    </ul>
+  </li>
+  <li class="list-item">
+    <strong>Owner:</strong> {{ patternDetails.ownerUserName }}
+  </li>
+  <li class="list-item">
+    <strong>Created in Package:</strong> {{ patternDetails.createdInPackage }}
+  </li>
+  <li class="list-item">
+    <strong>Pattern Script:</strong> {{ patternDetails.originalScript }}
+  </li>
+  <div class="flex flex-row items-center">
+    <li class="list-item"><strong>Linked Root Causes:</strong></li>
+    @if (patternDetails.linkedRootCauses.length > 0) {
+    <div class="flex flex-row gap-4 flex-warp ml-4">
+      @for (rc of patternDetails.linkedRootCauses; track rc.id) {
+      <p-chip
+        class="cursor-pointer"
+        (click)="onRootCauseClick(rc.id)"
+        (keydown)="onRootCauseChipKeyDown($event, rc.id)"
+        label="{{ rc.displayName }}"
+      />
+      }
+    </div>
+    }
+  </div>
+  <li class="list-item"><strong>Pattern Columns:</strong></li>
+  <p-table
+    [value]="patternDetails.referencedColumns"
+    [scrollable]="true"
+    scrollHeight="40vh"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th scope="col">Column Name</th>
+        <th scope="col">Column Type</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-column>
+      <tr>
+        <td>{{ column.name }}</td>
+        <td>{{ column.type }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</ul>
+} @else {
+<div
+  class="flex justify-center items-center pattern-details-placeholder"
+  data-testid="pattern-details-empty"
+>
+  <p>No pattern details available.</p>
+</div>
+}

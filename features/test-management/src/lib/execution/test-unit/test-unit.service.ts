@@ -108,7 +108,7 @@ export class TestUnitService {
       mxVersion: scenarioExecutionApiModel.mxVersion,
       mxBuildId: scenarioExecutionApiModel.mxBuildId,
       factoryProductId: scenarioExecutionApiModel.factoryProductId,
-      keptExecution: scenarioExecutionApiModel.keptExecution,
+      keepExecution: scenarioExecutionApiModel.keepExecution,
       environment: this.toEnvironment(scenarioExecutionApiModel.environment),
       analysisObjects: this.toAnalysisObjects(
         scenarioExecutionApiModel.analysisObjects
@@ -116,6 +116,7 @@ export class TestUnitService {
       cleaningStatus: scenarioExecutionApiModel.cleaningStatus,
       isFailed: scenarioExecutionApiModel.failed,
       isFinished: scenarioExecutionApiModel.finished,
+      testUnitHead: scenarioExecutionApiModel.testUnitHead,
     };
   }
 

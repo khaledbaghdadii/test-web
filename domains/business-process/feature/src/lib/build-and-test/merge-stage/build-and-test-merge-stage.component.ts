@@ -8,15 +8,15 @@ import {
   signal,
 } from "@angular/core";
 import { rxResource, takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { FinalProductDetailsComponent } from "@mxevolve/domains/artifact/widget";
 import {
   BuildAndTestProcessStateUpdaterService,
   BuildAndTestUserInputService,
 } from "@mxevolve/domains/business-process/data-access";
 import {
   BuildAndTestProcessExecution,
-  BuildAndTestProcessStage,
+  IntegrateChangesStage,
   ExecutionStatus,
+  FinalProductFailure,
   StageStatus,
 } from "@mxevolve/domains/business-process/util";
 import {
@@ -28,7 +28,6 @@ import {
   MergeConfigurationService,
   MergeRequestService,
 } from "@mxevolve/domains/scm/data-access";
-import { DevelopmentDetailsComponent } from "@mxevolve/domains/scm/composite-widget";
 import { MergeRequestStepperComponent } from "@mxevolve/domains/scm/widget";
 import {
   MxevolveIconComponent,
@@ -36,12 +35,12 @@ import {
 } from "@mxevolve/shared/ui/primitive";
 import { Button } from "primeng/button";
 import { Message } from "primeng/message";
-import { PanelModule } from "primeng/panel";
 import { Skeleton } from "primeng/skeleton";
 import { TabsModule } from "primeng/tabs";
 import { catchError, forkJoin, map, of } from "rxjs";
 import { BuildAndTestBackportExecutionsSummaryComponent } from "./build-and-test-backport-executions-summary.component";
 import { BuildAndTestSendForReviewComponent } from "./build-and-test-send-for-review.component";
+import { BuildAndTestMergeRequestReopenComponent } from "../merge-request-reopen/build-and-test-merge-request-reopen.component";
 import { BuildAndTestLegacyBackportChangesComponent } from "./legacy/build-and-test-legacy-backport-changes.component";
 
 @Component({
@@ -49,16 +48,14 @@ import { BuildAndTestLegacyBackportChangesComponent } from "./legacy/build-and-t
   imports: [
     BuildAndTestBackportExecutionsSummaryComponent,
     BuildAndTestLegacyBackportChangesComponent,
+    BuildAndTestMergeRequestReopenComponent,
     BuildAndTestSendForReviewComponent,
     BusinessProcessContentContainerComponent,
     Button,
-    DevelopmentDetailsComponent,
-    FinalProductDetailsComponent,
     MergeRequestStepperComponent,
     Message,
     MxevolveIconComponent,
     NgTemplateOutlet,
-    PanelModule,
     Skeleton,
     StageContainerComponent,
     TabsModule,
@@ -80,16 +77,20 @@ export class BuildAndTestMergeStageComponent {
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly developmentService = inject(DevelopmentService);
-  private readonly mergeConfigurationService = inject(MergeConfigurationService);
+  private readonly mergeConfigurationService = inject(
+    MergeConfigurationService
+  );
   private readonly mergeRequestService = inject(MergeRequestService);
-  private readonly stateUpdater = inject(BuildAndTestProcessStateUpdaterService);
+  private readonly stateUpdater = inject(
+    BuildAndTestProcessStateUpdaterService
+  );
   private readonly toastMessageService = inject(ToastMessageService);
   private readonly userInputService = inject(BuildAndTestUserInputService);
 
   readonly sendForReviewVisible = signal(false);
   readonly actionLoading = signal(false);
 
-  readonly stage = computed<BuildAndTestProcessStage>(
+  readonly stage = computed<IntegrateChangesStage>(
     () => this.execution().integrateChangesStage
   );
 
@@ -106,16 +107,14 @@ export class BuildAndTestMergeStageComponent {
     () => this.execution().ciVersion !== 2 && this.backportRequested()
   );
 
-  readonly actionsDisabled = computed(
+  readonly showActions = computed(
     () =>
-      this.stage().status !== StageStatus.PENDING_INPUT ||
-      this.backportStarted() ||
-      this.actionLoading()
+      this.stage().status === StageStatus.PENDING_INPUT &&
+      !this.backportStarted()
   );
 
   readonly showDecision = computed(
-    () =>
-      this.stage().status === StageStatus.STOPPED && !this.backportStarted()
+    () => this.stage().status === StageStatus.STOPPED && !this.backportStarted()
   );
 
   readonly mergeRequestResource = rxResource({
@@ -200,6 +199,16 @@ export class BuildAndTestMergeStageComponent {
       !!this.stage().finalProductPublishing
   );
 
+  readonly finalProductPublishingFailed = computed(
+    () =>
+      this.stage().finalProductPublishing?.finalProductFailure ===
+      FinalProductFailure.FAILURE_PRE_PUBLISHING_REQUESTED
+  );
+
+  failedToFetchFinalProduct(errorMessage: string): void {
+    this.toastMessageService.showError(errorMessage);
+  }
+
   readonly shouldShowV1BackportInfo = computed(
     () =>
       !this.backportStarted() &&
@@ -213,17 +222,7 @@ export class BuildAndTestMergeStageComponent {
   }
 
   reopenMergeRequest(): void {
-    this.actionLoading.set(true);
-    this.userInputService
-      .reopenMergeRequest({
-        projectId: this.execution().projectId,
-        processId: this.execution().id,
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.reload(),
-        error: (error) => this.handleActionError(error.message),
-      });
+    this.reload();
   }
 
   fixIssues(): void {
@@ -239,10 +238,6 @@ export class BuildAndTestMergeStageComponent {
 
   handleMergeRequestCreated(): void {
     this.reload();
-  }
-
-  handleFinalProductError(message: string): void {
-    this.toastMessageService.showError(message);
   }
 
   private reload(): void {

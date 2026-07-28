@@ -29,6 +29,8 @@ export type { PreconfiguredTestSelectionApiModel } from "./lib/api-models/precon
 export { ReconService } from "./lib/recon/recon.service";
 export type { FetchReconReportsTransferProgressRequest } from "./lib/recon/fetch-recon-reports-transfer-progress-request";
 export { VersionService } from "./lib/version/version.service";
+export { VersionValidationService } from "./lib/version/version-validation.service";
+export { VersionValidationResult } from "./lib/version/version-validation-result";
 export type { VersionApiModel } from "./lib/version/version-api-model";
 export { VersionType } from "./lib/version/version-api-model";
 export type { Page } from "./lib/page";
@@ -37,3 +39,4 @@ export { ClientImpactNoteService } from "./lib/client-impact-note/client-impact-
 export type { ClientImpactNoteAffectedVersionsConfigApiModel } from "./lib/client-impact-note/client-impact-note-affected-versions-config-api-model";
 export { ClientImpactNoteFieldType } from "./lib/client-impact-note/client-impact-note-field-type.enum";
 export type { ClientImpactNoteOption } from "./lib/client-impact-note/client-impact-note-option.model";
+export * from "./lib/analytics-tracker/test-management-analytics-tracker.service";

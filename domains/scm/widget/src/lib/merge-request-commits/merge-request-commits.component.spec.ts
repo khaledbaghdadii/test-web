@@ -1,6 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/angular";
 import { MockComponent, ngMocks } from "ng-mocks";
-import { of, Subject } from "rxjs";
+import { of, Subject, throwError } from "rxjs";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { AgGridAngular } from "ag-grid-angular";
 import {
@@ -10,8 +10,14 @@ import {
   MergeRequestState,
   Development,
 } from "@mxevolve/domains/scm/data-access";
-import { MergeRequestCommitsComponent } from "./merge-request-commits.component";
-import { PaginatedCommitsDifferenceComponent } from "../paginated-commits-difference/paginated-commits-difference.component";
+import { DialogService } from "primeng/dynamicdialog";
+import {
+  MergeRequestCommitsComponent,
+  PaginatedCommitsDifferenceComponent,
+} from "@mxevolve/domains/scm/widget";
+import userEvent from "@testing-library/user-event";
+import { ScenarioRunStatus } from "@mxevolve/domains/test/model";
+import { TestExecutionsByCommitIdService } from "../test-executions-by-commit-id/test-executions-by-commit-id.service";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -19,6 +25,14 @@ const mockCommitsService = {
   getCommitDifferences: jest.fn(),
   getPullRequestCommits: jest.fn(),
   getPaginatedCommitDifferences: jest.fn(),
+};
+
+const mockTestExecutionsByCommitIdService = {
+  getExecutionsGroupedByCommitId: jest.fn(),
+};
+
+const mockDialogService = {
+  open: jest.fn(),
 };
 
 const MOCK_DEVELOPMENT: Development = {
@@ -54,10 +68,32 @@ const MOCK_COMMIT_WITHOUT_URL: CommitDetails = {
   url: "",
 };
 
+const MOCK_EXECUTIONS_FOR_COMMIT = [
+  {
+    id: "exec-1",
+    projectId: MOCK_DEVELOPMENT.projectId,
+    name: "Scenario A",
+    status: ScenarioRunStatus.PASSED,
+    endDate: "2024-01-15T12:00:00Z",
+  },
+  {
+    id: "exec-2",
+    projectId: MOCK_DEVELOPMENT.projectId,
+    name: "Scenario B",
+    status: ScenarioRunStatus.PASSED,
+    endDate: "2024-01-15T11:00:00Z",
+  },
+];
+
+const MOCK_GROUPED_EXECUTIONS_BY_COMMIT_ID = {
+  [MOCK_COMMIT_WITH_URL.id]: MOCK_EXECUTIONS_FOR_COMMIT,
+};
+
 async function renderComponent(
   inputs: {
     development?: Development;
     mergeRequest?: MergeRequestOverview;
+    showCommitsBehindWarning?: boolean;
   } = {}
 ) {
   return render(MergeRequestCommitsComponent, {
@@ -68,6 +104,11 @@ async function renderComponent(
     inputs: { development: MOCK_DEVELOPMENT, ...inputs },
     componentProviders: [
       { provide: CommitsService, useValue: mockCommitsService },
+      {
+        provide: TestExecutionsByCommitIdService,
+        useValue: mockTestExecutionsByCommitIdService,
+      },
+      { provide: DialogService, useValue: mockDialogService },
     ],
   });
 }
@@ -83,6 +124,9 @@ describe("MergeRequestCommitsComponent", () => {
     jest.clearAllMocks();
     mockCommitsService.getPullRequestCommits.mockReturnValue(
       of([MOCK_COMMIT_WITH_URL, MOCK_COMMIT_WITHOUT_URL])
+    );
+    mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId.mockReturnValue(
+      of({})
     );
   });
 
@@ -108,6 +152,57 @@ describe("MergeRequestCommitsComponent", () => {
       await waitFor(() =>
         expect(screen.getByText("Pull Request Commits")).toBeTruthy()
       );
+    });
+  });
+
+  describe("commits behind warning", () => {
+    it("does not fetch or show the warning when the flag is off", async () => {
+      await renderComponent({ showCommitsBehindWarning: false });
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(`Commits on "${MOCK_DEVELOPMENT.name}"`)
+        ).toBeTruthy()
+      );
+      expect(mockCommitsService.getCommitDifferences).not.toHaveBeenCalled();
+      expect(screen.queryByText(/behind/)).toBeNull();
+    });
+
+    it("shows the warning when the branch is behind its source", async () => {
+      mockCommitsService.getCommitDifferences.mockReturnValue(
+        of([MOCK_COMMIT_WITH_URL, MOCK_COMMIT_WITHOUT_URL])
+      );
+
+      await renderComponent({ showCommitsBehindWarning: true });
+      const warningTextMatcher = (
+        _: string,
+        element: Element | null
+      ): boolean =>
+        element?.textContent?.replace(/\s+/g, " ").trim() ===
+        `You are 2 commits behind ${MOCK_DEVELOPMENT.source}.`;
+
+      await waitFor(() =>
+        expect(screen.getByText(warningTextMatcher)).toBeTruthy()
+      );
+      expect(mockCommitsService.getCommitDifferences).toHaveBeenCalledWith({
+        projectId: MOCK_DEVELOPMENT.projectId,
+        repositoryId: MOCK_DEVELOPMENT.repository.id,
+        sourceBranch: MOCK_DEVELOPMENT.source,
+        destinationBranch: MOCK_DEVELOPMENT.name,
+      });
+    });
+
+    it("does not show the warning when the branch is up to date", async () => {
+      mockCommitsService.getCommitDifferences.mockReturnValue(of([]));
+
+      await renderComponent({ showCommitsBehindWarning: true });
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(`Commits on "${MOCK_DEVELOPMENT.name}"`)
+        ).toBeTruthy()
+      );
+      expect(screen.queryByText(/behind/)).toBeNull();
     });
   });
 
@@ -286,6 +381,119 @@ describe("MergeRequestCommitsComponent", () => {
           name: MOCK_COMMIT_WITH_URL.id.substring(0, 10),
         });
         expect(link.getAttribute("href")).toBe(MOCK_COMMIT_WITH_URL.url);
+      });
+    });
+  });
+
+  describe("test runs column", () => {
+    it("fetches scenario executions once with all PR commit IDs", async () => {
+      mockCommitsService.getPullRequestCommits.mockReturnValue(
+        of([MOCK_COMMIT_WITH_URL, MOCK_COMMIT_WITHOUT_URL])
+      );
+      mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId.mockReturnValue(
+        of({})
+      );
+
+      await renderComponent({
+        mergeRequest: {
+          pullRequestId: "pr-123",
+          mergeRequestState: MergeRequestState.MERGED,
+        },
+      });
+
+      await waitFor(() => {
+        expect(
+          mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId
+        ).toHaveBeenCalledWith(MOCK_DEVELOPMENT.projectId, [
+          MOCK_COMMIT_WITH_URL.id,
+          MOCK_COMMIT_WITHOUT_URL.id,
+        ]);
+      });
+    });
+
+    it("does not fetch scenario executions for non-merged branches", async () => {
+      await renderComponent();
+
+      await waitFor(() =>
+        expect(
+          mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId
+        ).not.toHaveBeenCalled()
+      );
+    });
+
+    it("still renders PR commits when execution enrichment fails", async () => {
+      mockCommitsService.getPullRequestCommits.mockReturnValue(
+        of([MOCK_COMMIT_WITH_URL, MOCK_COMMIT_WITHOUT_URL])
+      );
+      mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId.mockReturnValue(
+        throwError(() => new Error("Execution fetch failed"))
+      );
+
+      await renderComponent({
+        mergeRequest: {
+          pullRequestId: "pr-123",
+          mergeRequestState: MergeRequestState.MERGED,
+        },
+      });
+
+      await waitFor(() => expect(getDataRows()).toHaveLength(2));
+    });
+  });
+
+  describe("test runs dialog", () => {
+    it("does not open dialog without row interaction", async () => {
+      mockCommitsService.getPullRequestCommits.mockReturnValue(
+        of([MOCK_COMMIT_WITH_URL])
+      );
+      mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId.mockReturnValue(
+        of(MOCK_GROUPED_EXECUTIONS_BY_COMMIT_ID)
+      );
+
+      await renderComponent({
+        mergeRequest: {
+          pullRequestId: "pr-123",
+          mergeRequestState: MergeRequestState.MERGED,
+        },
+      });
+
+      await waitFor(() => expect(getDataRows()).toHaveLength(1));
+      expect(mockDialogService.open).not.toHaveBeenCalled();
+    });
+
+    it("opens the dialog when user clicks on test runs indicator", async () => {
+      const user = userEvent.setup();
+      mockCommitsService.getPullRequestCommits.mockReturnValue(
+        of([MOCK_COMMIT_WITH_URL])
+      );
+      mockTestExecutionsByCommitIdService.getExecutionsGroupedByCommitId.mockReturnValue(
+        of(MOCK_GROUPED_EXECUTIONS_BY_COMMIT_ID)
+      );
+
+      await renderComponent({
+        mergeRequest: {
+          pullRequestId: "pr-123",
+          mergeRequestState: MergeRequestState.MERGED,
+        },
+      });
+
+      await waitFor(() => expect(getDataRows()).toHaveLength(1));
+
+      const indicator = await screen.findByText("Passed");
+      await user.click(indicator);
+
+      await waitFor(() => {
+        expect(mockDialogService.open).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            header: `Runs on Commit ID: ${MOCK_COMMIT_WITH_URL.id}`,
+            closable: true,
+            closeOnEscape: true,
+            data: {
+              commitId: MOCK_COMMIT_WITH_URL.id,
+              executions: MOCK_EXECUTIONS_FOR_COMMIT,
+            },
+          })
+        );
       });
     });
   });

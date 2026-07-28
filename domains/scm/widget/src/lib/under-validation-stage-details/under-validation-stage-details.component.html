@@ -78,6 +78,7 @@
   >
     <mxevolve-merge-request-priority-selector
       [mergeRequest]="prioritySelectorModel()"
+      (saved)="priorityUpdated.emit()"
     />
   </div>
 
@@ -90,6 +91,20 @@
 
   } @else {
   <!-- Non-queued states: Rebase section -->
+  @if (isValidationFailed()) {
+  <p-message
+    class="w-full"
+    styleClass="w-full"
+    severity="error"
+    [closable]="false"
+    data-testid="validation-failure-message"
+  >
+    <ng-template #icon>
+      <mxevolve-icon name="cancel" size="md" class="mr-2 mt-1" />
+    </ng-template>
+    {{ validationFailureReasonMessage() }}
+  </p-message>
+  }
   <div class="flex flex-col gap-2">
     <h4 class="text-base font-semibold">Rebase</h4>
     <div class="flex flex-wrap items-stretch gap-6">
@@ -100,7 +115,14 @@
             [severity]="rebaseStatusSeverity()"
             data-testid="rebase-status-tag"
           >
+            @if (isRebaseFailed()) {
+            <div class="flex items-center gap-2">
+              <mxevolve-icon name="cancel" size="sm" />
+              <span class="text-sm">{{ rebaseStatusLabel() }}</span>
+            </div>
+            } @else {
             {{ rebaseStatusLabel() }}
+            }
           </p-tag>
         </div>
       </div>
@@ -109,8 +131,12 @@
 
   @if (isRebaseFailed()) {
   <!-- Rebase Failed: show commits table -->
-  <div class="flex flex-col gap-4">
-    <span class="text-base font-semibold">List of Commits</span>
+  <div class="flex flex-col gap-4" data-testid="rebase-failed-commits-section">
+    <span class="text-base font-semibold">Commits</span>
+    <span class="text-sm">
+      The below commits couldn't be rebased from {{ data().sourceBranch }} to
+      {{ data().destinationBranch }} due to merge conflicts.
+    </span>
     <mxevolve-paginated-commits-difference
       [projectId]="data().projectId"
       [repositoryId]="data().repositoryId"
@@ -118,19 +144,37 @@
       [destination]="data().sourceBranch"
     />
   </div>
-  } @if ((isUnderValidation() || isValidationFailed()) &&
-  scenarioRunIds().length > 0) {
+  } @if ((isUnderValidation() || isValidationFailed()) && hasScenarioRuns()) {
   <!-- Under Validation / Validation Failed: show scenario runs -->
-  <div class="flex flex-col gap-2 overflow-hidden">
+  <div class="flex flex-col gap-4 overflow-hidden">
     <span class="text-base font-bold">Test Result</span>
-    <mxevolve-scenario-runs
-      [projectId]="data().projectId"
-      [scenarioRunIds]="scenarioRunIds()"
-      [showEnvironmentDetails]="false"
-      [showActionButtons]="false"
-      [showTopBarActions]="false"
-      [detailsExpandedByDefault]="true"
-    />
+    @if (sequentialScenarioRunIds().length > 0) {
+    <div class="flex flex-col gap-2 overflow-hidden">
+      <span class="text-sm">Sequential Execution</span>
+      <mxevolve-scenario-runs
+        [projectId]="data().projectId"
+        [scenarioRunIds]="sequentialScenarioRunIds()"
+        [showEnvironmentDetails]="false"
+        [showActionButtons]="false"
+        [showTopBarActions]="false"
+        [detailsExpandedByDefault]="true"
+        [sortPanelsByStartDateDesc]="true"
+      />
+    </div>
+    } @if (bulkScenarioRunIds().length > 0) {
+    <div class="flex flex-col gap-2 overflow-hidden">
+      <span class="text-sm">Bulk Execution</span>
+      <mxevolve-scenario-runs
+        [projectId]="data().projectId"
+        [scenarioRunIds]="bulkScenarioRunIds()"
+        [showEnvironmentDetails]="false"
+        [showActionButtons]="false"
+        [showTopBarActions]="false"
+        [detailsExpandedByDefault]="true"
+        [sortPanelsByStartDateDesc]="true"
+      />
+    </div>
+    }
   </div>
   } }
 </div>

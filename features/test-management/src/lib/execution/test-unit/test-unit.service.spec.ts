@@ -60,7 +60,8 @@ const START_DATE_SE2B = "2025-10-08T09:45:00.000Z";
 const START_DATE_EARLIEST = "2025-10-01T08:00:00.000Z";
 const START_DATE_MIDDLE = "2025-10-05T08:00:00.000Z";
 const START_DATE_LATEST = "2025-10-09T08:00:00.000Z";
-const CLEANING_STATUS = "status";
+import { ScenarioExecutionHousekeepingStatus } from "@mxevolve/domains/test/model";
+const CLEANING_STATUS = ScenarioExecutionHousekeepingStatus.NOT_LAUNCHED;
 
 describe("TestUnitService", () => {
   let service: TestUnitService;
@@ -483,11 +484,12 @@ describe("TestUnitService", () => {
       mxVersion: MX_VERSION,
       mxBuildId: MX_BUILD_ID,
       factoryProductId: FACTORY_PRODUCT_ID,
-      keptExecution: false,
+      keepExecution: false,
       environment: { id: ENV_ID, status: ENV_STATUS_READY },
       cleaningStatus: CLEANING_STATUS,
       isFailed: true,
       isFinished: true,
+      testUnitHead: true,
       ...overrides,
     };
   }
@@ -508,11 +510,12 @@ describe("TestUnitService", () => {
       mxVersion: MX_VERSION,
       mxBuildId: MX_BUILD_ID,
       factoryProductId: FACTORY_PRODUCT_ID,
-      keptExecution: false,
+      keepExecution: false,
       failed: true,
       finished: true,
       environment: { environmentId: ENV_ID, status: ENV_STATUS_READY },
       cleaningStatus: CLEANING_STATUS,
+      testUnitHead: true,
       ...overrides,
     };
   }

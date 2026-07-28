@@ -44,4 +44,21 @@ export class TechnicalReseedService {
         )
       );
   }
+
+  resumeTechnicalReseed(
+    projectId: string,
+    executionGroupId: string,
+    operationId: string
+  ): Observable<void> {
+    return this.http
+      .post<void>(
+        `${this.config.gatewayUrl}projects/${projectId}/technical-reseed-execution-groups/${executionGroupId}/operations/${operationId}/resume`,
+        {}
+      )
+      .pipe(
+        catchError((error: HttpErrorResponse) =>
+          throwError(() => new Error(error.error?.message ?? error.message))
+        )
+      );
+  }
 }

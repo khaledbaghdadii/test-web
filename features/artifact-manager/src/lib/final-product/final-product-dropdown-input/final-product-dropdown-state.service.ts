@@ -9,6 +9,7 @@ import {
   map,
   Observable,
   of,
+  scan,
   shareReplay,
   startWith,
   Subject,
@@ -29,7 +30,11 @@ import { FinalProductDropdownOption } from "./final-product-dropdown-option.mode
 import { FinalProductService } from "../final-product.service";
 import { DropdownDefaultSelectionMode } from "../model/dropdown-default-selection-mode";
 import { FinalProductDropdownInputLabelMode } from "./final-product-dropdown-input-label-mode";
-import { GetBranchDetailsRequest, ScmService } from "@mxflow/features/scm";
+import {
+  CommitInfoApiResponse,
+  GetBranchDetailsRequest,
+  ScmService,
+} from "@mxflow/features/scm";
 
 @Injectable()
 export class FinalProductDropdownStateService {
@@ -148,6 +153,9 @@ export class FinalProductDropdownStateService {
   readonly newFinalProductDropdownOptions = computed(() =>
     this.getDropdownOptions(this.finalProducts(), this.headCommitId())
   );
+  private readonly rawFinalProductDropdownOptions: Signal<
+    FinalProductDropdownOption[]
+  >;
   readonly finalProductDropdownOptions: Signal<FinalProductDropdownOption[]>;
   readonly isLastPage = computed(() => this.finalProductsPage().last);
   readonly isLoadingData = signal(false);
@@ -161,6 +169,21 @@ export class FinalProductDropdownStateService {
   private readonly customFinalProductFailureSubject = new Subject<Error>();
   readonly customFinalProductFailure$ =
     this.customFinalProductFailureSubject.asObservable();
+
+  private readonly commitMessageMaxLength = 60;
+  private readonly headCommitMessageMaxLength = 40;
+  private readonly commitsInfo$: Observable<Map<string, CommitInfoApiResponse>>;
+  private readonly commitsInfo: Signal<Map<string, CommitInfoApiResponse>>;
+  private readonly allCommitIds$: Observable<string[]>;
+  private readonly commitsInfoMapSubject = new BehaviorSubject<
+    Map<string, CommitInfoApiResponse>
+  >(new Map());
+  private readonly loadingCommitsInfoSubject = new BehaviorSubject<boolean>(
+    false
+  );
+  readonly isLoadingCommitsInfo: Signal<boolean>;
+  private lastStableFinalProductDropdownOptions: FinalProductDropdownOption[] =
+    [];
 
   constructor() {
     this.headCommitID$ = combineLatest([
@@ -275,6 +298,56 @@ export class FinalProductDropdownStateService {
     );
     this.finalProducts = toSignal(this.finalProducts$, { initialValue: [] });
     this.customFinalProduct = toSignal(this.customFinalProduct$);
+    this.allCommitIds$ = this.finalProducts$.pipe(
+      map((finalProducts) => this.getUniqueCommitIds(finalProducts)),
+      scan((accumulatedCommitIds: string[], currentPageCommitIds: string[]) => {
+        if (this.pageIndex() === 0) {
+          return currentPageCommitIds;
+        }
+        return Array.from(
+          new Set([...accumulatedCommitIds, ...currentPageCommitIds])
+        );
+      }, [] as string[])
+    );
+    this.commitsInfo$ = combineLatest([
+      this.projectId$,
+      this.repositoryId$,
+      this.allCommitIds$,
+    ]).pipe(
+      switchMap(([projectId, repositoryId, commitIds]) => {
+        const cachedCommitsInfo = this.commitsInfoMapSubject.value;
+        if (!repositoryId || commitIds.length === 0) {
+          return of(cachedCommitsInfo);
+        }
+        const missingCommitIds = commitIds.filter(
+          (commitId) => !cachedCommitsInfo.has(commitId)
+        );
+        if (missingCommitIds.length === 0) {
+          return of(cachedCommitsInfo);
+        }
+        this.loadingCommitsInfoSubject.next(true);
+        return this.scmService
+          .getCommitsInfo({
+            projectId,
+            repositoryId,
+            commitIds: missingCommitIds,
+          })
+          .pipe(
+            map((commitsInfo) =>
+              this.mergeCommitsInfoMap(cachedCommitsInfo, commitsInfo)
+            ),
+            catchError(() => of(cachedCommitsInfo))
+          );
+      }),
+      tap((commitsInfoMap) => {
+        this.commitsInfoMapSubject.next(commitsInfoMap);
+        this.loadingCommitsInfoSubject.next(false);
+      }),
+      takeUntilDestroyed()
+    );
+    this.commitsInfo = toSignal(this.commitsInfo$, {
+      initialValue: new Map<string, CommitInfoApiResponse>(),
+    });
     const finalProductDropdownOptions$ = toObservable(
       this.newFinalProductDropdownOptions
     ).pipe(
@@ -290,12 +363,30 @@ export class FinalProductDropdownStateService {
     this.finalProductsPage = toSignal(this.finalProductsPage$, {
       initialValue: this.emptyPage,
     });
-    this.finalProductDropdownOptions = toSignal(finalProductDropdownOptions$, {
-      initialValue: [],
-    });
+    this.rawFinalProductDropdownOptions = toSignal(
+      finalProductDropdownOptions$,
+      {
+        initialValue: [],
+      }
+    );
     this.selectedOption = toSignal(this.selectedOption$);
     this.searchKey = toSignal(this.searchKeyCriteria$);
     this.headCommitId = toSignal(this.headCommitID$);
+    this.isLoadingCommitsInfo = toSignal(
+      this.loadingCommitsInfoSubject.asObservable(),
+      { initialValue: false }
+    );
+    this.finalProductDropdownOptions = computed(() => {
+      if (this.isLoadingCommitsInfo()) {
+        return this.lastStableFinalProductDropdownOptions;
+      }
+      const options = this.rawFinalProductDropdownOptions().map((option) => ({
+        label: this.getDropdownOptionLabel(option.value, this.headCommitId()),
+        value: option.value,
+      }));
+      this.lastStableFinalProductDropdownOptions = options;
+      return options;
+    });
   }
 
   private sortFinalProductsByCreationDateDesc(
@@ -384,6 +475,9 @@ export class FinalProductDropdownStateService {
   }
 
   setRepositoryId(value: string) {
+    this.commitsInfoMapSubject.next(new Map<string, CommitInfoApiResponse>());
+    this.loadingCommitsInfoSubject.next(false);
+    this.lastStableFinalProductDropdownOptions = [];
     this.repositoryIdSubject.next(value);
   }
 
@@ -439,18 +533,69 @@ export class FinalProductDropdownStateService {
     if (this.dropdownLabelMode === FinalProductDropdownInputLabelMode.TAG) {
       return finalProduct.tag ?? "-";
     }
+    const commitInfo = this.commitsInfo().get(
+      finalProduct.configurationCommitId
+    );
+    const shortCommitId =
+      commitInfo?.displayId ?? finalProduct.configurationCommitId;
+    const messageSuffix = this.buildCommitMessageSuffix(
+      commitInfo?.message,
+      isHeadCommit
+    );
+    const commitIdLabel = headLabelPrefix + shortCommitId + messageSuffix;
     if (
       this.dropdownLabelMode ===
       FinalProductDropdownInputLabelMode.TAG_COMMIT_ID
     ) {
       return finalProduct.tag
-        ? finalProduct.tag +
-            "-" +
-            headLabelPrefix +
-            finalProduct.configurationCommitId
-        : headLabelPrefix + finalProduct.configurationCommitId;
+        ? finalProduct.tag + "-" + commitIdLabel
+        : commitIdLabel;
     }
-    return headLabelPrefix + finalProduct.configurationCommitId;
+    return commitIdLabel;
+  }
+
+  private buildCommitMessageSuffix(
+    message: string | undefined,
+    isHeadCommit: boolean
+  ): string {
+    if (!message) {
+      return "";
+    }
+    const maxLength = isHeadCommit
+      ? this.headCommitMessageMaxLength
+      : this.commitMessageMaxLength;
+    const truncatedMessage =
+      message.length > maxLength
+        ? `${message.slice(0, maxLength)}...`
+        : message;
+    return ` ${truncatedMessage}`;
+  }
+
+  private getUniqueCommitIds(finalProducts: FinalProduct[]): string[] {
+    return Array.from(
+      new Set(
+        finalProducts.map((finalProduct) => finalProduct.configurationCommitId)
+      )
+    );
+  }
+
+  private toCommitsInfoMap(
+    commitsInfo: CommitInfoApiResponse[]
+  ): Map<string, CommitInfoApiResponse> {
+    return new Map(
+      commitsInfo.map((commitInfo) => [commitInfo.id, commitInfo])
+    );
+  }
+
+  private mergeCommitsInfoMap(
+    existingCommitsInfo: Map<string, CommitInfoApiResponse>,
+    newCommitsInfo: CommitInfoApiResponse[]
+  ): Map<string, CommitInfoApiResponse> {
+    const merged = new Map(existingCommitsInfo);
+    this.toCommitsInfoMap(newCommitsInfo).forEach((commitInfo, commitId) =>
+      merged.set(commitId, commitInfo)
+    );
+    return merged;
   }
 
   private addNewFinalProductDropdownOptions(
@@ -462,7 +607,7 @@ export class FinalProductDropdownStateService {
       return of(
         Array.from(
           this.getUniqueDropdownOptions(
-            this.finalProductDropdownOptions().concat(...newOptions)
+            this.rawFinalProductDropdownOptions().concat(...newOptions)
           )
         )
       );
