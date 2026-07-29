@@ -67,3 +67,34 @@ export function shouldShowInForm(
     (mode === "ACCESS_EMPTY_OPTIONAL_INPUTS" && isInputEmpty(control.value))
   );
 }
+
+/**
+ * A control-like shape that can also report whether it currently carries a
+ * `required` validator (subset of `AbstractControl`).
+ */
+export interface RequirableControl extends VisibilityControl {
+  hasValidator(validator: unknown): boolean;
+}
+
+/**
+ * Whether a field must be rendered regardless of what the definition prefilled,
+ * because it is required and has nothing in it.
+ *
+ * Executors decide visibility once, from a definition-only probe form, the way
+ * legacy's `shouldShow` was assigned once in `ngOnInit`. That holds only while
+ * validators are fixed — and several are not. Validation makes the parent branch
+ * required once MQG + create-branch is chosen; Upgrade clears the configuration
+ * branches when the create-branch answer changes. A field that turns required
+ * *after* the snapshot would otherwise stay hidden while blocking submission,
+ * leaving the run impossible to complete.
+ *
+ * Legacy never hit this: its fields were projected and therefore always mounted,
+ * so `shouldShow` only decided whether they were on screen, never whether they
+ * existed.
+ */
+export function mustStayReachable(
+  control: RequirableControl,
+  requiredValidator: unknown
+): boolean {
+  return control.hasValidator(requiredValidator) && isInputEmpty(control.value);
+}

@@ -196,3 +196,40 @@ function messageOf(error: unknown, fallback: string): string {
 function isDeadPrefill(result: DeadPrefill | null): result is DeadPrefill {
   return result !== null;
 }
+
+/**
+ * Resolves pre-filled notification recipients (VAL-27132 B4).
+ *
+ * `mxevolve-notifications-recipients-input` does this itself — but its access
+ * mode is `ACCESS_EMPTY_OPTIONAL_INPUTS`, so it only mounts when the control is
+ * *empty*, i.e. only when there is nothing to resolve. Legacy ran it through
+ * content projection whatever the value, which is what surfaced a failed lookup
+ * to the user and narrowed the submitted list to the addresses that resolved.
+ *
+ * Unlike an entity lookup this never blocks submission: legacy dropped
+ * unresolvable addresses silently and let the run proceed, and that part is
+ * parity. Only the failure toast and the narrowing were lost.
+ */
+export function resolvePrefilledRecipients(
+  control: AbstractControl,
+  projectId: string,
+  fetchByEmails: (projectId: string, emails: string[]) => Observable<{ content: readonly { mail: string }[] }>,
+  toast: ToastMessageService
+): Observable<void> {
+  const emails = prefilledIds(control.value);
+  if (emails.length === 0) {
+    return of(undefined);
+  }
+  return fetchByEmails(projectId, [...emails]).pipe(
+    map((page) => {
+      const resolved = page.content.map((user) => user.mail);
+      if (resolved.length !== emails.length) {
+        control.setValue(resolved, { emitEvent: false });
+      }
+    }),
+    catchError((error: unknown) => {
+      toast.showError(messageOf(error, PREFILL_LOOKUP_FAILED));
+      return of(undefined);
+    })
+  );
+}

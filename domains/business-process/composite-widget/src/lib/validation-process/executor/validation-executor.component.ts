@@ -39,10 +39,12 @@ import {
   RepositoryService,
 } from "@mxevolve/domains/scm/data-access";
 import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { UserService } from "@mxevolve/domains/user/data-access";
 import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
 import { FinalProductApiService } from "@mxevolve/domains/artifact/data-access";
 import {
   isValidationScopeStartCommitVisible,
+  mustStayReachable,
   shouldShowInForm,
 } from "@mxevolve/domains/business-process/util";
 import {
@@ -63,6 +65,7 @@ import {
   checkPrefilledBranch,
   checkPrefilledEntities,
   prefilledIds,
+  resolvePrefilledRecipients,
 } from "../../shared/dead-prefill";
 import { InputVisibilityStore } from "../../shared/input-visibility.store";
 import {
@@ -147,6 +150,7 @@ export class ValidationExecutorComponent {
   private readonly finalProductService = inject(FinalProductApiService);
   private readonly branchService = inject(BranchService);
   private readonly featureFlags = inject(FeatureFlagResolver);
+  private readonly userService = inject(UserService);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly inputVisibility = inject(InputVisibilityStore);
@@ -163,6 +167,11 @@ export class ValidationExecutorComponent {
   private readonly archivalFlag = signal(false);
   /** Parent branch resolved from the SCM developments lookup (or `null`). */
   private readonly resolvedParentBranch = signal<string | null>(null);
+  /**
+   * Bumped whenever the live form's status changes, so {@link visibility} can
+   * re-evaluate. The probe form alone cannot see validators applied after init.
+   */
+  private readonly formRevision = signal(0);
   /** Snapshot of the visibility-relevant control values, kept in sync with the form. */
   private readonly scopeSnapshot = signal<ScopeVisibilitySnapshot>({
     official: null,
@@ -209,60 +218,32 @@ export class ValidationExecutorComponent {
    */
   protected readonly visibility = computed(() => {
     const controls = this.visibilityForm().controls;
+    // Re-read on every status change: validators are applied dynamically (the
+    // parent branch becomes required once MQG + create-branch is chosen), and a
+    // field that turns required after this snapshot must not stay hidden.
+    this.formRevision();
+    const live = this.form().controls;
+    const show = (
+      field: keyof typeof controls,
+      mode: Parameters<typeof shouldShowInForm>[1]
+    ): boolean =>
+      shouldShowInForm(controls[field], mode) ||
+      mustStayReachable(live[field], Validators.required);
     return {
-      name: shouldShowInForm(controls.name, "ACCESS_INVALID_INPUTS_ONLY"),
-      official: shouldShowInForm(
-        controls.official,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      repositoryId: shouldShowInForm(
-        controls.repositoryId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      businessProcessQualityLevel: shouldShowInForm(
-        controls.businessProcessQualityLevel,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      createBranch: shouldShowInForm(
-        controls.createBranch,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      archivalBranchName: shouldShowInForm(
-        controls.archivalBranchName,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      parentBranchName: shouldShowInForm(
-        controls.parentBranchName,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      finalProductId: shouldShowInForm(
-        controls.finalProductId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      rtpCommitId: shouldShowInForm(
-        controls.rtpCommitId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      configCommitId: shouldShowInForm(
-        controls.configCommitId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      nightlyRepusherEnabled: shouldShowInForm(
-        controls.nightlyRepusherEnabled,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      qualityGateScenarioDefinitionIds: shouldShowInForm(
-        controls.qualityGateScenarioDefinitionIds,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      qualityGateInfraGroupId: shouldShowInForm(
-        controls.qualityGateInfraGroupId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      notificationsRecipients: shouldShowInForm(
-        controls.notificationsRecipients,
-        "ACCESS_EMPTY_OPTIONAL_INPUTS"
-      ),
+      name: show("name", "ACCESS_INVALID_INPUTS_ONLY"),
+      official: show("official", "ACCESS_INVALID_INPUTS_ONLY"),
+      repositoryId: show("repositoryId", "ACCESS_INVALID_INPUTS_ONLY"),
+      businessProcessQualityLevel: show("businessProcessQualityLevel", "ACCESS_INVALID_INPUTS_ONLY"),
+      createBranch: show("createBranch", "ACCESS_INVALID_INPUTS_ONLY"),
+      archivalBranchName: show("archivalBranchName", "ACCESS_INVALID_INPUTS_ONLY"),
+      parentBranchName: show("parentBranchName", "ACCESS_INVALID_INPUTS_ONLY"),
+      finalProductId: show("finalProductId", "ACCESS_INVALID_INPUTS_ONLY"),
+      rtpCommitId: show("rtpCommitId", "ACCESS_INVALID_INPUTS_ONLY"),
+      configCommitId: show("configCommitId", "ACCESS_INVALID_INPUTS_ONLY"),
+      nightlyRepusherEnabled: show("nightlyRepusherEnabled", "ACCESS_INVALID_INPUTS_ONLY"),
+      qualityGateScenarioDefinitionIds: show("qualityGateScenarioDefinitionIds", "ACCESS_INVALID_INPUTS_ONLY"),
+      qualityGateInfraGroupId: show("qualityGateInfraGroupId", "ACCESS_INVALID_INPUTS_ONLY"),
+      notificationsRecipients: show("notificationsRecipients", "ACCESS_EMPTY_OPTIONAL_INPUTS"),
     };
   });
 
@@ -339,6 +320,9 @@ export class ValidationExecutorComponent {
       }
       this.applyMqgCreateBranchValidators(form);
       this.applyScopeValidators(form, this.showScopeStartCommit());
+      // Both apply their validators with `emitEvent: false`, so nothing else
+      // would tell `visibility` that a field just became required.
+      this.formRevision.update((revision) => revision + 1);
     });
   }
 
@@ -372,6 +356,12 @@ export class ValidationExecutorComponent {
       ),
       this.resolveEntity(controls.finalProductId, (id) =>
         this.finalProductService.getFinalProductById(projectId, id)
+      ),
+      resolvePrefilledRecipients(
+        controls.notificationsRecipients,
+        projectId,
+        (id, emails) => this.userService.fetchUsersByEmails(id, emails),
+        this.toast
       ),
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))

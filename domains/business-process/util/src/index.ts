@@ -4,9 +4,11 @@ export { BranchCreationDetails } from "./lib/branch-creation-details";
 export {
   isInputEmpty,
   isPrefilled,
+  mustStayReachable,
   shouldShowInForm,
   type InputAccessMode,
   type DefinitionInputValue,
+  type RequirableControl,
   type VisibilityControl,
 } from "./lib/definition-inputs/input-visibility";
 export {

@@ -36,6 +36,7 @@ import {
   RepositoryService,
 } from "@mxevolve/domains/scm/data-access";
 import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { UserService } from "@mxevolve/domains/user/data-access";
 import {
   MxevolveIconComponent,
   ToastMessageService,
@@ -43,6 +44,7 @@ import {
 import {
   checkPrefilledEntities,
   prefilledIds,
+  resolvePrefilledRecipients,
 } from "../../shared/dead-prefill";
 import {
   BackportExecutorForm,
@@ -56,7 +58,11 @@ import {
 const MERGE_CONFIGURATION_MISSING =
   "The destination merge configuration available in the Process Template no longer exists. Please update the Process Template.";
 
-/** Page size used to look the pre-filled merge configuration up in the list. */
+/**
+ * The merge-configuration endpoint is paginated with no by-id read, so the
+ * pre-filled id is searched page by page. A single large page would silently
+ * report a valid configuration as gone once a project has more than that many.
+ */
 const MERGE_CONFIGURATION_PAGE_SIZE = 100;
 
 /**
@@ -89,6 +95,7 @@ const MERGE_CONFIGURATION_PAGE_SIZE = 100;
     RepositoryService,
     MergeConfigurationService,
     InfraGroupService,
+    UserService,
   ],
 })
 export class BackportExecutorComponent {
@@ -100,6 +107,7 @@ export class BackportExecutorComponent {
   private readonly repositoryService = inject(RepositoryService);
   private readonly mergeConfigurationService = inject(MergeConfigurationService);
   private readonly infraGroupService = inject(InfraGroupService);
+  private readonly userService = inject(UserService);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -205,6 +213,12 @@ export class BackportExecutorComponent {
               this.infraGroupService.getGroup(projectId, id)
             ),
             this.resolveMergeConfiguration(form),
+            resolvePrefilledRecipients(
+              controls.notificationsRecipients,
+              projectId,
+              (id, emails) => this.userService.fetchUsersByEmails(id, emails),
+              this.toast
+            ),
           ]).pipe(map(() => undefined))
         ),
         takeUntilDestroyed(this.destroyRef)
@@ -227,22 +241,34 @@ export class BackportExecutorComponent {
       return of(undefined);
     }
     return this.resolveEntity(controls.mergeConfigurationId, (id) =>
-      this.mergeConfigurationService
-        .getFilteredMergeConfigurations(
-          this.projectId(),
-          repositoryId,
-          "",
-          0,
-          MERGE_CONFIGURATION_PAGE_SIZE
-        )
-        .pipe(
-          switchMap((page) =>
-            page.content.some((configuration) => configuration.id === id)
-              ? of(page)
-              : throwError(() => new Error(MERGE_CONFIGURATION_MISSING))
-          )
-        )
+      this.findMergeConfiguration(repositoryId, id, 0)
     );
+  }
+
+  /** Walks the paginated merge-configuration list looking for one id. */
+  private findMergeConfiguration(
+    repositoryId: string,
+    id: string,
+    page: number
+  ): Observable<unknown> {
+    return this.mergeConfigurationService
+      .getFilteredMergeConfigurations(
+        this.projectId(),
+        repositoryId,
+        "",
+        page,
+        MERGE_CONFIGURATION_PAGE_SIZE
+      )
+      .pipe(
+        switchMap((result) => {
+          if (result.content.some((configuration) => configuration.id === id)) {
+            return of(result);
+          }
+          return result.last
+            ? throwError(() => new Error(MERGE_CONFIGURATION_MISSING))
+            : this.findMergeConfiguration(repositoryId, id, page + 1);
+        })
+      );
   }
 
   private resolveEntity(

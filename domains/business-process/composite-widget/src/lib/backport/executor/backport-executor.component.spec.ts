@@ -22,6 +22,7 @@ import {
   RepositoryService,
 } from "@mxevolve/domains/scm/data-access";
 import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { UserService } from "@mxevolve/domains/user/data-access";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { BackportExecutorComponent } from "./backport-executor.component";
 
@@ -57,13 +58,19 @@ const mockMergeConfigurationService = {
 const mockInfraGroupService = { getGroup: jest.fn() };
 
 /** Services the executor resolves its three pre-filled ids against (W1 / D3). */
+const mockUserService = { fetchUsersByEmails: jest.fn() };
+
 const PREFILL_PROVIDERS = [
+  { provide: UserService, useValue: mockUserService },
   { provide: RepositoryService, useValue: mockRepositoryService },
   { provide: MergeConfigurationService, useValue: mockMergeConfigurationService },
   { provide: InfraGroupService, useValue: mockInfraGroupService },
 ];
 
 function stubPrefillsResolve(): void {
+  mockUserService.fetchUsersByEmails.mockImplementation(
+    (_projectId: string, emails: string[]) => of({ content: emails.map((mail) => ({ mail })) })
+  );
   mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
   mockInfraGroupService.getGroup.mockReturnValue(of({ id: "group-1" }));
   mockMergeConfigurationService.getFilteredMergeConfigurations.mockReturnValue(

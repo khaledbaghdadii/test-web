@@ -20,7 +20,10 @@ import {
   BusinessProcessDefinition,
   ExecuteBuildAndTestProcessRequest,
 } from "@mxevolve/domains/business-process/data-access";
-import { shouldShowInForm } from "@mxevolve/domains/business-process/util";
+import {
+  mustStayReachable,
+  shouldShowInForm,
+} from "@mxevolve/domains/business-process/util";
 import {
   BuildAndTestPrefilledInputsComponent,
   InfraGroupSelectorComponent,
@@ -38,6 +41,7 @@ import {
   RepositoryService,
 } from "@mxevolve/domains/scm/data-access";
 import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { UserService } from "@mxevolve/domains/user/data-access";
 import {
   AnalyticsTrackerService,
   EventAction,
@@ -52,6 +56,7 @@ import {
   checkPrefilledBranch,
   checkPrefilledEntities,
   prefilledIds,
+  resolvePrefilledRecipients,
 } from "../../shared/dead-prefill";
 import {
   BuildAndTestExecutorForm,
@@ -101,6 +106,7 @@ const CONFIGURATION_PARENT_BRANCH_MISSING =
     RepositoryService,
     ScenarioDefinitionService,
     InfraGroupService,
+    UserService,
   ],
 })
 export class BuildAndTestExecutorComponent {
@@ -120,6 +126,7 @@ export class BuildAndTestExecutorComponent {
   private readonly infraGroupService = inject(InfraGroupService);
   private readonly branchService = inject(BranchService);
   private readonly analyticsTracker = inject(AnalyticsTrackerService);
+  private readonly userService = inject(UserService);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -128,6 +135,12 @@ export class BuildAndTestExecutorComponent {
   protected readonly skipEnvironmentDeployment = signal(false);
   /** True while the pre-filled values are being resolved (W1); blocks submission. */
   protected readonly resolvingPrefill = signal(false);
+  /**
+   * Bumped whenever a validator is applied after the form is built, so
+   * {@link visibility} can re-derive. The definition-only probe form cannot see
+   * those later changes on its own.
+   */
+  private readonly formRevision = signal(0);
 
   /** Exposed for the template's `[class.required]` label bindings (legacy parity). */
   protected readonly Validators = Validators;
@@ -168,40 +181,28 @@ export class BuildAndTestExecutorComponent {
    */
   protected readonly visibility = computed(() => {
     const controls = this.visibilityForm().controls;
+    // A field that turns required after this snapshot - the configuration
+    // branches are cleared when the create-branch answer changes, the build
+    // scenario when the skip toggle flips - must not stay hidden, or the run
+    // becomes impossible to submit.
+    this.formRevision();
+    const live = this.form().controls;
+    const show = (
+      field: keyof typeof controls,
+      mode: Parameters<typeof shouldShowInForm>[1]
+    ): boolean =>
+      shouldShowInForm(controls[field], mode) ||
+      mustStayReachable(live[field], Validators.required);
     return {
-      name: shouldShowInForm(controls.name, "ACCESS_INVALID_INPUTS_ONLY"),
-      repositoryId: shouldShowInForm(
-        controls.repositoryId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      configurationBranchName: shouldShowInForm(
-        controls.configurationBranchName,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      configurationParentBranch: shouldShowInForm(
-        controls.configurationParentBranch,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      buildScenarioDefinitionId: shouldShowInForm(
-        controls.buildScenarioDefinitionId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      userStoryIds: shouldShowInForm(
-        controls.userStoryIds,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      buildEnvironmentInfraGroup: shouldShowInForm(
-        controls.buildEnvironmentInfraGroup,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      buildAndTestInfraGroup: shouldShowInForm(
-        controls.buildAndTestInfraGroup,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      notificationsRecipients: shouldShowInForm(
-        controls.notificationsRecipients,
-        "ACCESS_EMPTY_OPTIONAL_INPUTS"
-      ),
+      name: show("name", "ACCESS_INVALID_INPUTS_ONLY"),
+      repositoryId: show("repositoryId", "ACCESS_INVALID_INPUTS_ONLY"),
+      configurationBranchName: show("configurationBranchName", "ACCESS_INVALID_INPUTS_ONLY"),
+      configurationParentBranch: show("configurationParentBranch", "ACCESS_INVALID_INPUTS_ONLY"),
+      buildScenarioDefinitionId: show("buildScenarioDefinitionId", "ACCESS_INVALID_INPUTS_ONLY"),
+      userStoryIds: show("userStoryIds", "ACCESS_INVALID_INPUTS_ONLY"),
+      buildEnvironmentInfraGroup: show("buildEnvironmentInfraGroup", "ACCESS_INVALID_INPUTS_ONLY"),
+      buildAndTestInfraGroup: show("buildAndTestInfraGroup", "ACCESS_INVALID_INPUTS_ONLY"),
+      notificationsRecipients: show("notificationsRecipients", "ACCESS_EMPTY_OPTIONAL_INPUTS"),
     };
   });
 
@@ -310,6 +311,12 @@ export class BuildAndTestExecutorComponent {
       ),
       this.resolveEntity(controls.buildAndTestInfraGroup, (id) =>
         this.infraGroupService.getGroup(projectId, id)
+      ),
+      resolvePrefilledRecipients(
+        controls.notificationsRecipients,
+        projectId,
+        (id, emails) => this.userService.fetchUsersByEmails(id, emails),
+        this.toast
       ),
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -439,6 +446,8 @@ export class BuildAndTestExecutorComponent {
           scenario.setValidators([Validators.required]);
         }
         scenario.updateValueAndValidity({ emitEvent: false });
+        // Applied with `emitEvent: false`, so tell `visibility` explicitly.
+        this.formRevision.update((revision) => revision + 1);
       });
   }
 

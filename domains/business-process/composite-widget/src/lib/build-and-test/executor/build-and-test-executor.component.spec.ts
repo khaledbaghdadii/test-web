@@ -30,6 +30,7 @@ import {
 } from "@mxevolve/domains/scm/data-access";
 import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
 import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { UserService } from "@mxevolve/domains/user/data-access";
 import { AnalyticsTrackerService } from "@mxflow/core/analytics-tracker";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { BuildAndTestExecutorComponent } from "./build-and-test-executor.component";
@@ -74,7 +75,10 @@ const mockBranchService = { getBranchDetails: jest.fn() };
 const mockAnalyticsTracker = { trackEvent: jest.fn() };
 
 /** Services the executor resolves pre-filled values against (VAL-27132 W1). */
+const mockUserService = { fetchUsersByEmails: jest.fn() };
+
 const PREFILL_PROVIDERS = [
+  { provide: UserService, useValue: mockUserService },
   { provide: RepositoryService, useValue: mockRepositoryService },
   { provide: ScenarioDefinitionService, useValue: mockScenarioService },
   { provide: InfraGroupService, useValue: mockInfraGroupService },
@@ -84,6 +88,9 @@ const PREFILL_PROVIDERS = [
 
 /** Every pre-filled id resolves; the default for tests that are not about W1. */
 function stubPrefillsResolve(): void {
+  mockUserService.fetchUsersByEmails.mockImplementation(
+    (_projectId: string, emails: string[]) => of({ content: emails.map((mail) => ({ mail })) })
+  );
   mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
   mockScenarioService.getScenarioDefinitionById.mockReturnValue(
     of({ id: "scenario-1" })
@@ -449,6 +456,51 @@ describe("BuildAndTestExecutorComponent", () => {
           "Select the users who will receive email notifications as the business process approaches its expiry date"
         )
       ).toBeTruthy();
+    });
+  });
+
+  describe("pre-filled notification recipients", () => {
+    const WITH_RECIPIENTS = [
+      ...FULLY_PREFILLED_INPUTS,
+      { inputId: "notificationsRecipients", value: ["a@x.com", "b@x.com"] },
+    ];
+
+    it("reports a failed recipient lookup to the user", async () => {
+      mockUserService.fetchUsersByEmails.mockReturnValue(
+        throwError(() => new Error("User service unavailable"))
+      );
+
+      await renderComponent(WITH_RECIPIENTS);
+
+      // The recipients widget resolves these itself, but only mounts when the
+      // control is empty - i.e. never when there is something to resolve.
+      await waitFor(() =>
+        expect(mockToastService.showError).toHaveBeenCalledWith(
+          "User service unavailable"
+        )
+      );
+    });
+
+    it("drops recipients that no longer resolve, without blocking submission", async () => {
+      mockUserService.fetchUsersByEmails.mockReturnValue(
+        of({ content: [{ mail: "a@x.com" }] })
+      );
+
+      const { fixture } = await renderComponent(WITH_RECIPIENTS);
+      const executor = fixture.componentInstance as unknown as {
+        form: () => {
+          controls: {
+            notificationsRecipients: { value: unknown; valid: boolean };
+          };
+        };
+      };
+      const recipients = () => executor.form().controls.notificationsRecipients;
+
+      // Legacy narrowed the submitted list to the addresses that resolved and
+      // let the run proceed - unlike an entity lookup, an unresolvable
+      // recipient never blocks submission.
+      await waitFor(() => expect(recipients().value).toEqual(["a@x.com"]));
+      expect(recipients().valid).toBe(true);
     });
   });
 

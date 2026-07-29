@@ -41,6 +41,10 @@ import { UpgradeFactoryProductValue } from "../upgrade-executor.form";
       class="grid grid-cols-6 gap-4"
       [projectId]="projectId()"
       [factoryProductId]="factoryProductId()"
+      [initialMxVersion]="initialMxVersion()"
+      [initialMxBuildId]="initialMxBuildId()"
+      [initialBipVersion]="initialBipVersion()"
+      [initialBipBuildId]="initialBipBuildId()"
       (factoryProductIdChange)="patch({ id: $event ?? '' })"
       (mxVersionChange)="patch({ mxVersion: $event?.version ?? '' })"
       (mxBuildIdChange)="patch({ mxBuildId: $event?.buildId ?? '' })"
@@ -79,6 +83,34 @@ export class UpgradeFactoryProductInputComponent {
   /** Seeds the cascade from the value the definition pre-filled. */
   protected factoryProductId(): string | undefined {
     return this.factoryProductFormControl().value?.id || undefined;
+  }
+
+  /*
+   * A repush carries the exact MX/BIP versions and build ids the previous run
+   * used. Passing only the factory-product id makes the directive re-derive
+   * them, which can silently land on a different build - so the saved values are
+   * handed over too, and the directive prefers them when there is no id.
+   */
+  protected initialMxVersion(): { version: string } | null {
+    const version = this.factoryProductFormControl().value?.mxVersion;
+    return version ? { version } : null;
+  }
+
+  protected initialMxBuildId(): { buildId: string; projectId: undefined } | null {
+    const buildId = this.factoryProductFormControl().value?.mxBuildId;
+    return buildId ? { buildId, projectId: undefined } : null;
+  }
+
+  protected initialBipVersion(): { version: string } | null {
+    const version = this.factoryProductFormControl().value?.bipVersion;
+    return version ? { version } : null;
+  }
+
+  protected initialBipBuildId(): { buildId: string; factoryProductId: string } | null {
+    const value = this.factoryProductFormControl().value;
+    return value?.bipBuildId
+      ? { buildId: value.bipBuildId, factoryProductId: value.id ?? "" }
+      : null;
   }
 
   /**

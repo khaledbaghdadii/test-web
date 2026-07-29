@@ -35,6 +35,7 @@ import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
 import { EnvironmentDefinitionService } from "@mxevolve/domains/environment/data-access";
 import { FactoryProductApiService } from "@mxevolve/domains/artifact/data-access";
 import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { UserService } from "@mxevolve/domains/user/data-access";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { UpgradeFactoryProductInputComponent } from "./factory-product-input/upgrade-factory-product-input.component";
 import { UpgradeExecutorComponent } from "./upgrade-executor.component";
@@ -77,7 +78,10 @@ const mockInfraGroupService = { getGroup: jest.fn() };
 const mockBranchService = { getBranchDetails: jest.fn() };
 
 /** Services the executor resolves pre-filled values against (VAL-27132 W1). */
+const mockUserService = { fetchUsersByEmails: jest.fn() };
+
 const PREFILL_PROVIDERS = [
+  { provide: UserService, useValue: mockUserService },
   { provide: RepositoryService, useValue: mockRepositoryService },
   { provide: ScenarioDefinitionService, useValue: mockScenarioService },
   {
@@ -90,6 +94,9 @@ const PREFILL_PROVIDERS = [
 ];
 
 function stubPrefillsResolve(): void {
+  mockUserService.fetchUsersByEmails.mockImplementation(
+    (_projectId: string, emails: string[]) => of({ content: emails.map((mail) => ({ mail })) })
+  );
   mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
   mockScenarioService.getScenarioDefinitionById.mockReturnValue(
     of({ id: "scenario-1" })
@@ -164,14 +171,19 @@ function definition(
 }
 
 async function renderComponent(
-  providedInputs: { inputId: string; value: unknown }[] = []
+  providedInputs: { inputId: string; value: unknown }[] = [],
+  initialValues?: Record<string, unknown>
 ) {
   mockExecutorService.executeUpgradeProcessDefinition.mockReturnValue(
     of({ upgradeProcessExecutionId: "exec-1" })
   );
 
   return render(UpgradeExecutorComponent, {
-    inputs: { projectId: "project-1", definition: definition(providedInputs) },
+    inputs: {
+      projectId: "project-1",
+      definition: definition(providedInputs),
+      ...(initialValues ? { initialValues } : {}),
+    },
     componentImports: COMPONENT_IMPORTS,
     componentProviders: [
       {
@@ -356,6 +368,26 @@ describe("UpgradeExecutorComponent", () => {
       const prefilled = ngMocks.find(UpgradePrefilledInputsComponent);
       expect(ngMocks.input(prefilled, "providedInputs")).toEqual(
         FULLY_PREFILLED_INPUTS
+      );
+    });
+  });
+
+  describe("repush seed", () => {
+    it("clears a placeholder quality level carried in by the repush values", async () => {
+      const { fixture } = await renderComponent([], {
+        businessProcessQualityLevel: "NA",
+      });
+      const executor = fixture.componentInstance as unknown as {
+        form: () => { controls: { businessProcessQualityLevel: { value: unknown } } };
+      };
+
+      // "NA" is a placeholder, not a quality level. It is stripped from the
+      // definition's own value at seed time, but the repush patch lands after
+      // that - so it needs clearing there too, or an invalid value survives.
+      await waitFor(() =>
+        expect(
+          executor.form().controls.businessProcessQualityLevel.value
+        ).toBeNull()
       );
     });
   });

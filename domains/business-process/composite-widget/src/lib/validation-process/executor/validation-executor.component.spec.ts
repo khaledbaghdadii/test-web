@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/angular";
 import userEvent from "@testing-library/user-event";
-import { ReactiveFormsModule } from "@angular/forms";
+import { ReactiveFormsModule, Validators } from "@angular/forms";
 import { MockComponent } from "ng-mocks";
 import { of, throwError } from "rxjs";
 import { InputText } from "primeng/inputtext";
@@ -18,6 +18,7 @@ import {
 } from "@mxevolve/domains/scm/data-access";
 import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
 import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { UserService } from "@mxevolve/domains/user/data-access";
 import { FinalProductApiService } from "@mxevolve/domains/artifact/data-access";
 import {
   InfraGroupSelectorComponent,
@@ -34,6 +35,7 @@ import { ScopeStartCommitInputComponent } from "../scope-start-commit-input/scop
 import { ValidationConfigurationParametersComponent } from "./configuration-parameters/validation-configuration-parameters.component";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { ValidationExecutorComponent } from "./validation-executor.component";
+import type { ValidationExecutorForm } from "./validation-executor.form";
 
 const COMPONENT_IMPORTS = [
   ReactiveFormsModule,
@@ -76,13 +78,19 @@ const mockScenarioService = { getScenarioDefinitionById: jest.fn() };
 const mockInfraGroupService = { getGroup: jest.fn() };
 
 /** Services the executor resolves pre-filled values against (VAL-27132 W1). */
+const mockUserService = { fetchUsersByEmails: jest.fn() };
+
 const PREFILL_PROVIDERS = [
+  { provide: UserService, useValue: mockUserService },
   { provide: RepositoryService, useValue: mockRepositoryService },
   { provide: ScenarioDefinitionService, useValue: mockScenarioService },
   { provide: InfraGroupService, useValue: mockInfraGroupService },
 ];
 
 function stubPrefillsResolve(): void {
+  mockUserService.fetchUsersByEmails.mockImplementation(
+    (_projectId: string, emails: string[]) => of({ content: emails.map((mail) => ({ mail })) })
+  );
   mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
   mockScenarioService.getScenarioDefinitionById.mockReturnValue(
     of({ id: "scenario-1" })
@@ -200,6 +208,33 @@ describe("ValidationExecutorComponent", () => {
       await renderComponent();
 
       expect(screen.getByText("* Mandatory Field")).toBeTruthy();
+    });
+
+    it("keeps the parent branch reachable once MQG create-branch makes it required", async () => {
+      const { fixture } = await renderComponent({
+        providedInputs: [{ inputId: "repositoryId", value: "repo-1" }],
+      });
+      const executor = fixture.componentInstance as unknown as {
+        form: () => ValidationExecutorForm;
+        visibility: () => Record<string, boolean>;
+      };
+      const controls = executor.form().controls;
+
+      // The parent branch carries no validators when the form is built, so the
+      // definition-only visibility snapshot says "hide". Choosing MQG +
+      // create-branch makes it required - and a required field the user cannot
+      // reach leaves the run permanently unsubmittable.
+      expect(executor.visibility()["parentBranchName"]).toBe(false);
+
+      controls.businessProcessQualityLevel.setValue("MQG");
+      controls.createBranch.setValue(true);
+
+      await waitFor(() =>
+        expect(
+          controls.parentBranchName.hasValidator(Validators.required)
+        ).toBe(true)
+      );
+      expect(executor.visibility()["parentBranchName"]).toBe(true);
     });
 
     it("marks required fields with an asterisk and leaves optional fields unmarked", async () => {

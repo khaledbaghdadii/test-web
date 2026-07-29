@@ -25,7 +25,10 @@ import {
   ExecuteUpgradeProcessDefinitionRequest,
   UpgradeProcessDefinitionExecutorService,
 } from "@mxevolve/domains/business-process/data-access";
-import { shouldShowInForm } from "@mxevolve/domains/business-process/util";
+import {
+  mustStayReachable,
+  shouldShowInForm,
+} from "@mxevolve/domains/business-process/util";
 import {
   InfraGroupSelectorComponent,
   NotificationsRecipientsInputComponent,
@@ -43,6 +46,7 @@ import {
   RepositoryService,
 } from "@mxevolve/domains/scm/data-access";
 import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { UserService } from "@mxevolve/domains/user/data-access";
 import {
   ScenarioDefinitionDropdownComponent,
   ScenarioDefinitionMultiselectDropdownComponent,
@@ -58,6 +62,7 @@ import {
   checkPrefilledBranch,
   checkPrefilledEntities,
   prefilledIds,
+  resolvePrefilledRecipients,
 } from "../../shared/dead-prefill";
 import {
   UpgradeExecutorForm,
@@ -124,6 +129,7 @@ const CONFIGURATION_PARENT_BRANCH_MISSING =
     ScenarioDefinitionService,
     EnvironmentDefinitionService,
     InfraGroupService,
+    UserService,
   ],
 })
 export class UpgradeExecutorComponent {
@@ -147,6 +153,7 @@ export class UpgradeExecutorComponent {
   private readonly factoryProductService = inject(FactoryProductApiService);
   private readonly infraGroupService = inject(InfraGroupService);
   private readonly branchService = inject(BranchService);
+  private readonly userService = inject(UserService);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -154,6 +161,12 @@ export class UpgradeExecutorComponent {
   protected readonly detailsExpanded = signal(false);
   /** True while the pre-filled values are being resolved (W1); blocks submission. */
   protected readonly resolvingPrefill = signal(false);
+  /**
+   * Bumped whenever a validator is applied after the form is built, so
+   * {@link visibility} can re-derive. The definition-only probe form cannot see
+   * those later changes on its own.
+   */
+  private readonly formRevision = signal(0);
 
   /** Exposed for the template's `[class.required]` label bindings (legacy parity). */
   protected readonly Validators = Validators;
@@ -189,6 +202,14 @@ export class UpgradeExecutorComponent {
     const seed = this.initialValues();
     if (seed) {
       form.patchValue(seed);
+      // "NA" is a placeholder, not a quality level. It is stripped at seed time
+      // for definition-provided values; a repush can carry it in too, and that
+      // patch lands after the seed (REV-8).
+      if (form.controls.businessProcessQualityLevel.value === "NA") {
+        form.controls.businessProcessQualityLevel.reset(null, {
+          emitEvent: false,
+        });
+      }
     }
     return form;
   });
@@ -217,80 +238,38 @@ export class UpgradeExecutorComponent {
    */
   protected readonly visibility = computed(() => {
     const controls = this.visibilityForm().controls;
+    // A field that turns required after this snapshot - the configuration
+    // branches are cleared when the create-branch answer changes, the build
+    // scenario when the skip toggle flips - must not stay hidden, or the run
+    // becomes impossible to submit.
+    this.formRevision();
+    const live = this.form().controls;
+    const show = (
+      field: keyof typeof controls,
+      mode: Parameters<typeof shouldShowInForm>[1]
+    ): boolean =>
+      shouldShowInForm(controls[field], mode) ||
+      mustStayReachable(live[field], Validators.required);
     return {
-      official: shouldShowInForm(
-        controls.official,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      name: shouldShowInForm(controls.name, "ACCESS_INVALID_INPUTS_ONLY"),
-      factoryProduct: shouldShowInForm(
-        controls.factoryProduct,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      parentMxArchivalBranch: shouldShowInForm(
-        controls.parentMxArchivalBranch,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      upgradeJump: shouldShowInForm(
-        controls.upgradeJump,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      repositoryId: shouldShowInForm(
-        controls.repositoryId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      businessProcessQualityLevel: shouldShowInForm(
-        controls.businessProcessQualityLevel,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      createBranch: shouldShowInForm(
-        controls.createBranch,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      configurationBranchName: shouldShowInForm(
-        controls.configurationBranchName,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      configurationParentBranch: shouldShowInForm(
-        controls.configurationParentBranch,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      qualityGateExecutionInfraGroupId: shouldShowInForm(
-        controls.qualityGateExecutionInfraGroupId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      binaryConversionInfraGroupId: shouldShowInForm(
-        controls.binaryConversionInfraGroupId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      testScenarioIds: shouldShowInForm(
-        controls.testScenarioIds,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      technicalUpgradeTestScenarioId: shouldShowInForm(
-        controls.technicalUpgradeTestScenarioId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      referenceCommitId: shouldShowInForm(
-        controls.referenceCommitId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      referenceFactoryProduct: shouldShowInForm(
-        controls.referenceFactoryProduct,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      referenceEnvironmentDefinitionId: shouldShowInForm(
-        controls.referenceEnvironmentDefinitionId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      referenceEnvironmentInfraGroupId: shouldShowInForm(
-        controls.referenceEnvironmentInfraGroupId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      notificationsRecipients: shouldShowInForm(
-        controls.notificationsRecipients,
-        "ACCESS_EMPTY_OPTIONAL_INPUTS"
-      ),
+      official: show("official", "ACCESS_INVALID_INPUTS_ONLY"),
+      name: show("name", "ACCESS_INVALID_INPUTS_ONLY"),
+      factoryProduct: show("factoryProduct", "ACCESS_INVALID_INPUTS_ONLY"),
+      parentMxArchivalBranch: show("parentMxArchivalBranch", "ACCESS_INVALID_INPUTS_ONLY"),
+      upgradeJump: show("upgradeJump", "ACCESS_INVALID_INPUTS_ONLY"),
+      repositoryId: show("repositoryId", "ACCESS_INVALID_INPUTS_ONLY"),
+      businessProcessQualityLevel: show("businessProcessQualityLevel", "ACCESS_INVALID_INPUTS_ONLY"),
+      createBranch: show("createBranch", "ACCESS_INVALID_INPUTS_ONLY"),
+      configurationBranchName: show("configurationBranchName", "ACCESS_INVALID_INPUTS_ONLY"),
+      configurationParentBranch: show("configurationParentBranch", "ACCESS_INVALID_INPUTS_ONLY"),
+      qualityGateExecutionInfraGroupId: show("qualityGateExecutionInfraGroupId", "ACCESS_INVALID_INPUTS_ONLY"),
+      binaryConversionInfraGroupId: show("binaryConversionInfraGroupId", "ACCESS_INVALID_INPUTS_ONLY"),
+      testScenarioIds: show("testScenarioIds", "ACCESS_INVALID_INPUTS_ONLY"),
+      technicalUpgradeTestScenarioId: show("technicalUpgradeTestScenarioId", "ACCESS_INVALID_INPUTS_ONLY"),
+      referenceCommitId: show("referenceCommitId", "ACCESS_INVALID_INPUTS_ONLY"),
+      referenceFactoryProduct: show("referenceFactoryProduct", "ACCESS_INVALID_INPUTS_ONLY"),
+      referenceEnvironmentDefinitionId: show("referenceEnvironmentDefinitionId", "ACCESS_INVALID_INPUTS_ONLY"),
+      referenceEnvironmentInfraGroupId: show("referenceEnvironmentInfraGroupId", "ACCESS_INVALID_INPUTS_ONLY"),
+      notificationsRecipients: show("notificationsRecipients", "ACCESS_EMPTY_OPTIONAL_INPUTS"),
     };
   });
 
@@ -420,6 +399,12 @@ export class UpgradeExecutorComponent {
       this.resolveEntity(controls.referenceEnvironmentInfraGroupId, (id) =>
         this.infraGroupService.getGroup(projectId, id)
       ),
+      resolvePrefilledRecipients(
+        controls.notificationsRecipients,
+        projectId,
+        (id, emails) => this.userService.fetchUsersByEmails(id, emails),
+        this.toast
+      ),
     ])
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.resolvingPrefill.set(false));
@@ -532,6 +517,7 @@ export class UpgradeExecutorComponent {
         form.controls.configurationParentBranch.reset(null, {
           emitEvent: false,
         });
+        this.formRevision.update((revision) => revision + 1);
       });
   }
 
@@ -545,6 +531,9 @@ export class UpgradeExecutorComponent {
         form.controls.configurationParentBranch.reset(null, {
           emitEvent: false,
         });
+        // The branches are now empty but still required; without this the
+        // definition-only snapshot would keep them hidden.
+        this.formRevision.update((revision) => revision + 1);
       });
   }
 

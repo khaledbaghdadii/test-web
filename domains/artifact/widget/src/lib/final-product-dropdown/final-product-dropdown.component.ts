@@ -21,8 +21,8 @@ import {
   BranchService,
   CommitsService,
 } from "@mxevolve/domains/scm/data-access";
-import { EMPTY } from "rxjs";
-import { catchError, map } from "rxjs/operators";
+import { EMPTY, Subject } from "rxjs";
+import { catchError, map, switchMap } from "rxjs/operators";
 import {
   CommitLabelInfo,
   FinalProductDataProvider,
@@ -99,6 +99,14 @@ export class FinalProductDropdownComponent implements ControlValueAccessor {
    * supplied by the consumer.
    */
   private readonly headCommitId = signal<string | undefined>(undefined);
+  private readonly commitsRequests = new Subject<{
+    repositoryId: string;
+    commitIds: string[];
+  }>();
+  private readonly headCommitRequests = new Subject<{
+    repositoryId: string;
+    branch: string;
+  }>();
   private resolvedInitialId: string | undefined;
   private resolvedCommitIds = "";
   private onChange: (value: string | null) => void = () => {};
@@ -121,6 +129,8 @@ export class FinalProductDropdownComponent implements ControlValueAccessor {
       dataProvider,
       this.destroyRef
     );
+
+    this.wireCommitLookups();
 
     // Keep the backend list scoped to the current project + branch. The shared
     // dropdown only applies the data params once on init, so drive the provider
@@ -219,14 +229,36 @@ export class FinalProductDropdownComponent implements ControlValueAccessor {
   }
 
   /**
-   * Fetches the messages for the commits currently on screen and pushes them
-   * into the state provider, which rebuilds the option labels in place.
+   * Requests the messages for the commits currently on screen. Each request
+   * supersedes the one before it: the visible commits change as the user filters
+   * and pages, and a slow earlier response must not overwrite a newer one.
    */
   private loadCommitsInfo(repositoryId: string, commitIds: string[]): void {
-    this.commitsService
-      .getCommitsInfo({ projectId: this.projectId(), repositoryId, commitIds })
+    this.commitsRequests.next({ repositoryId, commitIds });
+  }
+
+  /** Legacy `final-product-dropdown-state.service.ts:189`. */
+  private loadHeadCommitId(repositoryId: string, branch: string): void {
+    this.headCommitRequests.next({ repositoryId, branch });
+  }
+
+  /**
+   * Both lookups are driven through a `switchMap` so an in-flight request is
+   * cancelled when a newer one arrives, matching legacy's pipeline. Subscribing
+   * per call would let responses land out of order.
+   */
+  private wireCommitLookups(): void {
+    this.commitsRequests
       .pipe(
-        catchError(() => EMPTY),
+        switchMap(({ repositoryId, commitIds }) =>
+          this.commitsService
+            .getCommitsInfo({
+              projectId: this.projectId(),
+              repositoryId,
+              commitIds,
+            })
+            .pipe(catchError(() => EMPTY))
+        ),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((commits) => {
@@ -238,19 +270,21 @@ export class FinalProductDropdownComponent implements ControlValueAccessor {
         );
         this.stateProvider.setCommitsInfo(info);
       });
-  }
 
-  /** Legacy `final-product-dropdown-state.service.ts:189`. */
-  private loadHeadCommitId(repositoryId: string, branch: string): void {
-    this.branchService
-      .getBranchDetails({
-        projectId: this.projectId(),
-        repositoryId,
-        branchName: branch,
-      })
+    this.headCommitRequests
       .pipe(
-        map((details) => details.latestCommitId),
-        catchError(() => EMPTY),
+        switchMap(({ repositoryId, branch }) =>
+          this.branchService
+            .getBranchDetails({
+              projectId: this.projectId(),
+              repositoryId,
+              branchName: branch,
+            })
+            .pipe(
+              map((details) => details.latestCommitId),
+              catchError(() => EMPTY)
+            )
+        ),
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe((commitId) => this.headCommitId.set(commitId));

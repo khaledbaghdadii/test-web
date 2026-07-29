@@ -19,7 +19,6 @@
 }
 
 @if (loading() || finalProductIdFormControl().enabled) {
-@if (inputVisibility.shows("configCommitId")) {
 <mxevolve-definition-input
   inputId="validation-final-product-readonly"
   [control]="finalProductIdFormControl()"
@@ -40,9 +39,7 @@
     }
   </div>
 </mxevolve-definition-input>
-}
 
-@if (inputVisibility.shows("rtpCommitId")) {
 <mxevolve-definition-input
   inputId="validation-rtp-commit"
   [control]="rtpCommitIdFormControl()"
@@ -62,7 +59,6 @@
     }
   </div>
 </mxevolve-definition-input>
-}
 } @if (warningMessage()) {
 <mxevolve-warning-alert [message]="warningMessage()" />
 }
