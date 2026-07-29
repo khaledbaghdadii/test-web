@@ -14,7 +14,10 @@ import {
 import {
   BranchService,
   DevelopmentService,
+  RepositoryService,
 } from "@mxevolve/domains/scm/data-access";
+import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
+import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
 import { FinalProductApiService } from "@mxevolve/domains/artifact/data-access";
 import {
   InfraGroupSelectorComponent,
@@ -65,7 +68,30 @@ const mockBranchService = {
 
 const mockFinalProductApiService = {
   getFinalProducts: jest.fn(),
+  getFinalProductById: jest.fn(),
 };
+
+const mockRepositoryService = { getRepository: jest.fn() };
+const mockScenarioService = { getScenarioDefinitionById: jest.fn() };
+const mockInfraGroupService = { getGroup: jest.fn() };
+
+/** Services the executor resolves pre-filled values against (VAL-27132 W1). */
+const PREFILL_PROVIDERS = [
+  { provide: RepositoryService, useValue: mockRepositoryService },
+  { provide: ScenarioDefinitionService, useValue: mockScenarioService },
+  { provide: InfraGroupService, useValue: mockInfraGroupService },
+];
+
+function stubPrefillsResolve(): void {
+  mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
+  mockScenarioService.getScenarioDefinitionById.mockReturnValue(
+    of({ id: "scenario-1" })
+  );
+  mockInfraGroupService.getGroup.mockReturnValue(of({ id: "infra-1" }));
+  mockFinalProductApiService.getFinalProductById.mockReturnValue(
+    of({ id: "product-1" })
+  );
+}
 
 const mockFeatureFlags = {
   isFeatureEnabled: jest.fn(),
@@ -142,8 +168,10 @@ async function renderComponent({
         provide: ValidationProcessExecutorService,
         useValue: mockExecutorService,
       },
+      ...PREFILL_PROVIDERS,
     ],
     providers: [
+      ...PREFILL_PROVIDERS,
       {
         provide: ValidationProcessExecutorService,
         useValue: mockExecutorService,
@@ -162,7 +190,10 @@ function buildButton(): HTMLElement {
 }
 
 describe("ValidationExecutorComponent", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    stubPrefillsResolve();
+  });
 
   describe("required-field markers", () => {
     it("renders the mandatory-field legend", async () => {

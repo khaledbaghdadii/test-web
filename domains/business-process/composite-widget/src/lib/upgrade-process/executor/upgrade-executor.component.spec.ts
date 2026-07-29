@@ -17,7 +17,6 @@ import {
   NotificationsRecipientsInputComponent,
   UpgradePrefilledInputsComponent,
 } from "@mxevolve/domains/business-process/widget";
-import { FactoryProductSelectorComponent } from "@mxevolve/domains/artifact/widget";
 import { EnvironmentDefinitionSelectorComponent } from "@mxevolve/domains/environment/widget";
 import {
   RepositorySelectorComponent,
@@ -28,6 +27,16 @@ import {
   ScenarioDefinitionMultiselectDropdownComponent,
 } from "@mxevolve/domains/test/widget";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import {
+  BranchService,
+  RepositoryService,
+} from "@mxevolve/domains/scm/data-access";
+import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
+import { EnvironmentDefinitionService } from "@mxevolve/domains/environment/data-access";
+import { FactoryProductApiService } from "@mxevolve/domains/artifact/data-access";
+import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
+import { UpgradeFactoryProductInputComponent } from "./factory-product-input/upgrade-factory-product-input.component";
 import { UpgradeExecutorComponent } from "./upgrade-executor.component";
 
 function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
@@ -49,13 +58,53 @@ const COMPONENT_IMPORTS = [
   MockComponent(UpgradePrefilledInputsComponent),
   MockComponent(InfraGroupSelectorComponent),
   MockComponent(NotificationsRecipientsInputComponent),
-  MockComponent(FactoryProductSelectorComponent),
+  MockComponent(UpgradeFactoryProductInputComponent),
   MockComponent(EnvironmentDefinitionSelectorComponent),
   MockComponent(RepositorySelectorComponent),
   MockComponent(BranchInputComponent),
   MockComponent(ScenarioDefinitionDropdownComponent),
   MockComponent(ScenarioDefinitionMultiselectDropdownComponent),
+  DefinitionInputComponent,
 ];
+
+const mockRepositoryService = { getRepository: jest.fn() };
+const mockScenarioService = { getScenarioDefinitionById: jest.fn() };
+const mockEnvironmentDefinitionService = {
+  getEnvironmentDefinitionById: jest.fn(),
+};
+const mockFactoryProductService = { getFactoryProductById: jest.fn() };
+const mockInfraGroupService = { getGroup: jest.fn() };
+const mockBranchService = { getBranchDetails: jest.fn() };
+
+/** Services the executor resolves pre-filled values against (VAL-27132 W1). */
+const PREFILL_PROVIDERS = [
+  { provide: RepositoryService, useValue: mockRepositoryService },
+  { provide: ScenarioDefinitionService, useValue: mockScenarioService },
+  {
+    provide: EnvironmentDefinitionService,
+    useValue: mockEnvironmentDefinitionService,
+  },
+  { provide: FactoryProductApiService, useValue: mockFactoryProductService },
+  { provide: InfraGroupService, useValue: mockInfraGroupService },
+  { provide: BranchService, useValue: mockBranchService },
+];
+
+function stubPrefillsResolve(): void {
+  mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
+  mockScenarioService.getScenarioDefinitionById.mockReturnValue(
+    of({ id: "scenario-1" })
+  );
+  mockEnvironmentDefinitionService.getEnvironmentDefinitionById.mockReturnValue(
+    of({ id: "env-def-1" })
+  );
+  mockFactoryProductService.getFactoryProductById.mockReturnValue(
+    of({ id: "fp-1" })
+  );
+  mockInfraGroupService.getGroup.mockReturnValue(of({ id: "group-1" }));
+  mockBranchService.getBranchDetails.mockReturnValue(
+    of({ latestCommitId: "commit-1" })
+  );
+}
 
 const CONVERSION_FACTORY_PRODUCT = {
   id: "fp-1",
@@ -129,8 +178,12 @@ async function renderComponent(
         provide: UpgradeProcessDefinitionExecutorService,
         useValue: mockExecutorService,
       },
+      ...PREFILL_PROVIDERS,
     ],
-    providers: [{ provide: ToastMessageService, useValue: mockToastService }],
+    providers: [
+      { provide: ToastMessageService, useValue: mockToastService },
+      ...PREFILL_PROVIDERS,
+    ],
   });
 }
 
@@ -139,7 +192,10 @@ function buildButton(): HTMLElement {
 }
 
 describe("UpgradeExecutorComponent", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    stubPrefillsResolve();
+  });
 
   describe("required-field markers", () => {
     it("renders the mandatory-field legend", async () => {

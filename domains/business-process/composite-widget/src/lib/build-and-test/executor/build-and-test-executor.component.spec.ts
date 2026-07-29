@@ -23,6 +23,15 @@ import {
   RepositorySelectorComponent,
 } from "@mxevolve/domains/scm/widget";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import {
+  BranchDetailsError,
+  BranchService,
+  RepositoryService,
+} from "@mxevolve/domains/scm/data-access";
+import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
+import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { AnalyticsTrackerService } from "@mxflow/core/analytics-tracker";
+import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { BuildAndTestExecutorComponent } from "./build-and-test-executor.component";
 
 function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
@@ -47,6 +56,7 @@ const COMPONENT_IMPORTS = [
   MockComponent(ScenarioDefinitionDropdownComponent),
   MockComponent(RepositorySelectorComponent),
   MockComponent(BranchInputComponent),
+  DefinitionInputComponent,
 ];
 
 const mockExecutorService = {
@@ -56,6 +66,33 @@ const mockExecutorService = {
 const mockToastService = {
   showError: jest.fn(),
 };
+
+const mockRepositoryService = { getRepository: jest.fn() };
+const mockScenarioService = { getScenarioDefinitionById: jest.fn() };
+const mockInfraGroupService = { getGroup: jest.fn() };
+const mockBranchService = { getBranchDetails: jest.fn() };
+const mockAnalyticsTracker = { trackEvent: jest.fn() };
+
+/** Services the executor resolves pre-filled values against (VAL-27132 W1). */
+const PREFILL_PROVIDERS = [
+  { provide: RepositoryService, useValue: mockRepositoryService },
+  { provide: ScenarioDefinitionService, useValue: mockScenarioService },
+  { provide: InfraGroupService, useValue: mockInfraGroupService },
+  { provide: BranchService, useValue: mockBranchService },
+  { provide: AnalyticsTrackerService, useValue: mockAnalyticsTracker },
+];
+
+/** Every pre-filled id resolves; the default for tests that are not about W1. */
+function stubPrefillsResolve(): void {
+  mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
+  mockScenarioService.getScenarioDefinitionById.mockReturnValue(
+    of({ id: "scenario-1" })
+  );
+  mockInfraGroupService.getGroup.mockReturnValue(of({ id: "group-1" }));
+  mockBranchService.getBranchDetails.mockReturnValue(
+    of({ latestCommitId: "commit-1" })
+  );
+}
 
 const FULLY_PREFILLED_INPUTS = [
   { inputId: "repositoryId", value: "repo-1" },
@@ -94,6 +131,7 @@ async function renderComponent(
         provide: BuildAndTestProcessExecutorService,
         useValue: mockExecutorService,
       },
+      ...PREFILL_PROVIDERS,
     ],
     providers: [
       {
@@ -101,6 +139,7 @@ async function renderComponent(
         useValue: mockExecutorService,
       },
       { provide: ToastMessageService, useValue: mockToastService },
+      ...PREFILL_PROVIDERS,
     ],
   });
 }
@@ -114,7 +153,10 @@ function buildButton(): HTMLElement {
 }
 
 describe("BuildAndTestExecutorComponent", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    stubPrefillsResolve();
+  });
 
   describe("field presence", () => {
     it("hides the branch fields until a repository is selected (legacy repo-first gating)", async () => {
@@ -342,11 +384,143 @@ describe("BuildAndTestExecutorComponent", () => {
         ],
         providers: [
           { provide: ToastMessageService, useValue: mockToastService },
+          ...PREFILL_PROVIDERS,
         ],
       });
 
       expect(screen.getByLabelText("Execution Name")).toHaveValue(
         "Prefilled Run"
+      );
+    });
+  });
+
+  describe("field descriptions (legacy definition-input strings)", () => {
+    it("describes the repository field", async () => {
+      await renderComponent();
+
+      expect(
+        screen.getByText(
+          "Select the Repository where the configuration is stored"
+        )
+      ).toBeTruthy();
+    });
+
+    it("describes the user story field", async () => {
+      await renderComponent();
+
+      expect(
+        screen.getByText("Enter the IDs of the stories you will be working on")
+      ).toBeTruthy();
+    });
+
+    it("describes the build environment infra group", async () => {
+      await renderComponent();
+
+      expect(
+        screen.getByText("Select the Infra Group for the build environment")
+      ).toBeTruthy();
+    });
+
+    it("describes the notification recipients", async () => {
+      await renderComponent();
+
+      expect(
+        screen.getByText(
+          "Select the users who will receive email notifications as the business process approaches its expiry date"
+        )
+      ).toBeTruthy();
+    });
+  });
+
+  describe("pre-filled values that no longer resolve", () => {
+    it("blocks submission when a pre-filled repository is gone", async () => {
+      mockRepositoryService.getRepository.mockReturnValue(
+        throwError(() => new Error("Repository not found"))
+      );
+
+      await renderComponent(FULLY_PREFILLED_INPUTS);
+
+      await waitFor(() => expect(buildButton()).toBeDisabled());
+    });
+
+    it("reports a pre-filled repository that is gone", async () => {
+      mockRepositoryService.getRepository.mockReturnValue(
+        throwError(() => new Error("Repository not found"))
+      );
+
+      await renderComponent(FULLY_PREFILLED_INPUTS);
+
+      await waitFor(() =>
+        expect(mockToastService.showError).toHaveBeenCalledWith(
+          "Repository not found"
+        )
+      );
+    });
+
+    it("blocks submission when a pre-filled build scenario is gone", async () => {
+      mockScenarioService.getScenarioDefinitionById.mockReturnValue(
+        throwError(() => new Error("Scenario not found"))
+      );
+
+      await renderComponent(FULLY_PREFILLED_INPUTS);
+
+      await waitFor(() => expect(buildButton()).toBeDisabled());
+    });
+
+    it("relays an infra group failure rejected as a bare string", async () => {
+      mockInfraGroupService.getGroup.mockReturnValue(
+        throwError(() => "Could not fetch groups details")
+      );
+
+      await renderComponent(FULLY_PREFILLED_INPUTS);
+
+      await waitFor(() =>
+        expect(mockToastService.showError).toHaveBeenCalledWith(
+          "Could not fetch groups details"
+        )
+      );
+    });
+
+    it("blocks submission when a hidden parent branch no longer exists", async () => {
+      mockBranchService.getBranchDetails.mockImplementation(
+        ({ branchName }: { branchName: string }) =>
+          branchName === "parent-1"
+            ? throwError(() => new BranchDetailsError("not found", 404))
+            : of({ latestCommitId: "commit-1" })
+      );
+
+      await renderComponent(FULLY_PREFILLED_INPUTS);
+
+      await waitFor(() => expect(buildButton()).toBeDisabled());
+    });
+
+    it("keeps the form submittable when every pre-filled value resolves", async () => {
+      await renderComponent([
+        ...FULLY_PREFILLED_INPUTS,
+        { inputId: "notificationsRecipients", value: ["a@b.com"] },
+      ]);
+
+      await waitFor(() =>
+        expect(mockToastService.showError).not.toHaveBeenCalled()
+      );
+    });
+  });
+
+  describe("skip build environment analytics", () => {
+    it("tracks skipping the prepare-build-environment step", async () => {
+      const user = userEvent.setup();
+      await renderComponent();
+
+      await user.click(
+        screen.getByLabelText('Skip "Prepare Build Environment" step')
+      );
+
+      await waitFor(() =>
+        expect(mockAnalyticsTracker.trackEvent).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          "CI Process - Prepare-Build Environment Skipped"
+        )
       );
     });
   });

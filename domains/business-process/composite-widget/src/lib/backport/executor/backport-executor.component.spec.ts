@@ -17,6 +17,12 @@ import {
 } from "@mxevolve/domains/business-process/widget";
 import { ReviewersAutoCompleteComponent } from "@mxevolve/domains/scm/widget";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import {
+  MergeConfigurationService,
+  RepositoryService,
+} from "@mxevolve/domains/scm/data-access";
+import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
+import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { BackportExecutorComponent } from "./backport-executor.component";
 
 function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
@@ -37,11 +43,33 @@ const COMPONENT_IMPORTS = [
   MockComponent(UserStoryInputComponent),
   MockComponent(NotificationsRecipientsInputComponent),
   MockComponent(ReviewersAutoCompleteComponent),
+  DefinitionInputComponent,
 ];
 
 const mockExecutorService = {
   executeBackportProcessDefinition: jest.fn(),
 };
+
+const mockRepositoryService = { getRepository: jest.fn() };
+const mockMergeConfigurationService = {
+  getFilteredMergeConfigurations: jest.fn(),
+};
+const mockInfraGroupService = { getGroup: jest.fn() };
+
+/** Services the executor resolves its three pre-filled ids against (W1 / D3). */
+const PREFILL_PROVIDERS = [
+  { provide: RepositoryService, useValue: mockRepositoryService },
+  { provide: MergeConfigurationService, useValue: mockMergeConfigurationService },
+  { provide: InfraGroupService, useValue: mockInfraGroupService },
+];
+
+function stubPrefillsResolve(): void {
+  mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
+  mockInfraGroupService.getGroup.mockReturnValue(of({ id: "group-1" }));
+  mockMergeConfigurationService.getFilteredMergeConfigurations.mockReturnValue(
+    of({ content: [{ id: "merge-1" }] })
+  );
+}
 
 const mockToastService = {
   showError: jest.fn(),
@@ -77,12 +105,14 @@ async function renderComponent(
     inputs: { projectId: "project-1", definition: definition(providedInputs) },
     componentImports: COMPONENT_IMPORTS,
     componentProviders: [
+      ...PREFILL_PROVIDERS,
       {
         provide: BackportProcessExecutorService,
         useValue: mockExecutorService,
       },
     ],
     providers: [
+      ...PREFILL_PROVIDERS,
       {
         provide: BackportProcessExecutorService,
         useValue: mockExecutorService,
@@ -103,7 +133,10 @@ function setReviewers(names: string[]): void {
 }
 
 describe("BackportExecutorComponent", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    stubPrefillsResolve();
+  });
 
   describe("field presence", () => {
     it("shows every backport field", async () => {
