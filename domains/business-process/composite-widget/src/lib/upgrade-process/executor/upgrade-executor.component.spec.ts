@@ -40,7 +40,7 @@ import { UpgradeFactoryProductInputComponent } from "./factory-product-input/upg
 import { UpgradeExecutorComponent } from "./upgrade-executor.component";
 
 function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
-  const instance = ngMocks.findInstance(component) as unknown as {
+  const instance = ngMocks.find(component).componentInstance as unknown as {
     __simulateChange?: (value: T) => void;
   };
   if (!instance.__simulateChange) {
@@ -214,13 +214,12 @@ describe("UpgradeExecutorComponent", () => {
       for (const label of [
         "Official Status",
         "Execution Name",
-        "Conversion Factory Product",
         "Parent MX Archival Branch",
         "Upgrade Jump",
         "Repository",
-        "BP Quality Level",
-        "Create Branch",
-        "Configuration Branch",
+        "Business Process Quality Level",
+        "Create Branch?",
+        "Configuration Branch Name",
         "Configuration Parent Branch",
         "Quality Gate Execution Infra Group",
         "Binary Conversion Infra Group",
@@ -228,7 +227,6 @@ describe("UpgradeExecutorComponent", () => {
         "Binary Conversion Test Scenario",
         "Reference Commit ID",
         "Reference Environment Definition",
-        "Reference Factory Product",
         "Reference Environment Infra Group",
       ]) {
         expect(screen.getByText(label).classList.contains("required")).toBe(
@@ -249,20 +247,20 @@ describe("UpgradeExecutorComponent", () => {
       const user = userEvent.setup();
       const { fixture } = await renderComponent();
 
-      expect(screen.queryByText("Create Branch")).toBeNull();
-      expect(screen.queryByText("Configuration Branch")).toBeNull();
+      expect(screen.queryByText("Create Branch?")).toBeNull();
+      expect(screen.queryByText("Configuration Branch Name")).toBeNull();
       expect(screen.queryByText("Configuration Parent Branch")).toBeNull();
 
       simulateCvaChange(RepositorySelectorComponent, "repo-1");
       fixture.detectChanges();
 
-      expect(screen.getByText("Create Branch")).toBeTruthy();
-      expect(screen.queryByText("Configuration Branch")).toBeNull();
+      expect(screen.getByText("Create Branch?")).toBeTruthy();
+      expect(screen.queryByText("Configuration Branch Name")).toBeNull();
       expect(screen.queryByText("Configuration Parent Branch")).toBeNull();
 
       await user.click(screen.getByLabelText("Yes"));
 
-      expect(screen.getByText("Configuration Branch")).toBeTruthy();
+      expect(screen.getByText("Configuration Branch Name")).toBeTruthy();
       expect(screen.getByText("Configuration Parent Branch")).toBeTruthy();
     });
 
@@ -278,7 +276,11 @@ describe("UpgradeExecutorComponent", () => {
       expect(screen.getByLabelText("Execution Name")).toBeTruthy();
 
       expect(screen.getByText("MX Parameters")).toBeTruthy();
-      expect(screen.getByText("Conversion Factory Product")).toBeTruthy();
+      expect(
+        screen.getByText(
+          "Select the factory product that you wish to validate your Quality Gate against"
+        )
+      ).toBeTruthy();
       expect(screen.getByLabelText("Parent MX Archival Branch")).toBeTruthy();
       expect(screen.getByText("Upgrade Jump")).toBeTruthy();
 
@@ -287,9 +289,9 @@ describe("UpgradeExecutorComponent", () => {
       expect(
         document.querySelector("mxevolve-repository-selector")
       ).toBeTruthy();
-      expect(screen.getByText("BP Quality Level")).toBeTruthy();
-      expect(screen.getByText("Create Branch")).toBeTruthy();
-      expect(screen.getByText("Configuration Branch")).toBeTruthy();
+      expect(screen.getByText("Business Process Quality Level")).toBeTruthy();
+      expect(screen.getByText("Create Branch?")).toBeTruthy();
+      expect(screen.getByText("Configuration Branch Name")).toBeTruthy();
       expect(screen.getByText("Configuration Parent Branch")).toBeTruthy();
 
       expect(screen.getByText("Infrastructure Parameters")).toBeTruthy();
@@ -298,7 +300,7 @@ describe("UpgradeExecutorComponent", () => {
       ).toBeTruthy();
       expect(screen.getByText("Binary Conversion Infra Group")).toBeTruthy();
       expect(
-        ngMocks.findInstances(InfraGroupSelectorComponent).length
+        ngMocks.findAll(InfraGroupSelectorComponent).length
       ).toBeGreaterThanOrEqual(2);
 
       expect(screen.getByText("Tests")).toBeTruthy();
@@ -310,14 +312,18 @@ describe("UpgradeExecutorComponent", () => {
       expect(screen.getByText("Reference Environment Parameters")).toBeTruthy();
       expect(screen.getByLabelText("Reference Commit ID")).toBeTruthy();
       expect(screen.getByText("Reference Environment Definition")).toBeTruthy();
-      expect(screen.getByText("Reference Factory Product")).toBeTruthy();
+      expect(
+        screen.getByText(
+          "Select the factory product that you wish to use in your reference environment"
+        )
+      ).toBeTruthy();
       expect(
         screen.getByText("Reference Environment Infra Group")
       ).toBeTruthy();
 
       expect(screen.getByText("Notifications")).toBeTruthy();
       expect(
-        ngMocks.findInstance(NotificationsRecipientsInputComponent)
+        ngMocks.find(NotificationsRecipientsInputComponent).componentInstance
       ).toBeTruthy();
       expect(buildButton()).toBeTruthy();
     });
@@ -328,11 +334,11 @@ describe("UpgradeExecutorComponent", () => {
 
       expect(screen.queryByLabelText("Parent MX Archival Branch")).toBeNull();
       expect(screen.queryByText("Repository")).toBeNull();
-      expect(screen.queryByText("Configuration Branch")).toBeNull();
+      expect(screen.queryByText("Configuration Branch Name")).toBeNull();
       expect(screen.queryByLabelText("Reference Commit ID")).toBeNull();
       expect(screen.queryByText("MX Parameters")).toBeNull();
       expect(screen.queryByText("Configuration Parameters")).toBeNull();
-      expect(ngMocks.findInstances(InfraGroupSelectorComponent)).toHaveLength(
+      expect(ngMocks.findAll(InfraGroupSelectorComponent)).toHaveLength(
         0
       );
 

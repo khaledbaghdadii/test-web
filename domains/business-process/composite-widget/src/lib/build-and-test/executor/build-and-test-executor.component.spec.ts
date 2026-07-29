@@ -35,7 +35,7 @@ import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui"
 import { BuildAndTestExecutorComponent } from "./build-and-test-executor.component";
 
 function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
-  const instance = ngMocks.findInstance(component) as unknown as {
+  const instance = ngMocks.find(component).componentInstance as unknown as {
     __simulateChange?: (value: T) => void;
   };
   if (!instance.__simulateChange) {
@@ -89,8 +89,12 @@ function stubPrefillsResolve(): void {
     of({ id: "scenario-1" })
   );
   mockInfraGroupService.getGroup.mockReturnValue(of({ id: "group-1" }));
-  mockBranchService.getBranchDetails.mockReturnValue(
-    of({ latestCommitId: "commit-1" })
+  mockBranchService.getBranchDetails.mockImplementation(
+    ({ branchName }: { branchName: string }) =>
+      branchName === "branch-1"
+        ? // the configuration branch is about to be created, so it must be free
+          throwError(() => new BranchDetailsError("not found", 404))
+        : of({ latestCommitId: "commit-1" })
   );
 }
 
@@ -148,6 +152,15 @@ function scenarioDropdown(): Element | null {
   return document.querySelector("mxevolve-scenario-definition-dropdown");
 }
 
+/** The `<label>` bound to a given input id, unambiguous when a group heading shares its text. */
+function fieldLabel(inputId: string): HTMLElement {
+  const label = document.querySelector<HTMLElement>(`label[for="${inputId}"]`);
+  if (!label) {
+    throw new Error(`No label found for input id "${inputId}"`);
+  }
+  return label;
+}
+
 function buildButton(): HTMLElement {
   return screen.getByRole("button", { name: "Build" });
 }
@@ -198,23 +211,23 @@ describe("BuildAndTestExecutorComponent", () => {
       expect(document.querySelectorAll("mxevolve-branch-input")).toHaveLength(
         2
       );
-      expect(screen.getByText("Build Scenario")).toBeTruthy();
+      expect(fieldLabel("bt-build-scenario")).toBeTruthy();
       expect(screen.getByText("Build Environment")).toBeTruthy();
       expect(
         screen.getByRole("checkbox", {
-          name: "Skip Build Environment Deployment",
+          name: 'Skip "Prepare Build Environment" step',
         })
       ).toBeTruthy();
       expect(scenarioDropdown()).toBeTruthy();
       expect(screen.getByText("User Stories")).toBeTruthy();
-      expect(ngMocks.findInstance(UserStoryInputComponent)).toBeTruthy();
+      expect(ngMocks.find(UserStoryInputComponent).componentInstance).toBeTruthy();
       expect(screen.getByText("Infrastructure Parameters")).toBeTruthy();
-      expect(ngMocks.findInstances(InfraGroupSelectorComponent)).toHaveLength(
+      expect(ngMocks.findAll(InfraGroupSelectorComponent)).toHaveLength(
         2
       );
       expect(screen.getByText("Notifications")).toBeTruthy();
       expect(
-        ngMocks.findInstance(NotificationsRecipientsInputComponent)
+        ngMocks.find(NotificationsRecipientsInputComponent).componentInstance
       ).toBeTruthy();
       expect(buildButton()).toBeTruthy();
     });
@@ -228,7 +241,7 @@ describe("BuildAndTestExecutorComponent", () => {
       expect(document.querySelectorAll("mxevolve-branch-input")).toHaveLength(
         0
       );
-      expect(ngMocks.findInstances(InfraGroupSelectorComponent)).toHaveLength(
+      expect(ngMocks.findAll(InfraGroupSelectorComponent)).toHaveLength(
         0
       );
 
@@ -255,20 +268,21 @@ describe("BuildAndTestExecutorComponent", () => {
       simulateCvaChange(RepositorySelectorComponent, "repo-1");
       fixture.detectChanges();
 
-      for (const label of [
-        "Execution Name",
-        "Repository",
-        "Configuration Branch Name",
-        "Configuration Parent Branch",
-        "Build Scenario Definition",
-        "User Stories",
-        "Build Environment Infra Group",
-        "Build and Test Infra Group",
+      for (const inputId of [
+        "bt-execution-name",
+        "bt-repository",
+        "bt-config-branch",
+        "bt-config-parent-branch",
+        "bt-build-scenario",
+        "bt-build-environment-infra-group",
+        "bt-build-and-test-infra-group",
       ]) {
-        expect(screen.getByText(label).classList.contains("required")).toBe(
-          true
-        );
+        expect(fieldLabel(inputId).classList.contains("required")).toBe(true);
       }
+      // The user-story group heading carries the marker, not a field label.
+      expect(
+        screen.getByText("User Stories").classList.contains("required")
+      ).toBe(true);
 
       expect(
         screen
@@ -287,7 +301,7 @@ describe("BuildAndTestExecutorComponent", () => {
 
       await user.click(
         screen.getByRole("checkbox", {
-          name: "Skip Build Environment Deployment",
+          name: 'Skip "Prepare Build Environment" step',
         })
       );
 
@@ -381,6 +395,7 @@ describe("BuildAndTestExecutorComponent", () => {
             provide: BuildAndTestProcessExecutorService,
             useValue: mockExecutorService,
           },
+          ...PREFILL_PROVIDERS,
         ],
         providers: [
           { provide: ToastMessageService, useValue: mockToastService },

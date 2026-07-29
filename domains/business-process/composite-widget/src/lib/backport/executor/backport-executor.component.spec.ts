@@ -26,7 +26,7 @@ import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui"
 import { BackportExecutorComponent } from "./backport-executor.component";
 
 function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
-  const instance = ngMocks.findInstance(component) as unknown as {
+  const instance = ngMocks.find(component).componentInstance as unknown as {
     __simulateChange?: (value: T) => void;
   };
   if (!instance.__simulateChange) {
@@ -145,12 +145,12 @@ describe("BackportExecutorComponent", () => {
       expect(screen.getByLabelText("Execution Name")).toBeTruthy();
       expect(screen.getByLabelText("Pull Request Id")).toBeTruthy();
       expect(screen.getByText("User Stories")).toBeTruthy();
-      expect(ngMocks.findInstance(UserStoryInputComponent)).toBeTruthy();
+      expect(ngMocks.find(UserStoryInputComponent).componentInstance).toBeTruthy();
       expect(screen.getByLabelText("Merge Request Title")).toBeTruthy();
-      expect(ngMocks.findInstance(ReviewersAutoCompleteComponent)).toBeTruthy();
+      expect(ngMocks.find(ReviewersAutoCompleteComponent).componentInstance).toBeTruthy();
       expect(screen.getByText("Notifications")).toBeTruthy();
       expect(
-        ngMocks.findInstance(NotificationsRecipientsInputComponent)
+        ngMocks.find(NotificationsRecipientsInputComponent).componentInstance
       ).toBeTruthy();
       expect(buildButton()).toBeTruthy();
     });

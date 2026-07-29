@@ -7,7 +7,6 @@ export { RepositoryNameComponent } from "./lib/repository-name/repository-name.c
 export { MergeConfigurationDropdownComponent } from "./lib/merge-configuration-dropdown/merge-configuration-dropdown.component";
 export { ReviewersAutoCompleteComponent } from "./lib/reviewers-autocomplete/reviewers-autocomplete.component";
 export { BranchInputComponent } from "./lib/branch-input/branch-input.component";
-export { BRANCH_CHECK_FAILED_MESSAGE } from "./lib/branch-input/branch-input.component";
 export { RepositorySelectorComponent } from "./lib/repository-selector/repository-selector.component";
 export {
   UnderValidationStageDetailsComponent,

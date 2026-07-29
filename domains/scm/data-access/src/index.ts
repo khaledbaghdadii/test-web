@@ -14,6 +14,7 @@ export { TagService } from "./lib/tags/tag.service";
 export type { Tag } from "./lib/tags/model/tag.model";
 export { BranchService } from "./lib/branch/branch.service";
 export {
+  BRANCH_CHECK_FAILED_MESSAGE,
   BranchDetailsError,
   type BranchDetails,
   type GetBranchDetailsRequest,

@@ -26,3 +26,15 @@ export { ToastMessageData } from "./lib/toast/toast-message-data";
 export { StepperComponent } from "./lib/stepper/stepper.component";
 export { StepComponent } from "./lib/stepper/step.component";
 export { type StepDefinition, type StepStatus } from "./lib/stepper/step";
+
+// Present on disk but previously absent from this barrel: `shared/` was merged
+// in additively (rsync --ignore-existing) and the repo's older index.ts was
+// kept, so these five directories shipped without exports. Every one of them is
+// imported through this barrel elsewhere in the tree, so the libraries that use
+// them could not compile.
+export { SkeletonComponent } from "./lib/skeleton/skeleton.component";
+export { WarningAlertComponent } from "./lib/alert/warning-alert.component";
+export { CopyToClipboardComponent } from "./lib/copy-to-clipboard/copy-to-clipboard.component";
+export { ExpandableMessageComponent } from "./lib/expandable-message/expandable-message.component";
+export { MultiPageDialogComponent } from "./lib/multi-page-dialog/multi-page-dialog.component";
+export { MultiPageDialogPageDirective } from "./lib/multi-page-dialog/multi-page-dialog-page.directive";

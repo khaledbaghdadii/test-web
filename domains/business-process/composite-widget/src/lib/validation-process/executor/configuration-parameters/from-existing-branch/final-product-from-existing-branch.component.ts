@@ -30,7 +30,7 @@ import {
   ToastMessageService,
   WarningAlertComponent,
 } from "@mxevolve/shared/ui/primitive";
-import { injectInputVisibility } from "../../../shared/input-visibility.store";
+import { injectInputVisibility } from "../../../../shared/input-visibility.store";
 
 /** Debounce applied before looking a typed archival branch up (legacy 500ms). */
 const BRANCH_DEBOUNCE_MS = 500;

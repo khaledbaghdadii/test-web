@@ -1,8 +1,12 @@
 import { AbstractControl, ValidatorFn } from "@angular/forms";
 import { Observable, forkJoin, of } from "rxjs";
 import { catchError, map } from "rxjs/operators";
-import { BranchDetailsError, BranchService, GetBranchDetailsRequest } from "@mxevolve/domains/scm/data-access";
-import { BRANCH_CHECK_FAILED_MESSAGE } from "@mxevolve/domains/scm/widget";
+import {
+  BRANCH_CHECK_FAILED_MESSAGE,
+  BranchDetailsError,
+  BranchService,
+  GetBranchDetailsRequest,
+} from "@mxevolve/domains/scm/data-access";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 
 /**

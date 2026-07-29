@@ -19,19 +19,11 @@ import { InputIcon } from "primeng/inputicon";
 import { catchError, debounceTime, map, of, switchMap, tap } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
+  BRANCH_CHECK_FAILED_MESSAGE,
   BranchService,
   BranchDetailsError,
   GetBranchDetailsRequest,
 } from "@mxevolve/domains/scm/data-access";
-
-/**
- * Shown when the branch-existence check itself fails — anything other than the
- * 404 that legitimately means "this branch does not exist". Legacy interpolated
- * the raw backend message here, including 500 bodies; a generic message replaces
- * it (VAL-27132 divergence register KEEP-2).
- */
-export const BRANCH_CHECK_FAILED_MESSAGE =
-  "Couldn't validate the branch. Please try again.";
 
 /**
  * New-architecture rebuild of the legacy

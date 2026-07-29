@@ -9,7 +9,7 @@ import {
 import { BranchInputComponent } from "@mxevolve/domains/scm/widget";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
-import { injectInputVisibility } from "../../../../shared/input-visibility.store";
+import { injectInputVisibility } from "../../../../../shared/input-visibility.store";
 
 /**
  * DQG + "Create Branch = Yes" configuration parameters: a brand-new archival

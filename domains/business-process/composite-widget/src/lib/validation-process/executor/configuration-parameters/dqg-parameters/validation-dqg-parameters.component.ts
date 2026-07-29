@@ -1,9 +1,9 @@
-import { Component, OnDestroy, OnInit, inject, input } from "@angular/core";
+import { Component, OnDestroy, OnInit, input } from "@angular/core";
 import { FormControl, ReactiveFormsModule, Validators } from "@angular/forms";
 import { RadioButton } from "primeng/radiobutton";
 import { FinalProductFromExistingBranchComponent } from "../from-existing-branch/final-product-from-existing-branch.component";
 import { DqgFromNewBranchParametersComponent } from "./from-new-branch/dqg-from-new-branch-parameters.component";
-import { injectInputVisibility } from "../../../shared/input-visibility.store";
+import { injectInputVisibility } from "../../../../shared/input-visibility.store";
 
 /**
  * DQG configuration parameters: the "Create Branch?" decision and whichever
