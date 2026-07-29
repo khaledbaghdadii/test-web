@@ -152,13 +152,12 @@ function scenarioDropdown(): Element | null {
   return document.querySelector("mxevolve-scenario-definition-dropdown");
 }
 
-/** The `<label>` bound to a given input id, unambiguous when a group heading shares its text. */
-function fieldLabel(inputId: string): HTMLElement {
-  const label = document.querySelector<HTMLElement>(`label[for="${inputId}"]`);
-  if (!label) {
-    throw new Error(`No label found for input id "${inputId}"`);
-  }
-  return label;
+/**
+ * A field's own `<label>`. "Build Scenario" is both a group heading and a field
+ * label - as it is in legacy - so the element type disambiguates them.
+ */
+function fieldLabel(text: string): HTMLElement {
+  return screen.getByText(text, { selector: "label" });
 }
 
 function buildButton(): HTMLElement {
@@ -173,7 +172,7 @@ describe("BuildAndTestExecutorComponent", () => {
 
   describe("field presence", () => {
     it("hides the branch fields until a repository is selected (legacy repo-first gating)", async () => {
-      const { fixture } = await renderComponent();
+      await renderComponent();
 
       expect(screen.getByText("Repository")).toBeTruthy();
       expect(
@@ -186,9 +185,10 @@ describe("BuildAndTestExecutorComponent", () => {
       );
 
       simulateCvaChange(RepositorySelectorComponent, "repo-1");
-      fixture.detectChanges();
 
-      expect(screen.getByText("Configuration Branch Name")).toBeTruthy();
+      await waitFor(() =>
+        expect(screen.getByText("Configuration Branch Name")).toBeTruthy()
+      );
       expect(screen.getByText("Configuration Parent Branch")).toBeTruthy();
       expect(document.querySelectorAll("mxevolve-branch-input")).toHaveLength(
         2
@@ -196,10 +196,12 @@ describe("BuildAndTestExecutorComponent", () => {
     });
 
     it("shows every non-prefilled field with its section heading", async () => {
-      const { fixture } = await renderComponent();
+      await renderComponent();
       simulateCvaChange(RepositorySelectorComponent, "repo-1");
-      fixture.detectChanges();
 
+      await waitFor(() =>
+        expect(screen.getByText("Configuration Branch Name")).toBeTruthy()
+      );
       expect(screen.getByLabelText("Execution Name")).toBeTruthy();
       expect(screen.getByText("Configuration Parameters")).toBeTruthy();
       expect(screen.getByText("Repository")).toBeTruthy();
@@ -211,7 +213,7 @@ describe("BuildAndTestExecutorComponent", () => {
       expect(document.querySelectorAll("mxevolve-branch-input")).toHaveLength(
         2
       );
-      expect(fieldLabel("bt-build-scenario")).toBeTruthy();
+      expect(fieldLabel("Build Scenario")).toBeTruthy();
       expect(screen.getByText("Build Environment")).toBeTruthy();
       expect(
         screen.getByRole("checkbox", {
@@ -264,20 +266,23 @@ describe("BuildAndTestExecutorComponent", () => {
     });
 
     it("marks required fields with an asterisk and leaves optional fields unmarked", async () => {
-      const { fixture } = await renderComponent();
+      await renderComponent();
       simulateCvaChange(RepositorySelectorComponent, "repo-1");
-      fixture.detectChanges();
 
-      for (const inputId of [
-        "bt-execution-name",
-        "bt-repository",
-        "bt-config-branch",
-        "bt-config-parent-branch",
-        "bt-build-scenario",
-        "bt-build-environment-infra-group",
-        "bt-build-and-test-infra-group",
+      await waitFor(() =>
+        expect(fieldLabel("Configuration Branch Name")).toBeTruthy()
+      );
+
+      for (const label of [
+        "Execution Name",
+        "Repository",
+        "Configuration Branch Name",
+        "Configuration Parent Branch",
+        "Build Scenario",
+        "Build Environment Infra Group",
+        "Build and Test Infra Group",
       ]) {
-        expect(fieldLabel(inputId).classList.contains("required")).toBe(true);
+        expect(fieldLabel(label).classList.contains("required")).toBe(true);
       }
       // The user-story group heading carries the marker, not a field label.
       expect(

@@ -451,7 +451,6 @@ describe("ValidationExecutorComponent", () => {
       controls.rtpCommitId.setValue("rtp-1");
       controls.qualityGateScenarioDefinitionIds.setValue(["scenario-1"]);
       controls.qualityGateInfraGroupId.setValue("infra-1");
-      fixture.detectChanges();
 
       await user.click(document.getElementById("validation-nightly-yes")!);
 

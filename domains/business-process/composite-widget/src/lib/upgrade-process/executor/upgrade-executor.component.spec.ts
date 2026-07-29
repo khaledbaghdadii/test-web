@@ -206,9 +206,12 @@ describe("UpgradeExecutorComponent", () => {
 
     it("marks required fields with an asterisk and leaves optional fields unmarked", async () => {
       const user = userEvent.setup();
-      const { fixture } = await renderComponent();
+      await renderComponent();
       simulateCvaChange(RepositorySelectorComponent, "repo-1");
-      fixture.detectChanges();
+
+      await waitFor(() =>
+        expect(screen.getByText("Create Branch?")).toBeTruthy()
+      );
       await user.click(screen.getByLabelText("Yes"));
 
       for (const label of [
@@ -245,16 +248,17 @@ describe("UpgradeExecutorComponent", () => {
   describe("field presence", () => {
     it("hides Create Branch until a repository is selected, and the branch fields until Create Branch is chosen", async () => {
       const user = userEvent.setup();
-      const { fixture } = await renderComponent();
+      await renderComponent();
 
       expect(screen.queryByText("Create Branch?")).toBeNull();
       expect(screen.queryByText("Configuration Branch Name")).toBeNull();
       expect(screen.queryByText("Configuration Parent Branch")).toBeNull();
 
       simulateCvaChange(RepositorySelectorComponent, "repo-1");
-      fixture.detectChanges();
 
-      expect(screen.getByText("Create Branch?")).toBeTruthy();
+      await waitFor(() =>
+        expect(screen.getByText("Create Branch?")).toBeTruthy()
+      );
       expect(screen.queryByText("Configuration Branch Name")).toBeNull();
       expect(screen.queryByText("Configuration Parent Branch")).toBeNull();
 
@@ -266,9 +270,12 @@ describe("UpgradeExecutorComponent", () => {
 
     it("shows every non-prefilled field grouped under its section heading", async () => {
       const user = userEvent.setup();
-      const { fixture } = await renderComponent();
+      await renderComponent();
       simulateCvaChange(RepositorySelectorComponent, "repo-1");
-      fixture.detectChanges();
+
+      await waitFor(() =>
+        expect(screen.getByText("Create Branch?")).toBeTruthy()
+      );
       await user.click(screen.getByLabelText("Yes"));
 
       expect(screen.getByLabelText("Official Execution")).toBeTruthy();
