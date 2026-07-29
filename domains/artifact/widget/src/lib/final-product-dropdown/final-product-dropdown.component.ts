@@ -18,6 +18,12 @@ import type {
 } from "@mxevolve/domains/artifact/data-access";
 import { FinalProductApiService } from "@mxevolve/domains/artifact/data-access";
 import {
+  BranchService,
+  CommitsService,
+} from "@mxevolve/domains/scm/data-access";
+import { EMPTY } from "rxjs";
+import { catchError, map } from "rxjs/operators";
+import {
   CommitLabelInfo,
   FinalProductDataProvider,
   FinalProductParams,
@@ -31,6 +37,7 @@ import { FinalProductLabelMode } from "./final-product-label-mode";
   standalone: true,
   providers: [
     FinalProductApiService,
+    CommitsService,
     {
       provide: NG_VALUE_ACCESSOR,
       useExisting: forwardRef(() => FinalProductDropdownComponent),
@@ -41,6 +48,13 @@ import { FinalProductLabelMode } from "./final-product-label-mode";
 })
 export class FinalProductDropdownComponent implements ControlValueAccessor {
   readonly projectId = input.required<string>();
+  /**
+   * Repository the branch and commits belong to. Required to label options with
+   * their commit message and to resolve the branch's head commit; without it the
+   * dropdown falls back to a truncated commit id, as it always did before this
+   * lookup moved in here.
+   */
+  readonly repositoryId = input<string>();
   readonly branch = input<string>();
   readonly initialFinalProductId = input<string>();
   readonly inputId = input<string>();
@@ -48,15 +62,6 @@ export class FinalProductDropdownComponent implements ControlValueAccessor {
   /** How each option is labelled (commit id, tag, or tag + commit id). */
   readonly labelMode = input<FinalProductLabelMode>(
     FinalProductLabelMode.COMMIT_ID
-  );
-  /**
-   * Commit descriptions keyed by commit id, used to label each option with its
-   * commit message. Supplied by the consumer (the SCM lookups cannot live here:
-   * `artifact/widget` -> `scm/data-access` would close a dependency cycle
-   * through the legacy libraries), driven by {@link loadedCommitIds}.
-   */
-  readonly commitMessages = input<ReadonlyMap<string, CommitLabelInfo>>(
-    new Map()
   );
   /** Restricts the list to final products at the given validation level(s) (e.g. `["CQG"]`). */
   readonly validationLevelFilter = input<string[]>();
@@ -70,16 +75,7 @@ export class FinalProductDropdownComponent implements ControlValueAccessor {
    * existing consumers (e.g. the rerun dialog) that don't set this explicitly.
    */
   readonly fetchParent = input<boolean | undefined>(true);
-  /**
-   * The scoped branch's head commit id. When set, the option whose
-   * `configurationCommitId` matches is labeled with a `"HEAD-"` prefix
-   * (legacy `final-product-dropdown-state.service.ts` behavior).
-   */
-  readonly headCommitId = input<string>();
-
   readonly selectedFinalProductChange = output<FinalProduct | undefined>();
-  /** Commit ids currently shown, so the consumer can resolve their messages. */
-  readonly loadedCommitIds = output<string[]>();
   /** Legacy `errorMessageChange`: surfaced when the list cannot be loaded. */
   readonly errorMessage = output<string>();
   /**
@@ -91,10 +87,20 @@ export class FinalProductDropdownComponent implements ControlValueAccessor {
   readonly stateProvider: FinalProductDropdownStateProvider;
 
   private readonly finalProductService = inject(FinalProductApiService);
+  private readonly commitsService = inject(CommitsService);
+  private readonly branchService = inject(BranchService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly value = signal<string | null | undefined>(undefined);
   protected readonly disabled = signal(false);
+  /**
+   * Head commit of the scoped branch. The option whose `configurationCommitId`
+   * matches is labelled with a `"HEAD-"` prefix (legacy
+   * `final-product-dropdown-state.service.ts:189`). Resolved here rather than
+   * supplied by the consumer.
+   */
+  private readonly headCommitId = signal<string | undefined>(undefined);
   private resolvedInitialId: string | undefined;
+  private resolvedCommitIds = "";
   private onChange: (value: string | null) => void = () => {};
   private onTouched: () => void = () => {};
 
@@ -140,18 +146,31 @@ export class FinalProductDropdownComponent implements ControlValueAccessor {
       }
     });
 
-    // Push the consumer-supplied commit descriptions into the state provider so
-    // the option labels are rebuilt in place once they arrive.
-    effect(() => {
-      this.stateProvider.setCommitsInfo(this.commitMessages());
-    });
-
-    // Tell the consumer which commits are on screen so it can resolve them.
+    // Label the visible options with their commit message. This used to be
+    // inverted — the component emitted `loadedCommitIds` and expected the
+    // consumer to fetch and hand back `commitMessages` — and not one of the four
+    // consumers closed that round trip, so `commitsInfo` stayed empty and no
+    // commit message appeared anywhere in the app (VAL-27132 W6).
     effect(() => {
       const commitIds = this.stateProvider.visibleCommitIds();
-      if (commitIds.length > 0) {
-        this.loadedCommitIds.emit(commitIds);
+      const repositoryId = this.repositoryId();
+      const key = commitIds.join(",");
+      if (!repositoryId || commitIds.length === 0 || key === this.resolvedCommitIds) {
+        return;
       }
+      this.resolvedCommitIds = key;
+      this.loadCommitsInfo(repositoryId, commitIds);
+    });
+
+    // Resolve the scoped branch's head commit, which drives the `HEAD-` prefix.
+    effect(() => {
+      const repositoryId = this.repositoryId();
+      const branch = this.branch();
+      if (!repositoryId || !branch) {
+        this.headCommitId.set(undefined);
+        return;
+      }
+      this.loadHeadCommitId(repositoryId, branch);
     });
   }
 
@@ -197,6 +216,44 @@ export class FinalProductDropdownComponent implements ControlValueAccessor {
         `The selected final product will expire on ${product.expiryDate}`
       );
     }
+  }
+
+  /**
+   * Fetches the messages for the commits currently on screen and pushes them
+   * into the state provider, which rebuilds the option labels in place.
+   */
+  private loadCommitsInfo(repositoryId: string, commitIds: string[]): void {
+    this.commitsService
+      .getCommitsInfo({ projectId: this.projectId(), repositoryId, commitIds })
+      .pipe(
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((commits) => {
+        const info = new Map<string, CommitLabelInfo>(
+          commits.map((commit) => [
+            commit.id,
+            { displayId: commit.displayId, message: commit.message },
+          ])
+        );
+        this.stateProvider.setCommitsInfo(info);
+      });
+  }
+
+  /** Legacy `final-product-dropdown-state.service.ts:189`. */
+  private loadHeadCommitId(repositoryId: string, branch: string): void {
+    this.branchService
+      .getBranchDetails({
+        projectId: this.projectId(),
+        repositoryId,
+        branchName: branch,
+      })
+      .pipe(
+        map((details) => details.latestCommitId),
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((commitId) => this.headCommitId.set(commitId));
   }
 
   private loadInitialSelection(initialId: string): void {

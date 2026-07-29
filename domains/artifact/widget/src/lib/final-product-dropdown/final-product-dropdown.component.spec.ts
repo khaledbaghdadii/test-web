@@ -5,7 +5,7 @@ import { provideHttpClient } from "@angular/common/http";
 import { provideHttpClientTesting } from "@angular/common/http/testing";
 import { GATEWAY_CONFIG } from "@mxevolve/shared/core/config";
 import { APP_CONFIG } from "@mxflow/config";
-import { of } from "rxjs";
+import { EMPTY, of, throwError } from "rxjs";
 import { FinalProductDropdownComponent } from "./final-product-dropdown.component";
 import { FinalProductLabelMode } from "./final-product-label-mode";
 import type {
@@ -16,6 +16,7 @@ import {
   FinalProductApiService,
   FinalProductState,
 } from "@mxevolve/domains/artifact/data-access";
+import { BranchService, CommitsService } from "@mxevolve/domains/scm/data-access";
 
 const MOCK_FINAL_PRODUCT: FinalProduct = {
   id: "fp-001",
@@ -53,17 +54,21 @@ const mockFinalProductService = {
   getFinalProductById: jest.fn(),
 };
 
+const mockCommitsService = { getCommitsInfo: jest.fn() };
+const mockBranchService = { getBranchDetails: jest.fn() };
+
 const COMPONENT_PROVIDERS = [
   { provide: FinalProductApiService, useValue: mockFinalProductService },
+  { provide: CommitsService, useValue: mockCommitsService },
+  { provide: BranchService, useValue: mockBranchService },
 ];
 
 async function renderComponent(
   inputs: Partial<{
     projectId: string;
+    repositoryId: string;
     branch: string;
-    commitMessages: ReadonlyMap<string, { displayId: string; message: string }>;
     labelMode: FinalProductLabelMode;
-    headCommitId: string;
     placeholder: string;
     initialFinalProductId: string;
     validationLevelFilter: string[];
@@ -81,6 +86,8 @@ async function renderComponent(
 describe("FinalProductDropdownComponent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCommitsService.getCommitsInfo.mockReturnValue(EMPTY);
+    mockBranchService.getBranchDetails.mockReturnValue(EMPTY);
     mockFinalProductService.getFinalProducts.mockReturnValue(of(MOCK_PRODUCTS));
     mockFinalProductService.getFinalProductById.mockImplementation(
       (_projectId: string, id: string) =>
@@ -246,6 +253,8 @@ describe("FinalProductDropdownComponent", () => {
     const { fixture } = await renderComponent();
 
     jest.clearAllMocks();
+    mockCommitsService.getCommitsInfo.mockReturnValue(EMPTY);
+    mockBranchService.getBranchDetails.mockReturnValue(EMPTY);
     mockFinalProductService.getFinalProducts.mockReturnValue(of(MOCK_PRODUCTS));
     fixture.componentInstance.stateProvider.setSearchKey("abc123");
 
@@ -568,23 +577,31 @@ describe("FinalProductDropdownComponent", () => {
       await waitFor(() => expect(labels(fixture)).toEqual(["abc123comm"]));
     });
 
-    it("marks the branch head final product", async () => {
+    it("marks the final product at the head of the scoped branch", async () => {
+      mockBranchService.getBranchDetails.mockReturnValue(
+        of({ latestCommitId: "abc123commit" })
+      );
+
       const { fixture } = await renderComponent({
-        headCommitId: "abc123commit",
+        repositoryId: "repo-1",
+        branch: "feature/x",
       });
 
       await waitFor(() => expect(labels(fixture)).toEqual(["HEAD-abc123comm"]));
     });
 
-    it("appends the commit message once the commit description is supplied", async () => {
-      const { fixture } = await renderComponent({
-        commitMessages: new Map([
-          [
-            "abc123commit",
-            { displayId: "abc123c", message: "fix: adjust pricing" },
-          ],
-        ]),
-      });
+    it("appends the commit message once the commit description is resolved", async () => {
+      mockCommitsService.getCommitsInfo.mockReturnValue(
+        of([
+          {
+            id: "abc123commit",
+            displayId: "abc123c",
+            message: "fix: adjust pricing",
+          },
+        ])
+      );
+
+      const { fixture } = await renderComponent({ repositoryId: "repo-1" });
 
       await waitFor(() =>
         expect(labels(fixture)).toEqual(["abc123c fix: adjust pricing"])
@@ -592,32 +609,33 @@ describe("FinalProductDropdownComponent", () => {
     });
 
     it("truncates a long commit message", async () => {
-      const { fixture } = await renderComponent({
-        commitMessages: new Map([
-          ["abc123commit", { displayId: "abc123c", message: "m".repeat(80) }],
-        ]),
-      });
+      mockCommitsService.getCommitsInfo.mockReturnValue(
+        of([
+          { id: "abc123commit", displayId: "abc123c", message: "m".repeat(80) },
+        ])
+      );
+
+      const { fixture } = await renderComponent({ repositoryId: "repo-1" });
 
       await waitFor(() =>
         expect(labels(fixture)).toEqual([`abc123c ${"m".repeat(60)}...`])
       );
     });
 
-    it("keeps the shortened commit id until the commit description arrives", async () => {
+    it("keeps the shortened commit id when no repository is given to resolve against", async () => {
       const { fixture } = await renderComponent();
 
       await waitFor(() => expect(labels(fixture)).toEqual(["abc123comm"]));
     });
 
-    it("reports the commits on screen so the consumer can resolve their messages", async () => {
-      const loaded = jest.fn();
-      const { fixture } = await renderComponent();
-      fixture.componentInstance.loadedCommitIds.subscribe(loaded);
-      fixture.detectChanges();
-
-      await waitFor(() =>
-        expect(loaded).toHaveBeenCalledWith(["abc123commit"])
+    it("keeps the shortened commit id when the commit lookup fails", async () => {
+      mockCommitsService.getCommitsInfo.mockReturnValue(
+        throwError(() => new Error("boom"))
       );
+
+      const { fixture } = await renderComponent({ repositoryId: "repo-1" });
+
+      await waitFor(() => expect(labels(fixture)).toEqual(["abc123comm"]));
     });
   });
 
