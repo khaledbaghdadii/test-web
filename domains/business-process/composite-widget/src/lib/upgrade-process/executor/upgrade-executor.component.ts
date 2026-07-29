@@ -31,7 +31,6 @@ import {
   NotificationsRecipientsInputComponent,
   UpgradePrefilledInputsComponent,
 } from "@mxevolve/domains/business-process/widget";
-import { FactoryProductSelectorComponent } from "@mxevolve/domains/artifact/widget";
 import { FactoryProductApiService } from "@mxevolve/domains/artifact/data-access";
 import { EnvironmentDefinitionSelectorComponent } from "@mxevolve/domains/environment/widget";
 import { EnvironmentDefinitionService } from "@mxevolve/domains/environment/data-access";
@@ -50,6 +49,7 @@ import {
 } from "@mxevolve/domains/test/widget";
 import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
+import { UpgradeFactoryProductInputComponent } from "./factory-product-input/upgrade-factory-product-input.component";
 import {
   MxevolveIconComponent,
   ToastMessageService,
@@ -110,13 +110,13 @@ const CONFIGURATION_PARENT_BRANCH_MISSING =
     UpgradePrefilledInputsComponent,
     InfraGroupSelectorComponent,
     NotificationsRecipientsInputComponent,
-    FactoryProductSelectorComponent,
     EnvironmentDefinitionSelectorComponent,
     RepositorySelectorComponent,
     BranchInputComponent,
     ScenarioDefinitionDropdownComponent,
     ScenarioDefinitionMultiselectDropdownComponent,
     DefinitionInputComponent,
+    UpgradeFactoryProductInputComponent,
   ],
   providers: [
     UpgradeProcessDefinitionExecutorService,

@@ -84,11 +84,10 @@
           [control]="form().controls.factoryProduct"
           description="Select the factory product that you wish to validate your Quality Gate against"
         >
-          <mxevolve-factory-product-selector
+          <mxevolve-upgrade-factory-product-input
             [projectId]="projectId()"
             inputId="upgrade-conversion-factory-product"
-            [formControl]="form().controls.factoryProduct"
-            (failureEvent)="showSelectorError($event)"
+            [factoryProductFormControl]="form().controls.factoryProduct"
           />
         </mxevolve-definition-input>
         } @if (visibility().parentMxArchivalBranch) {
@@ -352,11 +351,10 @@
           [control]="form().controls.referenceFactoryProduct"
           description="Select the factory product that you wish to use in your reference environment"
         >
-          <mxevolve-factory-product-selector
+          <mxevolve-upgrade-factory-product-input
             [projectId]="projectId()"
             inputId="upgrade-reference-factory-product"
-            [formControl]="form().controls.referenceFactoryProduct"
-            (failureEvent)="showSelectorError($event)"
+            [factoryProductFormControl]="form().controls.referenceFactoryProduct"
           />
         </mxevolve-definition-input>
         } @if (visibility().referenceEnvironmentInfraGroupId) {
