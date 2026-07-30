@@ -1,5 +1,10 @@
 import { render, screen, waitFor } from "@testing-library/angular";
-import { FormControl, ReactiveFormsModule } from "@angular/forms";
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
 import { MockComponent, ngMocks } from "ng-mocks";
 import { Subject, of } from "rxjs";
 import { InputText } from "primeng/inputtext";
@@ -47,9 +52,13 @@ async function renderComponent({
     archivalBranchName: new FormControl<string | null>(archivalBranchName),
     // The already-chosen product lives in the form control itself - it is what a
     // definition prefill and a repush seed both land in.
-    finalProductId: new FormControl<string | null>(preselectedFinalProductId),
-    configCommitId: new FormControl<string | null>(null),
-    rtpCommitId: new FormControl<string | null>(null),
+    finalProductId: new FormControl<string | null>(preselectedFinalProductId, [
+      Validators.required,
+    ]),
+    configCommitId: new FormControl<string | null>(null, [
+      Validators.required,
+    ]),
+    rtpCommitId: new FormControl<string | null>(null, [Validators.required]),
   };
 
   const view = await render(FinalProductFromExistingBranchComponent, {
@@ -266,6 +275,55 @@ describe("FinalProductFromExistingBranchComponent", () => {
           )
         ).toBeTruthy()
       );
+    });
+
+    /**
+     * A branch that exists but carries no final product must not be
+     * submittable: there is no product, config commit or RTP commit to send.
+     *
+     * Angular drops disabled controls from `form.valid`, so disabling all three
+     * on this path removed every `required` the section contributes and left the
+     * Run button enabled behind the warning. Legacy disabled only
+     * `finalProductId` and left the two commits enabled and empty, which is what
+     * kept the form invalid.
+     */
+    it("leaves the run unsubmittable when the branch carries no final product", async () => {
+      const { controls } = await renderWithFailure(
+        LatestFinalProductFailureReason.NO_FINAL_PRODUCT_FOUND
+      );
+      // `name` stands in for the rest of the executor form: without at least one
+      // enabled control the group would report DISABLED rather than VALID, and
+      // the test would pass for the wrong reason.
+      const form = new FormGroup({
+        name: new FormControl("A validation run", [Validators.required]),
+        finalProductId: controls.finalProductId,
+        configCommitId: controls.configCommitId,
+        rtpCommitId: controls.rtpCommitId,
+      });
+
+      await waitFor(() =>
+        expect(
+          screen.getByText(
+            "Could not find a final product on the selected archival branch."
+          )
+        ).toBeTruthy()
+      );
+      expect(form.valid).toBe(false);
+    });
+
+    it("keeps the two commit fields contributing their required errors when the lookup fails", async () => {
+      const { controls } = await renderWithFailure(
+        LatestFinalProductFailureReason.NO_FINAL_PRODUCT_FOUND
+      );
+
+      await waitFor(() =>
+        expect(controls.finalProductId.disabled).toBe(true)
+      );
+      // Legacy only ever disabled the final product itself.
+      expect(controls.configCommitId.enabled).toBe(true);
+      expect(controls.rtpCommitId.enabled).toBe(true);
+      expect(controls.configCommitId.errors).toEqual({ required: true });
+      expect(controls.rtpCommitId.errors).toEqual({ required: true });
     });
 
     it("hides the read-only final product fields when the lookup fails", async () => {

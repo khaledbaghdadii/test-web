@@ -253,6 +253,18 @@ export class FinalProductFromExistingBranchComponent
     );
   }
 
+  /**
+   * Drops the product and its two commits, and takes the product picker out of
+   * play.
+   *
+   * Only `finalProductId` is disabled — the two commits stay enabled, empty and
+   * `required`, which is what keeps the run unsubmittable while the branch has
+   * no final product to send. Angular excludes disabled controls from
+   * `form.valid`, so disabling all three removed every `required` this section
+   * contributes and left the Run button live behind the "no final product"
+   * warning. Legacy disabled only the product itself
+   * (`disableFinalProductSelection`) and merely cleared the commits.
+   */
   private clearFinalProduct(): void {
     this.loading.set(false);
     for (const control of [
@@ -263,8 +275,8 @@ export class FinalProductFromExistingBranchComponent
       // Emits: `rtpCommitId` feeds the executor's scope-visibility snapshot,
       // which is recomputed only from `valueChanges` (legacy emitted too).
       control.reset(null);
-      control.disable({ emitEvent: false });
     }
+    this.finalProductIdFormControl().disable({ emitEvent: false });
   }
 
   protected notProvided(inputId: string): boolean {
