@@ -27,6 +27,7 @@ import {
   selector: "mxevolve-bip-version-dropdown",
   template: `<mxevolve-single-select-dropdown
     [stateProvider]="stateProvider"
+    [inputId]="inputId()"
     [dataParams]="dataParams()"
     [config]="{
       placeholder: placeholder(),
@@ -47,7 +48,10 @@ export class BipVersionDropdownComponent extends BaseSingleSelectDropdown<
   BipVersion,
   BipVersionDataProviderParams
 > {
-  readonly placeholder = input<string>("BIP Version");
+  /** Legacy wording, restored: the "Select " prefix was dropped in the port. */
+  readonly placeholder = input<string>("Select BIP Version");
+  /** Forwarded to the inner select so a `<label for>` can address it. */
+  readonly inputId = input<string>();
 
   protected override readonly stateProvider: MxEvolveSingleSelectDropdownState<
     BipVersion,

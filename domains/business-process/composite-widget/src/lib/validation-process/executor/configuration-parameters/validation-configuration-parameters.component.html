@@ -10,7 +10,6 @@
     inputId="validation-repository"
     [projectId]="projectId()"
     [formControl]="repositoryIdFormControl()"
-    (repositoryChanged)="onRepositoryChanged()"
     (failureEvent)="showSelectorError($event)"
   />
 </mxevolve-definition-input>
@@ -46,7 +45,6 @@
   [finalProductIdFormControl]="finalProductIdFormControl()"
   [configCommitIdFormControl]="configCommitIdFormControl()"
   [rtpCommitIdFormControl]="rtpCommitIdFormControl()"
-  [preselectedFinalProductId]="preselectedFinalProductId()"
 />
 } @else if (businessProcessQualityLevelFormControl().value === "DQG") {
 <mxevolve-validation-dqg-parameters
@@ -58,6 +56,5 @@
   [finalProductIdFormControl]="finalProductIdFormControl()"
   [configCommitIdFormControl]="configCommitIdFormControl()"
   [rtpCommitIdFormControl]="rtpCommitIdFormControl()"
-  [preselectedFinalProductId]="preselectedFinalProductId()"
 />
 }

@@ -16,10 +16,15 @@ import { UpgradeProcessExecution } from "@mxevolve/domains/business-process/util
  * in the MX / reference-environment parameters. Mirrors the legacy
  * `FactoryProductInput`.
  */
+/**
+ * Mirrors the legacy `BusinessProcessFactoryProductInput`: every key optional,
+ * because the four dropdowns are answered one at a time and an unanswered one
+ * must stay absent rather than becoming `""`.
+ */
 export interface UpgradeFactoryProductValue {
-  id: string;
-  mxVersion: string;
-  mxBuildId: string;
+  id?: string;
+  mxVersion?: string;
+  mxBuildId?: string;
   bipVersion?: string;
   bipBuildId?: string;
 }
@@ -68,7 +73,15 @@ function providedValue<T>(
 /**
  * Maps the prefilled `createBranch` provided-input (which may arrive as the
  * string `"true"`/`"false"` or a boolean) to a boolean, copied verbatim from the
- * legacy `mapCreateBranchControlValueToBoolean` (unknown → null).
+ * legacy `mapCreateBranchControlValueToBoolean`.
+ *
+ * Legacy returned `undefined` for an unknown or absent value and the executor
+ * template gates the two branch fields on `createBranch.value !== null`, which
+ * reads as "an unanswered choice still shows them". It does not: `FormControl`
+ * normalises an `undefined` initial value to `null` (verified on this Angular
+ * version, with and without validators), so legacy's `undefined` never survived
+ * into `.value` either. `null` is therefore the honest mapping — and the
+ * observable behaviour is identical to legacy's.
  */
 function mapCreateBranchToBoolean(createBranch: unknown): boolean | null {
   if (createBranch === true || createBranch === "true") {

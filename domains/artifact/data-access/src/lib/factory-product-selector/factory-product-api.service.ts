@@ -27,7 +27,10 @@ export class FactoryProductApiService {
     let params = new HttpParams()
       .set("page", (filters.pageIndex ?? 0).toString())
       .set("size", (filters.pageSize ?? 10).toString())
-      .set("sort", "createdOn,asc");
+      // Legacy requested `createdOn,desc` (`FactoryProductService`), so the BIP
+      // version list opens on the newest products. `asc` put the oldest first,
+      // and with paging the newest could fall off the end of the first page.
+      .set("sort", "createdOn,desc");
 
     if (filters.softwareProductVersionFilter) {
       params = params.set(

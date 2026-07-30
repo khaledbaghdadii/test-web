@@ -55,11 +55,11 @@
     [branchFilter]="parentBranchNameFormControl().value ?? ''"
     [validationLevel]="validationLevelFilter"
     [fetchParent]="false"
-    [customFinalProductId]="finalProductIdFormControl().value ?? ''"
+    [dropdownDefaultSelectionMode]="DropdownDefaultSelectionMode.CUSTOM"
+    [customFinalProductId]="customFinalProductId"
     (selectedFinalProductChange)="onFinalProductSelected($event)"
   />
 </mxevolve-definition-input>
-}
 
 <mxevolve-definition-input
   inputId="validation-rtp-commit"
@@ -77,3 +77,4 @@
     [readonly]="true"
   />
 </mxevolve-definition-input>
+}

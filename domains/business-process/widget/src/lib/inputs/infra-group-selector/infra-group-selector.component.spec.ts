@@ -82,15 +82,52 @@ describe("InfraGroupSelectorComponent", () => {
     expect(control.dirty).toBe(false);
   });
 
-  it("shows an error toast and clears the control when the prefilled group fails to load", async () => {
-    mockGroupService.getGroup.mockReturnValue(throwError(() => "load failed"));
+  /**
+   * The control is invalidated (correct legacy behaviour) but the field itself
+   * is prefilled and therefore usually not rendered, so the toast is the only
+   * thing the user sees - it has to say what to do about it, and it has to be a
+   * string. Handing `showError` the raised object rendered "[object Object]".
+   */
+  it("clears the control and explains how to fix a prefilled group that will not load", async () => {
+    mockGroupService.getGroup.mockReturnValue(
+      throwError(() => new Error("boom"))
+    );
 
     const { control } = await renderComponent("g1");
 
     await waitFor(() =>
-      expect(mockToast.showError).toHaveBeenCalledWith("load failed")
+      expect(mockToast.showError).toHaveBeenCalledWith(
+        "The Infra Group available in the Process Template could not be loaded. Please update the Process Template."
+      )
     );
     expect(control.value).toBeUndefined();
+  });
+
+  it("surfaces the reason when the project's default infra group cannot be read", async () => {
+    mockGroupService.getProjectInfraRegistryConfig.mockReturnValue(
+      throwError(() => "registry unreachable")
+    );
+
+    const { control } = await renderComponent(null);
+
+    await waitFor(() =>
+      expect(mockToast.showError).toHaveBeenCalledWith("registry unreachable")
+    );
+    expect(control.value).toBeUndefined();
+  });
+
+  it("falls back to a readable message when the default-group failure carries no message", async () => {
+    mockGroupService.getProjectInfraRegistryConfig.mockReturnValue(
+      throwError(() => ({ status: 500 }))
+    );
+
+    await renderComponent(null);
+
+    await waitFor(() =>
+      expect(mockToast.showError).toHaveBeenCalledWith(
+        "Could not fetch groups details"
+      )
+    );
   });
 
   it("updates the control with the id of the group chosen in the dropdown", async () => {

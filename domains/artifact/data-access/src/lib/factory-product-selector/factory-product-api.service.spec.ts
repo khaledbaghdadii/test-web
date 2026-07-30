@@ -47,7 +47,9 @@ describe("FactoryProductApiService", () => {
             `${GATEWAY_URL}artifact-management/projects/project-1/factory-products` &&
           request.params.get("page") === "0" &&
           request.params.get("size") === "10" &&
-          request.params.get("sort") === "createdOn,asc"
+          // Legacy `FactoryProductService` requested desc, so the list opens on
+          // the newest products; asc buried them behind the first page.
+          request.params.get("sort") === "createdOn,desc"
       );
 
       expect(req.request.method).toBe("GET");

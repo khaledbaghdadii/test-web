@@ -26,6 +26,7 @@ import {
   selector: "mxevolve-mx-build-id-dropdown",
   template: `<mxevolve-single-select-dropdown
     [stateProvider]="stateProvider"
+    [inputId]="inputId()"
     [dataParams]="dataParams()"
     [config]="{
       placeholder: placeholder(),
@@ -46,7 +47,10 @@ export class MxBuildIdDropdownComponent extends BaseSingleSelectDropdown<
   SoftwareProductBuild,
   MxBuildIdDataProviderParams
 > {
-  readonly placeholder = input<string>("MX Build ID");
+  /** Legacy wording, restored: the "Select " prefix was dropped in the port. */
+  readonly placeholder = input<string>("Select MX Build ID");
+  /** Forwarded to the inner select so a `<label for>` can address it. */
+  readonly inputId = input<string>();
 
   protected override readonly stateProvider: MxevolveSingleSelectBackendStateProvider<
     SoftwareProductBuild,

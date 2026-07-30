@@ -1,8 +1,11 @@
 import { render, screen, waitFor } from "@testing-library/angular";
 import { FormControl, ReactiveFormsModule, Validators } from "@angular/forms";
-import { MockComponent } from "ng-mocks";
+import { MockComponent, ngMocks } from "ng-mocks";
 import { InputText } from "primeng/inputtext";
-import { FinalProductDropdownInputComponent } from "@mxevolve/domains/artifact/widget";
+import {
+  DropdownDefaultSelectionMode,
+  FinalProductDropdownInputComponent,
+} from "@mxevolve/domains/artifact/widget";
 import { BranchInputComponent } from "@mxevolve/domains/scm/widget";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { ProvidedDefinitionInput } from "@mxevolve/domains/business-process/util";
@@ -23,18 +26,20 @@ interface RenderOptions {
   providedInputs?: readonly ProvidedDefinitionInput[];
   finalProductRequired?: boolean;
   parentBranchName?: string | null;
+  finalProductId?: string | null;
 }
 
 async function renderComponent({
   providedInputs = [],
   finalProductRequired = true,
   parentBranchName = null,
+  finalProductId = null,
 }: RenderOptions = {}) {
   const controls = {
     parentBranchName: new FormControl<string | null>(parentBranchName),
     archivalBranchName: new FormControl<string | null>(null),
     finalProductId: new FormControl<string | null>(
-      null,
+      finalProductId,
       finalProductRequired ? [Validators.required] : []
     ),
     configCommitId: new FormControl<string | null>(null),
@@ -151,5 +156,82 @@ describe("MqgFromNewBranchParametersComponent", () => {
     // Required + empty + hidden is a deadlock: the run can never be submitted
     // and the user has nothing to fill in.
     expect(required && empty && !onScreen).toBe(false);
+  });
+
+  /**
+   * Without an explicit selection mode the dropdown state service defaults to
+   * LATEST, which re-sorts the options by createdOn and auto-selects the newest
+   * one - silently replacing the product the Process Template prefilled, along
+   * with its config and RTP commits. Legacy's wrapper always passed CUSTOM.
+   */
+  describe("final product selection mode", () => {
+    function dropdown() {
+      return ngMocks.find(FinalProductDropdownInputComponent)
+        .componentInstance as unknown as {
+        dropdownDefaultSelectionMode: DropdownDefaultSelectionMode;
+        customFinalProductId: string;
+      };
+    }
+
+    it("asks the dropdown not to auto-select the newest product", async () => {
+      await renderComponent({
+        parentBranchName: "main",
+        finalProductId: "fp-prefilled",
+      });
+
+      await waitFor(() =>
+        expect(dropdown().dropdownDefaultSelectionMode).toBe(
+          DropdownDefaultSelectionMode.CUSTOM
+        )
+      );
+    });
+
+    it("hands the dropdown the product the form arrived with", async () => {
+      await renderComponent({
+        parentBranchName: "main",
+        finalProductId: "fp-prefilled",
+      });
+
+      await waitFor(() =>
+        expect(dropdown().customFinalProductId).toBe("fp-prefilled")
+      );
+    });
+
+    /**
+     * Legacy read the custom id off the selector control's `defaultValue`, taken
+     * once at init, so the parent-branch cascade that clears the live control
+     * could not lose it.
+     */
+    it("keeps the custom id after a parent-branch change clears the control", async () => {
+      const { controls, fixture } = await renderComponent({
+        parentBranchName: "main",
+        finalProductId: "fp-prefilled",
+      });
+
+      controls.parentBranchName.setValue("other-branch");
+      fixture.detectChanges();
+
+      await waitFor(() => expect(controls.finalProductId.value).toBeNull());
+      expect(dropdown().customFinalProductId).toBe("fp-prefilled");
+    });
+  });
+
+  it("keeps the RTP commit inside the final-product block, so both disappear together", async () => {
+    const { controls, fixture } = await renderComponent({
+      parentBranchName: "main",
+    });
+
+    await waitFor(() =>
+      expect(screen.getByLabelText("RTP Commit ID")).toBeInTheDocument()
+    );
+
+    // Clearing the parent branch disables the final product, which legacy used
+    // to hide the pair; the RTP box escaped the wrapper and stayed on screen.
+    controls.parentBranchName.setValue(null);
+    fixture.detectChanges();
+
+    await waitFor(() =>
+      expect(screen.queryByLabelText("RTP Commit ID")).toBeNull()
+    );
   });
 });

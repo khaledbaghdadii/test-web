@@ -1,5 +1,6 @@
 <mxevolve-multi-page-dialog
   [dialogClass]="dialogClass()"
+  [busy]="executorBusy()"
   [header]="selected()?.name"
   (pageChange)="onPageChange($event)"
 >
@@ -67,6 +68,8 @@
       [definition]="definition"
       [initialValues]="executorSeed()"
       (created)="onExecutorCreated($event)"
+      (executingChange)="executorBusy.set($event)"
+      (cancelled)="onExecutorCancelled()"
     />
     }
   </ng-template>

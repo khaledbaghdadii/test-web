@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { ReactiveFormsModule } from "@angular/forms";
 import { Type } from "@angular/core";
 import { MockComponent, ngMocks } from "ng-mocks";
-import { of, throwError } from "rxjs";
+import { Subject, of, throwError } from "rxjs";
 import { InputText } from "primeng/inputtext";
 import { Button } from "primeng/button";
 import {
@@ -16,7 +16,10 @@ import {
   UserStoryInputComponent,
 } from "@mxevolve/domains/business-process/widget";
 import { ReviewersAutoCompleteComponent } from "@mxevolve/domains/scm/widget";
-import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import {
+  ErrorAlertComponent,
+  ToastMessageService,
+} from "@mxevolve/shared/ui/primitive";
 import { MergeConfigurationService } from "@mxevolve/domains/scm/data-access";
 import {
   DefinitionInputComponent,
@@ -35,6 +38,7 @@ function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
 }
 
 const COMPONENT_IMPORTS = [
+  ErrorAlertComponent,
   ReactiveFormsModule,
   InputText,
   Button,
@@ -121,6 +125,17 @@ async function renderComponent(
 
 function buildButton(): HTMLElement {
   return screen.getByRole("button", { name: "Build" });
+}
+
+/** The minimum a backport run needs before the Build button turns on. */
+async function fillValidForm(
+  user: ReturnType<typeof userEvent.setup>
+): Promise<void> {
+  await user.type(screen.getByLabelText("Execution Name"), "My backport");
+  await user.type(screen.getByLabelText("Pull Request Id"), "4402");
+  await user.type(screen.getByLabelText("Merge Request Title"), "My MR title");
+  simulateCvaChange(UserStoryInputComponent, ["VAL-1"]);
+  setReviewers(["reviewer-a"]);
 }
 
 function setReviewers(names: string[]): void {
@@ -266,7 +281,13 @@ describe("BackportExecutorComponent", () => {
       await waitFor(() => expect(buildButton()).toBeEnabled());
     });
 
-    it("shows an error toast and does not emit created when the execute call fails", async () => {
+    /**
+     * Legacy pinned a backend failure in a non-closeable alert at the top of the
+     * dialog and cleared it on the next attempt. A toast is gone before the user
+     * has finished reading the form that produced it, and the dialog is modal,
+     * so there is nowhere else for the message to live.
+     */
+    it("anchors the failure in the dialog and does not emit created when the execute call fails", async () => {
       const user = userEvent.setup();
       const { fixture } = await renderComponent();
       const created = jest.fn();
@@ -285,9 +306,7 @@ describe("BackportExecutorComponent", () => {
       setReviewers(["reviewer-a"]);
       await user.click(buildButton());
 
-      await waitFor(() =>
-        expect(mockToastService.showError).toHaveBeenCalledWith("boom")
-      );
+      await waitFor(() => expect(screen.getByText("boom")).toBeVisible());
       expect(created).not.toHaveBeenCalled();
     });
   });
@@ -372,6 +391,61 @@ describe("BackportExecutorComponent", () => {
         mockMergeConfigurationService.getFilteredMergeConfigurations
       ).not.toHaveBeenCalled();
       expect(mockToastService.showError).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * Legacy gave every executor dialog a footer Cancel disabled during execution,
+   * plus `[closable]="!isExecuting"` on the dialog itself. The repush path opens
+   * the executor directly (a stack of one, so no back chevron), which is why
+   * Cancel has to exist as its own control rather than relying on Back.
+   */
+  describe("cancel and dialog locking", () => {
+    it("emits cancelled when the footer Cancel is clicked", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+      const cancelled = jest.fn();
+      fixture.componentInstance.cancelled.subscribe(cancelled);
+
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(cancelled).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports execution state to the host dialog so it can lock itself", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+      const busy: boolean[] = [];
+      fixture.componentInstance.executingChange.subscribe((value: boolean) =>
+        busy.push(value)
+      );
+      mockExecutorService.executeBackportProcessDefinition.mockReturnValue(
+        new Subject()
+      );
+
+      await fillValidForm(user);
+      await user.click(buildButton());
+
+      await waitFor(() => expect(busy.at(-1)).toBe(true));
+      expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    });
+
+    it("refuses to submit while an async validator is still pending", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent();
+      mockExecutorService.executeBackportProcessDefinition.mockClear();
+
+      await fillValidForm(user);
+      await waitFor(() =>
+        expect(fixture.componentInstance.form().valid).toBe(true)
+      );
+      fixture.componentInstance.form().controls.name.markAsPending();
+
+      fixture.componentInstance.build();
+
+      expect(
+        mockExecutorService.executeBackportProcessDefinition
+      ).not.toHaveBeenCalled();
     });
   });
 });

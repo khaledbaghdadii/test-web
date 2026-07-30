@@ -22,6 +22,11 @@ import {
   RepositorySelectorParams,
 } from "./repository-data-provider";
 
+/** Stands in until Angular registers the real callbacks on the value accessor. */
+function noop(): void {
+  return;
+}
+
 /**
  * New-architecture rebuild of the legacy
  * `mxevolve-business-process-repository-selector`. A single-select dropdown of
@@ -59,9 +64,8 @@ export class RepositorySelectorComponent implements ControlValueAccessor {
 
   private readonly repositoryService = inject(RepositoryService);
   private prefilledId: string | null = null;
-  private hasEmittedInitial = false;
-  private onChange: (value: string | null) => void = () => {};
-  private onTouched: () => void = () => {};
+  private onChange: (value: string | null) => void = noop;
+  private onTouched: () => void = noop;
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -101,21 +105,31 @@ export class RepositorySelectorComponent implements ControlValueAccessor {
     this.onTouched = fn;
   }
 
+  /**
+   * Only ever reached from a user interaction: the inner dropdown emits
+   * `selectionChange` from its select/clear handlers, never from the
+   * programmatic `setSelectedItem` the prefill uses. So every call here is a
+   * genuine change and must fire the cascade, exactly as legacy's
+   * `(onChange)="repositoryChanged.emit()"` did.
+   */
   onSelectionChange(repository: RepositoryListItem | null): void {
     this.onChange(repository?.id ?? null);
     this.onTouched();
-    // Skip the very first (prefill-driven) selection so the cascade only fires
-    // for genuine user changes.
-    if (this.hasEmittedInitial) {
-      this.repositoryChanged.emit();
-    }
-    this.hasEmittedInitial = true;
+    this.repositoryChanged.emit();
   }
 
   onError(errorMessage: string): void {
     this.failureEvent.emit(errorMessage);
   }
 
+  /**
+   * Resolves the id the definition (or a repush) prefilled the control with
+   * against the repositories the project actually has.
+   *
+   * When the id is gone the control is cleared as well as the dropdown: leaving
+   * the dead id in the control would let it pass `Validators.required`, enable
+   * the run button and be POSTed, while the dropdown rendered blank.
+   */
   private resolvePrefilledId(repositories: RepositoryListItem[]): void {
     const id = this.prefilledId;
     this.prefilledId = null;
@@ -127,6 +141,12 @@ export class RepositorySelectorComponent implements ControlValueAccessor {
 
     const match = repositories.find((repository) => repository.id === id);
     this.stateProvider.setSelectedItem(match ?? null);
-    this.hasEmittedInitial = true;
+
+    if (!match) {
+      this.onChange(null);
+      this.failureEvent.emit(
+        "The repository available in the Process Template no longer exists. Please update the Process Template."
+      );
+    }
   }
 }

@@ -93,6 +93,13 @@ export class ValidationTemplatesDialogComponent {
     undefined
   );
 
+  /**
+   * True while the executor page has a run in flight. It locks the dialog: the
+   * X, Escape and the back chevron all destroy the executor, which would abandon
+   * an already-issued POST with nothing left to report its outcome.
+   */
+  protected readonly executorBusy = signal(false);
+
   /** Current dialog page; both pages render at the same 6-column width. */
   protected readonly currentPage = signal<string | undefined>("templates");
   protected readonly dialogClass = computed(() => "dialog-cols-6");
@@ -246,6 +253,22 @@ export class ValidationTemplatesDialogComponent {
     if (pageId !== "executor") {
       this.selected.set(undefined);
       this.executorSeed.set(undefined);
+      // The executor is gone, so it will never emit `executingChange` again.
+      this.executorBusy.set(false);
+    }
+  }
+
+  /**
+   * The executor's Cancel button. Coming from the templates list there is a page
+   * to go back to; the repush entry point opens the executor directly (a stack of
+   * one, hence no back chevron), and there Cancel has to close the dialog.
+   */
+  protected onExecutorCancelled(): void {
+    const dialog = this.dialog();
+    if (dialog.canGoBack()) {
+      dialog.back();
+    } else {
+      dialog.close();
     }
   }
 }

@@ -1,4 +1,7 @@
 <div class="flex flex-col gap-4 overflow-x-auto">
+  @if (submitError(); as error) {
+  <mxevolve-error-alert [message]="error" [closable]="false" />
+  }
   <section class="border border-surface rounded-md overflow-hidden">
     <button
       type="button"
@@ -147,6 +150,15 @@
           form().invalid || form().pending || executing() || resolvingPrefill()
         "
         [loading]="executing()"
+      />
+      <p-button
+        type="button"
+        label="Cancel"
+        class="col-span-2"
+        styleClass="w-full justify-center"
+        [outlined]="true"
+        [disabled]="executing()"
+        (onClick)="cancelled.emit()"
       />
     </div>
   </form>

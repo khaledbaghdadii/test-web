@@ -12,6 +12,19 @@ export interface FinalProductControls {
   readonly rtpCommitId: FormControl<string | null>;
 }
 
+/*
+ * emitEvent rule for every write below: these controls feed the executor's
+ * scope-visibility snapshot (`rtpCommitId`, `parentBranchName`,
+ * `archivalBranchName`) and the `mxevolve-branch-input` error state, both of
+ * which are recomputed only from `valueChanges`. A silent write therefore
+ * leaves a stale snapshot — the Validation-Scope-Start-Commit field can stay
+ * visible and `required` after its preconditions are gone, making the form
+ * unsubmittable — and a stale branch error. Legacy emitted on every one of
+ * these writes (`setValue(...)` / `.reset()` with default options).
+ *
+ * `{ emitEvent: false }` is only for writes nothing subscribes to.
+ */
+
 /**
  * Legacy `handleSelectedFinalProduct`: the commits follow the product, and the
  * RTP commit falls back to the configuration commit when the product carries no
@@ -25,30 +38,27 @@ export function applyFinalProductSelection(
     resetFinalProductSelection(controls);
     return;
   }
-  controls.finalProductId.setValue(product.id, { emitEvent: false });
-  controls.configCommitId.setValue(product.configurationCommitId, {
-    emitEvent: false,
-  });
+  controls.finalProductId.setValue(product.id);
+  controls.configCommitId.setValue(product.configurationCommitId);
   controls.rtpCommitId.setValue(
-    product.rtpProduct?.rtpCommitId ?? product.configurationCommitId,
-    { emitEvent: false }
+    product.rtpProduct?.rtpCommitId ?? product.configurationCommitId
   );
 }
 
 export function resetFinalProductSelection(
   controls: FinalProductControls
 ): void {
-  controls.finalProductId.reset(null, { emitEvent: false });
-  controls.configCommitId.reset(null, { emitEvent: false });
-  controls.rtpCommitId.reset(null, { emitEvent: false });
+  controls.finalProductId.reset(null);
+  controls.configCommitId.reset(null);
+  controls.rtpCommitId.reset(null);
 }
 
 /**
- * Hands a control the step borrowed back to the form: cleared, then disabled,
- * both silently. Clearing after disabling would leave the stale value in
- * `getRawValue()`, which is what the submitted payload is built from.
+ * Hands a control the step borrowed back to the form: cleared, then disabled.
+ * Clearing after disabling would leave the stale value in `getRawValue()`,
+ * which is what the submitted payload is built from.
  */
 export function releaseControl(control: FormControl<unknown>): void {
-  control.reset(null, { emitEvent: false });
+  control.reset(null);
   control.disable({ emitEvent: false });
 }

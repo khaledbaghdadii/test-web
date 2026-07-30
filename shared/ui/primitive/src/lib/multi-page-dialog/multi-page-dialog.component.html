@@ -3,7 +3,10 @@
   [class]="dialogClass()"
   [modal]="true"
   [draggable]="false"
+  [resizable]="false"
   [dismissableMask]="false"
+  [closable]="!busy()"
+  [closeOnEscape]="!busy()"
   (visibleChange)="onVisibleChange($event)"
 >
   <ng-template pTemplate="header">
@@ -11,8 +14,9 @@
       @if (canGoBack()) {
       <button
         type="button"
-        class="flex items-center cursor-pointer bg-transparent border-none p-0"
+        class="flex items-center cursor-pointer bg-transparent border-none p-0 disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Back"
+        [disabled]="busy()"
         (click)="back()"
       >
         <mxevolve-icon name="chevron_left" size="md" />

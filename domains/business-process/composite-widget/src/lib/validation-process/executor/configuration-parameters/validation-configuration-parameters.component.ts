@@ -54,8 +54,6 @@ export class ValidationConfigurationParametersComponent implements OnInit {
     input.required<FormControl<string | null>>();
   readonly rtpCommitIdFormControl =
     input.required<FormControl<string | null>>();
-  readonly preselectedFinalProductId = input<string | null>(null);
-  /** Whether the repository field itself is editable (hidden when prefilled). */
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly toast = inject(ToastMessageService);
@@ -85,20 +83,28 @@ export class ValidationConfigurationParametersComponent implements OnInit {
     this.toast.showError(message);
   }
 
-  /** Legacy `clearQualityLevelSelection`: a repository change invalidates it. */
-  protected onRepositoryChanged(): void {
-    this.businessProcessQualityLevelFormControl().reset(null, {
-      emitEvent: true,
-    });
-  }
-
+  /**
+   * Legacy `repositoryValueNotSet$`: the quality level is cleared and locked
+   * only when the repository becomes *empty*, never on a plain change. Legacy
+   * validation never bound `repositoryChanged` at all, so a definition-prefilled
+   * quality level survived the user re-picking a repository.
+   *
+   * The clear emits deliberately (legacy `setValue(undefined)` did too):
+   * `businessProcessQualityLevel` feeds the executor's scope-visibility
+   * snapshot, which is recomputed only from `valueChanges`. A silent write there
+   * strands the snapshot on the old quality level and can leave the
+   * Validation-Scope-Start-Commit field visible and `required` with its
+   * preconditions gone — an unsubmittable form. `{ emitEvent: false }` is only
+   * for writes nothing subscribes to; the `disable` below is one, since the
+   * template reads `.enabled` directly on every change-detection pass.
+   */
   private applyQualityLevelAvailability(repositoryId: string | null): void {
     const qualityLevel = this.businessProcessQualityLevelFormControl();
     if (repositoryId) {
       qualityLevel.enable({ emitEvent: false });
       return;
     }
-    qualityLevel.reset(null, { emitEvent: false });
+    qualityLevel.reset(null);
     qualityLevel.disable({ emitEvent: false });
   }
 

@@ -46,12 +46,28 @@
         <label class="block mb-1" for="rerun-final-product"
           >Final Product <span class="text-red-500">*</span></label
         >
+        @if (finalProductsLoading()) {
+        <p-skeleton styleClass="h-12" />
+        }
         <mxevolve-final-product-dropdown-input
+          [style.display]="finalProductsLoading() ? 'none' : 'block'"
           [projectId]="projectId()"
+          [repositoryId]="repositoryId() ?? ''"
           [branchFilter]="branch() ?? ''"
           [customFinalProductId]="initialFinalProductId() ?? ''"
           (selectedFinalProductChange)="onFinalProductChange($event)"
+          (selectedFinalProductExpiryDateNotification)="
+            onFinalProductExpiryNotification($event)
+          "
+          (dataReadyChange)="onFinalProductsDataReady($event)"
+          (errorMessageChange)="onFinalProductsError($event)"
         />
+        @if (finalProductWarningMessage()) {
+        <div class="text-surface-400 dark:text-surface-400 italic mt-2">
+          <mxevolve-icon name="info" class="mr-1" />Note:
+          {{ finalProductWarningMessage() }}
+        </div>
+        }
       </div>
       <div class="flex flex-col gap-1 col-span-3">
         <label for="rtp-commit-id"

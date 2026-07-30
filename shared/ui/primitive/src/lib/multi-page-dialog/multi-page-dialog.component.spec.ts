@@ -10,7 +10,7 @@ import { MultiPageDialogComponent } from "./multi-page-dialog.component";
 import { MultiPageDialogPageDirective } from "./multi-page-dialog-page.directive";
 
 const HOST_TEMPLATE = `
-  <mxevolve-multi-page-dialog #dlg (pageChange)="onPageChange($event)">
+  <mxevolve-multi-page-dialog #dlg [busy]="busy" (pageChange)="onPageChange($event)">
     <ng-template mxevolveMultiPageDialogPage="page1" title="Page One Title">
       <span>Page one body</span>
     </ng-template>
@@ -25,7 +25,8 @@ const HOST_TEMPLATE = `
 `;
 
 async function renderHost(
-  onPageChange: (value: string | undefined) => void = () => {}
+  onPageChange: (value: string | undefined) => void = jest.fn(),
+  busy = false
 ) {
   return render(HOST_TEMPLATE, {
     imports: [
@@ -36,7 +37,7 @@ async function renderHost(
       MockComponent(MxevolveIconComponent),
     ],
     providers: [provideNoopAnimations()],
-    componentProperties: { onPageChange },
+    componentProperties: { onPageChange, busy },
   });
 }
 
@@ -142,5 +143,63 @@ describe("MultiPageDialogComponent", () => {
     await waitFor(() =>
       expect(pageEvents).toEqual(["page1", "page2", "page1"])
     );
+  });
+
+  /**
+   * Closing the dialog destroys the projected page, and with it the
+   * `takeUntilDestroyed` subscription watching an already-issued POST. Legacy
+   * locked every executor dialog for exactly this reason
+   * (`[closable]="!isExecuting"`, plus `[closeOnEscape]` on Upgrade); the shell
+   * bound neither, so the X and Escape stayed live mid-execution.
+   */
+  describe("busy", () => {
+    it("leaves the dialog closable and escapable when not busy", async () => {
+      const { fixture } = await renderHost();
+
+      await userEvent.click(screen.getByText("do-open"));
+
+      const dialog = fixture.debugElement.query(By.directive(Dialog))
+        .componentInstance;
+      expect(dialog.closable).toBe(true);
+      expect(dialog.closeOnEscape).toBe(true);
+    });
+
+    it("locks the X and Escape while busy", async () => {
+      const { fixture } = await renderHost(jest.fn(), true);
+
+      await userEvent.click(screen.getByText("do-open"));
+
+      const dialog = fixture.debugElement.query(By.directive(Dialog))
+        .componentInstance;
+      expect(dialog.closable).toBe(false);
+      expect(dialog.closeOnEscape).toBe(false);
+    });
+
+    it("is never resizable (legacy parity)", async () => {
+      const { fixture } = await renderHost();
+
+      await userEvent.click(screen.getByText("do-open"));
+
+      expect(
+        fixture.debugElement.query(By.directive(Dialog)).componentInstance
+          .resizable
+      ).toBe(false);
+    });
+
+    it("disables the back chevron while busy, because navigating away also destroys the page", async () => {
+      const { fixture } = await renderHost(jest.fn(), true);
+
+      await userEvent.click(screen.getByText("do-open"));
+      await userEvent.click(screen.getByText("do-goto"));
+      await waitFor(() => expect(screen.getByText("Page two body")).toBeTruthy());
+
+      expect(
+        screen.getByRole("button", { name: "Back" })
+      ).toBeDisabled();
+
+      fixture.componentInstance.busy = false;
+      fixture.detectChanges();
+      expect(screen.getByRole("button", { name: "Back" })).toBeEnabled();
+    });
   });
 });

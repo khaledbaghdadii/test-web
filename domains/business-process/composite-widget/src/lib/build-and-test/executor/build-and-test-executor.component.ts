@@ -42,6 +42,7 @@ import {
   DefinitionInputGroupComponent,
 } from "@mxevolve/domains/business-process/ui";
 import {
+  ErrorAlertComponent,
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
@@ -73,6 +74,7 @@ const CONFIGURATION_PARENT_BRANCH_MISSING =
     Checkbox,
     InputText,
     Button,
+    ErrorAlertComponent,
     MxevolveIconComponent,
     BuildAndTestPrefilledInputsComponent,
     InfraGroupSelectorComponent,
@@ -96,6 +98,14 @@ export class BuildAndTestExecutorComponent {
    */
   readonly initialValues = input<BuildAndTestExecutorSeed>();
   readonly created = output<string>();
+  /**
+   * Mirrors {@link executing} to the hosting dialog, which locks itself while a
+   * run is in flight — closing the dialog destroys this component (and with it
+   * the `takeUntilDestroyed` subscription) while the POST may still be running.
+   */
+  readonly executingChange = output<boolean>();
+  /** The footer's Cancel button; the host decides between Back and Close. */
+  readonly cancelled = output<void>();
 
   private readonly executorService = inject(BuildAndTestProcessExecutorService);
   private readonly analyticsTracker = inject(AnalyticsTrackerService);
@@ -104,6 +114,12 @@ export class BuildAndTestExecutorComponent {
 
   protected readonly executing = signal(false);
   protected readonly detailsExpanded = signal(false);
+  /**
+   * Backend failure from the last submit. Legacy pinned this in a non-closeable
+   * alert at the top of the dialog and cleared it when the user retried; a toast
+   * is gone before the user has finished reading the form it refers to.
+   */
+  protected readonly submitError = signal<string | null>(null);
   protected readonly skipEnvironmentDeployment = signal(false);
 
   /** Exposed for the template's `[class.required]` label bindings. */
@@ -138,6 +154,7 @@ export class BuildAndTestExecutorComponent {
       this.wiredForm = form;
       this.wireSkipEnvironmentDeployment(form);
     });
+    effect(() => this.executingChange.emit(this.executing()));
   }
 
   /**
@@ -203,11 +220,18 @@ export class BuildAndTestExecutorComponent {
     this.toast.showError(message);
   }
 
+  /**
+   * `form.pending` is part of the guard because the branch inputs validate
+   * asynchronously: without it, Enter submits a form whose branch checks have
+   * not come back yet, and the run is created against a branch that may not
+   * exist.
+   */
   protected build(): void {
     const form = this.form();
-    if (form.invalid || this.executing()) {
+    if (form.invalid || form.pending || this.executing()) {
       return;
     }
+    this.submitError.set(null);
     this.executing.set(true);
     this.executorService
       .executeBuildAndTestProcessDefinition(
@@ -217,7 +241,7 @@ export class BuildAndTestExecutorComponent {
       .pipe(
         catchError((error: Error) => {
           this.executing.set(false);
-          this.toast.showError(error.message);
+          this.submitError.set(error.message);
           return EMPTY;
         }),
         takeUntilDestroyed(this.destroyRef)

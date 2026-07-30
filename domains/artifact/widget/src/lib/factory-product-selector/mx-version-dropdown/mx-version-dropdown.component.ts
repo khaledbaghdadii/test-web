@@ -16,6 +16,7 @@ import { MxVersionDataProvider } from "./mx-version-data-provider";
   selector: "mxevolve-mx-version-dropdown",
   template: `<mxevolve-single-select-dropdown
     [stateProvider]="stateProvider"
+    [inputId]="inputId()"
     [dataParams]="{ projectId: state.projectId() ?? '' }"
     [config]="{
       placeholder: placeholder(),
@@ -35,7 +36,10 @@ export class MxVersionDropdownComponent extends BaseSingleSelectDropdown<
   SoftwareProductVersion,
   { projectId: string }
 > {
-  readonly placeholder = input<string>("MX Version");
+  /** Legacy wording, restored: the "Select " prefix was dropped in the port. */
+  readonly placeholder = input<string>("Select MX Version");
+  /** Forwarded to the inner select so a `<label for>` can address it. */
+  readonly inputId = input<string>();
 
   protected override readonly stateProvider: MxEvolveSingleSelectDropdownState<
     SoftwareProductVersion,

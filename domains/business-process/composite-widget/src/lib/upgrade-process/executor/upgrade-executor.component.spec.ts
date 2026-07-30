@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { Type } from "@angular/core";
 import { ReactiveFormsModule } from "@angular/forms";
 import { MockComponent, MockDirective, ngMocks } from "ng-mocks";
-import { of, throwError } from "rxjs";
+import { Subject, of, throwError } from "rxjs";
 import { InputText } from "primeng/inputtext";
 import { RadioButton } from "primeng/radiobutton";
 import { Select } from "primeng/select";
@@ -26,7 +26,10 @@ import {
   ScenarioDefinitionDropdownComponent,
   ScenarioDefinitionMultiselectDropdownComponent,
 } from "@mxevolve/domains/test/widget";
-import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import {
+  ErrorAlertComponent,
+  ToastMessageService,
+} from "@mxevolve/shared/ui/primitive";
 import {
   DefinitionInputComponent,
   DefinitionInputGroupComponent,
@@ -51,6 +54,7 @@ function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
 }
 
 const COMPONENT_IMPORTS = [
+  ErrorAlertComponent,
   ReactiveFormsModule,
   InputText,
   RadioButton,
@@ -157,6 +161,13 @@ async function renderComponent(
 
 function buildButton(): HTMLElement {
   return screen.getByRole("button", { name: "Build" });
+}
+
+/** The conversion factory-product cascade (the first of the two selectors). */
+function conversionSelector(): FactoryProductSelectionDirective {
+  return ngMocks
+    .findAll(FactoryProductSelectionDirective)[0]
+    .injector.get(FactoryProductSelectionDirective);
 }
 
 describe("UpgradeExecutorComponent", () => {
@@ -464,7 +475,13 @@ describe("UpgradeExecutorComponent", () => {
       await waitFor(() => expect(buildButton()).toBeEnabled());
     });
 
-    it("shows an error toast and does not emit created when the execute call fails", async () => {
+    /**
+     * Legacy pinned a backend failure in a non-closeable alert at the top of the
+     * dialog and cleared it on the next attempt. A toast is gone before the user
+     * has finished reading the form that produced it, and the dialog is modal,
+     * so there is nowhere else for the message to live.
+     */
+    it("anchors the failure in the dialog and does not emit created when the execute call fails", async () => {
       const user = userEvent.setup();
       const { fixture } = await renderComponent(FULLY_PREFILLED_INPUTS);
       const created = jest.fn();
@@ -481,10 +498,299 @@ describe("UpgradeExecutorComponent", () => {
       await waitFor(() => expect(buildButton()).toBeEnabled());
       await user.click(buildButton());
 
-      await waitFor(() =>
-        expect(mockToastService.showError).toHaveBeenCalledWith("boom")
-      );
+      await waitFor(() => expect(screen.getByText("boom")).toBeVisible());
       expect(created).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * Legacy gave every executor dialog a footer Cancel disabled during execution,
+   * plus `[closable]="!isExecuting"` on the dialog itself. The repush path opens
+   * the executor directly (a stack of one, so no back chevron), which is why
+   * Cancel has to exist as its own control rather than relying on Back.
+   */
+  describe("cancel and dialog locking", () => {
+    it("emits cancelled when the footer Cancel is clicked", async () => {
+      const user = userEvent.setup();
+      const { fixture } = await renderComponent(FULLY_PREFILLED_INPUTS);
+      const cancelled = jest.fn();
+      fixture.componentInstance.cancelled.subscribe(cancelled);
+
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(cancelled).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports execution state to the host dialog so it can lock itself", async () => {
+      const { fixture } = await renderComponent(FULLY_PREFILLED_INPUTS);
+      const busy: boolean[] = [];
+      fixture.componentInstance.executingChange.subscribe((value: boolean) =>
+        busy.push(value)
+      );
+      mockExecutorService.executeUpgradeProcessDefinition.mockReturnValue(new Subject());
+
+      fixture.componentInstance.form().patchValue({ name: "Cancel run", official: false });
+      fixture.componentInstance.build();
+
+      await waitFor(() => expect(busy.at(-1)).toBe(true));
+      expect(
+        screen.getByRole("button", { name: "Cancel" })
+      ).toBeDisabled();
+    });
+
+    it("refuses to submit while an async validator is still pending", async () => {
+      const { fixture } = await renderComponent(FULLY_PREFILLED_INPUTS);
+      mockExecutorService.executeUpgradeProcessDefinition.mockClear();
+
+      fixture.componentInstance.form().patchValue({ name: "Cancel run", official: false });
+      await waitFor(() =>
+        expect(fixture.componentInstance.form().valid).toBe(true)
+      );
+      fixture.componentInstance.form().controls.name.markAsPending();
+
+      fixture.componentInstance.build();
+
+      expect(mockExecutorService.executeUpgradeProcessDefinition).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * The four factory-product dropdowns are the one place the migration lost the
+   * legacy label contract: all four labels were marked required
+   * (`[class.required]="required"` on both legacy selectors) and each `for`
+   * pointed at a real control.
+   */
+  describe("factory product dropdowns", () => {
+    function labelFor(text: string): HTMLElement[] {
+      return screen
+        .getAllByText(text)
+        .filter((element) => element.tagName === "LABEL");
+    }
+
+    it("marks all four factory-product labels required in both selectors", async () => {
+      await renderComponent();
+
+      for (const text of [
+        "MX Version",
+        "MX Build ID",
+        "BIP Version",
+        "BIP Build ID",
+      ]) {
+        const labels = labelFor(text);
+        expect(labels).toHaveLength(2);
+        for (const label of labels) {
+          expect(label).toHaveClass("required");
+        }
+      }
+    });
+
+    /**
+     * Each `<label for>` used to point at an id nothing rendered, because the
+     * dropdowns received no `inputId` - so none of the eight labels addressed
+     * anything.
+     */
+    it("gives every factory-product label a control to address", async () => {
+      await renderComponent();
+
+      const dropdownInputIds = [
+        ...ngMocks.findAll(MxVersionDropdownComponent),
+        ...ngMocks.findAll(MxBuildIdDropdownComponent),
+        ...ngMocks.findAll(BipVersionDropdownComponent),
+        ...ngMocks.findAll(BipBuildIdDropdownComponent),
+      ].map((dropdown) => ngMocks.input(dropdown, "inputId") as string);
+
+      expect(dropdownInputIds).toHaveLength(8);
+      expect(dropdownInputIds.filter(Boolean)).toHaveLength(8);
+
+      const labelTargets = [
+        "MX Version",
+        "MX Build ID",
+        "BIP Version",
+        "BIP Build ID",
+      ].flatMap((text) =>
+        labelFor(text).map((label) => label.getAttribute("for"))
+      );
+      for (const target of labelTargets) {
+        expect(dropdownInputIds).toContain(target);
+      }
+    });
+  });
+
+  describe("factory product payload", () => {
+    /**
+     * The cascade directive used to emit its empty starting state, so
+     * `patchFactoryProduct` ran - and called `markAsDirty()` - before the user
+     * had touched anything, showing "all attributes are required" the moment the
+     * dialog opened.
+     */
+    it("leaves the factory product pristine until the user chooses something", async () => {
+      const { fixture } = await renderComponent();
+
+      expect(fixture.componentInstance.form().controls.factoryProduct.dirty).toBe(
+        false
+      );
+    });
+
+    /**
+     * Legacy spread the current value and wrote only the key that changed, so an
+     * unanswered dropdown stayed absent. Filling the rest with `""` turned "not
+     * chosen" into "chosen as empty" in the submitted payload.
+     */
+    it("keeps unchosen factory-product attributes out of the value", async () => {
+      const { fixture } = await renderComponent();
+      const control = fixture.componentInstance.form().controls.factoryProduct;
+
+      conversionSelector().mxVersionChange.emit({ version: "3.1.65" });
+
+      expect(control.value).toEqual({ mxVersion: "3.1.65" });
+      expect(control.value).not.toHaveProperty("bipVersion");
+    });
+
+    it("merges each dropdown answer into the value as it arrives", async () => {
+      const { fixture } = await renderComponent();
+      const control = fixture.componentInstance.form().controls.factoryProduct;
+      const directive = conversionSelector();
+
+      directive.mxVersionChange.emit({ version: "3.1.65" });
+      directive.mxBuildIdChange.emit({ buildId: "build-1" });
+      directive.factoryProductIdChange.emit("fp-1");
+
+      expect(control.value).toEqual({
+        mxVersion: "3.1.65",
+        mxBuildId: "build-1",
+        id: "fp-1",
+      });
+      expect(control.dirty).toBe(true);
+    });
+  });
+
+  /**
+   * `mxevolve-branch-input` recomputes its `branchInvalid` / `branchApiError`
+   * state purely from `valueChanges`, and its debounced async check is cancelled
+   * only by a new emission. Resetting the branches silently therefore left the
+   * emptied fields carrying the "branch does not exist / already exists" error
+   * derived from the value that had just been cleared - and let an in-flight
+   * check land on them afterwards - so the form stayed invalid with no field the
+   * user could touch to clear it. Legacy used plain emitting `.reset()`.
+   */
+  describe("configuration branch cascade", () => {
+    function branchValues(fixture: {
+      componentInstance: UpgradeExecutorComponent;
+    }) {
+      const form = fixture.componentInstance.form();
+      return {
+        configurationBranchName: form.controls.configurationBranchName,
+        configurationParentBranch: form.controls.configurationParentBranch,
+        createBranch: form.controls.createBranch,
+      };
+    }
+
+    it("announces the emptied branches when the create-branch answer changes", async () => {
+      const { fixture } = await renderComponent();
+      const controls = branchValues(fixture);
+      controls.configurationBranchName.setValue("stale-branch");
+      const seen: (string | null)[] = [];
+      controls.configurationBranchName.valueChanges.subscribe((value) =>
+        seen.push(value)
+      );
+
+      controls.createBranch.setValue(true);
+
+      await waitFor(() => expect(seen).toContain(null));
+      expect(controls.configurationBranchName.value).toBeNull();
+    });
+
+    it("announces the emptied branches when the repository is cleared", async () => {
+      const { fixture } = await renderComponent();
+      const controls = branchValues(fixture);
+      fixture.componentInstance.form().controls.repositoryId.setValue("repo-1");
+      controls.configurationParentBranch.setValue("stale-parent");
+      const seen: (string | null)[] = [];
+      controls.configurationParentBranch.valueChanges.subscribe((value) =>
+        seen.push(value)
+      );
+
+      fixture.componentInstance.form().controls.repositoryId.setValue(null);
+
+      await waitFor(() => expect(seen).toContain(null));
+      expect(controls.configurationParentBranch.value).toBeNull();
+      expect(controls.createBranch.value).toBeNull();
+    });
+
+    it("announces the emptied branches when the user picks another repository", async () => {
+      const { fixture } = await renderComponent();
+      const controls = branchValues(fixture);
+      controls.configurationBranchName.setValue("stale-branch");
+      const seen: (string | null)[] = [];
+      controls.configurationBranchName.valueChanges.subscribe((value) =>
+        seen.push(value)
+      );
+
+      fixture.componentInstance.onRepositoryChanged();
+
+      await waitFor(() => expect(seen).toContain(null));
+      expect(controls.createBranch.value).toBeNull();
+    });
+  });
+
+  /**
+   * The run form lays fields out two per row. A factory product is four
+   * dropdowns, not one field, so it has to claim the whole row - otherwise the
+   * next field is placed beside it and the row shows three inputs.
+   *
+   * `mxevolve-definition-input` is `display: contents`, so the grid item is the
+   * `.field` div it renders; `fieldClass` is what puts `col-span-full` on it.
+   */
+  describe("factory product layout", () => {
+    function factoryProductFields(): HTMLElement[] {
+      return Array.from(
+        document.querySelectorAll("[mxevolveFactoryProductSelection]")
+      ).map((selector) => selector.closest("div.field") as HTMLElement);
+    }
+
+    it("gives each factory product a row of its own", async () => {
+      await renderComponent();
+
+      const fields = factoryProductFields();
+      expect(fields).toHaveLength(2);
+      for (const field of fields) {
+        expect(field).toHaveClass("col-span-full");
+      }
+    });
+
+    it("places each factory product in the two-column field grid, and the other fields beside each other", async () => {
+      await renderComponent();
+
+      for (const field of factoryProductFields()) {
+        // The nearest grid is the section's field grid, not the dropdowns' own.
+        const grid = field.parentElement?.closest("div.grid-2");
+        expect(grid).toBeTruthy();
+
+        // Every other field in that grid is a half-width one, so they pair up on
+        // their own rows and none can land beside the factory product.
+        const neighbours = Array.from(
+          grid!.querySelectorAll(":scope > mxevolve-definition-input > div.field")
+        ).filter((candidate) => candidate !== field);
+        expect(neighbours.length).toBeGreaterThan(0);
+        for (const neighbour of neighbours) {
+          expect(neighbour).not.toHaveClass("col-span-full");
+        }
+      }
+    });
+
+    it("lays the four dropdowns out two per row inside that block", async () => {
+      await renderComponent();
+
+      for (const selector of document.querySelectorAll(
+        "[mxevolveFactoryProductSelection]"
+      )) {
+        expect(selector).toHaveClass("grid-2");
+        expect(
+          selector.querySelectorAll(
+            "mxevolve-mx-version-dropdown, mxevolve-mx-build-id-dropdown, mxevolve-bip-version-dropdown, mxevolve-bip-build-id-dropdown"
+          )
+        ).toHaveLength(4);
+      }
     });
   });
 });

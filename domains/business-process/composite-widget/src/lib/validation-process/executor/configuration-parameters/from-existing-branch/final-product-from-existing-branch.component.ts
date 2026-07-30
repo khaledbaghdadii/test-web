@@ -15,9 +15,11 @@ import {
   debounceTime,
   distinctUntilChanged,
   filter,
+  startWith,
   switchMap,
 } from "rxjs/operators";
 import { InputText } from "primeng/inputtext";
+import { FinalProduct } from "@mxevolve/domains/artifact/data-access";
 import {
   LatestFinalProductFailureReason,
   LatestFinalProductFetcherService,
@@ -114,12 +116,6 @@ export class FinalProductFromExistingBranchComponent
     input.required<FormControl<string | null>>();
   readonly rtpCommitIdFormControl =
     input.required<FormControl<string | null>>();
-  /**
-   * Final product the definition/repush already points at. When the branch
-   * lookup finds a different (newer) one, the user is warned rather than
-   * silently switched.
-   */
-  readonly preselectedFinalProductId = input<string | null>(null);
 
   private readonly fetcher = inject(LatestFinalProductFetcherService);
   private readonly toast = inject(ToastMessageService);
@@ -137,8 +133,12 @@ export class FinalProductFromExistingBranchComponent
     this.archivalBranchNameInitialValue = archivalBranch.value ?? "";
     archivalBranch.enable({ emitEvent: false });
 
+    // `startWith` matters at t0: with no branch there is nothing to look a
+    // product up on, and legacy disabled and cleared the three read-only boxes
+    // straight away rather than rendering them empty until the user typed.
     archivalBranch.valueChanges
       .pipe(
+        startWith(archivalBranch.value),
         filter((branchName) => !branchName),
         takeUntilDestroyed(this.destroyRef)
       )
@@ -157,7 +157,7 @@ export class FinalProductFromExistingBranchComponent
     if (archivalBranch.value) {
       this.startLookup(archivalBranch.value)
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((result) => this.applyResult(result));
+        .subscribe((result) => this.applyInitialResult(result));
     }
   }
 
@@ -190,6 +190,10 @@ export class FinalProductFromExistingBranchComponent
     });
   }
 
+  /**
+   * A lookup the user caused by changing the archival branch. They picked a new
+   * branch, so whatever product was selected for the old one is replaced.
+   */
   private applyResult(result: LatestFinalProductResult): void {
     this.loading.set(false);
     const product = result.finalProduct;
@@ -203,22 +207,49 @@ export class FinalProductFromExistingBranchComponent
       return;
     }
 
-    this.finalProductIdFormControl().setValue(product.id, {
-      emitEvent: false,
-    });
-    this.configCommitIdFormControl().setValue(product.configurationCommitId, {
-      emitEvent: false,
-    });
-    this.rtpCommitIdFormControl().setValue(
-      product.rtpProduct?.rtpCommitId ?? product.configurationCommitId,
-      { emitEvent: false }
-    );
+    this.writeFinalProduct(product);
+    this.warning.set(ExistingBranchWarning.NONE);
+  }
 
-    const preselected = this.preselectedFinalProductId();
-    this.warning.set(
-      preselected && preselected !== product.id
-        ? ExistingBranchWarning.PRESELECTED_DIFFERENT_FROM_LATEST
-        : ExistingBranchWarning.NONE
+  /**
+   * The lookup for the branch the form arrived with. This one must not overwrite
+   * a product the definition (or a repush) already chose: legacy wrote only when
+   * the control was empty, and when the branch's newest product differed from
+   * the selected one it warned and left the selection alone.
+   *
+   * The comparison is against the live control, not the repush seed: a product
+   * the *definition* pre-filled sits in the control too, and comparing against
+   * the seed meant the warning could never fire for one.
+   */
+  private applyInitialResult(result: LatestFinalProductResult): void {
+    this.loading.set(false);
+    const product = result.finalProduct;
+    const preselected = this.finalProductIdFormControl().value;
+
+    if (preselected && product && product.id !== preselected) {
+      this.warning.set(ExistingBranchWarning.PRESELECTED_DIFFERENT_FROM_LATEST);
+      return;
+    }
+    if (!product) {
+      this.clearFinalProduct();
+      this.warning.set(
+        result.failureReason
+          ? FAILURE_WARNINGS[result.failureReason]
+          : ExistingBranchWarning.NO_FINAL_PRODUCT_FOUND
+      );
+      return;
+    }
+    if (!preselected) {
+      this.writeFinalProduct(product);
+    }
+    this.warning.set(ExistingBranchWarning.NONE);
+  }
+
+  private writeFinalProduct(product: FinalProduct): void {
+    this.finalProductIdFormControl().setValue(product.id);
+    this.configCommitIdFormControl().setValue(product.configurationCommitId);
+    this.rtpCommitIdFormControl().setValue(
+      product.rtpProduct?.rtpCommitId ?? product.configurationCommitId
     );
   }
 
@@ -229,7 +260,9 @@ export class FinalProductFromExistingBranchComponent
       this.configCommitIdFormControl(),
       this.rtpCommitIdFormControl(),
     ]) {
-      control.reset(null, { emitEvent: false });
+      // Emits: `rtpCommitId` feeds the executor's scope-visibility snapshot,
+      // which is recomputed only from `valueChanges` (legacy emitted too).
+      control.reset(null);
       control.disable({ emitEvent: false });
     }
   }

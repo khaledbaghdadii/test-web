@@ -53,7 +53,7 @@ const FACTORY_PRODUCT_WITH_BIPS: FactoryProduct = {
           os: "linux",
         },
         core: { id: "core-1", type: "CORE" },
-        mxBundles: [],
+        mxBundles: [{ id: "bundle-1", type: "MX" }],
       },
     ],
   },
@@ -68,7 +68,7 @@ const FACTORY_PRODUCT_WITH_BIPS: FactoryProduct = {
           id: "ccb-1",
           purged: false,
           mxBuild: { version: "bip-1.0", buildId: "bip-build-1" },
-          mxBundles: [],
+          mxBundles: [{ id: "bip-bundle-1", type: "BIP" }],
         },
       ],
     },
@@ -103,7 +103,7 @@ const FACTORY_PRODUCT_SINGLE_BIP: FactoryProduct = {
           id: "ccb-single",
           purged: false,
           mxBuild: { version: "bip-only", buildId: "bip-build-only" },
-          mxBundles: [],
+          mxBundles: [{ id: "bip-bundle-only", type: "BIP" }],
         },
       ],
     },
@@ -979,6 +979,44 @@ describe("FactoryProductSelection integration", () => {
       await waitFor(() => mxVersionDropdown.expectToHaveValue("3.1.65"));
       mxBuildDropdown.expectToHaveValue("build-1");
       bipVersionDropdown.expectToHaveValue("bip-1.0");
+    });
+
+    /**
+     * Legacy hydrated from the first build that actually carries `mxBundles`,
+     * not simply `builds[0]`: a build with no bundles has nothing to convert, so
+     * prefilling with it produced a factory product the run could not use.
+     */
+    it("skips builds that carry no bundles when hydrating from a factory product id", async () => {
+      expect.hasAssertions();
+      const withBundlelessFirstBuild: FactoryProduct = {
+        ...FACTORY_PRODUCT_WITH_BIPS,
+        softwareProduct: {
+          ...FACTORY_PRODUCT_WITH_BIPS.softwareProduct,
+          builds: [
+            {
+              ...FACTORY_PRODUCT_WITH_BIPS.softwareProduct.builds[0],
+              id: "spb-empty",
+              mxBuild: {
+                version: "3.1.65",
+                buildId: "build-without-bundles",
+                revision: "1",
+                os: "linux",
+              },
+              mxBundles: [],
+            },
+            ...FACTORY_PRODUCT_WITH_BIPS.softwareProduct.builds,
+          ],
+        },
+      };
+      mockApiService.getFactoryProductById.mockReturnValue(
+        of(withBundlelessFirstBuild)
+      );
+
+      const { mxBuildDropdown } = await renderComponent({
+        factoryProductId: "fp-1",
+      });
+
+      await waitFor(() => mxBuildDropdown.expectToHaveValue("build-1"));
     });
 
     it("calls the API with projectId and factoryProductId when factoryProductId input is provided", async () => {

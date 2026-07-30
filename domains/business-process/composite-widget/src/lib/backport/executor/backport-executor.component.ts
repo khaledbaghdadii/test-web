@@ -36,6 +36,7 @@ import {
 } from "@mxevolve/domains/business-process/ui";
 import { MergeConfigurationService } from "@mxevolve/domains/scm/data-access";
 import {
+  ErrorAlertComponent,
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
@@ -99,6 +100,7 @@ function missingMergeConfigurationValidator(
     ReactiveFormsModule,
     InputText,
     Button,
+    ErrorAlertComponent,
     MxevolveIconComponent,
     BackportPrefilledInputsComponent,
     UserStoryInputComponent,
@@ -113,6 +115,14 @@ export class BackportExecutorComponent {
   readonly projectId = input.required<string>();
   readonly definition = input.required<BusinessProcessDefinition>();
   readonly created = output<string>();
+  /**
+   * Mirrors {@link executing} to the hosting dialog, which locks itself while a
+   * run is in flight — closing the dialog destroys this component (and with it
+   * the `takeUntilDestroyed` subscription) while the POST may still be running.
+   */
+  readonly executingChange = output<boolean>();
+  /** The footer's Cancel button; the host decides between Back and Close. */
+  readonly cancelled = output<void>();
 
   private readonly executorService = inject(BackportProcessExecutorService);
   private readonly mergeConfigurationService = inject(MergeConfigurationService);
@@ -121,6 +131,12 @@ export class BackportExecutorComponent {
 
   protected readonly executing = signal(false);
   protected readonly detailsExpanded = signal(false);
+  /**
+   * Backend failure from the last submit. Legacy pinned this in a non-closeable
+   * alert at the top of the dialog and cleared it when the user retried; a toast
+   * is gone before the user has finished reading the form it refers to.
+   */
+  protected readonly submitError = signal<string | null>(null);
   /** True while the pre-filled merge configuration resolves; blocks submission. */
   protected readonly resolvingPrefill = signal(false);
 
@@ -159,6 +175,7 @@ export class BackportExecutorComponent {
         this.resolveMergeConfiguration(form);
       }
     });
+    effect(() => this.executingChange.emit(this.executing()));
   }
 
   protected toggleDetails(): void {
@@ -231,18 +248,25 @@ export class BackportExecutorComponent {
       );
   }
 
+  /**
+   * `form.pending` is part of the guard because the branch inputs validate
+   * asynchronously: without it, Enter submits a form whose branch checks have
+   * not come back yet, and the run is created against a branch that may not
+   * exist.
+   */
   protected build(): void {
     const form = this.form();
-    if (form.invalid || this.executing()) {
+    if (form.invalid || form.pending || this.executing()) {
       return;
     }
+    this.submitError.set(null);
     this.executing.set(true);
     this.executorService
       .executeBackportProcessDefinition(this.projectId(), this.toRequest(form))
       .pipe(
         catchError((error: Error) => {
           this.executing.set(false);
-          this.toast.showError(error.message);
+          this.submitError.set(error.message);
           return EMPTY;
         }),
         takeUntilDestroyed(this.destroyRef)

@@ -54,6 +54,7 @@ import {
   DefinitionInputGroupComponent,
 } from "@mxevolve/domains/business-process/ui";
 import {
+  ErrorAlertComponent,
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
@@ -103,6 +104,7 @@ const CONFIGURATION_PARENT_BRANCH_MISSING =
     RadioButton,
     Select,
     Button,
+    ErrorAlertComponent,
     MxevolveIconComponent,
     UpgradePrefilledInputsComponent,
     InfraGroupSelectorComponent,
@@ -131,6 +133,14 @@ export class UpgradeExecutorComponent {
    */
   readonly initialValues = input<UpgradeExecutorSeed>();
   readonly created = output<string>();
+  /**
+   * Mirrors {@link executing} to the hosting dialog, which locks itself while a
+   * run is in flight — closing the dialog destroys this component (and with it
+   * the `takeUntilDestroyed` subscription) while the POST may still be running.
+   */
+  readonly executingChange = output<boolean>();
+  /** The footer's Cancel button; the host decides between Back and Close. */
+  readonly cancelled = output<void>();
 
   private readonly executorService = inject(
     UpgradeProcessDefinitionExecutorService
@@ -140,6 +150,12 @@ export class UpgradeExecutorComponent {
 
   protected readonly executing = signal(false);
   protected readonly detailsExpanded = signal(false);
+  /**
+   * Backend failure from the last submit. Legacy pinned this in a non-closeable
+   * alert at the top of the dialog and cleared it when the user retried; a toast
+   * is gone before the user has finished reading the form it refers to.
+   */
+  protected readonly submitError = signal<string | null>(null);
 
   /** Exposed for the template's `[class.required]` label bindings (legacy parity). */
   protected readonly Validators = Validators;
@@ -167,6 +183,7 @@ export class UpgradeExecutorComponent {
         this.wireRepositoryClearedCascade(form);
       }
     });
+    effect(() => this.executingChange.emit(this.executing()));
   }
 
   protected readonly form = computed(() => {
@@ -209,15 +226,34 @@ export class UpgradeExecutorComponent {
     this.resetConfigurationParameters(this.form());
   }
 
+  /*
+   * emitEvent rule for every reset/cascade helper below:
+   *
+   * a write that feeds a `mxevolve-branch-input` control, or the Validation
+   * scope-visibility snapshot, MUST emit. Those consumers recompute their state
+   * purely from `valueChanges`; a silent write leaves the previous state behind
+   * — a branch-input keeps the "branch does not exist / already exists" error it
+   * derived from the value that was just cleared, and its in-flight async check
+   * is never cancelled, so it lands on the emptied control afterwards. The form
+   * then stays invalid with no field the user can touch to clear it.
+   *
+   * `{ emitEvent: false }` is only for writes nothing subscribes to.
+   */
+
   /** The two branches, which are only ever meaningful for one create-branch choice. */
   private resetConfigurationBranches(form: UpgradeExecutorForm): void {
-    form.controls.configurationBranchName.reset(null, { emitEvent: false });
-    form.controls.configurationParentBranch.reset(null, { emitEvent: false });
+    form.controls.configurationBranchName.reset();
+    form.controls.configurationParentBranch.reset();
   }
 
-  /** The create-branch choice and everything downstream of it. */
+  /**
+   * The create-branch choice and everything downstream of it. Resetting
+   * `createBranch` emits, which re-enters `wireCreateBranchCascade` and resets
+   * the two branches a second time — harmless, and exactly what legacy's
+   * `resetConfigurationParamsInputs` did.
+   */
   private resetConfigurationParameters(form: UpgradeExecutorForm): void {
-    form.controls.createBranch.reset(null, { emitEvent: false });
+    form.controls.createBranch.reset();
     this.resetConfigurationBranches(form);
   }
 
@@ -294,30 +330,28 @@ export class UpgradeExecutorComponent {
    * Legacy patched one key at a time and marked the control dirty on every
    * emission, so a partially-chosen product still reaches the form (and fails
    * `factoryProductAttributes()` until every required attribute is set).
+   *
+   * Only the key that changed is written; the rest are carried over as they are.
+   * Filling the untouched ones with `""` (as this used to) turned "not chosen"
+   * into "chosen as empty" in the submitted payload. The directive no longer
+   * emits its empty starting state, so `markAsDirty()` is now only reached by a
+   * real selection.
    */
   protected patchFactoryProduct(
     control: FormControl<UpgradeFactoryProductValue | null>,
     change: Partial<UpgradeFactoryProductValue>
   ): void {
-    const current = control.value;
-    control.setValue({
-      id: current?.id ?? "",
-      mxVersion: current?.mxVersion ?? "",
-      mxBuildId: current?.mxBuildId ?? "",
-      bipVersion: current?.bipVersion,
-      bipBuildId: current?.bipBuildId,
-      ...change,
-    });
+    control.setValue({ ...(control.value ?? {}), ...change });
     control.markAsDirty();
   }
 
   /**
    * Legacy watched `repositoryId.valueChanges.pipe(filter(v => !v))` and cleared
    * the create-branch choice with both branches whenever the repository was
-   * *cleared*. `onRepositoryChanged()` covers only a genuine
-   * user re-selection — the selector suppresses its first emission and never
-   * emits at all when the value is cleared programmatically — so without this
-   * the branches kept pointing at a repository that was no longer chosen.
+   * *cleared*. `onRepositoryChanged()` covers only user-driven selector
+   * changes — the selector never emits when the value is cleared
+   * programmatically — so without this the branches kept pointing at a
+   * repository that was no longer chosen.
    */
   private wireRepositoryClearedCascade(form: UpgradeExecutorForm): void {
     form.controls.repositoryId.valueChanges
@@ -338,18 +372,25 @@ export class UpgradeExecutorComponent {
       .subscribe(() => this.resetConfigurationBranches(form));
   }
 
+  /**
+   * `form.pending` is part of the guard because the branch inputs validate
+   * asynchronously: without it, Enter submits a form whose branch checks have
+   * not come back yet, and the run is created against a branch that may not
+   * exist.
+   */
   protected build(): void {
     const form = this.form();
-    if (form.invalid || this.executing()) {
+    if (form.invalid || form.pending || this.executing()) {
       return;
     }
+    this.submitError.set(null);
     this.executing.set(true);
     this.executorService
       .executeUpgradeProcessDefinition(this.toRequest(form))
       .pipe(
         catchError((error: Error) => {
           this.executing.set(false);
-          this.toast.showError(error.message);
+          this.submitError.set(error.message);
           return EMPTY;
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -414,13 +455,18 @@ export class UpgradeExecutorComponent {
     };
   }
 
+  /**
+   * Passes the chosen keys through untouched. An unset key stays `undefined` and
+   * is dropped from the JSON body, which is what legacy sent; `""` would be a
+   * deliberate empty value.
+   */
   private toFactoryProduct(
     value: UpgradeFactoryProductValue | null
   ): ExecuteUpgradeProcessDefinitionRequest["mxParameters"]["conversionFactoryProduct"] {
     return {
-      id: value?.id ?? "",
-      mxVersion: value?.mxVersion ?? "",
-      mxBuildId: value?.mxBuildId ?? "",
+      id: value?.id,
+      mxVersion: value?.mxVersion,
+      mxBuildId: value?.mxBuildId,
       bipVersion: value?.bipVersion,
       bipBuildId: value?.bipBuildId,
     };

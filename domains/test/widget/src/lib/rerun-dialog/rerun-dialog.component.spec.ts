@@ -11,9 +11,15 @@ import { RadioButton } from "primeng/radiobutton";
 import { RerunDialogComponent } from "./rerun-dialog.component";
 import { RerunModeAnalyticsTrackerService } from "./rerun-mode-analytics-tracker.service";
 import { FactoryProductInputComponent } from "../rerun-scenario-button/factory-product-input/factory-product-input.component";
-import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
+import {
+  MxevolveIconComponent,
+  ToastMessageService,
+} from "@mxevolve/shared/ui/primitive";
 import { FinalProductDropdownInputComponent } from "@mxevolve/domains/artifact/widget";
 import type { FinalProduct } from "@mxevolve/domains/artifact/data-access";
+import { RepositoryService } from "@mxevolve/domains/scm/data-access";
+import { Skeleton } from "primeng/skeleton";
+import { of } from "rxjs";
 
 const MOCK_IMPORTS = [
   MockComponent(FactoryProductInputComponent),
@@ -27,6 +33,7 @@ const MOCK_IMPORTS = [
   InputText,
   Checkbox,
   RadioButton,
+  Skeleton,
 ];
 
 const REQUIRED_INPUTS = {
@@ -38,6 +45,17 @@ const mockRerunModeAnalyticsTracker = {
   trackOfficialModeSelected: jest.fn(),
   trackUnofficialModeSelected: jest.fn(),
 };
+
+/**
+ * The dialog resolves the repository the final products live on the same way
+ * legacy did - the project's first repository - and hands it to the dropdown so
+ * commit messages and the HEAD- prefix can load.
+ */
+const mockRepositoryService = {
+  getAllRepositories: jest.fn(() => of([{ id: "repo-1", name: "repo" }])),
+};
+
+const mockToastService = { showError: jest.fn(), showSuccess: jest.fn() };
 
 async function renderComponent(
   inputs: Partial<
@@ -61,6 +79,8 @@ async function renderComponent(
         provide: RerunModeAnalyticsTrackerService,
         useValue: mockRerunModeAnalyticsTracker,
       },
+      { provide: RepositoryService, useValue: mockRepositoryService },
+      { provide: ToastMessageService, useValue: mockToastService },
     ],
   });
 }

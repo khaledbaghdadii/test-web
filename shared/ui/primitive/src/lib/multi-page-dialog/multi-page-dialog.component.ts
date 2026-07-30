@@ -42,6 +42,16 @@ export class MultiPageDialogComponent {
    */
   readonly dialogClass = input<string>("");
 
+  /**
+   * Locks the dialog while the active page is running something the user must
+   * not interrupt. The X and Escape are both disabled, because closing destroys
+   * the projected page while its request may still be in flight — the run would
+   * be started with nothing left to report its outcome. The back chevron is
+   * disabled for the same reason: navigating away swaps the projected page out,
+   * which destroys it just as surely as closing.
+   */
+  readonly busy = input(false);
+
   readonly pageChange = output<string | undefined>();
 
   readonly pages = contentChildren(MultiPageDialogPageDirective);

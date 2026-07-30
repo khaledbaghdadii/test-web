@@ -34,6 +34,7 @@ export { type StepDefinition, type StepStatus } from "./lib/stepper/step";
 // them could not compile.
 export { SkeletonComponent } from "./lib/skeleton/skeleton.component";
 export { WarningAlertComponent } from "./lib/alert/warning-alert.component";
+export { ErrorAlertComponent } from "./lib/alert/error-alert.component";
 export { CopyToClipboardComponent } from "./lib/copy-to-clipboard/copy-to-clipboard.component";
 export { ExpandableMessageComponent } from "./lib/expandable-message/expandable-message.component";
 export { MultiPageDialogComponent } from "./lib/multi-page-dialog/multi-page-dialog.component";

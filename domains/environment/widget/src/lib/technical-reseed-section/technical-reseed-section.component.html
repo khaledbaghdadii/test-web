@@ -247,6 +247,8 @@
           [labelMode]="FinalProductDropdownInputLabelMode.TAG_COMMIT_ID"
           [validationLevel]="['MQG', 'DQG']"
           [fetchParent]="finalProductFetchParent ?? false"
+          [dropdownDefaultSelectionMode]="DropdownDefaultSelectionMode.CUSTOM"
+          [customFinalProductId]="finalProductCustomId"
           (selectedFinalProductChange)="
             launchForm.controls.finalProduct.setValue($event)
           "

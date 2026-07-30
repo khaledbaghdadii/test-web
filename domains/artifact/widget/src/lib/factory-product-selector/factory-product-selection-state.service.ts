@@ -250,7 +250,12 @@ export class FactoryProductSelectionStateService {
       this.mxVersion.set({ version: softwareProduct.version });
     }
 
-    const build = softwareProduct.builds?.[0];
+    // Legacy picked the first build that actually carries bundles, not simply
+    // the first one: a build with no `mxBundles` has nothing to convert, so
+    // hydrating the form with it produced a product the run could not use.
+    const build = softwareProduct.builds?.find(
+      (candidate) => (candidate.mxBundles?.length ?? 0) > 0
+    );
     if (build && !this.mxBuildId()) {
       this.mxBuildId.set({
         buildId: build.mxBuild.buildId,
@@ -270,12 +275,16 @@ export class FactoryProductSelectionStateService {
         this.bipVersion.set({ version: firstConfigComponent.version });
       }
 
-      const nonPurgedBuilds = (firstConfigComponent.builds ?? []).filter(
-        (b: ConfigurationComponentBuildResponse) => !b.purged
-      );
-      if (nonPurgedBuilds.length > 0 && !this.bipBuildId()) {
+      // Same rule as the MX build above (legacy applied it to both).
+      const bipBuild = (firstConfigComponent.builds ?? [])
+        .filter((b: ConfigurationComponentBuildResponse) => !b.purged)
+        .find(
+          (b: ConfigurationComponentBuildResponse) =>
+            (b.mxBundles?.length ?? 0) > 0
+        );
+      if (bipBuild && !this.bipBuildId()) {
         this.bipBuildId.set({
-          buildId: nonPurgedBuilds[0].mxBuild.buildId,
+          buildId: bipBuild.mxBuild.buildId,
           factoryProductId: factoryProduct.id,
         });
       }

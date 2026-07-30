@@ -32,6 +32,7 @@ import {
 import type { FinalProduct } from "@mxevolve/domains/artifact/data-access";
 import { FinalProductState } from "@mxevolve/domains/artifact/data-access";
 import {
+  DropdownDefaultSelectionMode,
   FinalProductDropdownInputComponent,
   FinalProductDropdownInputLabelMode,
 } from "@mxevolve/domains/artifact/widget";
@@ -118,6 +119,13 @@ export class TechnicalReseedSectionComponent {
   protected readonly finalProductStateFilter = [FinalProductState.AVAILABLE];
   /** Left unset so the branch-root product is not pulled in (legacy parity). */
   protected readonly finalProductFetchParent = undefined;
+  /**
+   * Legacy launched the reseed picker in CUSTOM mode with an empty custom id, so
+   * nothing is auto-selected: the user must pick the product deliberately. The
+   * service default (LATEST) would silently preselect the newest product.
+   */
+  protected readonly DropdownDefaultSelectionMode = DropdownDefaultSelectionMode;
+  protected readonly finalProductCustomId = "";
 
   readonly launchForm = this.formBuilder.nonNullable.group({
     finalProduct: [undefined as FinalProduct | undefined, Validators.required],

@@ -34,7 +34,8 @@
     [labelMode]="FinalProductDropdownInputLabelMode.TAG_COMMIT_ID"
     [validationLevel]="validationLevelFilter"
     [fetchParent]="false"
-    [customFinalProductId]="finalProductIdFormControl().value ?? ''"
+    [dropdownDefaultSelectionMode]="DropdownDefaultSelectionMode.CUSTOM"
+    [customFinalProductId]="customFinalProductId"
     (selectedFinalProductChange)="onFinalProductSelected($event)"
   />
 </mxevolve-definition-input>

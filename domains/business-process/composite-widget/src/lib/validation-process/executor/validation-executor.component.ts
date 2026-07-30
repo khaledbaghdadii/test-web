@@ -33,6 +33,7 @@ import {
 } from "@mxevolve/domains/business-process/widget";
 import { ScenarioDefinitionMultiselectDropdownComponent } from "@mxevolve/domains/test/widget";
 import {
+  ErrorAlertComponent,
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
@@ -81,6 +82,7 @@ interface ScopeVisibilitySnapshot {
     RadioButton,
     Select,
     Button,
+    ErrorAlertComponent,
     MxevolveIconComponent,
     ValidationPrefilledInputsComponent,
     InfraGroupSelectorComponent,
@@ -102,6 +104,14 @@ export class ValidationExecutorComponent {
    */
   readonly initialValues = input<ValidationExecutorSeed>();
   readonly created = output<string>();
+  /**
+   * Mirrors {@link executing} to the hosting dialog, which locks itself while a
+   * run is in flight — closing the dialog destroys this component (and with it
+   * the `takeUntilDestroyed` subscription) while the POST may still be running.
+   */
+  readonly executingChange = output<boolean>();
+  /** The footer's Cancel button; the host decides between Back and Close. */
+  readonly cancelled = output<void>();
 
   private readonly executorService = inject(ValidationProcessExecutorService);
   private readonly developmentService = inject(DevelopmentService);
@@ -111,6 +121,12 @@ export class ValidationExecutorComponent {
 
   protected readonly executing = signal(false);
   protected readonly detailsExpanded = signal(false);
+  /**
+   * Backend failure from the last submit. Legacy pinned this in a non-closeable
+   * alert at the top of the dialog and cleared it when the user retried; a toast
+   * is gone before the user has finished reading the form it refers to.
+   */
+  protected readonly submitError = signal<string | null>(null);
 
   /** Exposed for the template's `[class.required]` label bindings (legacy parity). */
   protected readonly Validators = Validators;
@@ -174,14 +190,6 @@ export class ValidationExecutorComponent {
     )
   );
 
-  /**
-   * Final product the definition (or the repush seed) already points at, used by
-   * the existing-branch path to warn when the branch carries a newer one.
-   */
-  protected readonly preselectedFinalProductId = computed(
-    () => this.initialValues()?.finalProductId ?? null
-  );
-
   private wiredForm: ValidationExecutorForm | null = null;
 
   constructor() {
@@ -193,11 +201,56 @@ export class ValidationExecutorComponent {
       }
       this.applyScopeValidators(form, this.showScopeStartCommit());
     });
+    effect(() => this.executingChange.emit(this.executing()));
   }
 
   protected notProvided(inputId: string): boolean {
     return !isProvidedByDefinition(this.definition().providedInputs, inputId);
   }
+
+  /** The definition's own quality level, when it fixed one. */
+  private readonly providedQualityLevel = computed(
+    () =>
+      this.definition().providedInputs.find(
+        (input) => input.inputId === "businessProcessQualityLevel"
+      )?.value
+  );
+
+  /** Whether the definition itself answered "Create Branch?" with Yes. */
+  private readonly providedCreateBranch = computed(() => {
+    const value = this.definition().providedInputs.find(
+      (input) => input.inputId === "createBranch"
+    )?.value;
+    return value === true || value === "true";
+  });
+
+  /**
+   * Keeps the Configuration Parameters group open for a repush, whose seeded
+   * values would otherwise make every control valid and collapse the whole group
+   * out of reach. It mirrors the per-field `[forceShow]="notProvided(...)"`
+   * bindings, so only inputs the group actually renders as fields may open it:
+   *
+   * - `configCommitId` is excluded — it rides along with the final product and
+   *   is never a field, so a definition (which never provides it) would have
+   *   force-shown the group every single time;
+   * - `parentBranch` only exists on the MQG + "Create Branch = Yes" path, so for
+   *   every DQG or existing-branch definition it too was always "not provided",
+   *   which is what made this expression permanently true.
+   */
+  protected readonly forceShowConfigurationParameters = computed(() => {
+    const inputIds = [
+      "repositoryId",
+      "businessProcessQualityLevel",
+      "createBranch",
+      "archivalBranchName",
+      "finalProductId",
+      "rtpCommitId",
+    ];
+    if (this.providedQualityLevel() === "MQG" && this.providedCreateBranch()) {
+      inputIds.push("parentBranch");
+    }
+    return inputIds.some((inputId) => this.notProvided(inputId));
+  });
 
   protected toggleDetails(): void {
     this.detailsExpanded.update((expanded) => !expanded);
@@ -211,11 +264,18 @@ export class ValidationExecutorComponent {
     this.toast.showError(message);
   }
 
+  /**
+   * `form.pending` is part of the guard because the branch inputs validate
+   * asynchronously: without it, Enter submits a form whose branch checks have
+   * not come back yet, and the run is created against a branch that may not
+   * exist.
+   */
   protected build(): void {
     const form = this.form();
-    if (form.invalid || this.executing()) {
+    if (form.invalid || form.pending || this.executing()) {
       return;
     }
+    this.submitError.set(null);
     this.executing.set(true);
     this.executorService
       .executeValidationProcessDefinition(
@@ -225,7 +285,7 @@ export class ValidationExecutorComponent {
       .pipe(
         catchError((error: Error) => {
           this.executing.set(false);
-          this.toast.showError(error.message);
+          this.submitError.set(error.message);
           return EMPTY;
         }),
         takeUntilDestroyed(this.destroyRef)

@@ -49,22 +49,15 @@ export class RepositoryService {
 
   /**
    * Migrated from the legacy `@mxflow/features/repository`
-   * `RepositoryService.getTestRepositories`: lists a project's repositories
-   * (GET projects/{projectId}/repositories) and keeps only those labelled
-   * "test". Used by the Build & Test / Validation / Upgrade repository selector.
+   * `RepositoryService.getAllRepositories`: lists every repository of a project
+   * (GET projects/{projectId}/repositories), unfiltered.
    */
-  getTestRepositories(projectId: string): Observable<RepositoryListItem[]> {
+  getAllRepositories(projectId: string): Observable<RepositoryListItem[]> {
     return this.http
       .get<RepositoryListItem[]>(
         `${this.config.gatewayUrl}projects/${projectId}/repositories`
       )
       .pipe(
-        map((repositories) =>
-          repositories.filter(
-            (repository) =>
-              repository.label?.toLowerCase() === TEST_REPOSITORY_LABEL
-          )
-        ),
         catchError((error) =>
           throwError(
             () =>
@@ -76,5 +69,22 @@ export class RepositoryService {
           )
         )
       );
+  }
+
+  /**
+   * Migrated from the legacy `@mxflow/features/repository`
+   * `RepositoryService.getTestRepositories`: lists a project's repositories
+   * (GET projects/{projectId}/repositories) and keeps only those labelled
+   * "test". Used by the Build & Test / Validation / Upgrade repository selector.
+   */
+  getTestRepositories(projectId: string): Observable<RepositoryListItem[]> {
+    return this.getAllRepositories(projectId).pipe(
+      map((repositories) =>
+        repositories.filter(
+          (repository) =>
+            repository.label?.toLowerCase() === TEST_REPOSITORY_LABEL
+        )
+      )
+    );
   }
 }

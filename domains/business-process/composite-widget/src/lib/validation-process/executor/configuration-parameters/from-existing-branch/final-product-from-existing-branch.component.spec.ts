@@ -45,7 +45,9 @@ async function renderComponent({
 }: RenderOptions = {}) {
   const controls = {
     archivalBranchName: new FormControl<string | null>(archivalBranchName),
-    finalProductId: new FormControl<string | null>(null),
+    // The already-chosen product lives in the form control itself - it is what a
+    // definition prefill and a repush seed both land in.
+    finalProductId: new FormControl<string | null>(preselectedFinalProductId),
     configCommitId: new FormControl<string | null>(null),
     rtpCommitId: new FormControl<string | null>(null),
   };
@@ -59,7 +61,6 @@ async function renderComponent({
       finalProductIdFormControl: controls.finalProductId,
       configCommitIdFormControl: controls.configCommitId,
       rtpCommitIdFormControl: controls.rtpCommitId,
-      preselectedFinalProductId,
     },
     componentImports: MOCK_IMPORTS,
     componentProviders: [
@@ -279,8 +280,13 @@ describe("FinalProductFromExistingBranchComponent", () => {
       );
     });
 
-    it("warns when the preselected final product is not the latest on the branch", async () => {
-      await renderComponent({
+    /**
+     * The comparison is against the live control rather than the repush seed:
+     * a definition-prefilled product sits in that control too, so comparing
+     * against the seed meant this warning could never fire for one.
+     */
+    it("warns when the already-chosen final product is not the latest on the branch", async () => {
+      const { controls } = await renderComponent({
         archivalBranchName: "arch-1",
         preselectedFinalProductId: "fp-older",
       });
@@ -292,17 +298,37 @@ describe("FinalProductFromExistingBranchComponent", () => {
           )
         ).toBeTruthy()
       );
+      // Legacy kept the chosen product and only warned; it never swapped it.
+      expect(controls.finalProductId.value).toBe("fp-older");
     });
 
-    it("stays silent when the preselected final product is the latest on the branch", async () => {
-      await renderComponent({
+    it("adopts the branch's product when nothing was chosen yet", async () => {
+      const { controls } = await renderComponent({
+        archivalBranchName: "arch-1",
+      });
+
+      await waitFor(() =>
+        expect(controls.finalProductId.value).toBe("fp-latest")
+      );
+      expect(document.querySelector("mxevolve-warning-alert")).toBeNull();
+    });
+
+    /**
+     * Legacy wrote the branch's product only when nothing had been chosen, so a
+     * choice that already matches is left exactly as the definition (or the
+     * repush) supplied it - commits included.
+     */
+    it("stays silent and writes nothing when the already-chosen product is the latest", async () => {
+      const { controls } = await renderComponent({
         archivalBranchName: "arch-1",
         preselectedFinalProductId: "fp-latest",
       });
 
       await waitFor(() =>
-        expect(screen.getByLabelText("RTP Commit ID")).toHaveValue("rtp-latest")
+        expect(screen.getByLabelText("RTP Commit ID")).toBeInTheDocument()
       );
+      expect(controls.finalProductId.value).toBe("fp-latest");
+      expect(controls.rtpCommitId.value).toBeNull();
       expect(document.querySelector("mxevolve-warning-alert")).toBeNull();
     });
   });

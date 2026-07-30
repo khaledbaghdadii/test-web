@@ -38,24 +38,39 @@ export class FactoryProductSelectionDirective implements OnInit {
   private readonly state = inject(FactoryProductSelectionStateService);
 
   constructor() {
-    effect(() => {
-      this.mxVersionChange.emit(this.state.mxVersion());
-    });
+    this.emitOnChange(this.state.mxVersion, this.mxVersionChange);
+    this.emitOnChange(this.state.mxBuildId, this.mxBuildIdChange);
+    this.emitOnChange(this.state.bipVersion, this.bipVersionChange);
+    this.emitOnChange(this.state.bipBuildId, this.bipBuildIdChange);
+    this.emitOnChange(this.state.factoryProductId, this.factoryProductIdChange);
+  }
 
+  /**
+   * Emits state changes, but stays silent while the selection is still empty.
+   *
+   * An `effect` fires once on creation, so all five of these used to emit the
+   * empty starting state before the user had touched anything. Consumers treat
+   * an emission as a selection: the upgrade executor patched the factory-product
+   * control and called `markAsDirty()`, which made the form show "all attributes
+   * are required" the moment the dialog opened, and replaced the payload's
+   * unset sub-keys with `""`.
+   *
+   * The gate is on emptiness rather than on "the first effect run", so a prefill
+   * still reaches the consumer no matter when it resolves. Once something real
+   * has been emitted, clearing a dropdown emits `null` as it should.
+   */
+  private emitOnChange<T>(
+    source: () => T,
+    target: { emit: (value: T) => void }
+  ): void {
+    let emitted = false;
     effect(() => {
-      this.mxBuildIdChange.emit(this.state.mxBuildId());
-    });
-
-    effect(() => {
-      this.bipVersionChange.emit(this.state.bipVersion());
-    });
-
-    effect(() => {
-      this.bipBuildIdChange.emit(this.state.bipBuildId());
-    });
-
-    effect(() => {
-      this.factoryProductIdChange.emit(this.state.factoryProductId());
+      const value = source();
+      if (!emitted && (value === null || value === undefined)) {
+        return;
+      }
+      emitted = true;
+      target.emit(value);
     });
   }
 

@@ -1,3 +1,4 @@
+import { FormControl } from "@angular/forms";
 import type { ProvidedInput } from "@mxevolve/domains/business-process/data-access";
 import type { UpgradeProcessExecution } from "@mxevolve/domains/business-process/util";
 import {
@@ -65,6 +66,22 @@ describe("buildUpgradeExecutorForm", () => {
     ]);
     expect(form.controls.createBranch.value).toBeNull();
     expect(form.controls.createBranch.errors).toEqual({ required: true });
+  });
+
+  /**
+   * Pins the reason `mapCreateBranchToBoolean` returns `null` rather than
+   * legacy's `undefined`: `FormControl` normalises an `undefined` initial value
+   * to `null`, so the two are indistinguishable once the control exists. The
+   * executor template's `createBranch.value !== null` gate on the branch fields
+   * therefore behaves the same either way — a rewrite to `undefined` would be
+   * pure noise.
+   */
+  it("normalises an unanswered create-branch choice to null, as Angular does with undefined", () => {
+    const absent = buildUpgradeExecutorForm([
+      { inputId: "repositoryId", value: "repo-1" },
+    ]);
+    expect(absent.controls.createBranch.value).toBeNull();
+    expect(new FormControl<boolean | null | undefined>(undefined).value).toBeNull();
   });
 
   it("enforces non-blank factory products and branch values", () => {

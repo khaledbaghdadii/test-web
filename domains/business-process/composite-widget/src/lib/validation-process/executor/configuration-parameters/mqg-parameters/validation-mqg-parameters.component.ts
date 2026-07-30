@@ -6,6 +6,7 @@ import { MqgFromNewBranchParametersComponent } from "./from-new-branch/mqg-from-
 import {
   ProvidedDefinitionInput,
   isProvidedByDefinition,
+  shouldShowInForm,
 } from "@mxevolve/domains/business-process/util";
 import { releaseControl } from "../parameter-controls";
 
@@ -42,12 +43,29 @@ export class ValidationMqgParametersComponent implements OnInit, OnDestroy {
     input.required<FormControl<string | null>>();
   readonly rtpCommitIdFormControl =
     input.required<FormControl<string | null>>();
-  readonly preselectedFinalProductId = input<string | null>(null);
 
   protected readonly Validators = Validators;
 
+  /**
+   * Whether the "Create Branch?" radio group is offered for editing.
+   *
+   * Legacy wrapped the group in `mxevolve-definition-input` with
+   * `ACCESS_INVALID_INPUTS_ONLY`, so a definition-prefilled `createBranch` was
+   * hidden. The gate lives here rather than in a wrapper because the group is a
+   * `fieldset`/`legend`, which the wrapper's `label` would duplicate.
+   *
+   * Decided once, exactly like the wrapper does: the control turns valid the
+   * moment the user answers, and the question must not vanish underneath them.
+   */
+  protected showCreateBranch = false;
+
   ngOnInit(): void {
     this.createBranchFormControl().enable({ emitEvent: false });
+    this.showCreateBranch = shouldShowInForm(
+      this.createBranchFormControl(),
+      "ACCESS_INVALID_INPUTS_ONLY",
+      this.notProvided("createBranch")
+    );
   }
 
   ngOnDestroy(): void {

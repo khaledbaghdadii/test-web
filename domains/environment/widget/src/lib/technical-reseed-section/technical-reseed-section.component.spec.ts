@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/angular";
 import userEvent from "@testing-library/user-event";
-import { MockComponent } from "ng-mocks";
+import { MockComponent, ngMocks } from "ng-mocks";
 import { of, Subject, throwError } from "rxjs";
 import { ToastMessageService } from "@mxflow/ui/alert";
 import {
@@ -15,7 +15,10 @@ import {
   FinalProduct,
   FinalProductState,
 } from "@mxevolve/domains/artifact/data-access";
-import { FinalProductDropdownInputComponent } from "@mxevolve/domains/artifact/widget";
+import {
+  DropdownDefaultSelectionMode,
+  FinalProductDropdownInputComponent,
+} from "@mxevolve/domains/artifact/widget";
 import {
   CommitIdDisplayComponent,
   DateDisplayComponent,
@@ -257,6 +260,36 @@ describe("TechnicalReseedSectionComponent", () => {
       "Technical reseed operation launched successfully."
     );
     expect(launchedSpy).toHaveBeenCalled();
+  });
+
+  /**
+   * Without an explicit selection mode the dropdown state service defaults to
+   * LATEST, which auto-selects the newest product as soon as the list loads. The
+   * reseed dialog must not choose a product for the user: legacy opened it in
+   * CUSTOM mode with an empty custom id so nothing is preselected.
+   */
+  it("does not preselect a final product when the launch dialog opens", async () => {
+    const { fixture } = await renderComponent();
+
+    fixture.componentInstance.launchDialogVisible.set(true);
+    await waitFor(() =>
+      expect(
+        document.querySelector("mxevolve-final-product-dropdown-input")
+      ).toBeTruthy()
+    );
+
+    const dropdown = ngMocks.find(FinalProductDropdownInputComponent)
+      .componentInstance as unknown as {
+      dropdownDefaultSelectionMode: DropdownDefaultSelectionMode;
+      customFinalProductId: string;
+    };
+    expect(dropdown.dropdownDefaultSelectionMode).toBe(
+      DropdownDefaultSelectionMode.CUSTOM
+    );
+    expect(dropdown.customFinalProductId).toBe("");
+    expect(
+      fixture.componentInstance.launchForm.controls.finalProduct.value
+    ).toBeFalsy();
   });
 
   it("shows an error toast when launching fails", async () => {

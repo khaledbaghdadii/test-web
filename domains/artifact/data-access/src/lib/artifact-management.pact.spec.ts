@@ -90,7 +90,7 @@ describe("artifact management contract tests", () => {
         query: {
           page: "0",
           size: "20",
-          sort: "createdOn,asc",
+          sort: "createdOn,desc",
           softwareProductVersionFilter: SOFTWARE_PRODUCT_VERSION,
           softwareProductBuildIdFilter: SOFTWARE_PRODUCT_BUILD_ID,
           configurationComponentVersionSearch: SEARCH_KEY,
@@ -138,7 +138,7 @@ describe("artifact management contract tests", () => {
         query: {
           page: "0",
           size: "10",
-          sort: "createdOn,asc",
+          sort: "createdOn,desc",
         },
       },
       willRespondWith: {

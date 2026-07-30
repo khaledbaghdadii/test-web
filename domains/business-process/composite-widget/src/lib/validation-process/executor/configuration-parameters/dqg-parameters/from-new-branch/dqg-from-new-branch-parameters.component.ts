@@ -3,6 +3,7 @@ import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import { InputText } from "primeng/inputtext";
 import { FinalProduct } from "@mxevolve/domains/artifact/data-access";
 import {
+  DropdownDefaultSelectionMode,
   FinalProductDropdownInputComponent,
   FinalProductDropdownInputLabelMode,
 } from "@mxevolve/domains/artifact/widget";
@@ -57,8 +58,15 @@ export class DqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
 
   protected readonly FinalProductDropdownInputLabelMode =
     FinalProductDropdownInputLabelMode;
+  protected readonly DropdownDefaultSelectionMode = DropdownDefaultSelectionMode;
   protected readonly validationLevelFilter = ["MQG"];
   protected archivalBranchNameInitialValue = "";
+  /**
+   * Final product the form arrived with, snapshotted once so a cascade that
+   * clears the live control cannot lose it. Legacy read the same value off the
+   * selector control's `defaultValue`, seeded once at init.
+   */
+  protected customFinalProductId = "";
 
   private finalProductControls(): FinalProductControls {
     return {
@@ -71,6 +79,7 @@ export class DqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const archivalBranch = this.archivalBranchNameFormControl();
     this.archivalBranchNameInitialValue = archivalBranch.value ?? "";
+    this.customFinalProductId = this.finalProductIdFormControl().value ?? "";
     archivalBranch.enable({ emitEvent: false });
     this.finalProductIdFormControl().enable({ emitEvent: false });
   }

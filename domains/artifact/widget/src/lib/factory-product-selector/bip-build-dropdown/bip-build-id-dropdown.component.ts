@@ -39,6 +39,7 @@ class BipBuildIdFrontendDataProvider {
   selector: "mxevolve-bip-build-id-dropdown",
   template: `<mxevolve-single-select-dropdown
     [stateProvider]="stateProvider"
+    [inputId]="inputId()"
     [dataParams]="triggerRefresh()"
     [config]="{
       placeholder: placeholder(),
@@ -58,7 +59,10 @@ export class BipBuildIdDropdownComponent extends BaseSingleSelectDropdown<
   BipBuildOption,
   unknown
 > {
-  readonly placeholder = input<string>("BIP Build ID");
+  /** Legacy wording, restored: the "Select " prefix was dropped in the port. */
+  readonly placeholder = input<string>("Select Bip Build ID");
+  /** Forwarded to the inner select so a `<label for>` can address it. */
+  readonly inputId = input<string>();
 
   protected override readonly stateProvider: MxEvolveSingleSelectDropdownState<
     BipBuildOption,

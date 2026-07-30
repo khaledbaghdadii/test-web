@@ -1,4 +1,7 @@
 <div class="flex flex-col gap-4 overflow-x-auto">
+  @if (submitError(); as error) {
+  <mxevolve-error-alert [message]="error" [closable]="false" />
+  }
   <section class="border border-surface rounded-md overflow-hidden">
     <button
       type="button"
@@ -79,11 +82,13 @@
         form().controls.businessProcessQualityLevel,
         form().controls.createBranch,
         form().controls.archivalBranchName,
+        form().controls.parentBranchName,
         form().controls.finalProductId,
+        form().controls.configCommitId,
         form().controls.rtpCommitId
       ]"
       inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
-      [forceShow]="notProvided('repositoryId') || notProvided('businessProcessQualityLevel') || notProvided('createBranch') || notProvided('archivalBranchName') || notProvided('parentBranch') || notProvided('finalProductId') || notProvided('rtpCommitId')"
+      [forceShow]="forceShowConfigurationParameters()"
     >
       <div class="grid-2">
         <mxevolve-validation-configuration-parameters
@@ -99,7 +104,6 @@
           [finalProductIdFormControl]="form().controls.finalProductId"
           [configCommitIdFormControl]="form().controls.configCommitId"
           [rtpCommitIdFormControl]="form().controls.rtpCommitId"
-          [preselectedFinalProductId]="preselectedFinalProductId()"
         />
       </div>
     </mxevolve-definition-input-group>
@@ -128,16 +132,13 @@
             (failureEvent)="showSelectorError($event)"
           />
         </mxevolve-definition-input>
-        <mxevolve-definition-input-group
-          label="Do you want to enable nightly repush?"
-          [controls]="[form().controls.nightlyRepusherEnabled]"
+        <mxevolve-definition-input
+          inputId="validation-nightly-repush"
+          [control]="form().controls.nightlyRepusherEnabled"
           inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
           [forceShow]="notProvided('nightlyRepusherEnabled')"
-          [required]="
-            form().controls.nightlyRepusherEnabled.hasValidator(
-              Validators.required
-            )
-          "
+          label="Do you want to enable nightly repush?"
+          description="The timing is configured under BP settings accessible by admins"
         >
           <div class="flex flex-row gap-4 mt-1">
             <div class="flex flex-row items-center gap-1">
@@ -157,11 +158,7 @@
               <label for="validation-nightly-no">No</label>
             </div>
           </div>
-          <small class="italic text-gray-500 text-sm text-wrap"
-            >The timing is configured under BP settings accessible by
-            admins</small
-          >
-        </mxevolve-definition-input-group>
+        </mxevolve-definition-input>
       </div>
     </mxevolve-definition-input-group>
     @if (showScopeStartCommit()) {
@@ -244,6 +241,15 @@
           form().invalid || form().pending || executing()
         "
         [loading]="executing()"
+      />
+      <p-button
+        type="button"
+        label="Cancel"
+        class="col-span-2"
+        styleClass="w-full justify-center"
+        [outlined]="true"
+        [disabled]="executing()"
+        (onClick)="cancelled.emit()"
       />
     </div>
   </form>

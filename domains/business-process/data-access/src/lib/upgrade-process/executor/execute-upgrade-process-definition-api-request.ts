@@ -41,10 +41,18 @@ export interface UpgradeProcessReferenceEnvironmentParametersApiModel {
   referenceEnvironmentInfraGroupId: string;
 }
 
+/**
+ * Every key is optional: the four dropdowns are filled in one at a time and the
+ * request carries whatever has been chosen. Legacy declared `id`, `mxVersion`
+ * and `mxBuildId` as required strings but fed them straight from an all-optional
+ * form value, so unset keys went over the wire as `undefined` (i.e. omitted).
+ * Defaulting them to `""` instead sends an empty string, which is a different
+ * request.
+ */
 export interface FactoryProductRequestApiModel {
-  id: string;
-  mxVersion: string;
-  mxBuildId: string;
+  id?: string;
+  mxVersion?: string;
+  mxBuildId?: string;
   bipVersion?: string;
   bipBuildId?: string;
 }

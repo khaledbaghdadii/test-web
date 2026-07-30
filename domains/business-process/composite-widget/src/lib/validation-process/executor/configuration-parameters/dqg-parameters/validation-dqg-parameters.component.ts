@@ -6,6 +6,7 @@ import { DqgFromNewBranchParametersComponent } from "./from-new-branch/dqg-from-
 import {
   ProvidedDefinitionInput,
   isProvidedByDefinition,
+  shouldShowInForm,
 } from "@mxevolve/domains/business-process/util";
 import { releaseControl } from "../parameter-controls";
 
@@ -41,12 +42,24 @@ export class ValidationDqgParametersComponent implements OnInit, OnDestroy {
     input.required<FormControl<string | null>>();
   readonly rtpCommitIdFormControl =
     input.required<FormControl<string | null>>();
-  readonly preselectedFinalProductId = input<string | null>(null);
 
   protected readonly Validators = Validators;
 
+  /**
+   * Whether the "Create Branch?" radio group is offered for editing. See the MQG
+   * twin: legacy gated it with `ACCESS_INVALID_INPUTS_ONLY` so a
+   * definition-prefilled `createBranch` stayed hidden, and the decision is taken
+   * once so answering the question does not make it disappear.
+   */
+  protected showCreateBranch = false;
+
   ngOnInit(): void {
     this.createBranchFormControl().enable({ emitEvent: false });
+    this.showCreateBranch = shouldShowInForm(
+      this.createBranchFormControl(),
+      "ACCESS_INVALID_INPUTS_ONLY",
+      this.notProvided("createBranch")
+    );
   }
 
   ngOnDestroy(): void {

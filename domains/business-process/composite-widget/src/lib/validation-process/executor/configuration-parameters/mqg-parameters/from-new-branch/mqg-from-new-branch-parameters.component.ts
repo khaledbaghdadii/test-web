@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { InputText } from "primeng/inputtext";
 import { FinalProduct } from "@mxevolve/domains/artifact/data-access";
 import {
+  DropdownDefaultSelectionMode,
   FinalProductDropdownInputComponent,
   FinalProductDropdownInputLabelMode,
 } from "@mxevolve/domains/artifact/widget";
@@ -72,9 +73,17 @@ export class MqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
   /** Legacy MQG new-branch picker lists CQG products available on the parent branch. */
   protected readonly FinalProductDropdownInputLabelMode =
     FinalProductDropdownInputLabelMode;
+  protected readonly DropdownDefaultSelectionMode = DropdownDefaultSelectionMode;
   protected readonly validationLevelFilter = ["CQG"];
   protected parentBranchNameInitialValue = "";
   protected archivalBranchNameInitialValue = "";
+  /**
+   * Final product the form arrived with, snapshotted once so it survives the
+   * parent-branch cascade that clears the live control. Legacy read the same
+   * value off the selector control's `defaultValue`, which was seeded from the
+   * definition (or repush) input at init and never re-read.
+   */
+  protected customFinalProductId = "";
 
   private finalProductControls(): FinalProductControls {
     return {
@@ -89,6 +98,7 @@ export class MqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
     const archivalBranch = this.archivalBranchNameFormControl();
     this.parentBranchNameInitialValue = parentBranch.value ?? "";
     this.archivalBranchNameInitialValue = archivalBranch.value ?? "";
+    this.customFinalProductId = this.finalProductIdFormControl().value ?? "";
 
     parentBranch.enable({ emitEvent: false });
     archivalBranch.enable({ emitEvent: false });

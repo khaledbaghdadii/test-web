@@ -1,4 +1,7 @@
 <div class="flex flex-col gap-4 overflow-x-auto">
+  @if (submitError(); as error) {
+  <mxevolve-error-alert [message]="error" [closable]="false" />
+  }
   <section class="border border-surface rounded-md overflow-hidden">
     <button
       type="button"
@@ -126,21 +129,21 @@
           >
             <div class="field flex flex-col gap-2">
               <label for="upgrade-conversion-factory-product-mx-version" class="required">MX Version</label>
-              <mxevolve-mx-version-dropdown />
+              <mxevolve-mx-version-dropdown inputId="upgrade-conversion-factory-product-mx-version" />
             </div>
             <div class="field flex flex-col gap-2">
               <label for="upgrade-conversion-factory-product-mx-build-id" class="required"
                 >MX Build ID</label
               >
-              <mxevolve-mx-build-id-dropdown />
+              <mxevolve-mx-build-id-dropdown inputId="upgrade-conversion-factory-product-mx-build-id" />
             </div>
             <div class="field flex flex-col gap-2">
-              <label for="upgrade-conversion-factory-product-bip-version">BIP Version</label>
-              <mxevolve-bip-version-dropdown />
+              <label for="upgrade-conversion-factory-product-bip-version" class="required">BIP Version</label>
+              <mxevolve-bip-version-dropdown inputId="upgrade-conversion-factory-product-bip-version" />
             </div>
             <div class="field flex flex-col gap-2">
-              <label for="upgrade-conversion-factory-product-bip-build-id">BIP Build ID</label>
-              <mxevolve-bip-build-id-dropdown />
+              <label for="upgrade-conversion-factory-product-bip-build-id" class="required">BIP Build ID</label>
+              <mxevolve-bip-build-id-dropdown inputId="upgrade-conversion-factory-product-bip-build-id" />
             </div>
           </div>
         </mxevolve-definition-input>
@@ -477,21 +480,21 @@
           >
             <div class="field flex flex-col gap-2">
               <label for="upgrade-reference-factory-product-mx-version" class="required">MX Version</label>
-              <mxevolve-mx-version-dropdown />
+              <mxevolve-mx-version-dropdown inputId="upgrade-reference-factory-product-mx-version" />
             </div>
             <div class="field flex flex-col gap-2">
               <label for="upgrade-reference-factory-product-mx-build-id" class="required"
                 >MX Build ID</label
               >
-              <mxevolve-mx-build-id-dropdown />
+              <mxevolve-mx-build-id-dropdown inputId="upgrade-reference-factory-product-mx-build-id" />
             </div>
             <div class="field flex flex-col gap-2">
-              <label for="upgrade-reference-factory-product-bip-version">BIP Version</label>
-              <mxevolve-bip-version-dropdown />
+              <label for="upgrade-reference-factory-product-bip-version" class="required">BIP Version</label>
+              <mxevolve-bip-version-dropdown inputId="upgrade-reference-factory-product-bip-version" />
             </div>
             <div class="field flex flex-col gap-2">
-              <label for="upgrade-reference-factory-product-bip-build-id">BIP Build ID</label>
-              <mxevolve-bip-build-id-dropdown />
+              <label for="upgrade-reference-factory-product-bip-build-id" class="required">BIP Build ID</label>
+              <mxevolve-bip-build-id-dropdown inputId="upgrade-reference-factory-product-bip-build-id" />
             </div>
           </div>
         </mxevolve-definition-input>
@@ -551,6 +554,15 @@
           form().invalid || form().pending || executing()
         "
         [loading]="executing()"
+      />
+      <p-button
+        type="button"
+        label="Cancel"
+        class="col-span-2"
+        styleClass="w-full justify-center"
+        [outlined]="true"
+        [disabled]="executing()"
+        (onClick)="cancelled.emit()"
       />
     </div>
   </form>
