@@ -2,7 +2,7 @@ import { Component, signal } from "@angular/core";
 import { ComponentFixture } from "@angular/core/testing";
 import { render, waitFor } from "@testing-library/angular";
 import { By } from "@angular/platform-browser";
-import { of } from "rxjs";
+import { of, throwError } from "rxjs";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import {
   createPrimeNgSelectHarness,
@@ -1032,6 +1032,38 @@ describe("FactoryProductSelection integration", () => {
 
       expect(mxVersionDropdown.getValue()).toBeNull();
       expect(mxBuildDropdown.getValue()).toBeNull();
+    });
+
+    it("keeps the explicit initial build when a factoryProductId is given too", async () => {
+      expect.hasAssertions();
+      mockApiService.getFactoryProductById.mockReturnValue(
+        of(FACTORY_PRODUCT_WITH_BIPS)
+      );
+
+      const { mxVersionDropdown, mxBuildDropdown } = await renderComponent({
+        factoryProductId: "fp-1",
+        initialMxVersion: { version: "3.1.65" },
+        initialMxBuildId: { buildId: "build-other", projectId: undefined },
+      });
+
+      await waitFor(() => mxVersionDropdown.expectToHaveValue("3.1.65"));
+      mxBuildDropdown.expectToHaveValue("build-other");
+    });
+
+    it("leaves the prefilled values untouched when the factory product no longer resolves", async () => {
+      expect.hasAssertions();
+      mockApiService.getFactoryProductById.mockReturnValue(
+        throwError(() => new Error("Factory product not found"))
+      );
+
+      const { mxVersionDropdown, mxBuildDropdown } = await renderComponent({
+        factoryProductId: "fp-gone",
+        initialMxVersion: { version: "3.1.65" },
+        initialMxBuildId: { buildId: "build-1", projectId: undefined },
+      });
+
+      await waitFor(() => mxVersionDropdown.expectToHaveValue("3.1.65"));
+      mxBuildDropdown.expectToHaveValue("build-1");
     });
   });
 

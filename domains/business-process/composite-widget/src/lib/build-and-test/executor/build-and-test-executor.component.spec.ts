@@ -23,16 +23,11 @@ import {
   RepositorySelectorComponent,
 } from "@mxevolve/domains/scm/widget";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
-import {
-  BranchDetailsError,
-  BranchService,
-  RepositoryService,
-} from "@mxevolve/domains/scm/data-access";
-import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
-import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
-import { UserService } from "@mxevolve/domains/user/data-access";
 import { AnalyticsTrackerService } from "@mxflow/core/analytics-tracker";
-import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
+import {
+  DefinitionInputComponent,
+  DefinitionInputGroupComponent,
+} from "@mxevolve/domains/business-process/ui";
 import { BuildAndTestExecutorComponent } from "./build-and-test-executor.component";
 
 function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
@@ -58,6 +53,7 @@ const COMPONENT_IMPORTS = [
   MockComponent(RepositorySelectorComponent),
   MockComponent(BranchInputComponent),
   DefinitionInputComponent,
+  DefinitionInputGroupComponent,
 ];
 
 const mockExecutorService = {
@@ -68,42 +64,11 @@ const mockToastService = {
   showError: jest.fn(),
 };
 
-const mockRepositoryService = { getRepository: jest.fn() };
-const mockScenarioService = { getScenarioDefinitionById: jest.fn() };
-const mockInfraGroupService = { getGroup: jest.fn() };
-const mockBranchService = { getBranchDetails: jest.fn() };
 const mockAnalyticsTracker = { trackEvent: jest.fn() };
 
-/** Services the executor resolves pre-filled values against (VAL-27132 W1). */
-const mockUserService = { fetchUsersByEmails: jest.fn() };
-
-const PREFILL_PROVIDERS = [
-  { provide: UserService, useValue: mockUserService },
-  { provide: RepositoryService, useValue: mockRepositoryService },
-  { provide: ScenarioDefinitionService, useValue: mockScenarioService },
-  { provide: InfraGroupService, useValue: mockInfraGroupService },
-  { provide: BranchService, useValue: mockBranchService },
+const SHARED_PROVIDERS = [
   { provide: AnalyticsTrackerService, useValue: mockAnalyticsTracker },
 ];
-
-/** Every pre-filled id resolves; the default for tests that are not about W1. */
-function stubPrefillsResolve(): void {
-  mockUserService.fetchUsersByEmails.mockImplementation(
-    (_projectId: string, emails: string[]) => of({ content: emails.map((mail) => ({ mail })) })
-  );
-  mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
-  mockScenarioService.getScenarioDefinitionById.mockReturnValue(
-    of({ id: "scenario-1" })
-  );
-  mockInfraGroupService.getGroup.mockReturnValue(of({ id: "group-1" }));
-  mockBranchService.getBranchDetails.mockImplementation(
-    ({ branchName }: { branchName: string }) =>
-      branchName === "branch-1"
-        ? // the configuration branch is about to be created, so it must be free
-          throwError(() => new BranchDetailsError("not found", 404))
-        : of({ latestCommitId: "commit-1" })
-  );
-}
 
 const FULLY_PREFILLED_INPUTS = [
   { inputId: "repositoryId", value: "repo-1" },
@@ -142,7 +107,7 @@ async function renderComponent(
         provide: BuildAndTestProcessExecutorService,
         useValue: mockExecutorService,
       },
-      ...PREFILL_PROVIDERS,
+      ...SHARED_PROVIDERS,
     ],
     providers: [
       {
@@ -150,7 +115,7 @@ async function renderComponent(
         useValue: mockExecutorService,
       },
       { provide: ToastMessageService, useValue: mockToastService },
-      ...PREFILL_PROVIDERS,
+      ...SHARED_PROVIDERS,
     ],
   });
 }
@@ -174,7 +139,6 @@ function buildButton(): HTMLElement {
 describe("BuildAndTestExecutorComponent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    stubPrefillsResolve();
   });
 
   describe("field presence", () => {
@@ -407,11 +371,11 @@ describe("BuildAndTestExecutorComponent", () => {
             provide: BuildAndTestProcessExecutorService,
             useValue: mockExecutorService,
           },
-          ...PREFILL_PROVIDERS,
+          ...SHARED_PROVIDERS,
         ],
         providers: [
           { provide: ToastMessageService, useValue: mockToastService },
-          ...PREFILL_PROVIDERS,
+          ...SHARED_PROVIDERS,
         ],
       });
 
@@ -456,125 +420,6 @@ describe("BuildAndTestExecutorComponent", () => {
           "Select the users who will receive email notifications as the business process approaches its expiry date"
         )
       ).toBeTruthy();
-    });
-  });
-
-  describe("pre-filled notification recipients", () => {
-    const WITH_RECIPIENTS = [
-      ...FULLY_PREFILLED_INPUTS,
-      { inputId: "notificationsRecipients", value: ["a@x.com", "b@x.com"] },
-    ];
-
-    it("reports a failed recipient lookup to the user", async () => {
-      mockUserService.fetchUsersByEmails.mockReturnValue(
-        throwError(() => new Error("User service unavailable"))
-      );
-
-      await renderComponent(WITH_RECIPIENTS);
-
-      // The recipients widget resolves these itself, but only mounts when the
-      // control is empty - i.e. never when there is something to resolve.
-      await waitFor(() =>
-        expect(mockToastService.showError).toHaveBeenCalledWith(
-          "User service unavailable"
-        )
-      );
-    });
-
-    it("drops recipients that no longer resolve, without blocking submission", async () => {
-      mockUserService.fetchUsersByEmails.mockReturnValue(
-        of({ content: [{ mail: "a@x.com" }] })
-      );
-
-      const { fixture } = await renderComponent(WITH_RECIPIENTS);
-      const executor = fixture.componentInstance as unknown as {
-        form: () => {
-          controls: {
-            notificationsRecipients: { value: unknown; valid: boolean };
-          };
-        };
-      };
-      const recipients = () => executor.form().controls.notificationsRecipients;
-
-      // Legacy narrowed the submitted list to the addresses that resolved and
-      // let the run proceed - unlike an entity lookup, an unresolvable
-      // recipient never blocks submission.
-      await waitFor(() => expect(recipients().value).toEqual(["a@x.com"]));
-      expect(recipients().valid).toBe(true);
-    });
-  });
-
-  describe("pre-filled values that no longer resolve", () => {
-    it("blocks submission when a pre-filled repository is gone", async () => {
-      mockRepositoryService.getRepository.mockReturnValue(
-        throwError(() => new Error("Repository not found"))
-      );
-
-      await renderComponent(FULLY_PREFILLED_INPUTS);
-
-      await waitFor(() => expect(buildButton()).toBeDisabled());
-    });
-
-    it("reports a pre-filled repository that is gone", async () => {
-      mockRepositoryService.getRepository.mockReturnValue(
-        throwError(() => new Error("Repository not found"))
-      );
-
-      await renderComponent(FULLY_PREFILLED_INPUTS);
-
-      await waitFor(() =>
-        expect(mockToastService.showError).toHaveBeenCalledWith(
-          "Repository not found"
-        )
-      );
-    });
-
-    it("blocks submission when a pre-filled build scenario is gone", async () => {
-      mockScenarioService.getScenarioDefinitionById.mockReturnValue(
-        throwError(() => new Error("Scenario not found"))
-      );
-
-      await renderComponent(FULLY_PREFILLED_INPUTS);
-
-      await waitFor(() => expect(buildButton()).toBeDisabled());
-    });
-
-    it("relays an infra group failure rejected as a bare string", async () => {
-      mockInfraGroupService.getGroup.mockReturnValue(
-        throwError(() => "Could not fetch groups details")
-      );
-
-      await renderComponent(FULLY_PREFILLED_INPUTS);
-
-      await waitFor(() =>
-        expect(mockToastService.showError).toHaveBeenCalledWith(
-          "Could not fetch groups details"
-        )
-      );
-    });
-
-    it("blocks submission when a hidden parent branch no longer exists", async () => {
-      mockBranchService.getBranchDetails.mockImplementation(
-        ({ branchName }: { branchName: string }) =>
-          branchName === "parent-1"
-            ? throwError(() => new BranchDetailsError("not found", 404))
-            : of({ latestCommitId: "commit-1" })
-      );
-
-      await renderComponent(FULLY_PREFILLED_INPUTS);
-
-      await waitFor(() => expect(buildButton()).toBeDisabled());
-    });
-
-    it("keeps the form submittable when every pre-filled value resolves", async () => {
-      await renderComponent([
-        ...FULLY_PREFILLED_INPUTS,
-        { inputId: "notificationsRecipients", value: ["a@b.com"] },
-      ]);
-
-      await waitFor(() =>
-        expect(mockToastService.showError).not.toHaveBeenCalled()
-      );
     });
   });
 

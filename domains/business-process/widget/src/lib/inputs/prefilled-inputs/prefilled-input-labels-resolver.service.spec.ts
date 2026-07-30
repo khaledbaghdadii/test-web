@@ -66,7 +66,10 @@ function configureDefaultResponses(): void {
     (_projectId: string, id: string) => of({ id, tag: `Product ${id}` })
   );
   mockMergeConfigurationService.getFilteredMergeConfigurations.mockReturnValue(
-    of({ content: [{ id: "merge-1", branchName: "Destination branch" }] })
+    of({
+      content: [{ id: "merge-1", branchName: "Destination branch" }],
+      last: true,
+    })
   );
 }
 
@@ -164,7 +167,10 @@ describe("PrefilledInputLabelsResolverService", () => {
 
   it("keeps the raw ID and reports an error when a merge configuration ID is not present in the returned page", async () => {
     mockMergeConfigurationService.getFilteredMergeConfigurations.mockReturnValue(
-      of({ content: [{ id: "merge-1", branchName: "Destination branch" }] })
+      of({
+        content: [{ id: "merge-1", branchName: "Destination branch" }],
+        last: true,
+      })
     );
 
     const result = await lastValueFrom(
@@ -178,5 +184,37 @@ describe("PrefilledInputLabelsResolverService", () => {
     expect(result.errors).toEqual([
       "Could not resolve missing-merge: not found",
     ]);
+  });
+
+  it("walks past the first page to find a merge configuration", async () => {
+    mockMergeConfigurationService.getFilteredMergeConfigurations.mockImplementation(
+      (
+        _projectId: string,
+        _repositoryId: string,
+        _searchKey: string,
+        page: number
+      ) =>
+        page === 0
+          ? of({
+              content: [{ id: "merge-other", branchName: "other" }],
+              last: false,
+            })
+          : of({
+              content: [{ id: "merge-1", branchName: "Destination branch" }],
+              last: true,
+            })
+    );
+
+    const result = await lastValueFrom(
+      service.resolve("project-1", [
+        { inputId: "repositoryId", value: "repo-1" },
+        { inputId: "mergeConfigurationId", value: "merge-1" },
+      ])
+    );
+
+    expect(result.labels.get("mergeConfigurationId")).toBe(
+      "Destination branch"
+    );
+    expect(result.errors).toEqual([]);
   });
 });

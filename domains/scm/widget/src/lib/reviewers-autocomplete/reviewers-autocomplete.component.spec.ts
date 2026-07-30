@@ -320,7 +320,8 @@ describe("Reviewers AutoComplete Component", () => {
     it("should resolve default reviewers", () => {
       expect(developmentService.getDevelopment).toHaveBeenCalledWith(
         projectId,
-        DEVELOPMENT.id
+        DEVELOPMENT.id,
+        true
       );
       expect(reviewersService.getDefaultReviewers).toHaveBeenCalledWith(
         projectId,

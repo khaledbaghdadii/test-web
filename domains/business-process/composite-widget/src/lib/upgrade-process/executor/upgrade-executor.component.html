@@ -27,16 +27,15 @@
   <form class="flex flex-col gap-6" [formGroup]="form()" (ngSubmit)="build()">
     <p class="mandatory-legend text-sm text-red-500 m-0">* Mandatory Field</p>
 
-    @if (visibility().official) {
-    <fieldset class="flex flex-col gap-2 border-none p-0 m-0">
-      <legend
-        class="text-[0.95rem] font-bold text-primary p-0"
-        [class.required]="
-          form().controls.official.hasValidator(Validators.required)
-        "
-      >
-        Official Status
-      </legend>
+        <mxevolve-definition-input-group
+      label="Official Status"
+      [controls]="[
+        form().controls.official
+      ]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="notProvided('official')"
+      [required]="form().controls.official.hasValidator(Validators.required)"
+    >
       <div class="flex flex-row gap-4 mt-2">
         <div class="flex flex-row items-center gap-1">
           <p-radioButton
@@ -55,10 +54,11 @@
           <label for="upgrade-unofficial">Unofficial Execution</label>
         </div>
       </div>
-    </fieldset>
-    } @if (visibility().name) {
-    <div class="grid-2">
+    </mxevolve-definition-input-group>
+        <div class="grid-2">
             <mxevolve-definition-input
+        inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+        [forceShow]="notProvided('name')"
         inputId="upgrade-execution-name"
         [control]="form().controls.name"
         label="Execution Name"
@@ -72,26 +72,81 @@
         />
       </mxevolve-definition-input>
     </div>
-    } @if (showMxGroup()) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        MX Parameters
-      </legend>
+        <mxevolve-definition-input-group
+      label="MX Parameters"
+      [controls]="[
+        form().controls.factoryProduct,
+        form().controls.parentMxArchivalBranch,
+        form().controls.upgradeJump
+      ]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="notProvided('factoryProduct') || notProvided('parentMxArchivalBranch') || notProvided('upgradeJump')"
+    >
       <div class="grid-2">
-        @if (visibility().factoryProduct) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('factoryProduct')"
           inputId="upgrade-conversion-factory-product"
           [control]="form().controls.factoryProduct"
           description="Select the factory product that you wish to validate your Quality Gate against"
+          fieldClass="col-span-full"
         >
-          <mxevolve-upgrade-factory-product-input
+          <div
+            mxevolveFactoryProductSelection
+            class="grid-2"
             [projectId]="projectId()"
-            inputId="upgrade-conversion-factory-product"
-            [factoryProductFormControl]="form().controls.factoryProduct"
-          />
+            [factoryProductId]="factoryProductId(form().controls.factoryProduct)"
+            [initialMxVersion]="initialMxVersion(form().controls.factoryProduct)"
+            [initialMxBuildId]="initialMxBuildId(form().controls.factoryProduct)"
+            [initialBipVersion]="initialBipVersion(form().controls.factoryProduct)"
+            [initialBipBuildId]="initialBipBuildId(form().controls.factoryProduct)"
+            (factoryProductIdChange)="
+              patchFactoryProduct(form().controls.factoryProduct, { id: $event ?? '' })
+            "
+            (mxVersionChange)="
+              patchFactoryProduct(form().controls.factoryProduct, {
+                mxVersion: $event?.version ?? ''
+              })
+            "
+            (mxBuildIdChange)="
+              patchFactoryProduct(form().controls.factoryProduct, {
+                mxBuildId: $event?.buildId ?? ''
+              })
+            "
+            (bipVersionChange)="
+              patchFactoryProduct(form().controls.factoryProduct, {
+                bipVersion: $event?.version
+              })
+            "
+            (bipBuildIdChange)="
+              patchFactoryProduct(form().controls.factoryProduct, {
+                bipBuildId: $event?.buildId
+              })
+            "
+          >
+            <div class="field flex flex-col gap-2">
+              <label for="upgrade-conversion-factory-product-mx-version" class="required">MX Version</label>
+              <mxevolve-mx-version-dropdown />
+            </div>
+            <div class="field flex flex-col gap-2">
+              <label for="upgrade-conversion-factory-product-mx-build-id" class="required"
+                >MX Build ID</label
+              >
+              <mxevolve-mx-build-id-dropdown />
+            </div>
+            <div class="field flex flex-col gap-2">
+              <label for="upgrade-conversion-factory-product-bip-version">BIP Version</label>
+              <mxevolve-bip-version-dropdown />
+            </div>
+            <div class="field flex flex-col gap-2">
+              <label for="upgrade-conversion-factory-product-bip-build-id">BIP Build ID</label>
+              <mxevolve-bip-build-id-dropdown />
+            </div>
+          </div>
         </mxevolve-definition-input>
-        } @if (visibility().parentMxArchivalBranch) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('parentMxArchivalBranch')"
           inputId="upgrade-parent-mx-archival-branch"
           [control]="form().controls.parentMxArchivalBranch"
           label="Parent MX Archival Branch"
@@ -105,8 +160,9 @@
             placeholder="Enter Parent MX Archival Branch"
           />
         </mxevolve-definition-input>
-        } @if (visibility().upgradeJump) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('upgradeJump')"
           inputId="upgrade-jump"
           [control]="form().controls.upgradeJump"
           label="Upgrade Jump"
@@ -124,17 +180,24 @@
             placeholder="Select an upgrade jump"
           />
         </mxevolve-definition-input>
-        }
       </div>
-    </fieldset>
-    } @if (showConfigurationGroup()) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        Configuration Parameters
-      </legend>
+    </mxevolve-definition-input-group>
+        <mxevolve-definition-input-group
+      label="Configuration Parameters"
+      [controls]="[
+        form().controls.businessProcessQualityLevel,
+        form().controls.repositoryId,
+        form().controls.createBranch,
+        form().controls.configurationBranchName,
+        form().controls.configurationParentBranch
+      ]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="notProvided('businessProcessQualityLevel') || notProvided('repositoryId') || notProvided('createBranch') || notProvided('configurationBranchName') || notProvided('configurationParentBranch')"
+    >
       <div class="grid-2">
-        @if (visibility().businessProcessQualityLevel) {
-        <mxevolve-definition-input
+                <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('businessProcessQualityLevel')"
           inputId="upgrade-bp-quality-level"
           [control]="form().controls.businessProcessQualityLevel"
           label="Business Process Quality Level"
@@ -152,8 +215,9 @@
             placeholder="Select Quality Gate Level"
           />
         </mxevolve-definition-input>
-        } @if (visibility().repositoryId) {
         <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('repositoryId')"
           inputId="upgrade-repository"
           [control]="form().controls.repositoryId"
           label="Repository"
@@ -167,9 +231,10 @@
             (failureEvent)="showSelectorError($event)"
           />
         </mxevolve-definition-input>
-        } @if (visibility().createBranch && form().controls.repositoryId.value)
-        {
+        @if (form().controls.repositoryId.value) {
         <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('createBranch')"
           inputId="upgrade-create-branch"
           [control]="form().controls.createBranch"
           label="Create Branch?"
@@ -193,9 +258,10 @@
             </div>
           </div>
         </mxevolve-definition-input>
-        } @if (visibility().configurationBranchName &&
-        form().controls.createBranch.value !== null) {
+        @if (form().controls.createBranch.value !== null) {
         <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('configurationBranchName')"
           inputId="upgrade-config-branch"
           [control]="form().controls.configurationBranchName"
           label="Configuration Branch Name"
@@ -212,9 +278,11 @@
             (initialInvalid)="showConfigBranchError()"
           />
         </mxevolve-definition-input>
-        } @if (visibility().configurationParentBranch &&
-        form().controls.createBranch.value !== null) {
+        }
+        @if (form().controls.createBranch.value !== null) {
         <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('configurationParentBranch')"
           inputId="upgrade-config-parent-branch"
           [control]="form().controls.configurationParentBranch"
           label="Configuration Parent Branch"
@@ -234,16 +302,22 @@
           />
         </mxevolve-definition-input>
         }
+        }
       </div>
-    </fieldset>
-    } @if (showInfrastructureGroup()) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        Infrastructure Parameters
-      </legend>
+    </mxevolve-definition-input-group>
+    <mxevolve-definition-input-group
+      label="Infrastructure Parameters"
+      [controls]="[
+        form().controls.qualityGateExecutionInfraGroupId,
+        form().controls.binaryConversionInfraGroupId
+      ]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="notProvided('qualityGateExecutionInfraGroupId') || notProvided('binaryConversionInfraGroupId')"
+    >
       <div class="grid-2">
-        @if (visibility().qualityGateExecutionInfraGroupId) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('qualityGateExecutionInfraGroupId')"
           inputId="upgrade-quality-gate-infra-group"
           [control]="form().controls.qualityGateExecutionInfraGroupId"
           label="Quality Gate Execution Infra Group"
@@ -257,8 +331,9 @@
             "
           />
         </mxevolve-definition-input>
-        } @if (visibility().binaryConversionInfraGroupId) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('binaryConversionInfraGroupId')"
           inputId="upgrade-binary-conversion-infra-group"
           [control]="form().controls.binaryConversionInfraGroupId"
           label="Binary Conversion Infra Group"
@@ -272,15 +347,21 @@
             "
           />
         </mxevolve-definition-input>
-        }
       </div>
-    </fieldset>
-    } @if (showTestsGroup()) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">Tests</legend>
+    </mxevolve-definition-input-group>
+        <mxevolve-definition-input-group
+      label="Tests"
+      [controls]="[
+        form().controls.testScenarioIds,
+        form().controls.technicalUpgradeTestScenarioId
+      ]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="notProvided('testScenarioIds') || notProvided('technicalUpgradeTestScenarioId')"
+    >
       <div class="grid-2">
-        @if (visibility().testScenarioIds) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('testScenarioIds')"
           inputId="upgrade-quality-gate-test-scenarios"
           [control]="form().controls.testScenarioIds"
           label="Quality Gate Execution Test Scenarios"
@@ -293,8 +374,9 @@
             (failureEvent)="showSelectorError($event)"
           />
         </mxevolve-definition-input>
-        } @if (visibility().technicalUpgradeTestScenarioId) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('technicalUpgradeTestScenarioId')"
           inputId="upgrade-binary-conversion-scenario"
           [control]="form().controls.technicalUpgradeTestScenarioId"
           label="Binary Conversion Test Scenario"
@@ -307,17 +389,23 @@
             (failureEvent)="showSelectorError($event)"
           />
         </mxevolve-definition-input>
-        }
       </div>
-    </fieldset>
-    } @if (showReferenceEnvironmentGroup()) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        Reference Environment Parameters
-      </legend>
+    </mxevolve-definition-input-group>
+        <mxevolve-definition-input-group
+      label="Reference Environment Parameters"
+      [controls]="[
+        form().controls.referenceCommitId,
+        form().controls.referenceEnvironmentDefinitionId,
+        form().controls.referenceFactoryProduct,
+        form().controls.referenceEnvironmentInfraGroupId
+      ]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="notProvided('referenceCommitId') || notProvided('referenceEnvironmentDefinitionId') || notProvided('referenceFactoryProduct') || notProvided('referenceEnvironmentInfraGroupId')"
+    >
       <div class="grid-2">
-        @if (visibility().referenceCommitId) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('referenceCommitId')"
           inputId="upgrade-reference-commit"
           [control]="form().controls.referenceCommitId"
           label="Reference Commit ID"
@@ -331,8 +419,9 @@
             placeholder="Enter Reference Commit ID"
           />
         </mxevolve-definition-input>
-        } @if (visibility().referenceEnvironmentDefinitionId) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('referenceEnvironmentDefinitionId')"
           inputId="upgrade-reference-env-definition"
           [control]="form().controls.referenceEnvironmentDefinitionId"
           label="Reference Environment Definition"
@@ -345,20 +434,70 @@
             (failureEvent)="showSelectorError($event)"
           />
         </mxevolve-definition-input>
-        } @if (visibility().referenceFactoryProduct) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('referenceFactoryProduct')"
           inputId="upgrade-reference-factory-product"
           [control]="form().controls.referenceFactoryProduct"
           description="Select the factory product that you wish to use in your reference environment"
+          fieldClass="col-span-full"
         >
-          <mxevolve-upgrade-factory-product-input
+          <div
+            mxevolveFactoryProductSelection
+            class="grid-2"
             [projectId]="projectId()"
-            inputId="upgrade-reference-factory-product"
-            [factoryProductFormControl]="form().controls.referenceFactoryProduct"
-          />
+            [factoryProductId]="factoryProductId(form().controls.referenceFactoryProduct)"
+            [initialMxVersion]="initialMxVersion(form().controls.referenceFactoryProduct)"
+            [initialMxBuildId]="initialMxBuildId(form().controls.referenceFactoryProduct)"
+            [initialBipVersion]="initialBipVersion(form().controls.referenceFactoryProduct)"
+            [initialBipBuildId]="initialBipBuildId(form().controls.referenceFactoryProduct)"
+            (factoryProductIdChange)="
+              patchFactoryProduct(form().controls.referenceFactoryProduct, { id: $event ?? '' })
+            "
+            (mxVersionChange)="
+              patchFactoryProduct(form().controls.referenceFactoryProduct, {
+                mxVersion: $event?.version ?? ''
+              })
+            "
+            (mxBuildIdChange)="
+              patchFactoryProduct(form().controls.referenceFactoryProduct, {
+                mxBuildId: $event?.buildId ?? ''
+              })
+            "
+            (bipVersionChange)="
+              patchFactoryProduct(form().controls.referenceFactoryProduct, {
+                bipVersion: $event?.version
+              })
+            "
+            (bipBuildIdChange)="
+              patchFactoryProduct(form().controls.referenceFactoryProduct, {
+                bipBuildId: $event?.buildId
+              })
+            "
+          >
+            <div class="field flex flex-col gap-2">
+              <label for="upgrade-reference-factory-product-mx-version" class="required">MX Version</label>
+              <mxevolve-mx-version-dropdown />
+            </div>
+            <div class="field flex flex-col gap-2">
+              <label for="upgrade-reference-factory-product-mx-build-id" class="required"
+                >MX Build ID</label
+              >
+              <mxevolve-mx-build-id-dropdown />
+            </div>
+            <div class="field flex flex-col gap-2">
+              <label for="upgrade-reference-factory-product-bip-version">BIP Version</label>
+              <mxevolve-bip-version-dropdown />
+            </div>
+            <div class="field flex flex-col gap-2">
+              <label for="upgrade-reference-factory-product-bip-build-id">BIP Build ID</label>
+              <mxevolve-bip-build-id-dropdown />
+            </div>
+          </div>
         </mxevolve-definition-input>
-        } @if (visibility().referenceEnvironmentInfraGroupId) {
-                <mxevolve-definition-input
+                        <mxevolve-definition-input
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          [forceShow]="notProvided('referenceEnvironmentInfraGroupId')"
           inputId="upgrade-reference-environment-infra-group"
           [control]="form().controls.referenceEnvironmentInfraGroupId"
           label="Reference Environment Infra Group"
@@ -372,16 +511,20 @@
             "
           />
         </mxevolve-definition-input>
-        }
       </div>
-    </fieldset>
-    } @if (visibility().notificationsRecipients) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        Notifications
-      </legend>
+    </mxevolve-definition-input-group>
+        <mxevolve-definition-input-group
+      label="Notifications"
+      [controls]="[
+        form().controls.notificationsRecipients
+      ]"
+      inputAccessMode="ACCESS_EMPTY_OPTIONAL_INPUTS"
+      [forceShow]="notProvided('notificationsRecipients')"
+    >
       <div class="grid-2">
                 <mxevolve-definition-input
+          inputAccessMode="ACCESS_EMPTY_OPTIONAL_INPUTS"
+          [forceShow]="notProvided('notificationsRecipients')"
           inputId="upgrade-notification-recipients"
           [control]="form().controls.notificationsRecipients"
           label="Expiry Date Notification Recipients"
@@ -396,8 +539,7 @@
           />
         </mxevolve-definition-input>
       </div>
-    </fieldset>
-    }
+    </mxevolve-definition-input-group>
 
     <div class="actions grid-6">
       <p-button
@@ -406,7 +548,7 @@
         class="col-start-3 col-span-2"
         styleClass="w-full justify-center"
         [disabled]="
-          form().invalid || form().pending || executing() || resolvingPrefill()
+          form().invalid || form().pending || executing()
         "
         [loading]="executing()"
       />

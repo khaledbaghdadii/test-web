@@ -27,11 +27,12 @@
   <form class="flex flex-col gap-6" [formGroup]="form()" (ngSubmit)="build()">
     <p class="mandatory-legend text-sm text-red-500 m-0">* Mandatory Field</p>
 
-    @if (visibility().name) {
     <div class="grid-2">
       <mxevolve-definition-input
         inputId="bt-execution-name"
+        [forceShow]="notProvided('name')"
         [control]="form().controls.name"
+        inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
         label="Execution Name"
       >
         <input
@@ -43,16 +44,22 @@
         />
       </mxevolve-definition-input>
     </div>
-    } @if (showConfigurationGroup()) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        Configuration Parameters
-      </legend>
+    <mxevolve-definition-input-group
+      label="Configuration Parameters"
+      [controls]="[
+        form().controls.repositoryId,
+        form().controls.configurationBranchName,
+        form().controls.configurationParentBranch
+      ]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="notProvided('repositoryId') || notProvided('configurationBranchName') || notProvided('configurationParentBranch')"
+    >
       <div class="grid-2">
-        @if (visibility().repositoryId) {
         <mxevolve-definition-input
           inputId="bt-repository"
+          [forceShow]="notProvided('repositoryId')"
           [control]="form().controls.repositoryId"
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
           label="Repository"
           description="Select the Repository where the configuration is stored"
         >
@@ -64,11 +71,12 @@
             (failureEvent)="showSelectorError($event)"
           />
         </mxevolve-definition-input>
-        } @if (visibility().configurationBranchName &&
-        form().controls.repositoryId.value) {
+        @if (form().controls.repositoryId.value) {
         <mxevolve-definition-input
           inputId="bt-config-branch"
+          [forceShow]="notProvided('configurationBranchName')"
           [control]="form().controls.configurationBranchName"
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
           label="Configuration Branch Name"
           description="Enter the Configuration Branch Name that you wish to use"
           [showValidationErrors]="false"
@@ -83,11 +91,12 @@
             (initialInvalid)="showConfigBranchError()"
           />
         </mxevolve-definition-input>
-        } @if (visibility().configurationParentBranch &&
-        form().controls.repositoryId.value) {
+        } @if (form().controls.repositoryId.value) {
         <mxevolve-definition-input
           inputId="bt-config-parent-branch"
+          [forceShow]="notProvided('configurationParentBranch')"
           [control]="form().controls.configurationParentBranch"
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
           label="Configuration Parent Branch"
           description="Enter the Parent Branch from where you want to create your branch"
           [showValidationErrors]="false"
@@ -106,13 +115,13 @@
         </mxevolve-definition-input>
         }
       </div>
-    </fieldset>
-    }
+    </mxevolve-definition-input-group>
 
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        Build Scenario
-      </legend>
+    <mxevolve-definition-input-group
+      label="Build Scenario"
+      [controls]="[form().controls.buildScenarioDefinitionId]"
+      inputAccessMode="ACCESS_ALL_INPUTS"
+    >
       <div class="grid-2">
         <div class="field flex flex-col gap-1 self-end">
           <span class="font-medium">Build Environment</span>
@@ -128,11 +137,12 @@
             >
           </div>
         </div>
-        @if (visibility().buildScenarioDefinitionId &&
-        !skipEnvironmentDeployment()) {
+        @if (!skipEnvironmentDeployment()) {
         <mxevolve-definition-input
           inputId="bt-build-scenario"
+          [forceShow]="notProvided('buildScenarioDefinitionId')"
           [control]="form().controls.buildScenarioDefinitionId"
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
           label="Build Scenario"
         >
           <mxevolve-scenario-definition-dropdown
@@ -144,21 +154,22 @@
         </mxevolve-definition-input>
         }
       </div>
-    </fieldset>
+    </mxevolve-definition-input-group>
 
-    @if (visibility().userStoryIds) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend
-        class="text-[0.95rem] font-bold text-primary p-0"
-        [class.required]="
-          form().controls.userStoryIds.hasValidator(Validators.required)
-        "
-      >
-        User Stories
-      </legend>
+    <mxevolve-definition-input-group
+      label="User Stories"
+      [controls]="[form().controls.userStoryIds]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="notProvided('userStoryIds')"
+      [required]="
+        form().controls.userStoryIds.hasValidator(Validators.required)
+      "
+    >
       <mxevolve-definition-input
         inputId="bt-user-story-ids"
+        [forceShow]="notProvided('userStoryIds')"
         [control]="form().controls.userStoryIds"
+        inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
         description="Enter the IDs of the stories you will be working on"
       >
         <mxevolve-user-story-input
@@ -167,17 +178,22 @@
           [formControl]="form().controls.userStoryIds"
         />
       </mxevolve-definition-input>
-    </fieldset>
-    } @if (showInfrastructureGroup()) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        Infrastructure Parameters
-      </legend>
+    </mxevolve-definition-input-group>
+    <mxevolve-definition-input-group
+      label="Infrastructure Parameters"
+      [controls]="[
+        form().controls.buildEnvironmentInfraGroup,
+        form().controls.buildAndTestInfraGroup
+      ]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="notProvided('buildEnvironmentInfraGroup') || notProvided('buildAndTestInfraGroup')"
+    >
       <div class="grid-2">
-        @if (visibility().buildEnvironmentInfraGroup) {
         <mxevolve-definition-input
           inputId="bt-build-environment-infra-group"
+          [forceShow]="notProvided('buildEnvironmentInfraGroup')"
           [control]="form().controls.buildEnvironmentInfraGroup"
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
           label="Build Environment Infra Group"
           description="Select the Infra Group for the build environment"
         >
@@ -187,10 +203,11 @@
             [infraGroupFormControl]="form().controls.buildEnvironmentInfraGroup"
           />
         </mxevolve-definition-input>
-        } @if (visibility().buildAndTestInfraGroup) {
         <mxevolve-definition-input
           inputId="bt-build-and-test-infra-group"
+          [forceShow]="notProvided('buildAndTestInfraGroup')"
           [control]="form().controls.buildAndTestInfraGroup"
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
           label="Build and Test Infra Group"
           description='Select the Infra Group for the test(s) executed under "Build &amp; Test" step'
         >
@@ -200,18 +217,21 @@
             [infraGroupFormControl]="form().controls.buildAndTestInfraGroup"
           />
         </mxevolve-definition-input>
-        }
       </div>
-    </fieldset>
-    } @if (visibility().notificationsRecipients) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        Notifications
-      </legend>
+    </mxevolve-definition-input-group>
+
+    <mxevolve-definition-input-group
+      label="Notifications"
+      [controls]="[form().controls.notificationsRecipients]"
+      inputAccessMode="ACCESS_EMPTY_OPTIONAL_INPUTS"
+      [forceShow]="notProvided('notificationsRecipients')"
+    >
       <div class="grid-2">
         <mxevolve-definition-input
           inputId="bt-notification-recipients"
+          [forceShow]="notProvided('notificationsRecipients')"
           [control]="form().controls.notificationsRecipients"
+          inputAccessMode="ACCESS_EMPTY_OPTIONAL_INPUTS"
           label="Expiry Date Notification Recipients"
           description="Select the users who will receive email notifications as the business process approaches its expiry date"
         >
@@ -224,8 +244,7 @@
           />
         </mxevolve-definition-input>
       </div>
-    </fieldset>
-    }
+    </mxevolve-definition-input-group>
 
     <div class="actions grid-6">
       <p-button
@@ -233,9 +252,7 @@
         label="Build"
         class="col-start-3 col-span-2"
         styleClass="w-full justify-center"
-        [disabled]="
-          form().invalid || form().pending || executing() || resolvingPrefill()
-        "
+        [disabled]="form().invalid || form().pending || executing()"
         [loading]="executing()"
       />
     </div>

@@ -1,6 +1,7 @@
-@if (showRepository()) {
 <mxevolve-definition-input
   inputId="validation-repository"
+  inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+  [forceShow]="notProvided('repositoryId')"
   [control]="repositoryIdFormControl()"
   label="Repository"
   description="Select the Repository where the configuration is stored"
@@ -13,10 +14,11 @@
     (failureEvent)="showSelectorError($event)"
   />
 </mxevolve-definition-input>
-} @if (inputVisibility.shows("businessProcessQualityLevel") &&
-businessProcessQualityLevelFormControl().enabled) {
+@if (businessProcessQualityLevelFormControl().enabled) {
 <mxevolve-definition-input
   inputId="validation-bp-quality-level"
+  inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+  [forceShow]="notProvided('businessProcessQualityLevel')"
   [control]="businessProcessQualityLevelFormControl()"
   label="Business Process Quality Level"
   description="Select the business process quality level"
@@ -35,6 +37,7 @@ businessProcessQualityLevelFormControl().enabled) {
 </mxevolve-definition-input>
 } @if (businessProcessQualityLevelFormControl().value === "MQG") {
 <mxevolve-validation-mqg-parameters
+  [providedInputs]="providedInputs()"
   [projectId]="projectId()"
   [repositoryId]="repositoryIdFormControl().value ?? ''"
   [createBranchFormControl]="createBranchFormControl()"
@@ -47,6 +50,7 @@ businessProcessQualityLevelFormControl().enabled) {
 />
 } @else if (businessProcessQualityLevelFormControl().value === "DQG") {
 <mxevolve-validation-dqg-parameters
+  [providedInputs]="providedInputs()"
   [projectId]="projectId()"
   [repositoryId]="repositoryIdFormControl().value ?? ''"
   [createBranchFormControl]="createBranchFormControl()"

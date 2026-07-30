@@ -124,6 +124,7 @@ export class UserStoryInputComponent implements ControlValueAccessor, OnInit {
       )
       .then((enabled: boolean) => {
         this.isValidationEnabled.set(enabled);
+        this.validateExistingValues();
       })
       .catch(() => {
         this.isValidationEnabled.set(false);
@@ -139,6 +140,7 @@ export class UserStoryInputComponent implements ControlValueAccessor, OnInit {
         ? seeded.map((id) => this.createField(id))
         : [this.createField()]
     );
+    this.validateExistingValues();
   }
 
   registerOnChange(fn: (value: string[] | null) => void): void {
@@ -220,7 +222,32 @@ export class UserStoryInputComponent implements ControlValueAccessor, OnInit {
     if (!initial.trim()) {
       return "empty";
     }
-    return this.validationActive() ? "valid" : "filled";
+    return this.validationActive() ? "pending" : "filled";
+  }
+
+  /**
+   * Ids that arrive already filled in - from the Process Template or a repush -
+   * are checked like any typed one. Nothing shows a green check until the
+   * backend has actually answered for it.
+   */
+  private validateExistingValues(): void {
+    if (!this.validationActive()) {
+      return;
+    }
+    for (const field of this.fields()) {
+      const value = field.control.value?.trim() ?? "";
+      if (!value) {
+        continue;
+      }
+      field.status.set("pending");
+      field.error.set(undefined);
+      this.validate(field, value)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((errors) => {
+          this.applyValidationResult(field, errors);
+          this.emitChange();
+        });
+    }
   }
 
   private applyValidationResult(
@@ -265,7 +292,7 @@ export class UserStoryInputComponent implements ControlValueAccessor, OnInit {
             this.messageService.showError(
               "Something went wrong. Please try again later."
             );
-            return of(null);
+            return of({ validationFailed: "Could not be validated" });
           })
         );
     }
@@ -281,7 +308,10 @@ export class UserStoryInputComponent implements ControlValueAccessor, OnInit {
 
   private firstError(errors: ValidationErrors): string {
     return (
-      errors["duplicate"] ?? errors["invalidStory"] ?? "Invalid user story"
+      errors["duplicate"] ??
+      errors["invalidStory"] ??
+      errors["validationFailed"] ??
+      "Invalid user story"
     );
   }
 

@@ -8,6 +8,9 @@ import {
   output,
 } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { forkJoin, of } from "rxjs";
+import { catchError } from "rxjs/operators";
 import {
   MxEvolveDropdownState,
   MxevolveMultiselectDropdownComponent,
@@ -17,21 +20,12 @@ import {
   ScenarioDefinitionApiResponse,
   ScenarioDefinitionService,
 } from "@mxevolve/domains/test/data-access";
+import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 import {
   ScenarioDefinitionDataProvider,
   ScenarioDefinitionParams,
 } from "../scenario-definition-dropdown/scenario-definition-data-provider";
 
-/**
- * Multi-select scenario-definition dropdown built on the shared
- * `mxevolve-multiselect-dropdown`. Mirrors the single-select
- * `ScenarioDefinitionDropdownComponent` but stores an array of scenario ids —
- * used by the Validation (`qualityGateScenarioDefinitionIds`) and Upgrade
- * (`testScenarioIds`) executors to restore the legacy multi-select scenario
- * picker. Implements `ControlValueAccessor` so it binds to the executor's
- * `string[]` control; the widget resolves prefilled ids to their objects and
- * emits the selected ids on user change.
- */
 @Component({
   selector: "mxevolve-scenario-definition-multiselect-dropdown",
   template: `
@@ -62,11 +56,8 @@ export class ScenarioDefinitionMultiselectDropdownComponent
   readonly projectId = input.required<string>();
   readonly disabled = input(false);
   readonly inputId = input<string>();
+  readonly clearArchived = input(false);
 
-  /**
-   * Mirrors the single-select siblings so an executor can surface a failed
-   * fetch; previously the error was swallowed here entirely (VAL-27132 R3).
-   */
   readonly failureEvent = output<string>();
 
   readonly stateProvider: MxEvolveDropdownState<
@@ -77,18 +68,19 @@ export class ScenarioDefinitionMultiselectDropdownComponent
   private readonly scenarioDefinitionService = inject(
     ScenarioDefinitionService
   );
+  private readonly toastMessageService = inject(ToastMessageService);
+  private readonly destroyRef = inject(DestroyRef);
   private prefilledIds: string[] | null = null;
   private onChange: (value: string[]) => void = () => {};
   private onTouched: () => void = () => {};
 
   constructor() {
-    const destroyRef = inject(DestroyRef);
     const dataProvider = new ScenarioDefinitionDataProvider(
       this.scenarioDefinitionService
     );
     this.stateProvider = new MxevolveMultiselectFrontendStateProvider(
       dataProvider,
-      destroyRef
+      this.destroyRef
     );
 
     effect(() => {
@@ -143,18 +135,54 @@ export class ScenarioDefinitionMultiselectDropdownComponent
       return;
     }
 
-    const matches = definitions.filter((definition) =>
-      ids.includes(definition.id)
-    );
-    this.stateProvider.setSelectedItems(matches);
+    const scenarios = ids
+      .map((id) => definitions.find((definition) => definition.id === id))
+      .filter((definition) => definition !== undefined);
 
-    const resolved = new Set(matches.map((definition) => definition.id));
-    if (ids.some((id) => !resolved.has(id))) {
-      // Some pre-filled scenario definitions no longer exist. Previously they
-      // were dropped from the dropdown while the control kept claiming them;
-      // emit only what actually resolved so the form sees reality — and, when
-      // nothing resolves, so `required`/`minLength` can fire (VAL-27132 R3).
-      this.onChange([...resolved]);
+    const archivedIds = ids.filter(
+      (id) => !definitions.find((definition) => definition.id === id)
+    );
+
+    if (archivedIds.length > 0) {
+      this.handleArchivedPrefill(scenarios, archivedIds);
+    } else {
+      this.stateProvider.setSelectedItems(scenarios);
     }
+  }
+
+  private handleArchivedPrefill(
+    scenarios: ScenarioDefinitionApiResponse[],
+    archivedIds: string[]
+  ): void {
+    this.stateProvider.setSelectedItems(scenarios);
+    if (this.clearArchived()) {
+      this.onChange(scenarios.map((scenario) => scenario.id));
+    }
+
+    forkJoin(
+      archivedIds.map((id) =>
+        this.scenarioDefinitionService
+          .getScenarioDefinitionById(id, this.projectId())
+          .pipe(catchError(() => of<ScenarioDefinitionApiResponse | null>(null)))
+      )
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((responses) => {
+        const names = responses
+          .filter((response) => response !== null)
+          .map((scenario) => `'${scenario.name}'`);
+        this.showArchivedWarning(names);
+      });
+  }
+
+  private showArchivedWarning(names: string[]): void {
+    const scenarioNames = names.length > 0 ? names.join(", ") + " " : "";
+    const action = this.clearArchived()
+      ? "have been cleared"
+      : "may no longer be valid";
+    this.toastMessageService.showWarning(
+      `The prefilled scenario(s) ${scenarioNames}are archived and ${action}.`,
+      "Archived Scenario Selected"
+    );
   }
 }

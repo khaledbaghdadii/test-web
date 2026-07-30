@@ -6,12 +6,15 @@ import {
   ngMocks,
 } from "ng-mocks";
 import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
-import { of } from "rxjs";
+import { waitFor } from "@testing-library/angular";
+import { of, throwError } from "rxjs";
 import { MxevolveSingleSelectDropdownComponent } from "@mxflow/ui/mxevolve-dropdown";
 import {
   ScenarioDefinitionApiResponse,
   ScenarioDefinitionService,
 } from "@mxevolve/domains/test/data-access";
+import { ScenarioDefinitionActivityStatus } from "@mxevolve/domains/test/model";
+import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 import { ScenarioDefinitionDropdownComponent } from "./scenario-definition-dropdown.component";
 
 const PROJECT_ID = "project-1234";
@@ -43,17 +46,27 @@ const SCENARIO_DEFINITIONS: ScenarioDefinitionApiResponse[] = [
   },
 ];
 
-function mockScenarioDefinitionService(): Partial<ScenarioDefinitionService> {
-  return {
-    getScenarioDefinitions: jest.fn(() => of(SCENARIO_DEFINITIONS)),
-  } as Partial<ScenarioDefinitionService>;
-}
+const ARCHIVED_SCENARIO = {
+  id: "st2",
+  name: "st2",
+} as ScenarioDefinitionApiResponse;
+
+const mockScenarioDefinitionService = {
+  getScenarioDefinitions: jest.fn(),
+  getScenarioDefinitionById: jest.fn(),
+};
+
+const mockToastMessageService = {
+  showWarning: jest.fn(),
+  showError: jest.fn(),
+};
 
 @Component({
   template: `
     <form [formGroup]="form">
       <mxevolve-scenario-definition-dropdown
         [projectId]="projectId"
+        [clearArchived]="clearArchived"
         formControlName="scenarioDefinitionId"
       />
     </form>
@@ -62,6 +75,7 @@ function mockScenarioDefinitionService(): Partial<ScenarioDefinitionService> {
 })
 class ScenarioDefinitionFormWrapperComponent {
   projectId = PROJECT_ID;
+  clearArchived = false;
   form = new FormGroup({
     scenarioDefinitionId: new FormControl<string | null>(null),
   });
@@ -78,11 +92,20 @@ describe("ScenarioDefinitionDropdownComponent", () => {
   let component: ScenarioDefinitionDropdownComponent;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    mockScenarioDefinitionService.getScenarioDefinitions.mockReturnValue(
+      of(SCENARIO_DEFINITIONS)
+    );
+    mockScenarioDefinitionService.getScenarioDefinitionById.mockReturnValue(
+      of(ARCHIVED_SCENARIO)
+    );
+
     await MockBuilder(ScenarioDefinitionFormWrapperComponent)
       .keep(ScenarioDefinitionDropdownComponent)
       .keep(ReactiveFormsModule)
       .mock(MxevolveSingleSelectDropdownComponent)
-      .mock(ScenarioDefinitionService, mockScenarioDefinitionService());
+      .mock(ScenarioDefinitionService, mockScenarioDefinitionService)
+      .mock(ToastMessageService, mockToastMessageService);
 
     fixture = MockRender(ScenarioDefinitionFormWrapperComponent);
     component = getComponent();
@@ -95,10 +118,13 @@ describe("ScenarioDefinitionDropdownComponent", () => {
     expect(component).toBeTruthy();
   });
 
-  it("given the component is rendered, then scenario definitions should be fetched with the correct project id", () => {
+  it("given the component is rendered, then only active scenario definitions should be offered for the project", () => {
     const service = ngMocks.get(ScenarioDefinitionService);
 
-    expect(service.getScenarioDefinitions).toHaveBeenCalledWith(PROJECT_ID);
+    expect(service.getScenarioDefinitions).toHaveBeenCalledWith(
+      PROJECT_ID,
+      ScenarioDefinitionActivityStatus.ACTIVE
+    );
   });
 
   it("given the scenario definitions are loaded, then dropdown options should be populated with their names", () => {
@@ -165,5 +191,98 @@ describe("ScenarioDefinitionDropdownComponent", () => {
     expect(errorSpy).toHaveBeenCalledWith(
       "Failed to load scenario definitions"
     );
+  });
+
+  it("warns that a prefilled scenario is archived, naming it", async () => {
+    fixture.componentInstance.form.patchValue({
+      scenarioDefinitionId: "st2",
+    });
+    fixture.detectChanges();
+
+    await waitFor(() =>
+      expect(mockToastMessageService.showWarning).toHaveBeenCalledWith(
+        "The prefilled scenario 'st2' is archived and may no longer be valid.",
+        "Archived Scenario Selected"
+      )
+    );
+  });
+
+  it("keeps an archived scenario in the form when it is not cleared", async () => {
+    fixture.componentInstance.form.patchValue({
+      scenarioDefinitionId: "st2",
+    });
+    fixture.detectChanges();
+
+    await waitFor(() =>
+      expect(mockToastMessageService.showWarning).toHaveBeenCalled()
+    );
+    expect(fixture.componentInstance.form.value.scenarioDefinitionId).toBe(
+      "st2"
+    );
+  });
+
+  it("drops an archived scenario from the form when clearing is requested", async () => {
+    fixture.componentInstance.clearArchived = true;
+    fixture.detectChanges();
+
+    fixture.componentInstance.form.patchValue({
+      scenarioDefinitionId: "st2",
+    });
+    fixture.detectChanges();
+
+    await waitFor(() =>
+      expect(
+        fixture.componentInstance.form.value.scenarioDefinitionId
+      ).toBeNull()
+    );
+  });
+
+  it("reports that the archived scenario has been cleared when clearing is requested", async () => {
+    fixture.componentInstance.clearArchived = true;
+    fixture.detectChanges();
+
+    fixture.componentInstance.form.patchValue({
+      scenarioDefinitionId: "st2",
+    });
+    fixture.detectChanges();
+
+    await waitFor(() =>
+      expect(mockToastMessageService.showWarning).toHaveBeenCalledWith(
+        "The prefilled scenario 'st2' is archived and has been cleared.",
+        "Archived Scenario Selected"
+      )
+    );
+  });
+
+  it("warns without a name when the archived scenario cannot be looked up", async () => {
+    mockScenarioDefinitionService.getScenarioDefinitionById.mockReturnValue(
+      throwError(() => new Error("gone"))
+    );
+
+    fixture.componentInstance.form.patchValue({
+      scenarioDefinitionId: "st2",
+    });
+    fixture.detectChanges();
+
+    await waitFor(() =>
+      expect(mockToastMessageService.showWarning).toHaveBeenCalledWith(
+        "The prefilled scenario is archived and may no longer be valid.",
+        "Archived Scenario Selected"
+      )
+    );
+  });
+
+  it("does not warn when the prefilled scenario is available", async () => {
+    fixture.componentInstance.form.patchValue({
+      scenarioDefinitionId: "scenario-definition-2",
+    });
+    fixture.detectChanges();
+
+    await waitFor(() =>
+      expect(component.stateProvider.selectedItem()).toEqual(
+        SCENARIO_DEFINITIONS[1]
+      )
+    );
+    expect(mockToastMessageService.showWarning).not.toHaveBeenCalled();
   });
 });

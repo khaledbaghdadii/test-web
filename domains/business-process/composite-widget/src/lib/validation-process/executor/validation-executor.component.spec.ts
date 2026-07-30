@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/angular";
 import userEvent from "@testing-library/user-event";
-import { ReactiveFormsModule, Validators } from "@angular/forms";
+import { ReactiveFormsModule } from "@angular/forms";
 import { MockComponent } from "ng-mocks";
 import { of, throwError } from "rxjs";
 import { InputText } from "primeng/inputtext";
@@ -14,11 +14,7 @@ import {
 import {
   BranchService,
   DevelopmentService,
-  RepositoryService,
 } from "@mxevolve/domains/scm/data-access";
-import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
-import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
-import { UserService } from "@mxevolve/domains/user/data-access";
 import { FinalProductApiService } from "@mxevolve/domains/artifact/data-access";
 import {
   InfraGroupSelectorComponent,
@@ -33,13 +29,16 @@ import {
 import { FeatureFlagResolver } from "@mxflow/feature-flags";
 import { ScopeStartCommitInputComponent } from "../scope-start-commit-input/scope-start-commit-input.component";
 import { ValidationConfigurationParametersComponent } from "./configuration-parameters/validation-configuration-parameters.component";
-import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
+import {
+  DefinitionInputComponent,
+  DefinitionInputGroupComponent,
+} from "@mxevolve/domains/business-process/ui";
 import { ValidationExecutorComponent } from "./validation-executor.component";
-import type { ValidationExecutorForm } from "./validation-executor.form";
 
 const COMPONENT_IMPORTS = [
   ReactiveFormsModule,
   DefinitionInputComponent,
+  DefinitionInputGroupComponent,
   InputText,
   RadioButton,
   Select,
@@ -72,34 +71,6 @@ const mockFinalProductApiService = {
   getFinalProducts: jest.fn(),
   getFinalProductById: jest.fn(),
 };
-
-const mockRepositoryService = { getRepository: jest.fn() };
-const mockScenarioService = { getScenarioDefinitionById: jest.fn() };
-const mockInfraGroupService = { getGroup: jest.fn() };
-
-/** Services the executor resolves pre-filled values against (VAL-27132 W1). */
-const mockUserService = { fetchUsersByEmails: jest.fn() };
-
-const PREFILL_PROVIDERS = [
-  { provide: UserService, useValue: mockUserService },
-  { provide: RepositoryService, useValue: mockRepositoryService },
-  { provide: ScenarioDefinitionService, useValue: mockScenarioService },
-  { provide: InfraGroupService, useValue: mockInfraGroupService },
-];
-
-function stubPrefillsResolve(): void {
-  mockUserService.fetchUsersByEmails.mockImplementation(
-    (_projectId: string, emails: string[]) => of({ content: emails.map((mail) => ({ mail })) })
-  );
-  mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
-  mockScenarioService.getScenarioDefinitionById.mockReturnValue(
-    of({ id: "scenario-1" })
-  );
-  mockInfraGroupService.getGroup.mockReturnValue(of({ id: "infra-1" }));
-  mockFinalProductApiService.getFinalProductById.mockReturnValue(
-    of({ id: "product-1" })
-  );
-}
 
 const mockFeatureFlags = {
   isFeatureEnabled: jest.fn(),
@@ -176,10 +147,8 @@ async function renderComponent({
         provide: ValidationProcessExecutorService,
         useValue: mockExecutorService,
       },
-      ...PREFILL_PROVIDERS,
     ],
     providers: [
-      ...PREFILL_PROVIDERS,
       {
         provide: ValidationProcessExecutorService,
         useValue: mockExecutorService,
@@ -200,7 +169,6 @@ function buildButton(): HTMLElement {
 describe("ValidationExecutorComponent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    stubPrefillsResolve();
   });
 
   describe("required-field markers", () => {
@@ -208,33 +176,6 @@ describe("ValidationExecutorComponent", () => {
       await renderComponent();
 
       expect(screen.getByText("* Mandatory Field")).toBeTruthy();
-    });
-
-    it("keeps the parent branch reachable once MQG create-branch makes it required", async () => {
-      const { fixture } = await renderComponent({
-        providedInputs: [{ inputId: "repositoryId", value: "repo-1" }],
-      });
-      const executor = fixture.componentInstance as unknown as {
-        form: () => ValidationExecutorForm;
-        visibility: () => Record<string, boolean>;
-      };
-      const controls = executor.form().controls;
-
-      // The parent branch carries no validators when the form is built, so the
-      // definition-only visibility snapshot says "hide". Choosing MQG +
-      // create-branch makes it required - and a required field the user cannot
-      // reach leaves the run permanently unsubmittable.
-      expect(executor.visibility()["parentBranchName"]).toBe(false);
-
-      controls.businessProcessQualityLevel.setValue("MQG");
-      controls.createBranch.setValue(true);
-
-      await waitFor(() =>
-        expect(
-          controls.parentBranchName.hasValidator(Validators.required)
-        ).toBe(true)
-      );
-      expect(executor.visibility()["parentBranchName"]).toBe(true);
     });
 
     it("marks required fields with an asterisk and leaves optional fields unmarked", async () => {

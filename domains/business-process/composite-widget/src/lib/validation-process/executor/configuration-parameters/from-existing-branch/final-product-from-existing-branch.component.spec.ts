@@ -53,6 +53,7 @@ async function renderComponent({
   const view = await render(FinalProductFromExistingBranchComponent, {
     inputs: {
       projectId: "project-1",
+      providedInputs: [],
       repositoryId: "repo-1",
       archivalBranchNameFormControl: controls.archivalBranchName,
       finalProductIdFormControl: controls.finalProductId,

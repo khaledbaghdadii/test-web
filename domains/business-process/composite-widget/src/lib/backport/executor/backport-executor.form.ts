@@ -23,10 +23,10 @@ export interface BackportExecutorFormControls {
   notificationsRecipients: FormControl<string[] | null>;
   /**
    * Pre-filled by the definition and never rendered as an editable field, but
-   * held as real controls (decision D3) so eager prefill resolution can mark
-   * them invalid when they point at something that no longer exists. Previously
-   * these were read straight off `providedInputs` at submit time, so a stale id
-   * was posted with nothing to stop it.
+   * held as real controls so the executor can mark the merge configuration
+   * invalid when it points at something that no longer exists. Previously these
+   * were read straight off `providedInputs` at submit time, so a stale id was
+   * posted with nothing to stop it.
    */
   repositoryId: FormControl<string | null>;
   mergeConfigurationId: FormControl<string | null>;

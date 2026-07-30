@@ -19,7 +19,6 @@ import { InputIcon } from "primeng/inputicon";
 import { catchError, debounceTime, map, of, switchMap, tap } from "rxjs";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
-  BRANCH_CHECK_FAILED_MESSAGE,
   BranchService,
   BranchDetailsError,
   GetBranchDetailsRequest,
@@ -164,10 +163,11 @@ export class BranchInputComponent implements OnInit {
               : null
           );
         }
-        // Legacy relayed the raw backend text here, which surfaced stack traces
-        // and 500 bodies to the user. Deliberately replaced with a generic
-        // message (VAL-27132 divergence register KEEP-2).
-        return of({ branchApiError: BRANCH_CHECK_FAILED_MESSAGE });
+        return of({
+          branchApiError: `Unable to validate branch: ${
+            err?.message || "Unknown error"
+          }`,
+        });
       })
     );
   }

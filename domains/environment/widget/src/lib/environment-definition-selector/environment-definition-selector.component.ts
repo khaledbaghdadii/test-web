@@ -23,12 +23,9 @@ import {
 } from "../environment-definition-dropdown/environment-definition-data-provider";
 
 /**
- * New-architecture environment-definition selector built on the shared
- * `mxevolve-single-select-dropdown`, rebuilding the legacy
- * `mxevolve-business-process-environment-definition-selector`. Lists the
- * project's environment definitions and binds the selected id to the executor's
- * `referenceEnvironmentDefinitionId` control. A prefilled id that is no longer
- * in the fetched list is preserved (legacy `invalidateHiddenEnvironmentDefinition=false`).
+ * Lists the project's environment definitions and binds the selected id to the
+ * bound control. A pre-filled id that is no longer in the fetched list is kept
+ * unless the consumer asks for it to be cleared.
  */
 @Component({
   selector: "mxevolve-environment-definition-selector",
@@ -62,6 +59,7 @@ export class EnvironmentDefinitionSelectorComponent
   readonly projectId = input.required<string>();
   readonly disabled = input(false);
   readonly inputId = input<string>();
+  readonly invalidateHiddenEnvironmentDefinition = input(false);
 
   readonly failureEvent = output<string>();
 
@@ -137,10 +135,7 @@ export class EnvironmentDefinitionSelectorComponent
 
     const match = definitions.find((definition) => definition.id === id);
     this.stateProvider.setSelectedItem(match ?? null);
-    if (!match) {
-      // The pre-filled environment definition no longer exists. Report the miss
-      // to the form instead of leaving the control holding a dead id that still
-      // satisfies `Validators.required` (VAL-27132 R3).
+    if (!match && this.invalidateHiddenEnvironmentDefinition()) {
       this.onChange(null);
     }
   }

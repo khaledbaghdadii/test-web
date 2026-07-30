@@ -17,13 +17,11 @@ import {
 } from "@mxevolve/domains/business-process/widget";
 import { ReviewersAutoCompleteComponent } from "@mxevolve/domains/scm/widget";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import { MergeConfigurationService } from "@mxevolve/domains/scm/data-access";
 import {
-  MergeConfigurationService,
-  RepositoryService,
-} from "@mxevolve/domains/scm/data-access";
-import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
-import { UserService } from "@mxevolve/domains/user/data-access";
-import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
+  DefinitionInputComponent,
+  DefinitionInputGroupComponent,
+} from "@mxevolve/domains/business-process/ui";
 import { BackportExecutorComponent } from "./backport-executor.component";
 
 function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
@@ -45,36 +43,28 @@ const COMPONENT_IMPORTS = [
   MockComponent(NotificationsRecipientsInputComponent),
   MockComponent(ReviewersAutoCompleteComponent),
   DefinitionInputComponent,
+  DefinitionInputGroupComponent,
 ];
 
 const mockExecutorService = {
   executeBackportProcessDefinition: jest.fn(),
 };
 
-const mockRepositoryService = { getRepository: jest.fn() };
 const mockMergeConfigurationService = {
   getFilteredMergeConfigurations: jest.fn(),
 };
-const mockInfraGroupService = { getGroup: jest.fn() };
-
-/** Services the executor resolves its three pre-filled ids against (W1 / D3). */
-const mockUserService = { fetchUsersByEmails: jest.fn() };
 
 const PREFILL_PROVIDERS = [
-  { provide: UserService, useValue: mockUserService },
-  { provide: RepositoryService, useValue: mockRepositoryService },
-  { provide: MergeConfigurationService, useValue: mockMergeConfigurationService },
-  { provide: InfraGroupService, useValue: mockInfraGroupService },
+  {
+    provide: MergeConfigurationService,
+    useValue: mockMergeConfigurationService,
+  },
 ];
 
-function stubPrefillsResolve(): void {
-  mockUserService.fetchUsersByEmails.mockImplementation(
-    (_projectId: string, emails: string[]) => of({ content: emails.map((mail) => ({ mail })) })
-  );
-  mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
-  mockInfraGroupService.getGroup.mockReturnValue(of({ id: "group-1" }));
+/** The pre-filled merge configuration is on the first page and is the last one. */
+function stubMergeConfigurationResolves(): void {
   mockMergeConfigurationService.getFilteredMergeConfigurations.mockReturnValue(
-    of({ content: [{ id: "merge-1" }] })
+    of({ content: [{ id: "merge-1" }], last: true })
   );
 }
 
@@ -142,7 +132,7 @@ function setReviewers(names: string[]): void {
 describe("BackportExecutorComponent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    stubPrefillsResolve();
+    stubMergeConfigurationResolves();
   });
 
   describe("field presence", () => {
@@ -299,6 +289,89 @@ describe("BackportExecutorComponent", () => {
         expect(mockToastService.showError).toHaveBeenCalledWith("boom")
       );
       expect(created).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("pre-filled merge configuration", () => {
+    async function fillEveryEditableField(): Promise<void> {
+      const user = userEvent.setup();
+      await user.type(screen.getByLabelText("Execution Name"), "My backport");
+      await user.type(screen.getByLabelText("Pull Request Id"), "4402");
+      await user.type(
+        screen.getByLabelText("Merge Request Title"),
+        "My MR title"
+      );
+      simulateCvaChange(UserStoryInputComponent, ["VAL-1"]);
+      setReviewers(["reviewer-a"]);
+    }
+
+    it("reports a merge configuration that is no longer in the list", async () => {
+      mockMergeConfigurationService.getFilteredMergeConfigurations.mockReturnValue(
+        of({ content: [{ id: "merge-other" }], last: true })
+      );
+
+      await renderComponent();
+
+      await waitFor(() =>
+        expect(mockToastService.showError).toHaveBeenCalledWith(
+          "The destination merge configuration available in the Process Template no longer exists. Please update the Process Template."
+        )
+      );
+    });
+
+    it("blocks submission when the merge configuration is gone, even once every editable field is filled", async () => {
+      mockMergeConfigurationService.getFilteredMergeConfigurations.mockReturnValue(
+        of({ content: [{ id: "merge-other" }], last: true })
+      );
+
+      await renderComponent();
+      await fillEveryEditableField();
+
+      await waitFor(() => expect(buildButton()).toBeDisabled());
+    });
+
+    it("keeps looking on the next page before deciding it is gone", async () => {
+      mockMergeConfigurationService.getFilteredMergeConfigurations.mockImplementation(
+        (
+          _projectId: string,
+          _repositoryId: string,
+          _filter: string,
+          page: number
+        ) =>
+          page === 0
+            ? of({ content: [{ id: "merge-other" }], last: false })
+            : of({ content: [{ id: "merge-1" }], last: true })
+      );
+
+      await renderComponent();
+      await fillEveryEditableField();
+
+      await waitFor(() => expect(buildButton()).toBeEnabled());
+      expect(mockToastService.showError).not.toHaveBeenCalled();
+    });
+
+    it("reports a merge-configuration lookup that fails outright", async () => {
+      mockMergeConfigurationService.getFilteredMergeConfigurations.mockReturnValue(
+        throwError(() => new Error("Merge configuration service unavailable"))
+      );
+
+      await renderComponent();
+
+      await waitFor(() =>
+        expect(mockToastService.showError).toHaveBeenCalledWith(
+          "Merge configuration service unavailable"
+        )
+      );
+    });
+
+    it("looks nothing up when the definition pre-fills no merge configuration", async () => {
+      await renderComponent([{ inputId: "repositoryId", value: "repo-1" }]);
+
+      await waitFor(() => expect(buildButton()).toBeTruthy());
+      expect(
+        mockMergeConfigurationService.getFilteredMergeConfigurations
+      ).not.toHaveBeenCalled();
+      expect(mockToastService.showError).not.toHaveBeenCalled();
     });
   });
 });

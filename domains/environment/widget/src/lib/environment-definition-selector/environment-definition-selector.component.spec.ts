@@ -1,6 +1,6 @@
 import { Component } from "@angular/core";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
-import { render } from "@testing-library/angular";
+import { render, waitFor } from "@testing-library/angular";
 import { MockComponent, ngMocks } from "ng-mocks";
 import { of } from "rxjs";
 import { MxevolveSingleSelectDropdownComponent } from "@mxflow/ui/mxevolve-dropdown";
@@ -15,20 +15,25 @@ import { EnvironmentDefinitionSelectorComponent } from "./environment-definition
     <mxevolve-environment-definition-selector
       [projectId]="'project-1'"
       [formControl]="control"
+      [invalidateHiddenEnvironmentDefinition]="invalidate"
     />
   `,
   imports: [EnvironmentDefinitionSelectorComponent, ReactiveFormsModule],
 })
 class HostComponent {
   control = new FormControl<string | null>(null);
+  invalidate = false;
 }
 
 const environmentDefinitionService = {
   getEnvironmentDefinitions: jest.fn().mockReturnValue(of([])),
 };
 
-async function renderComponent() {
+async function renderComponent(
+  componentProperties: Partial<HostComponent> = {}
+) {
   return render(HostComponent, {
+    componentProperties,
     imports: [MockComponent(MxevolveSingleSelectDropdownComponent)],
     componentProviders: [
       {
@@ -63,5 +68,44 @@ describe("EnvironmentDefinitionSelectorComponent", () => {
       .componentInstance.selectionChange.emit(DEFINITION);
 
     expect(view.fixture.componentInstance.control.value).toBe("env-9");
+  });
+
+  describe("a prefilled id that is no longer in the list", () => {
+    beforeEach(() => {
+      environmentDefinitionService.getEnvironmentDefinitions.mockReturnValue(
+        of([DEFINITION])
+      );
+    });
+
+    afterEach(() => {
+      environmentDefinitionService.getEnvironmentDefinitions.mockReturnValue(
+        of([])
+      );
+    });
+
+    it("keeps the id by default, so the run stays submittable", async () => {
+      const view = await renderComponent({
+        control: new FormControl<string | null>("env-gone"),
+      });
+
+      await waitFor(() =>
+        expect(
+          ngMocks.find(EnvironmentDefinitionSelectorComponent)
+            .componentInstance.stateProvider.items()
+        ).toHaveLength(1)
+      );
+      expect(view.fixture.componentInstance.control.value).toBe("env-gone");
+    });
+
+    it("clears the id when the consumer asks for it", async () => {
+      const view = await renderComponent({
+        control: new FormControl<string | null>("env-gone"),
+        invalidate: true,
+      });
+
+      await waitFor(() =>
+        expect(view.fixture.componentInstance.control.value).toBeNull()
+      );
+    });
   });
 });

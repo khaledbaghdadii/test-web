@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/angular";
 import userEvent from "@testing-library/user-event";
 import { Type } from "@angular/core";
 import { ReactiveFormsModule } from "@angular/forms";
-import { MockComponent, ngMocks } from "ng-mocks";
+import { MockComponent, MockDirective, ngMocks } from "ng-mocks";
 import { of, throwError } from "rxjs";
 import { InputText } from "primeng/inputtext";
 import { RadioButton } from "primeng/radiobutton";
@@ -28,16 +28,16 @@ import {
 } from "@mxevolve/domains/test/widget";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 import {
-  BranchService,
-  RepositoryService,
-} from "@mxevolve/domains/scm/data-access";
-import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
-import { EnvironmentDefinitionService } from "@mxevolve/domains/environment/data-access";
-import { FactoryProductApiService } from "@mxevolve/domains/artifact/data-access";
-import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
-import { UserService } from "@mxevolve/domains/user/data-access";
-import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
-import { UpgradeFactoryProductInputComponent } from "./factory-product-input/upgrade-factory-product-input.component";
+  DefinitionInputComponent,
+  DefinitionInputGroupComponent,
+} from "@mxevolve/domains/business-process/ui";
+import {
+  BipBuildIdDropdownComponent,
+  BipVersionDropdownComponent,
+  FactoryProductSelectionDirective,
+  MxBuildIdDropdownComponent,
+  MxVersionDropdownComponent,
+} from "@mxevolve/domains/artifact/widget";
 import { UpgradeExecutorComponent } from "./upgrade-executor.component";
 
 function simulateCvaChange<T>(component: Type<unknown>, value: T): void {
@@ -59,59 +59,19 @@ const COMPONENT_IMPORTS = [
   MockComponent(UpgradePrefilledInputsComponent),
   MockComponent(InfraGroupSelectorComponent),
   MockComponent(NotificationsRecipientsInputComponent),
-  MockComponent(UpgradeFactoryProductInputComponent),
+  MockDirective(FactoryProductSelectionDirective),
+  MockComponent(MxVersionDropdownComponent),
+  MockComponent(MxBuildIdDropdownComponent),
+  MockComponent(BipVersionDropdownComponent),
+  MockComponent(BipBuildIdDropdownComponent),
   MockComponent(EnvironmentDefinitionSelectorComponent),
   MockComponent(RepositorySelectorComponent),
   MockComponent(BranchInputComponent),
   MockComponent(ScenarioDefinitionDropdownComponent),
   MockComponent(ScenarioDefinitionMultiselectDropdownComponent),
   DefinitionInputComponent,
+  DefinitionInputGroupComponent,
 ];
-
-const mockRepositoryService = { getRepository: jest.fn() };
-const mockScenarioService = { getScenarioDefinitionById: jest.fn() };
-const mockEnvironmentDefinitionService = {
-  getEnvironmentDefinitionById: jest.fn(),
-};
-const mockFactoryProductService = { getFactoryProductById: jest.fn() };
-const mockInfraGroupService = { getGroup: jest.fn() };
-const mockBranchService = { getBranchDetails: jest.fn() };
-
-/** Services the executor resolves pre-filled values against (VAL-27132 W1). */
-const mockUserService = { fetchUsersByEmails: jest.fn() };
-
-const PREFILL_PROVIDERS = [
-  { provide: UserService, useValue: mockUserService },
-  { provide: RepositoryService, useValue: mockRepositoryService },
-  { provide: ScenarioDefinitionService, useValue: mockScenarioService },
-  {
-    provide: EnvironmentDefinitionService,
-    useValue: mockEnvironmentDefinitionService,
-  },
-  { provide: FactoryProductApiService, useValue: mockFactoryProductService },
-  { provide: InfraGroupService, useValue: mockInfraGroupService },
-  { provide: BranchService, useValue: mockBranchService },
-];
-
-function stubPrefillsResolve(): void {
-  mockUserService.fetchUsersByEmails.mockImplementation(
-    (_projectId: string, emails: string[]) => of({ content: emails.map((mail) => ({ mail })) })
-  );
-  mockRepositoryService.getRepository.mockReturnValue(of({ id: "repo-1" }));
-  mockScenarioService.getScenarioDefinitionById.mockReturnValue(
-    of({ id: "scenario-1" })
-  );
-  mockEnvironmentDefinitionService.getEnvironmentDefinitionById.mockReturnValue(
-    of({ id: "env-def-1" })
-  );
-  mockFactoryProductService.getFactoryProductById.mockReturnValue(
-    of({ id: "fp-1" })
-  );
-  mockInfraGroupService.getGroup.mockReturnValue(of({ id: "group-1" }));
-  mockBranchService.getBranchDetails.mockReturnValue(
-    of({ latestCommitId: "commit-1" })
-  );
-}
 
 const CONVERSION_FACTORY_PRODUCT = {
   id: "fp-1",
@@ -190,12 +150,8 @@ async function renderComponent(
         provide: UpgradeProcessDefinitionExecutorService,
         useValue: mockExecutorService,
       },
-      ...PREFILL_PROVIDERS,
     ],
-    providers: [
-      { provide: ToastMessageService, useValue: mockToastService },
-      ...PREFILL_PROVIDERS,
-    ],
+    providers: [{ provide: ToastMessageService, useValue: mockToastService }],
   });
 }
 
@@ -206,7 +162,6 @@ function buildButton(): HTMLElement {
 describe("UpgradeExecutorComponent", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    stubPrefillsResolve();
   });
 
   describe("required-field markers", () => {
@@ -345,6 +300,42 @@ describe("UpgradeExecutorComponent", () => {
         ngMocks.find(NotificationsRecipientsInputComponent).componentInstance
       ).toBeTruthy();
       expect(buildButton()).toBeTruthy();
+    });
+
+    it("lays each factory product out as four separate dropdown cells with one validation message", async () => {
+      await renderComponent();
+
+      await waitFor(() =>
+        expect(screen.getAllByText("MX Version", { selector: "label" })).toHaveLength(2)
+      );
+      expect(
+        screen.getAllByText("MX Build ID", { selector: "label" })
+      ).toHaveLength(2);
+      expect(
+        screen.getAllByText("BIP Version", { selector: "label" })
+      ).toHaveLength(2);
+      expect(
+        screen.getAllByText("BIP Build ID", { selector: "label" })
+      ).toHaveLength(2);
+
+      expect(ngMocks.findAll(MxVersionDropdownComponent)).toHaveLength(2);
+      expect(ngMocks.findAll(MxBuildIdDropdownComponent)).toHaveLength(2);
+      expect(ngMocks.findAll(BipVersionDropdownComponent)).toHaveLength(2);
+      expect(ngMocks.findAll(BipBuildIdDropdownComponent)).toHaveLength(2);
+
+      // One directive instance per factory product, each providing the state
+      // service its own four dropdowns read.
+      expect(
+        ngMocks.findAll(FactoryProductSelectionDirective)
+      ).toHaveLength(2);
+
+      // The four dropdowns share one control, so its description - and the
+      // validation message that replaces it - is rendered once, not four times.
+      expect(
+        screen.getAllByText(
+          "Select the factory product that you wish to validate your Quality Gate against"
+        )
+      ).toHaveLength(1);
     });
 
     it("hides prefilled fields from the form and shows them read-only on the details panel", async () => {

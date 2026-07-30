@@ -3,7 +3,11 @@ import { FormControl, ReactiveFormsModule, Validators } from "@angular/forms";
 import { RadioButton } from "primeng/radiobutton";
 import { FinalProductFromExistingBranchComponent } from "../from-existing-branch/final-product-from-existing-branch.component";
 import { DqgFromNewBranchParametersComponent } from "./from-new-branch/dqg-from-new-branch-parameters.component";
-import { injectInputVisibility } from "../../../../shared/input-visibility.store";
+import {
+  ProvidedDefinitionInput,
+  isProvidedByDefinition,
+} from "@mxevolve/domains/business-process/util";
+import { releaseControl } from "../parameter-controls";
 
 /**
  * DQG configuration parameters: the "Create Branch?" decision and whichever
@@ -24,10 +28,8 @@ import { injectInputVisibility } from "../../../../shared/input-visibility.store
   ],
 })
 export class ValidationDqgParametersComponent implements OnInit, OnDestroy {
-  /** Executor-owned per-field visibility (VAL-27132 W3, finding V2). */
-  protected readonly inputVisibility = injectInputVisibility();
-
   readonly projectId = input.required<string>();
+  readonly providedInputs = input.required<readonly ProvidedDefinitionInput[]>();
   readonly repositoryId = input.required<string>();
   readonly createBranchFormControl =
     input.required<FormControl<boolean | null>>();
@@ -48,8 +50,10 @@ export class ValidationDqgParametersComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    const createBranch = this.createBranchFormControl();
-    createBranch.reset(null, { emitEvent: false });
-    createBranch.disable({ emitEvent: false });
+    releaseControl(this.createBranchFormControl());
+  }
+
+  protected notProvided(inputId: string): boolean {
+    return !isProvidedByDefinition(this.providedInputs(), inputId);
   }
 }

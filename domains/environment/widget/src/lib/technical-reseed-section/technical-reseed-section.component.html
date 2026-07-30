@@ -242,14 +242,11 @@
     >
       <div class="flex flex-col gap-2">
         <label for="technical-reseed-final-product">Final Product Tag</label>
-        <mxevolve-final-product-dropdown
-          inputId="technical-reseed-final-product"
+        <mxevolve-final-product-dropdown-input
           [projectId]="projectId()"
-          [labelMode]="FinalProductLabelMode.TAG_COMMIT_ID"
-          [validationLevelFilter]="['MQG', 'DQG']"
-          [stateFilter]="finalProductStateFilter"
-          [fetchParent]="finalProductFetchParent"
-          sort="createdOn,desc"
+          [labelMode]="FinalProductDropdownInputLabelMode.TAG_COMMIT_ID"
+          [validationLevel]="['MQG', 'DQG']"
+          [fetchParent]="finalProductFetchParent ?? false"
           (selectedFinalProductChange)="
             launchForm.controls.finalProduct.setValue($event)
           "

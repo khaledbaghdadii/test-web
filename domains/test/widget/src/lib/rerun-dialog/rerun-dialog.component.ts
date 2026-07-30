@@ -23,7 +23,7 @@ import { RadioButton } from "primeng/radiobutton";
 import { WhitespaceValidators } from "@mxevolve/shared/ui/form";
 import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
 import { FactoryProductInputComponent } from "../rerun-scenario-button/factory-product-input/factory-product-input.component";
-import { FinalProductDropdownComponent } from "@mxevolve/domains/artifact/widget";
+import { FinalProductDropdownInputComponent } from "@mxevolve/domains/artifact/widget";
 import type { FinalProduct } from "@mxevolve/domains/artifact/data-access";
 import { FinalProductApiService } from "@mxevolve/domains/artifact/data-access";
 import { GATEWAY_CONFIG } from "@mxevolve/shared/core/config";
@@ -61,7 +61,7 @@ export type RerunRequestedEvent = UnofficialRerunEvent | OfficialRerunEvent;
     RadioButton,
     MxevolveIconComponent,
     FactoryProductInputComponent,
-    FinalProductDropdownComponent,
+    FinalProductDropdownInputComponent,
   ],
   providers: [
     FinalProductApiService,

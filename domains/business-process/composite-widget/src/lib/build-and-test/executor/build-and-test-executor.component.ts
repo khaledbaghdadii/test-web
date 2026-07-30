@@ -8,10 +8,10 @@ import {
   output,
   signal,
 } from "@angular/core";
-import { FormControl, ReactiveFormsModule, Validators } from "@angular/forms";
+import { ReactiveFormsModule, Validators } from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { EMPTY, Observable, forkJoin, of, startWith } from "rxjs";
-import { catchError, map, switchMap } from "rxjs/operators";
+import { EMPTY, startWith } from "rxjs";
+import { catchError } from "rxjs/operators";
 import { Checkbox } from "primeng/checkbox";
 import { InputText } from "primeng/inputtext";
 import { Button } from "primeng/button";
@@ -20,10 +20,7 @@ import {
   BusinessProcessDefinition,
   ExecuteBuildAndTestProcessRequest,
 } from "@mxevolve/domains/business-process/data-access";
-import {
-  mustStayReachable,
-  shouldShowInForm,
-} from "@mxevolve/domains/business-process/util";
+import { isProvidedByDefinition } from "@mxevolve/domains/business-process/util";
 import {
   BuildAndTestPrefilledInputsComponent,
   InfraGroupSelectorComponent,
@@ -31,33 +28,23 @@ import {
   UserStoryInputComponent,
 } from "@mxevolve/domains/business-process/widget";
 import { ScenarioDefinitionDropdownComponent } from "@mxevolve/domains/test/widget";
-import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
 import {
   BranchInputComponent,
   RepositorySelectorComponent,
 } from "@mxevolve/domains/scm/widget";
 import {
-  BranchService,
-  RepositoryService,
-} from "@mxevolve/domains/scm/data-access";
-import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
-import { UserService } from "@mxevolve/domains/user/data-access";
-import {
   AnalyticsTrackerService,
   EventAction,
   EventCategory,
 } from "@mxflow/core/analytics-tracker";
-import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
+import {
+  DefinitionInputComponent,
+  DefinitionInputGroupComponent,
+} from "@mxevolve/domains/business-process/ui";
 import {
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
-import {
-  checkPrefilledBranch,
-  checkPrefilledEntities,
-  prefilledIds,
-  resolvePrefilledRecipients,
-} from "../../shared/dead-prefill";
 import {
   BuildAndTestExecutorForm,
   BuildAndTestExecutorSeed,
@@ -73,15 +60,10 @@ const CONFIGURATION_PARENT_BRANCH_MISSING =
   "The branch name available in the Process Template doesn't exist in the repository. Please check the name and try again with an existing branch.";
 
 /**
- * Build & Test definition executor rendered as Page 2 of the generic multi-page
- * dialog (VAL-27132 Step 9). Signals + Angular Reactive Forms migration of the
- * legacy `BuildAndTestDefinitionExecutorComponent` /
- * `ExecuteBuildAndTestProcessInputComponent` — every field, validator,
- * conditional and the submit payload are reproduced exactly.
+ * Build & Test definition executor rendered as Page 2 of the multi-page dialog.
  *
- * Prefilled (non-editable) definition inputs are shown read-only in the
- * collapsible "{name} Details" panel; the form below shows only the
- * non-prefilled fields (legacy `shouldShow` rules via `shouldShowInForm`).
+ * Pre-filled definition inputs are shown read-only in the collapsible
+ * "{name} Details" panel; the form below shows the editable fields.
  */
 @Component({
   selector: "mxevolve-build-and-test-executor",
@@ -100,14 +82,9 @@ const CONFIGURATION_PARENT_BRANCH_MISSING =
     RepositorySelectorComponent,
     BranchInputComponent,
     DefinitionInputComponent,
+    DefinitionInputGroupComponent,
   ],
-  providers: [
-    BuildAndTestProcessExecutorService,
-    RepositoryService,
-    ScenarioDefinitionService,
-    InfraGroupService,
-    UserService,
-  ],
+  providers: [BuildAndTestProcessExecutorService],
 })
 export class BuildAndTestExecutorComponent {
   readonly projectId = input.required<string>();
@@ -121,39 +98,16 @@ export class BuildAndTestExecutorComponent {
   readonly created = output<string>();
 
   private readonly executorService = inject(BuildAndTestProcessExecutorService);
-  private readonly repositoryService = inject(RepositoryService);
-  private readonly scenarioService = inject(ScenarioDefinitionService);
-  private readonly infraGroupService = inject(InfraGroupService);
-  private readonly branchService = inject(BranchService);
   private readonly analyticsTracker = inject(AnalyticsTrackerService);
-  private readonly userService = inject(UserService);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly executing = signal(false);
   protected readonly detailsExpanded = signal(false);
   protected readonly skipEnvironmentDeployment = signal(false);
-  /** True while the pre-filled values are being resolved (W1); blocks submission. */
-  protected readonly resolvingPrefill = signal(false);
-  /**
-   * Bumped whenever a validator is applied after the form is built, so
-   * {@link visibility} can re-derive. The definition-only probe form cannot see
-   * those later changes on its own.
-   */
-  private readonly formRevision = signal(0);
 
-  /** Exposed for the template's `[class.required]` label bindings (legacy parity). */
+  /** Exposed for the template's `[class.required]` label bindings. */
   protected readonly Validators = Validators;
-
-  /**
-   * Definition-only probe form used solely to compute field visibility. It is
-   * never seeded with the repush {@link initialValues}, so pre-filled editable
-   * fields keep testing as "invalid/empty" here and therefore stay visible in
-   * the form instead of collapsing into the read-only details panel.
-   */
-  private readonly visibilityForm = computed(() =>
-    buildBuildAndTestExecutorForm(this.definition().providedInputs)
-  );
 
   protected readonly form = computed(() => {
     const form = buildBuildAndTestExecutorForm(
@@ -173,55 +127,6 @@ export class BuildAndTestExecutorComponent {
     () => `${this.definition().name} Details`
   );
 
-  /**
-   * Editable-field visibility, evaluated from each control's initial state
-   * exactly like the legacy `DefinitionInputComponent.shouldShow` (computed once
-   * at form init): a prefilled (valid) field is hidden here and shown read-only
-   * in the details panel instead.
-   */
-  protected readonly visibility = computed(() => {
-    const controls = this.visibilityForm().controls;
-    // A field that turns required after this snapshot - the configuration
-    // branches are cleared when the create-branch answer changes, the build
-    // scenario when the skip toggle flips - must not stay hidden, or the run
-    // becomes impossible to submit.
-    this.formRevision();
-    const live = this.form().controls;
-    const show = (
-      field: keyof typeof controls,
-      mode: Parameters<typeof shouldShowInForm>[1]
-    ): boolean =>
-      shouldShowInForm(controls[field], mode) ||
-      mustStayReachable(live[field], Validators.required);
-    return {
-      name: show("name", "ACCESS_INVALID_INPUTS_ONLY"),
-      repositoryId: show("repositoryId", "ACCESS_INVALID_INPUTS_ONLY"),
-      configurationBranchName: show("configurationBranchName", "ACCESS_INVALID_INPUTS_ONLY"),
-      configurationParentBranch: show("configurationParentBranch", "ACCESS_INVALID_INPUTS_ONLY"),
-      buildScenarioDefinitionId: show("buildScenarioDefinitionId", "ACCESS_INVALID_INPUTS_ONLY"),
-      userStoryIds: show("userStoryIds", "ACCESS_INVALID_INPUTS_ONLY"),
-      buildEnvironmentInfraGroup: show("buildEnvironmentInfraGroup", "ACCESS_INVALID_INPUTS_ONLY"),
-      buildAndTestInfraGroup: show("buildAndTestInfraGroup", "ACCESS_INVALID_INPUTS_ONLY"),
-      notificationsRecipients: show("notificationsRecipients", "ACCESS_EMPTY_OPTIONAL_INPUTS"),
-    };
-  });
-
-  protected readonly showConfigurationGroup = computed(() => {
-    const visibility = this.visibility();
-    return (
-      visibility.repositoryId ||
-      visibility.configurationBranchName ||
-      visibility.configurationParentBranch
-    );
-  });
-
-  protected readonly showInfrastructureGroup = computed(() => {
-    const visibility = this.visibility();
-    return (
-      visibility.buildEnvironmentInfraGroup || visibility.buildAndTestInfraGroup
-    );
-  });
-
   private wiredForm: BuildAndTestExecutorForm | null = null;
 
   constructor() {
@@ -232,8 +137,16 @@ export class BuildAndTestExecutorComponent {
       }
       this.wiredForm = form;
       this.wireSkipEnvironmentDeployment(form);
-      this.resolvePrefills(form);
     });
+  }
+
+  /**
+   * Legacy force-showed a field the definition did not supply. Keeping the
+   * decision on the definition means a repush seed cannot hide a field by
+   * filling it in.
+   */
+  protected notProvided(inputId: string): boolean {
+    return !isProvidedByDefinition(this.definition().providedInputs, inputId);
   }
 
   protected toggleDetails(): void {
@@ -241,8 +154,8 @@ export class BuildAndTestExecutorComponent {
   }
 
   /**
-   * Legacy `mxevolveUsageTracker` binding on the skip toggle (VAL-27132 REV-2),
-   * which was dropped in the migration. Reproduced here rather than importing
+   * Legacy `mxevolveUsageTracker` binding on the skip toggle, which was dropped
+   * in the migration. Reproduced here rather than importing
    * the legacy `features/business-process` directive, matching how the rest of
    * this executor reproduces legacy helpers; `AnalyticsTrackerService` itself is
    * already used directly elsewhere in this library.
@@ -284,121 +197,10 @@ export class BuildAndTestExecutorComponent {
 
   /**
    * Surfaces a selector's fetch failure. These outputs existed but were bound by
-   * no executor, so a failed lookup was swallowed entirely (VAL-27132 R3).
+   * no executor, so a failed lookup was swallowed entirely.
    */
   protected showSelectorError(message: string): void {
     this.toast.showError(message);
-  }
-
-  /**
-   * Resolves every value the definition pre-filled, whether or not its field is
-   * shown (VAL-27132 W1). Legacy resolved these as a side effect of content
-   * projection instantiating hidden fields; the new executor gates visibility
-   * with a structural `@if`, so nothing would otherwise fetch them and a stale
-   * id would sail through `Validators.required` into the submitted payload.
-   */
-  private resolvePrefills(form: BuildAndTestExecutorForm): void {
-    const projectId = this.projectId();
-    const controls = form.controls;
-    this.resolvingPrefill.set(true);
-    forkJoin([
-      this.resolveRepositoryThenBranches(form),
-      this.resolveEntity(controls.buildScenarioDefinitionId, (id) =>
-        this.scenarioService.getScenarioDefinitionById(id, projectId)
-      ),
-      this.resolveEntity(controls.buildEnvironmentInfraGroup, (id) =>
-        this.infraGroupService.getGroup(projectId, id)
-      ),
-      this.resolveEntity(controls.buildAndTestInfraGroup, (id) =>
-        this.infraGroupService.getGroup(projectId, id)
-      ),
-      resolvePrefilledRecipients(
-        controls.notificationsRecipients,
-        projectId,
-        (id, emails) => this.userService.fetchUsersByEmails(id, emails),
-        this.toast
-      ),
-    ])
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.resolvingPrefill.set(false));
-  }
-
-  /**
-   * A branch is only meaningful against a repository that still resolves, so the
-   * two configuration branches wait for the repository lookup and are skipped
-   * when it comes back dead — otherwise every branch would report a second,
-   * misleading failure.
-   */
-  private resolveRepositoryThenBranches(
-    form: BuildAndTestExecutorForm
-  ): Observable<void> {
-    const controls = form.controls;
-    return this.resolveEntity(controls.repositoryId, (id) =>
-      this.repositoryService.getRepository(this.projectId(), id)
-    ).pipe(
-      switchMap(() => {
-        const repositoryId = controls.repositoryId.value;
-        if (!repositoryId || controls.repositoryId.invalid) {
-          return of(undefined);
-        }
-        return forkJoin([
-          this.resolveHiddenBranch(controls.configurationBranchName, {
-            visible: this.visibility().configurationBranchName,
-            repositoryId,
-            mustExist: false,
-            message: CONFIGURATION_BRANCH_EXISTS,
-          }),
-          this.resolveHiddenBranch(controls.configurationParentBranch, {
-            visible: this.visibility().configurationParentBranch,
-            repositoryId,
-            mustExist: true,
-            message: CONFIGURATION_PARENT_BRANCH_MISSING,
-          }),
-        ]).pipe(map(() => undefined));
-      })
-    );
-  }
-
-  private resolveEntity(
-    control: FormControl<string | null>,
-    lookup: (id: string) => Observable<unknown>
-  ): Observable<void> {
-    return checkPrefilledEntities(
-      control,
-      prefilledIds(control.value),
-      lookup,
-      this.toast
-    );
-  }
-
-  /**
-   * A *shown* branch field is already validated by `mxevolve-branch-input`, which
-   * checks its initial value and raises the same toast through `initialInvalid`;
-   * only the hidden case needs resolving here.
-   */
-  private resolveHiddenBranch(
-    control: FormControl<string | null>,
-    options: {
-      visible: boolean;
-      repositoryId: string;
-      mustExist: boolean;
-      message: string;
-    }
-  ): Observable<void> {
-    if (options.visible) {
-      return of(undefined);
-    }
-    return checkPrefilledBranch(
-      control,
-      this.branchService,
-      {
-        projectId: this.projectId(),
-        repositoryId: options.repositoryId,
-        branchName: control.value ?? "",
-      },
-      { mustExist: options.mustExist, message: options.message },
-      this.toast
-    );
   }
 
   protected build(): void {
@@ -446,8 +248,6 @@ export class BuildAndTestExecutorComponent {
           scenario.setValidators([Validators.required]);
         }
         scenario.updateValueAndValidity({ emitEvent: false });
-        // Applied with `emitEvent: false`, so tell `visibility` explicitly.
-        this.formRevision.update((revision) => revision + 1);
       });
   }
 

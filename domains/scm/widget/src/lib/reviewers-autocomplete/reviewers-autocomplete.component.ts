@@ -149,7 +149,7 @@ export class ReviewersAutoCompleteComponent implements OnInit {
     targetBranch: string
   ) {
     return this.developmentService
-      .getDevelopment(projectId, developmentId ?? "")
+      .getDevelopment(projectId, developmentId ?? "", true)
       .pipe(
         tap((development) => {
           this.sendForReviewStateService.setRepositoryId(

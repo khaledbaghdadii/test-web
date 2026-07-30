@@ -48,6 +48,7 @@ async function renderComponent(providedInputs: ProvidedInput[]) {
                 pageSize === 100
                   ? [{ id: "merge-cfg-1", branchName: "main" }]
                   : [],
+              last: true,
             }),
         },
       },

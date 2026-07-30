@@ -3,12 +3,11 @@ export { ExecutionFamily } from "./lib/execution-family";
 export { BranchCreationDetails } from "./lib/branch-creation-details";
 export {
   isInputEmpty,
-  isPrefilled,
-  mustStayReachable,
+  isProvidedByDefinition,
   shouldShowInForm,
   type InputAccessMode,
   type DefinitionInputValue,
-  type RequirableControl,
+  type ProvidedDefinitionInput,
   type VisibilityControl,
 } from "./lib/definition-inputs/input-visibility";
 export {

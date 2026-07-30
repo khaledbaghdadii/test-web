@@ -19,15 +19,3 @@ export class BranchDetailsError extends Error {
     this.name = "BranchDetailsError";
   }
 }
-
-/**
- * Shown when a branch-existence check cannot be completed — anything other than
- * the 404 that legitimately means "this branch does not exist". Legacy
- * interpolated the raw backend message here, including 500 bodies; a generic
- * message replaces it (VAL-27132 divergence register KEEP-2).
- *
- * Lives beside the error it describes so both the branch input and the eager
- * prefill resolution can report a failed check identically.
- */
-export const BRANCH_CHECK_FAILED_MESSAGE =
-  "Couldn't validate the branch. Please try again.";

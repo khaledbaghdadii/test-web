@@ -11,11 +11,12 @@ import {
 import {
   AbstractControl,
   ReactiveFormsModule,
+  ValidatorFn,
   Validators,
 } from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { EMPTY, Observable, forkJoin, of, throwError } from "rxjs";
-import { catchError, map, switchMap } from "rxjs/operators";
+import { EMPTY, Observable, of } from "rxjs";
+import { catchError, switchMap } from "rxjs/operators";
 import { InputText } from "primeng/inputtext";
 import { Button } from "primeng/button";
 import {
@@ -23,29 +24,21 @@ import {
   BusinessProcessDefinition,
   ExecuteBackportProcessRequest,
 } from "@mxevolve/domains/business-process/data-access";
-import { shouldShowInForm } from "@mxevolve/domains/business-process/util";
 import {
   BackportPrefilledInputsComponent,
   NotificationsRecipientsInputComponent,
   UserStoryInputComponent,
 } from "@mxevolve/domains/business-process/widget";
 import { ReviewersAutoCompleteComponent } from "@mxevolve/domains/scm/widget";
-import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import {
-  MergeConfigurationService,
-  RepositoryService,
-} from "@mxevolve/domains/scm/data-access";
-import { InfraGroupService } from "@mxevolve/domains/infra/data-access";
-import { UserService } from "@mxevolve/domains/user/data-access";
+  DefinitionInputComponent,
+  DefinitionInputGroupComponent,
+} from "@mxevolve/domains/business-process/ui";
+import { MergeConfigurationService } from "@mxevolve/domains/scm/data-access";
 import {
   MxevolveIconComponent,
   ToastMessageService,
 } from "@mxevolve/shared/ui/primitive";
-import {
-  checkPrefilledEntities,
-  prefilledIds,
-  resolvePrefilledRecipients,
-} from "../../shared/dead-prefill";
 import {
   BackportExecutorForm,
   buildBackportExecutorForm,
@@ -65,9 +58,32 @@ const MERGE_CONFIGURATION_MISSING =
  */
 const MERGE_CONFIGURATION_PAGE_SIZE = 100;
 
+/** Shown when the merge-configuration list itself could not be read. */
+const MERGE_CONFIGURATION_LOOKUP_FAILED =
+  "Could not resolve the destination merge configuration available in the Process Template.";
+
+/**
+ * Error key carrying the "this pre-filled value no longer resolves" message.
+ * The payload is a string, so `DefinitionInputComponent` surfaces it through its
+ * string-error fall-through.
+ */
+const PREFILL_MISSING_ERROR = "prefillMissing";
+
+/**
+ * Being a validator rather than a one-shot `setErrors` is what makes the error
+ * survive the `updateValueAndValidity()` the form triggers for other reasons.
+ */
+function missingMergeConfigurationValidator(
+  deadValue: string,
+  message: string
+): ValidatorFn {
+  return (control: AbstractControl) =>
+    control.value === deadValue ? { [PREFILL_MISSING_ERROR]: message } : null;
+}
+
 /**
  * Backport definition executor (Build & Test sub-family `on-demand-backport`)
- * rendered as Page 2 of the generic multi-page dialog (VAL-27132 Step 10).
+ * rendered as Page 2 of the generic multi-page dialog.
  * Signals + Angular Reactive Forms migration of the legacy
  * `BackportDefinitionExecutorComponent` / `ExecuteBackportProcessInputComponent`
  * — every field, validator and the submit payload are reproduced exactly.
@@ -89,14 +105,9 @@ const MERGE_CONFIGURATION_PAGE_SIZE = 100;
     NotificationsRecipientsInputComponent,
     ReviewersAutoCompleteComponent,
     DefinitionInputComponent,
+    DefinitionInputGroupComponent,
   ],
-  providers: [
-    BackportProcessExecutorService,
-    RepositoryService,
-    MergeConfigurationService,
-    InfraGroupService,
-    UserService,
-  ],
+  providers: [BackportProcessExecutorService, MergeConfigurationService],
 })
 export class BackportExecutorComponent {
   readonly projectId = input.required<string>();
@@ -104,16 +115,13 @@ export class BackportExecutorComponent {
   readonly created = output<string>();
 
   private readonly executorService = inject(BackportProcessExecutorService);
-  private readonly repositoryService = inject(RepositoryService);
   private readonly mergeConfigurationService = inject(MergeConfigurationService);
-  private readonly infraGroupService = inject(InfraGroupService);
-  private readonly userService = inject(UserService);
   private readonly toast = inject(ToastMessageService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly executing = signal(false);
   protected readonly detailsExpanded = signal(false);
-  /** True while the pre-filled values are being resolved (W1); blocks submission. */
+  /** True while the pre-filled merge configuration resolves; blocks submission. */
   protected readonly resolvingPrefill = signal(false);
 
   /** Exposed for the template's `[class.required]` label bindings (legacy parity). */
@@ -141,40 +149,6 @@ export class BackportExecutorComponent {
     () => this.form().controls.repositoryId.value ?? ""
   );
 
-  /**
-   * Editable-field visibility, evaluated from each control's initial state like
-   * the legacy `DefinitionInputComponent.shouldShow`. The user-story field is
-   * `forceShow` (always shown); the optional notifications field is shown only
-   * when empty.
-   */
-  protected readonly visibility = computed(() => {
-    const controls = this.form().controls;
-    return {
-      name: shouldShowInForm(controls.name, "ACCESS_INVALID_INPUTS_ONLY"),
-      pullRequestId: shouldShowInForm(
-        controls.pullRequestId,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      userStoryIds: shouldShowInForm(
-        controls.userStoryIds,
-        "ACCESS_INVALID_INPUTS_ONLY",
-        true
-      ),
-      pullRequestTitle: shouldShowInForm(
-        controls.pullRequestTitle,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      pullRequestReviewers: shouldShowInForm(
-        controls.pullRequestReviewers,
-        "ACCESS_INVALID_INPUTS_ONLY"
-      ),
-      notificationsRecipients: shouldShowInForm(
-        controls.notificationsRecipients,
-        "ACCESS_EMPTY_OPTIONAL_INPUTS"
-      ),
-    };
-  });
-
   private wiredForm: BackportExecutorForm | null = null;
 
   constructor() {
@@ -182,7 +156,7 @@ export class BackportExecutorComponent {
       const form = this.form();
       if (this.wiredForm !== form) {
         this.wiredForm = form;
-        this.resolvePrefills(form);
+        this.resolveMergeConfiguration(form);
       }
     });
   }
@@ -192,65 +166,43 @@ export class BackportExecutorComponent {
   }
 
   /**
-   * Resolves the three values the definition pre-fills and the form never shows
-   * (VAL-27132 W1 + decision D3). Legacy read them straight out of
-   * `providedInputs` at submit time and threw when one was absent — a throw that
-   * escaped into Angular's global error handler and deadlocked the modal — so
-   * this is deliberately *not* legacy parity (register KEEP-3); resolving them
-   * up front and invalidating the form is the sanctioned replacement.
+   * The merge configuration is the one pre-filled value the form never shows and
+   * no widget resolves. Legacy read it straight out of `providedInputs` at submit
+   * time and threw when it was absent — a throw that escaped into Angular's
+   * global error handler and deadlocked the modal.
    */
-  private resolvePrefills(form: BackportExecutorForm): void {
-    const projectId = this.projectId();
-    const controls = form.controls;
+  private resolveMergeConfiguration(form: BackportExecutorForm): void {
+    const control = form.controls.mergeConfigurationId;
+    const repositoryId = form.controls.repositoryId.value;
+    const mergeConfigurationId = control.value;
+    if (!repositoryId || !mergeConfigurationId) {
+      return;
+    }
     this.resolvingPrefill.set(true);
-    this.resolveEntity(controls.repositoryId, (id) =>
-      this.repositoryService.getRepository(projectId, id)
-    )
-      .pipe(
-        switchMap(() =>
-          forkJoin([
-            this.resolveEntity(controls.buildAndTestInfraGroup, (id) =>
-              this.infraGroupService.getGroup(projectId, id)
-            ),
-            this.resolveMergeConfiguration(form),
-            resolvePrefilledRecipients(
-              controls.notificationsRecipients,
-              projectId,
-              (id, emails) => this.userService.fetchUsersByEmails(id, emails),
-              this.toast
-            ),
-          ]).pipe(map(() => undefined))
-        ),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(() => this.resolvingPrefill.set(false));
+    this.findMergeConfiguration(repositoryId, mergeConfigurationId, 0)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((failure) => {
+        this.resolvingPrefill.set(false);
+        if (!failure) {
+          return;
+        }
+        control.addValidators(
+          missingMergeConfigurationValidator(mergeConfigurationId, failure)
+        );
+        control.updateValueAndValidity({ emitEvent: false });
+        this.toast.showError(failure);
+      });
   }
 
   /**
-   * The merge configuration is scoped to the repository and the endpoint offers
-   * no by-id read, so it is looked up in the filtered list — which means the
-   * repository has to resolve first, and "not in the list" has to be turned into
-   * an error for {@link checkPrefilledEntities} to treat it as gone.
+   * Walks the paginated merge-configuration list looking for one id, and reports
+   * the message to show when it is not there — `null` when it is.
    */
-  private resolveMergeConfiguration(
-    form: BackportExecutorForm
-  ): Observable<void> {
-    const controls = form.controls;
-    const repositoryId = controls.repositoryId.value;
-    if (!repositoryId || controls.repositoryId.invalid) {
-      return of(undefined);
-    }
-    return this.resolveEntity(controls.mergeConfigurationId, (id) =>
-      this.findMergeConfiguration(repositoryId, id, 0)
-    );
-  }
-
-  /** Walks the paginated merge-configuration list looking for one id. */
   private findMergeConfiguration(
     repositoryId: string,
     id: string,
     page: number
-  ): Observable<unknown> {
+  ): Observable<string | null> {
     return this.mergeConfigurationService
       .getFilteredMergeConfigurations(
         this.projectId(),
@@ -262,25 +214,21 @@ export class BackportExecutorComponent {
       .pipe(
         switchMap((result) => {
           if (result.content.some((configuration) => configuration.id === id)) {
-            return of(result);
+            return of(null);
           }
-          return result.last
-            ? throwError(() => new Error(MERGE_CONFIGURATION_MISSING))
+          const isLastPage = result.last || result.content.length === 0;
+          return isLastPage
+            ? of(MERGE_CONFIGURATION_MISSING)
             : this.findMergeConfiguration(repositoryId, id, page + 1);
-        })
+        }),
+        catchError((error: unknown) =>
+          of(
+            error instanceof Error && error.message
+              ? error.message
+              : MERGE_CONFIGURATION_LOOKUP_FAILED
+          )
+        )
       );
-  }
-
-  private resolveEntity(
-    control: AbstractControl,
-    lookup: (id: string) => Observable<unknown>
-  ): Observable<void> {
-    return checkPrefilledEntities(
-      control,
-      prefilledIds(control.value),
-      lookup,
-      this.toast
-    );
   }
 
   protected build(): void {

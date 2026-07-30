@@ -59,17 +59,13 @@ export class FactoryProductSelectionDirective implements OnInit {
     });
   }
 
+  /**
+   * The explicit MX/BIP values are applied first, so a caller that knows exactly
+   * which build was used keeps it; the by-id lookup then fills in whatever they
+   * left out and loads the product the dropdowns list their options from.
+   */
   ngOnInit(): void {
     this.state.projectId.set(this.projectId());
-
-    const factoryProductId = this.factoryProductId();
-    if (factoryProductId) {
-      this.state.initializeFromFactoryProductId(
-        factoryProductId,
-        this.projectId()
-      );
-      return;
-    }
 
     const mxVersion = this.initialMxVersion();
     const mxBuild = this.initialMxBuildId();
@@ -78,6 +74,14 @@ export class FactoryProductSelectionDirective implements OnInit {
 
     if (mxVersion || mxBuild || bipVersion || bipBuild) {
       this.state.prefill(mxVersion, mxBuild, bipVersion, bipBuild);
+    }
+
+    const factoryProductId = this.factoryProductId();
+    if (factoryProductId) {
+      this.state.initializeFromFactoryProductId(
+        factoryProductId,
+        this.projectId()
+      );
     }
   }
 }

@@ -1,13 +1,30 @@
+import { Component, OnInit } from "@angular/core";
 import { render, screen } from "@testing-library/angular";
 import userEvent from "@testing-library/user-event";
 import { FormControl, ReactiveFormsModule, Validators } from "@angular/forms";
 import { WhitespaceValidators } from "@mxevolve/shared/ui/form";
+import { InputAccessMode } from "@mxevolve/domains/business-process/util";
 import { DefinitionInputComponent } from "./definition-input.component";
+
+const projectedInits: string[] = [];
+
+@Component({
+  selector: "mxevolve-projected-probe",
+  standalone: true,
+  template: `<span>probe</span>`,
+})
+class ProjectedProbeComponent implements OnInit {
+  ngOnInit(): void {
+    projectedInits.push("init");
+  }
+}
 
 const TEMPLATE = `
   <mxevolve-definition-input
     [inputId]="inputId"
     [control]="control"
+    [inputAccessMode]="inputAccessMode"
+    [forceShow]="forceShow"
     [label]="label"
     [description]="description"
     [tooltip]="tooltip"
@@ -19,6 +36,8 @@ const TEMPLATE = `
 
 interface RenderOptions {
   control?: FormControl;
+  inputAccessMode?: InputAccessMode;
+  forceShow?: boolean;
   label?: string;
   description?: string;
   tooltip?: string;
@@ -27,6 +46,8 @@ interface RenderOptions {
 
 async function renderComponent({
   control = new FormControl(""),
+  inputAccessMode = "ACCESS_ALL_INPUTS",
+  forceShow = false,
   label = "Archival Branch Name",
   description = "Enter the name of the archival branch",
   tooltip = "",
@@ -37,6 +58,8 @@ async function renderComponent({
     componentProperties: {
       inputId: "archival-branch",
       control,
+      inputAccessMode,
+      forceShow,
       label,
       description,
       tooltip,
@@ -156,5 +179,96 @@ describe("DefinitionInputComponent", () => {
     await renderComponent({ control, showValidationErrors: false });
 
     expect(screen.queryByText("Field is required")).toBeNull();
+  });
+
+  it("hides a field the definition already filled in", async () => {
+    await renderComponent({
+      control: new FormControl("release-2026", [Validators.required]),
+      inputAccessMode: "ACCESS_INVALID_INPUTS_ONLY",
+    });
+
+    expect(screen.queryByLabelText("Archival Branch Name")).toBeNull();
+  });
+
+  it("shows a field the definition left unusable", async () => {
+    await renderComponent({
+      control: requiredControl(),
+      inputAccessMode: "ACCESS_INVALID_INPUTS_ONLY",
+    });
+
+    expect(screen.getByLabelText("Archival Branch Name")).toBeTruthy();
+  });
+
+  it("shows a field the definition filled in when the consumer forces it", async () => {
+    await renderComponent({
+      control: new FormControl("release-2026", [Validators.required]),
+      inputAccessMode: "ACCESS_INVALID_INPUTS_ONLY",
+      forceShow: true,
+    });
+
+    expect(screen.getByLabelText("Archival Branch Name")).toBeTruthy();
+  });
+
+  it("shows an empty optional field", async () => {
+    await renderComponent({
+      control: new FormControl(""),
+      inputAccessMode: "ACCESS_EMPTY_OPTIONAL_INPUTS",
+    });
+
+    expect(screen.getByLabelText("Archival Branch Name")).toBeTruthy();
+  });
+
+  it("hides an optional field that already carries a value", async () => {
+    await renderComponent({
+      control: new FormControl("release-2026"),
+      inputAccessMode: "ACCESS_EMPTY_OPTIONAL_INPUTS",
+    });
+
+    expect(screen.queryByLabelText("Archival Branch Name")).toBeNull();
+  });
+
+  it("keeps a shown field on screen once the user makes it valid", async () => {
+    const control = requiredControl();
+    const { fixture } = await renderComponent({
+      control,
+      inputAccessMode: "ACCESS_INVALID_INPUTS_ONLY",
+    });
+
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("Archival Branch Name"), "release-2026");
+    fixture.detectChanges();
+
+    expect(control.valid).toBe(true);
+    expect(screen.getByLabelText("Archival Branch Name")).toBeTruthy();
+  });
+
+  it("still creates the projected control when the field is hidden", async () => {
+    projectedInits.length = 0;
+
+    await render(
+      `
+        <mxevolve-definition-input
+          inputId="archival-branch"
+          [control]="control"
+          inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+          label="Archival Branch Name"
+        >
+          <mxevolve-projected-probe />
+        </mxevolve-definition-input>
+      `,
+      {
+        imports: [
+          DefinitionInputComponent,
+          ProjectedProbeComponent,
+          ReactiveFormsModule,
+        ],
+        componentProperties: {
+          control: new FormControl("release-2026", [Validators.required]),
+        },
+      }
+    );
+
+    expect(screen.queryByLabelText("Archival Branch Name")).toBeNull();
+    expect(projectedInits).toEqual(["init"]);
   });
 });

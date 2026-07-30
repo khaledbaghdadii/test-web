@@ -28,10 +28,10 @@
     <p class="mandatory-legend text-sm text-red-500 m-0">* Mandatory Field</p>
 
     <div class="grid-2">
-      @if (visibility().name) {
       <mxevolve-definition-input
         inputId="backport-execution-name"
         [control]="form().controls.name"
+        inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
         label="Execution Name"
       >
         <input
@@ -42,10 +42,10 @@
           placeholder="Enter an on demand backport process execution name"
         />
       </mxevolve-definition-input>
-      } @if (visibility().pullRequestId) {
       <mxevolve-definition-input
         inputId="backport-pull-request-id"
         [control]="form().controls.pullRequestId"
+        inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
         label="Pull Request Id"
         description="Enter the 4‑digit pull request ID. This ID appears in the pull‑request URL and in the merge‑request list (e.g., 4402)."
       >
@@ -57,21 +57,21 @@
           placeholder="Enter the pull request id"
         />
       </mxevolve-definition-input>
-      }
     </div>
-    @if (visibility().userStoryIds) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend
-        class="text-[0.95rem] font-bold text-primary p-0"
-        [class.required]="
-          form().controls.userStoryIds.hasValidator(Validators.required)
-        "
-      >
-        User Stories
-      </legend>
+    <mxevolve-definition-input-group
+      label="User Stories"
+      [controls]="[form().controls.userStoryIds]"
+      inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+      [forceShow]="true"
+      [required]="
+        form().controls.userStoryIds.hasValidator(Validators.required)
+      "
+    >
       <mxevolve-definition-input
         inputId="backport-user-story-ids"
         [control]="form().controls.userStoryIds"
+        inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+        [forceShow]="true"
         description="Enter the IDs of the stories you will be working on"
       >
         <mxevolve-user-story-input
@@ -80,14 +80,13 @@
           [formControl]="form().controls.userStoryIds"
         />
       </mxevolve-definition-input>
-    </fieldset>
-    }
+    </mxevolve-definition-input-group>
 
     <div class="grid-2">
-      @if (visibility().pullRequestTitle) {
       <mxevolve-definition-input
         inputId="backport-pull-request-title"
         [control]="form().controls.pullRequestTitle"
+        inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
         label="Merge Request Title"
       >
         <input
@@ -98,10 +97,10 @@
           placeholder="Enter the merge request title"
         />
       </mxevolve-definition-input>
-      } @if (visibility().pullRequestReviewers) {
       <mxevolve-definition-input
         inputId="backport-reviewers"
         [control]="form().controls.pullRequestReviewers"
+        inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
         label="Reviewers"
         description="Enter the names of the reviewers that you wish to review your changes"
       >
@@ -112,18 +111,18 @@
           [reviewersFormControl]="form().controls.pullRequestReviewers"
         />
       </mxevolve-definition-input>
-      }
     </div>
 
-    @if (visibility().notificationsRecipients) {
-    <fieldset class="flex flex-col gap-3 border-none p-0 m-0">
-      <legend class="text-[0.95rem] font-bold text-primary p-0">
-        Notifications
-      </legend>
+    <mxevolve-definition-input-group
+      label="Notifications"
+      [controls]="[form().controls.notificationsRecipients]"
+      inputAccessMode="ACCESS_EMPTY_OPTIONAL_INPUTS"
+    >
       <div class="grid-2">
         <mxevolve-definition-input
           inputId="backport-notification-recipients"
           [control]="form().controls.notificationsRecipients"
+          inputAccessMode="ACCESS_EMPTY_OPTIONAL_INPUTS"
           label="Expiry Date Notification Recipients"
           description="Select the users who will receive email notifications as the business process approaches its expiry date"
         >
@@ -136,8 +135,7 @@
           />
         </mxevolve-definition-input>
       </div>
-    </fieldset>
-    }
+    </mxevolve-definition-input-group>
 
     <div class="actions grid-6">
       <p-button

@@ -9,18 +9,24 @@ import {
 import { FormControl, ReactiveFormsModule, Validators } from "@angular/forms";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { InputText } from "primeng/inputtext";
+import { FinalProduct } from "@mxevolve/domains/artifact/data-access";
 import {
-  FinalProduct,
-  FinalProductState,
-} from "@mxevolve/domains/artifact/data-access";
-import {
-  FinalProductDropdownComponent,
-  FinalProductLabelMode,
+  FinalProductDropdownInputComponent,
+  FinalProductDropdownInputLabelMode,
 } from "@mxevolve/domains/artifact/widget";
 import { BranchInputComponent } from "@mxevolve/domains/scm/widget";
+import {
+  ProvidedDefinitionInput,
+  isProvidedByDefinition,
+} from "@mxevolve/domains/business-process/util";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
-import { injectInputVisibility } from "../../../../../shared/input-visibility.store";
+import {
+  FinalProductControls,
+  applyFinalProductSelection,
+  releaseControl,
+  resetFinalProductSelection,
+} from "../../parameter-controls";
 
 /**
  * MQG + "Create Branch = Yes" configuration parameters: a parent branch to
@@ -41,14 +47,12 @@ import { injectInputVisibility } from "../../../../../shared/input-visibility.st
     InputText,
     BranchInputComponent,
     DefinitionInputComponent,
-    FinalProductDropdownComponent,
+    FinalProductDropdownInputComponent,
   ],
 })
 export class MqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
-  /** Executor-owned per-field visibility (VAL-27132 W3, finding V2). */
-  protected readonly inputVisibility = injectInputVisibility();
-
   readonly projectId = input.required<string>();
+  readonly providedInputs = input.required<readonly ProvidedDefinitionInput[]>();
   readonly repositoryId = input.required<string>();
   readonly parentBranchNameFormControl =
     input.required<FormControl<string | null>>();
@@ -66,11 +70,19 @@ export class MqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
 
   //TODO: check whgat to do wiht input repository id and commit message
   /** Legacy MQG new-branch picker lists CQG products available on the parent branch. */
-  protected readonly FinalProductLabelMode = FinalProductLabelMode;
+  protected readonly FinalProductDropdownInputLabelMode =
+    FinalProductDropdownInputLabelMode;
   protected readonly validationLevelFilter = ["CQG"];
-  protected readonly stateFilter = [FinalProductState.AVAILABLE];
   protected parentBranchNameInitialValue = "";
   protected archivalBranchNameInitialValue = "";
+
+  private finalProductControls(): FinalProductControls {
+    return {
+      finalProductId: this.finalProductIdFormControl(),
+      configCommitId: this.configCommitIdFormControl(),
+      rtpCommitId: this.rtpCommitIdFormControl(),
+    };
+  }
 
   ngOnInit(): void {
     const parentBranch = this.parentBranchNameFormControl();
@@ -99,7 +111,7 @@ export class MqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
       .subscribe((branchName) => {
         if (branchName) {
           this.finalProductIdFormControl().enable({ emitEvent: false });
-          this.resetFinalProductSelection();
+          resetFinalProductSelection(this.finalProductControls());
         } else {
           this.clearFinalProduct();
         }
@@ -109,30 +121,16 @@ export class MqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     const parentBranch = this.parentBranchNameFormControl();
     parentBranch.removeValidators(Validators.required);
-    parentBranch.reset(null, { emitEvent: false });
-    parentBranch.disable({ emitEvent: false });
+    releaseControl(parentBranch);
     parentBranch.updateValueAndValidity({ emitEvent: false });
 
-    const archivalBranch = this.archivalBranchNameFormControl();
-    archivalBranch.reset(null, { emitEvent: false });
-    archivalBranch.disable({ emitEvent: false });
+    releaseControl(this.archivalBranchNameFormControl());
 
     this.clearFinalProduct();
   }
 
-  /** Legacy `handleSelectedFinalProduct`: the commits follow the product. */
   protected onFinalProductSelected(product: FinalProduct | undefined): void {
-    if (!product) {
-      this.resetFinalProductSelection();
-      return;
-    }
-    this.configCommitIdFormControl().setValue(product.configurationCommitId, {
-      emitEvent: false,
-    });
-    this.rtpCommitIdFormControl().setValue(
-      product.rtpProduct?.rtpCommitId ?? product.configurationCommitId,
-      { emitEvent: false }
-    );
+    applyFinalProductSelection(this.finalProductControls(), product);
   }
 
   protected showParentBranchError(): void {
@@ -147,14 +145,12 @@ export class MqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
     );
   }
 
-  private resetFinalProductSelection(): void {
-    this.finalProductIdFormControl().reset(null, { emitEvent: false });
-    this.configCommitIdFormControl().reset(null, { emitEvent: false });
-    this.rtpCommitIdFormControl().reset(null, { emitEvent: false });
+  private clearFinalProduct(): void {
+    resetFinalProductSelection(this.finalProductControls());
+    this.finalProductIdFormControl().disable({ emitEvent: false });
   }
 
-  private clearFinalProduct(): void {
-    this.resetFinalProductSelection();
-    this.finalProductIdFormControl().disable({ emitEvent: false });
+  protected notProvided(inputId: string): boolean {
+    return !isProvidedByDefinition(this.providedInputs(), inputId);
   }
 }

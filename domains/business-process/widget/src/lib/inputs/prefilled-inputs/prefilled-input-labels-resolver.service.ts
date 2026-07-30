@@ -8,7 +8,14 @@ import {
   RepositoryService,
 } from "@mxevolve/domains/scm/data-access";
 import { ScenarioDefinitionService } from "@mxevolve/domains/test/data-access";
-import { catchError, forkJoin, map, Observable, of } from "rxjs";
+import {
+  catchError,
+  forkJoin,
+  map,
+  Observable,
+  of,
+  switchMap,
+} from "rxjs";
 
 export interface PrefilledInputLabels {
   readonly labels: ReadonlyMap<string, string>;
@@ -20,6 +27,14 @@ interface LookupResult {
   readonly value: string;
   readonly error?: string;
 }
+
+/**
+ * The merge-configuration endpoint offers only a filtered, paginated list and no
+ * by-id read, so pages are walked until every wanted id is found. A single large
+ * page reports a valid configuration as missing once a project has more than
+ * that many.
+ */
+const MERGE_CONFIGURATION_PAGE_SIZE = 100;
 
 const INFRA_GROUP_INPUT_IDS = new Set([
   "buildEnvironmentInfraGroup",
@@ -221,23 +236,60 @@ export class PrefilledInputLabelsResolverService {
     if (mergeConfigurationService == null) {
       return of([]);
     }
+    return this.findMergeConfigurationNames(
+      mergeConfigurationService,
+      projectId,
+      repositoryId,
+      new Set(ids),
+      new Map(),
+      0
+    ).pipe(
+      map((names) =>
+        ids.map((id) =>
+          names.has(id)
+            ? { key: id, value: names.get(id) as string }
+            : this.notFoundLookup(id)
+        )
+      ),
+      catchError((error) => of(ids.map((id) => this.failedLookup(id, error))))
+    );
+  }
+
+  private findMergeConfigurationNames(
+    mergeConfigurationService: MergeConfigurationService,
+    projectId: string,
+    repositoryId: string,
+    wanted: ReadonlySet<string>,
+    found: Map<string, string>,
+    page: number
+  ): Observable<ReadonlyMap<string, string>> {
     return mergeConfigurationService
-      .getFilteredMergeConfigurations(projectId, repositoryId, "", 0, 100)
+      .getFilteredMergeConfigurations(
+        projectId,
+        repositoryId,
+        "",
+        page,
+        MERGE_CONFIGURATION_PAGE_SIZE
+      )
       .pipe(
-        map((page) => {
-          const names = new Map(
-            page.content.map((configuration) => [
-              configuration.id,
-              configuration.branchName,
-            ])
-          );
-          return ids.map((id) =>
-            names.has(id)
-              ? { key: id, value: names.get(id) as string }
-              : this.notFoundLookup(id)
-          );
-        }),
-        catchError((error) => of(ids.map((id) => this.failedLookup(id, error))))
+        switchMap((result) => {
+          for (const configuration of result.content) {
+            if (wanted.has(configuration.id)) {
+              found.set(configuration.id, configuration.branchName);
+            }
+          }
+          const isLastPage = result.last || result.content.length === 0;
+          return isLastPage || found.size === wanted.size
+            ? of(found)
+            : this.findMergeConfigurationNames(
+                mergeConfigurationService,
+                projectId,
+                repositoryId,
+                wanted,
+                found,
+                page + 1
+              );
+        })
       );
   }
 

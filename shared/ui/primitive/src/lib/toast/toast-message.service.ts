@@ -29,6 +29,17 @@ export class ToastMessageService {
     });
   }
 
+  showWarning(detail: string, summary?: string, data?: ToastMessageData): void {
+    this.messageService.add({
+      severity: "warn",
+      summary: summary ?? "Warning",
+      detail: detail,
+      life: 10000,
+      icon: "pi pi-exclamation-triangle",
+      data: data,
+    });
+  }
+
   clearErrors(): void {
     this.messageService.clear();
   }

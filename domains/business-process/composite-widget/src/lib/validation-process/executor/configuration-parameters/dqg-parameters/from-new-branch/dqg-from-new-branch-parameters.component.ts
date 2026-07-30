@@ -1,15 +1,24 @@
 import { Component, OnDestroy, OnInit, inject, input } from "@angular/core";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
 import { InputText } from "primeng/inputtext";
-import {FinalProduct, FinalProductState} from "@mxevolve/domains/artifact/data-access";
+import { FinalProduct } from "@mxevolve/domains/artifact/data-access";
 import {
-  FinalProductDropdownComponent,
-  FinalProductLabelMode,
+  FinalProductDropdownInputComponent,
+  FinalProductDropdownInputLabelMode,
 } from "@mxevolve/domains/artifact/widget";
 import { BranchInputComponent } from "@mxevolve/domains/scm/widget";
+import {
+  ProvidedDefinitionInput,
+  isProvidedByDefinition,
+} from "@mxevolve/domains/business-process/util";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
-import { injectInputVisibility } from "../../../../../shared/input-visibility.store";
+import {
+  FinalProductControls,
+  applyFinalProductSelection,
+  releaseControl,
+  resetFinalProductSelection,
+} from "../../parameter-controls";
 
 /**
  * DQG + "Create Branch = Yes" configuration parameters: a brand-new archival
@@ -28,14 +37,12 @@ import { injectInputVisibility } from "../../../../../shared/input-visibility.st
     InputText,
     BranchInputComponent,
     DefinitionInputComponent,
-    FinalProductDropdownComponent,
+    FinalProductDropdownInputComponent,
   ],
 })
 export class DqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
-  /** Executor-owned per-field visibility (VAL-27132 W3, finding V2). */
-  protected readonly inputVisibility = injectInputVisibility();
-
   readonly projectId = input.required<string>();
+  readonly providedInputs = input.required<readonly ProvidedDefinitionInput[]>();
   readonly repositoryId = input.required<string>();
   readonly archivalBranchNameFormControl =
     input.required<FormControl<string | null>>();
@@ -48,9 +55,18 @@ export class DqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
 
   private readonly toast = inject(ToastMessageService);
 
-  protected readonly FinalProductLabelMode = FinalProductLabelMode;
+  protected readonly FinalProductDropdownInputLabelMode =
+    FinalProductDropdownInputLabelMode;
   protected readonly validationLevelFilter = ["MQG"];
   protected archivalBranchNameInitialValue = "";
+
+  private finalProductControls(): FinalProductControls {
+    return {
+      finalProductId: this.finalProductIdFormControl(),
+      configCommitId: this.configCommitIdFormControl(),
+      rtpCommitId: this.rtpCommitIdFormControl(),
+    };
+  }
 
   ngOnInit(): void {
     const archivalBranch = this.archivalBranchNameFormControl();
@@ -60,26 +76,14 @@ export class DqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    const archivalBranch = this.archivalBranchNameFormControl();
-    archivalBranch.reset(null, { emitEvent: false });
-    archivalBranch.disable({ emitEvent: false });
+    releaseControl(this.archivalBranchNameFormControl());
 
-    this.resetFinalProductSelection();
+    resetFinalProductSelection(this.finalProductControls());
     this.finalProductIdFormControl().disable({ emitEvent: false });
   }
 
   protected onFinalProductSelected(product: FinalProduct | undefined): void {
-    if (!product) {
-      this.resetFinalProductSelection();
-      return;
-    }
-    this.configCommitIdFormControl().setValue(product.configurationCommitId, {
-      emitEvent: false,
-    });
-    this.rtpCommitIdFormControl().setValue(
-      product.rtpProduct?.rtpCommitId ?? product.configurationCommitId,
-      { emitEvent: false }
-    );
+    applyFinalProductSelection(this.finalProductControls(), product);
   }
 
   protected showArchivalBranchError(): void {
@@ -88,11 +92,7 @@ export class DqgFromNewBranchParametersComponent implements OnInit, OnDestroy {
     );
   }
 
-  private resetFinalProductSelection(): void {
-    this.finalProductIdFormControl().reset(null, { emitEvent: false });
-    this.configCommitIdFormControl().reset(null, { emitEvent: false });
-    this.rtpCommitIdFormControl().reset(null, { emitEvent: false });
+  protected notProvided(inputId: string): boolean {
+    return !isProvidedByDefinition(this.providedInputs(), inputId);
   }
-
-    protected readonly FinalProductState = FinalProductState;
 }

@@ -8,6 +8,9 @@ import {
   output,
 } from "@angular/core";
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from "@angular/forms";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { of } from "rxjs";
+import { catchError } from "rxjs/operators";
 import {
   MxevolveSingleSelectDropdownComponent,
   MxEvolveSingleSelectDropdownState,
@@ -17,6 +20,7 @@ import {
   ScenarioDefinitionApiResponse,
   ScenarioDefinitionService,
 } from "@mxevolve/domains/test/data-access";
+import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
 import {
   ScenarioDefinitionDataProvider,
   ScenarioDefinitionParams,
@@ -41,6 +45,7 @@ export class ScenarioDefinitionDropdownComponent
   readonly projectId = input.required<string>();
   readonly disabled = input(false);
   readonly inputId = input<string>();
+  readonly clearArchived = input(false);
 
   readonly failureEvent = output<string>();
 
@@ -52,18 +57,19 @@ export class ScenarioDefinitionDropdownComponent
   private readonly scenarioDefinitionService = inject(
     ScenarioDefinitionService
   );
+  private readonly toastMessageService = inject(ToastMessageService);
+  private readonly destroyRef = inject(DestroyRef);
   private prefilledId: string | null = null;
   private onChange: (value: string | null) => void = () => {};
   private onTouched: () => void = () => {};
 
   constructor() {
-    const destroyRef = inject(DestroyRef);
     const dataProvider = new ScenarioDefinitionDataProvider(
       this.scenarioDefinitionService
     );
     this.stateProvider = new MxevolveSingleSelectFrontendStateProvider(
       dataProvider,
-      destroyRef
+      this.destroyRef
     );
 
     effect(() => {
@@ -119,12 +125,34 @@ export class ScenarioDefinitionDropdownComponent
     }
 
     const match = definitions.find((definition) => definition.id === id);
-    this.stateProvider.setSelectedItem(match ?? null);
-    if (!match) {
-      // The pre-filled scenario definition no longer exists. Report the miss to
-      // the form instead of leaving the control holding a dead id that still
-      // satisfies `Validators.required` (VAL-27132 R3).
+    if (match) {
+      this.stateProvider.setSelectedItem(match);
+    } else {
+      this.handleArchivedPrefill(id);
+    }
+  }
+
+  private handleArchivedPrefill(scenarioId: string): void {
+    if (this.clearArchived()) {
+      this.stateProvider.setSelectedItem(null);
       this.onChange(null);
     }
+
+    this.scenarioDefinitionService
+      .getScenarioDefinitionById(scenarioId, this.projectId())
+      .pipe(
+        catchError(() => of<ScenarioDefinitionApiResponse | null>(null)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((response) => {
+        const scenarioName = response?.name ? `'${response.name}' ` : "";
+        const action = this.clearArchived()
+          ? "has been cleared"
+          : "may no longer be valid";
+        this.toastMessageService.showWarning(
+          `The prefilled scenario ${scenarioName}is archived and ${action}.`,
+          "Archived Scenario Selected"
+        );
+      });
   }
 }

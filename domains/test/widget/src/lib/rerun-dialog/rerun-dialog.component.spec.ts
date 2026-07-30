@@ -12,13 +12,13 @@ import { RerunDialogComponent } from "./rerun-dialog.component";
 import { RerunModeAnalyticsTrackerService } from "./rerun-mode-analytics-tracker.service";
 import { FactoryProductInputComponent } from "../rerun-scenario-button/factory-product-input/factory-product-input.component";
 import { MxevolveIconComponent } from "@mxevolve/shared/ui/primitive";
-import { FinalProductDropdownComponent } from "@mxevolve/domains/artifact/widget";
+import { FinalProductDropdownInputComponent } from "@mxevolve/domains/artifact/widget";
 import type { FinalProduct } from "@mxevolve/domains/artifact/data-access";
 
 const MOCK_IMPORTS = [
   MockComponent(FactoryProductInputComponent),
   MockComponent(MxevolveIconComponent),
-  MockComponent(FinalProductDropdownComponent),
+  MockComponent(FinalProductDropdownInputComponent),
   FormsModule,
   ReactiveFormsModule,
   Button,
@@ -302,7 +302,7 @@ describe("RerunDialogComponent", () => {
       });
     });
 
-    it("passes projectId to FinalProductDropdownComponent", async () => {
+    it("passes projectId to FinalProductDropdownInputComponent", async () => {
       const user = userEvent.setup();
       const { fixture } = await renderComponent({
         allowOfficialRerun: true,
@@ -312,11 +312,11 @@ describe("RerunDialogComponent", () => {
       await user.click(screen.getByLabelText("Official"));
       fixture.detectChanges();
 
-      const fpDropdown = ngMocks.find(fixture, FinalProductDropdownComponent);
+      const fpDropdown = ngMocks.find(fixture, FinalProductDropdownInputComponent);
       expect(ngMocks.input(fpDropdown, "projectId")).toBe("proj-789");
     });
 
-    it("passes branch to FinalProductDropdownComponent", async () => {
+    it("passes the branch filter to FinalProductDropdownInputComponent", async () => {
       const user = userEvent.setup();
       const { fixture } = await renderComponent({
         allowOfficialRerun: true,
@@ -326,11 +326,11 @@ describe("RerunDialogComponent", () => {
       await user.click(screen.getByLabelText("Official"));
       fixture.detectChanges();
 
-      const fpDropdown = ngMocks.find(fixture, FinalProductDropdownComponent);
-      expect(ngMocks.input(fpDropdown, "branch")).toBe("feature/my-branch");
+      const fpDropdown = ngMocks.find(fixture, FinalProductDropdownInputComponent);
+      expect(ngMocks.input(fpDropdown, "branchFilter")).toBe("feature/my-branch");
     });
 
-    it("passes initialFinalProductId to FinalProductDropdownComponent", async () => {
+    it("passes the prefilled final product id to FinalProductDropdownInputComponent", async () => {
       const user = userEvent.setup();
       const { fixture } = await renderComponent({
         allowOfficialRerun: true,
@@ -340,8 +340,8 @@ describe("RerunDialogComponent", () => {
       await user.click(screen.getByLabelText("Official"));
       fixture.detectChanges();
 
-      const fpDropdown = ngMocks.find(fixture, FinalProductDropdownComponent);
-      expect(ngMocks.input(fpDropdown, "initialFinalProductId")).toBe(
+      const fpDropdown = ngMocks.find(fixture, FinalProductDropdownInputComponent);
+      expect(ngMocks.input(fpDropdown, "customFinalProductId")).toBe(
         "fp-pre-filled"
       );
     });

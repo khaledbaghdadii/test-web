@@ -28,12 +28,24 @@ export function isInputEmpty(value: unknown): boolean {
   );
 }
 
+/** A definition input, keyed by the id the executor forms use. */
+export interface ProvidedDefinitionInput extends DefinitionInputValue {
+  readonly inputId: string;
+}
+
 /**
- * A prefilled input has a non-empty value and is therefore shown read-only on
- * the executor's expand panel rather than as an editable form field.
+ * Whether the Process Template supplied a usable value for a field.
+ *
+ * Visibility must not depend on values a repush seeds into the live form, only
+ * on what the definition itself provided — otherwise seeding a field hides it.
  */
-export function isPrefilled(input: DefinitionInputValue): boolean {
-  return !isInputEmpty(input.value);
+export function isProvidedByDefinition(
+  providedInputs: readonly ProvidedDefinitionInput[],
+  inputId: string
+): boolean {
+  return providedInputs.some(
+    (input) => input.inputId === inputId && !isInputEmpty(input.value)
+  );
 }
 
 /**
@@ -66,35 +78,4 @@ export function shouldShowInForm(
     (mode === "ACCESS_INVALID_INPUTS_ONLY" && control.invalid) ||
     (mode === "ACCESS_EMPTY_OPTIONAL_INPUTS" && isInputEmpty(control.value))
   );
-}
-
-/**
- * A control-like shape that can also report whether it currently carries a
- * `required` validator (subset of `AbstractControl`).
- */
-export interface RequirableControl extends VisibilityControl {
-  hasValidator(validator: unknown): boolean;
-}
-
-/**
- * Whether a field must be rendered regardless of what the definition prefilled,
- * because it is required and has nothing in it.
- *
- * Executors decide visibility once, from a definition-only probe form, the way
- * legacy's `shouldShow` was assigned once in `ngOnInit`. That holds only while
- * validators are fixed — and several are not. Validation makes the parent branch
- * required once MQG + create-branch is chosen; Upgrade clears the configuration
- * branches when the create-branch answer changes. A field that turns required
- * *after* the snapshot would otherwise stay hidden while blocking submission,
- * leaving the run impossible to complete.
- *
- * Legacy never hit this: its fields were projected and therefore always mounted,
- * so `shouldShow` only decided whether they were on screen, never whether they
- * existed.
- */
-export function mustStayReachable(
-  control: RequirableControl,
-  requiredValidator: unknown
-): boolean {
-  return control.hasValidator(requiredValidator) && isInputEmpty(control.value);
 }

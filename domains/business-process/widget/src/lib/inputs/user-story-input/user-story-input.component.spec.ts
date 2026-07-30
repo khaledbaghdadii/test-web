@@ -218,4 +218,72 @@ describe("UserStoryInputComponent", () => {
     expect(screen.getByLabelText("User Story ID")).toHaveValue("US-1");
     expect(screen.getByLabelText("User Story ID 2")).toHaveValue("US-2");
   });
+
+  describe("seeded ids with validation enabled", () => {
+    async function renderSeeded(seed: string[]) {
+      const control = new FormControl<string[] | null>(seed);
+      mockFeatureFlagResolver.isFeatureEnabled.mockResolvedValue(true);
+
+      const view = await render(HOST_TEMPLATE, {
+        imports: [UserStoryInputComponent, ReactiveFormsModule],
+        componentProperties: {
+          projectId: "project-1",
+          shouldValidate: true,
+          control,
+        },
+        providers: [
+          { provide: ValidateUserStoryService, useValue: mockValidator },
+          { provide: ToastMessageService, useValue: mockToast },
+          { provide: FeatureFlagResolver, useValue: mockFeatureFlagResolver },
+        ],
+      });
+
+      return { ...view, control };
+    }
+
+    it("checks a seeded id against the backend instead of assuming it is valid", async () => {
+      mockValidator.validateUserStory.mockReturnValue(
+        of({ valid: true, errorMessage: "" })
+      );
+
+      const { container } = await renderSeeded(["US-1"]);
+
+      await waitFor(() =>
+        expect(mockValidator.validateUserStory).toHaveBeenCalledWith(
+          "project-1",
+          { userStoryId: "US-1" }
+        )
+      );
+      await waitFor(() =>
+        expect(container.querySelector(".pi-check")).toBeTruthy()
+      );
+    });
+
+    it("reports a seeded id the backend rejects and drops it from the value", async () => {
+      mockValidator.validateUserStory.mockReturnValue(
+        of({ valid: false, errorMessage: "Story not found" })
+      );
+
+      const { control } = await renderSeeded(["US-gone"]);
+
+      expect(await screen.findByText("Story not found")).toBeTruthy();
+      expect(control.value).toBeNull();
+    });
+
+    it("rejects the id when the validation request itself fails", async () => {
+      mockValidator.validateUserStory.mockReturnValue(
+        throwError(() => new Error("boom"))
+      );
+
+      const { container, control } = await renderSeeded(["US-1"]);
+
+      await waitFor(() =>
+        expect(mockToast.showError).toHaveBeenCalledWith(
+          "Something went wrong. Please try again later."
+        )
+      );
+      expect(control.value).toBeNull();
+      expect(container.querySelector(".pi-check")).toBeNull();
+    });
+  });
 });

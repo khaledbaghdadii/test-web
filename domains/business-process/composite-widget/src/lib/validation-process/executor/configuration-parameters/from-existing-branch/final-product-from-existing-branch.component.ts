@@ -25,12 +25,16 @@ import {
 } from "@mxevolve/domains/business-process/data-access";
 import { CommitsService } from "@mxevolve/domains/scm/data-access";
 import { BranchInputComponent } from "@mxevolve/domains/scm/widget";
+import {
+  ProvidedDefinitionInput,
+  isProvidedByDefinition,
+} from "@mxevolve/domains/business-process/util";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
 import {
   ToastMessageService,
   WarningAlertComponent,
 } from "@mxevolve/shared/ui/primitive";
-import { injectInputVisibility } from "../../../../shared/input-visibility.store";
+import { releaseControl } from "../parameter-controls";
 
 /** Debounce applied before looking a typed archival branch up (legacy 500ms). */
 const BRANCH_DEBOUNCE_MS = 500;
@@ -98,10 +102,9 @@ const FAILURE_WARNINGS: Record<
 export class FinalProductFromExistingBranchComponent
   implements OnInit, OnDestroy
 {
-  /** Executor-owned per-field visibility (VAL-27132 W3, finding V2). */
-  protected readonly inputVisibility = injectInputVisibility();
 
   readonly projectId = input.required<string>();
+  readonly providedInputs = input.required<readonly ProvidedDefinitionInput[]>();
   readonly repositoryId = input.required<string>();
   readonly archivalBranchNameFormControl =
     input.required<FormControl<string | null>>();
@@ -160,9 +163,7 @@ export class FinalProductFromExistingBranchComponent
 
   ngOnDestroy(): void {
     this.clearFinalProduct();
-    const archivalBranch = this.archivalBranchNameFormControl();
-    archivalBranch.reset(null, { emitEvent: false });
-    archivalBranch.disable({ emitEvent: false });
+    releaseControl(this.archivalBranchNameFormControl());
   }
 
   /**
@@ -231,5 +232,9 @@ export class FinalProductFromExistingBranchComponent
       control.reset(null, { emitEvent: false });
       control.disable({ emitEvent: false });
     }
+  }
+
+  protected notProvided(inputId: string): boolean {
+    return !isProvidedByDefinition(this.providedInputs(), inputId);
   }
 }

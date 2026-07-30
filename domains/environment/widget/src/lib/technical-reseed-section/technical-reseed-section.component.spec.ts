@@ -15,7 +15,7 @@ import {
   FinalProduct,
   FinalProductState,
 } from "@mxevolve/domains/artifact/data-access";
-import { FinalProductDropdownComponent } from "@mxevolve/domains/artifact/widget";
+import { FinalProductDropdownInputComponent } from "@mxevolve/domains/artifact/widget";
 import {
   CommitIdDisplayComponent,
   DateDisplayComponent,
@@ -118,7 +118,7 @@ async function renderComponent(launchesAllowed = true) {
       MockComponent(MxevolveIconComponent),
       MockComponent(MxevolveIllustrationComponent),
       MockComponent(EnvironmentDefinitionDropdownComponent),
-      MockComponent(FinalProductDropdownComponent),
+      MockComponent(FinalProductDropdownInputComponent),
     ],
     inputs: {
       projectId: "project-001",
@@ -365,7 +365,7 @@ describe("TechnicalReseedSectionComponent", () => {
           MockComponent(MxevolveIconComponent),
           MockComponent(MxevolveIllustrationComponent),
           MockComponent(EnvironmentDefinitionDropdownComponent),
-          MockComponent(FinalProductDropdownComponent),
+          MockComponent(FinalProductDropdownInputComponent),
         ],
         inputs: {
           projectId: "project-001",

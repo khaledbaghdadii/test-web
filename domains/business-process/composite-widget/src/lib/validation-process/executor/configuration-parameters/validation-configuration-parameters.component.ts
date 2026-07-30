@@ -4,8 +4,11 @@ import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { Select } from "primeng/select";
 import { RepositorySelectorComponent } from "@mxevolve/domains/scm/widget";
 import { ToastMessageService } from "@mxevolve/shared/ui/primitive";
+import {
+  ProvidedDefinitionInput,
+  isProvidedByDefinition,
+} from "@mxevolve/domains/business-process/util";
 import { DefinitionInputComponent } from "@mxevolve/domains/business-process/ui";
-import { injectInputVisibility } from "../../../shared/input-visibility.store";
 import { ValidationDqgParametersComponent } from "./dqg-parameters/validation-dqg-parameters.component";
 import { ValidationMqgParametersComponent } from "./mqg-parameters/validation-mqg-parameters.component";
 
@@ -34,6 +37,7 @@ import { ValidationMqgParametersComponent } from "./mqg-parameters/validation-mq
 })
 export class ValidationConfigurationParametersComponent implements OnInit {
   readonly projectId = input.required<string>();
+  readonly providedInputs = input.required<readonly ProvidedDefinitionInput[]>();
   readonly repositoryIdFormControl =
     input.required<FormControl<string | null>>();
   readonly businessProcessQualityLevelFormControl =
@@ -52,12 +56,9 @@ export class ValidationConfigurationParametersComponent implements OnInit {
     input.required<FormControl<string | null>>();
   readonly preselectedFinalProductId = input<string | null>(null);
   /** Whether the repository field itself is editable (hidden when prefilled). */
-  readonly showRepository = input(true);
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly toast = inject(ToastMessageService);
-  /** Executor-owned per-field visibility (VAL-27132 W3, findings V1/V2). */
-  protected readonly inputVisibility = injectInputVisibility();
 
   protected readonly Validators = Validators;
   protected readonly qualityLevelOptions = [
@@ -78,7 +79,7 @@ export class ValidationConfigurationParametersComponent implements OnInit {
 
   /**
    * Surfaces the repository selector's fetch failure, which was previously bound
-   * by nobody and therefore swallowed entirely (VAL-27132 R3).
+   * by nobody and therefore swallowed entirely.
    */
   protected showSelectorError(message: string): void {
     this.toast.showError(message);
@@ -99,5 +100,9 @@ export class ValidationConfigurationParametersComponent implements OnInit {
     }
     qualityLevel.reset(null, { emitEvent: false });
     qualityLevel.disable({ emitEvent: false });
+  }
+
+  protected notProvided(inputId: string): boolean {
+    return !isProvidedByDefinition(this.providedInputs(), inputId);
   }
 }

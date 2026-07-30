@@ -1,6 +1,7 @@
-@if (inputVisibility.shows("archivalBranchName")) {
 <mxevolve-definition-input
   inputId="validation-archival-branch"
+  inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+  [forceShow]="notProvided('archivalBranchName')"
   [control]="archivalBranchNameFormControl()"
   label="Archival Branch Name"
   description="Enter the name of the archival branch that you wish to use or create"
@@ -16,35 +17,33 @@
     (initialInvalid)="showArchivalBranchError()"
   />
 </mxevolve-definition-input>
-}
 
 @if (finalProductIdFormControl().enabled) {
-@if (inputVisibility.shows("finalProductId")) {
 <mxevolve-definition-input
   inputId="validation-final-product-tag"
+  inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+  [forceShow]="notProvided('finalProductId')"
   [control]="finalProductIdFormControl()"
   label="Final Product (represented by Tag-Commit ID)"
   description="Select the final product that you wish to use in your validation"
   tooltip="A final product is the client config and the tooling used to validate it. It will be packaged and shipped to the client when it reaches the right quality level."
 >
-  <mxevolve-final-product-dropdown
-    inputId="validation-final-product-tag"
+  <mxevolve-final-product-dropdown-input
     [projectId]="projectId()"
     [repositoryId]="repositoryId()"
-    [labelMode]="FinalProductLabelMode.TAG_COMMIT_ID"
-    [validationLevelFilter]="validationLevelFilter"
-    [formControl]="finalProductIdFormControl()"
-    [stateFilter]="[FinalProductState.AVAILABLE]"
+    [labelMode]="FinalProductDropdownInputLabelMode.TAG_COMMIT_ID"
+    [validationLevel]="validationLevelFilter"
     [fetchParent]="false"
-    sort="createdOn,desc"
+    [customFinalProductId]="finalProductIdFormControl().value ?? ''"
     (selectedFinalProductChange)="onFinalProductSelected($event)"
   />
 </mxevolve-definition-input>
 }
-} @if (rtpCommitIdFormControl().value) {
-@if (inputVisibility.shows("rtpCommitId")) {
+@if (rtpCommitIdFormControl().value) {
 <mxevolve-definition-input
   inputId="validation-rtp-commit"
+  inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+  [forceShow]="notProvided('rtpCommitId')"
   [control]="rtpCommitIdFormControl()"
   label="RTP Commit ID"
   description="Select the RTP commit from which you want to take your branch"
@@ -57,5 +56,4 @@
     [readonly]="true"
   />
 </mxevolve-definition-input>
-}
 }

@@ -7,6 +7,7 @@ import {
   ScenarioDefinitionApiResponse,
   ScenarioDefinitionService,
 } from "@mxevolve/domains/test/data-access";
+import { ScenarioDefinitionActivityStatus } from "@mxevolve/domains/test/model";
 
 export interface ScenarioDefinitionParams {
   projectId: string;
@@ -27,7 +28,8 @@ export class ScenarioDefinitionDataProvider
     params: ScenarioDefinitionParams
   ): Observable<ScenarioDefinitionApiResponse[]> {
     return this.scenarioDefinitionService.getScenarioDefinitions(
-      params.projectId
+      params.projectId,
+      ScenarioDefinitionActivityStatus.ACTIVE
     );
   }
 

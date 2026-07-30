@@ -1,8 +1,4 @@
-import {
-  isInputEmpty,
-  isPrefilled,
-  shouldShowInForm,
-} from "./input-visibility";
+import { isInputEmpty, shouldShowInForm } from "./input-visibility";
 
 describe("input-visibility", () => {
   describe("isInputEmpty", () => {
@@ -23,19 +19,6 @@ describe("input-visibility", () => {
       ["an object", { a: 1 }],
     ])("returns false for %s", (_label, value) => {
       expect(isInputEmpty(value)).toBe(false);
-    });
-  });
-
-  describe("isPrefilled", () => {
-    it("returns false when the input value is empty", () => {
-      expect(isPrefilled({ value: "" })).toBe(false);
-      expect(isPrefilled({ value: [] })).toBe(false);
-      expect(isPrefilled({ value: null })).toBe(false);
-    });
-
-    it("returns true when the input value is present", () => {
-      expect(isPrefilled({ value: "branch-1" })).toBe(true);
-      expect(isPrefilled({ value: ["a"] })).toBe(true);
     });
   });
 

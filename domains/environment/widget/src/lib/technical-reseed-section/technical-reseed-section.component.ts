@@ -32,8 +32,8 @@ import {
 import type { FinalProduct } from "@mxevolve/domains/artifact/data-access";
 import { FinalProductState } from "@mxevolve/domains/artifact/data-access";
 import {
-  FinalProductDropdownComponent,
-  FinalProductLabelMode,
+  FinalProductDropdownInputComponent,
+  FinalProductDropdownInputLabelMode,
 } from "@mxevolve/domains/artifact/widget";
 import {
   CommitIdDisplayComponent,
@@ -67,7 +67,7 @@ const PENDING_INPUT_MESSAGE =
     DialogModule,
     Divider,
     EnvironmentDefinitionDropdownComponent,
-    FinalProductDropdownComponent,
+    FinalProductDropdownInputComponent,
     Message,
     MxevolveIconComponent,
     MxevolveIllustrationComponent,
@@ -113,7 +113,8 @@ export class TechnicalReseedSectionComponent {
   readonly dialogMessage = signal("");
 
   /** Reseed lists AVAILABLE MQG/DQG final products labelled `tag-commitId`. */
-  protected readonly FinalProductLabelMode = FinalProductLabelMode;
+  protected readonly FinalProductDropdownInputLabelMode =
+    FinalProductDropdownInputLabelMode;
   protected readonly finalProductStateFilter = [FinalProductState.AVAILABLE];
   /** Left unset so the branch-root product is not pulled in (legacy parity). */
   protected readonly finalProductFetchParent = undefined;

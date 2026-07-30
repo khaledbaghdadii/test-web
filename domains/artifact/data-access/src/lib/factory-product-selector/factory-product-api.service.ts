@@ -58,7 +58,18 @@ export class FactoryProductApiService {
         )}/factory-products`,
         { params }
       )
-      .pipe(catchError((error) => throwError(() => new Error(error.error))));
+      .pipe(
+        catchError((error) =>
+          throwError(
+            () =>
+              new Error(
+                error.error?.message ??
+                  error.message ??
+                  "Failed to fetch factory products"
+              )
+          )
+        )
+      );
   }
 
   getFactoryProductById(
@@ -71,7 +82,18 @@ export class FactoryProductApiService {
           projectId
         )}/factory-products/${encodeURIComponent(factoryProductId)}`
       )
-      .pipe(catchError((error) => throwError(() => new Error(error.error))));
+      .pipe(
+        catchError((error) =>
+          throwError(
+            () =>
+              new Error(
+                error.error?.message ??
+                  error.message ??
+                  "Failed to fetch factory products"
+              )
+          )
+        )
+      );
   }
 
   getDistinctVersions(

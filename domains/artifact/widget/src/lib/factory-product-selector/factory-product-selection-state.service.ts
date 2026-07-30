@@ -1,4 +1,13 @@
-import { inject, Injectable, signal, computed } from "@angular/core";
+import {
+  DestroyRef,
+  inject,
+  Injectable,
+  signal,
+  computed,
+} from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
+import { EMPTY } from "rxjs";
+import { catchError } from "rxjs/operators";
 import {
   FactoryProduct,
   FactoryProductApiService,
@@ -18,6 +27,7 @@ export interface BipBuildOption {
 @Injectable()
 export class FactoryProductSelectionStateService {
   private readonly factoryProductApiService = inject(FactoryProductApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly projectId = signal<string | undefined>(undefined);
   readonly mxVersion = signal<SoftwareProductVersion | null>(null);
@@ -185,12 +195,20 @@ export class FactoryProductSelectionStateService {
     }
   }
 
+  /**
+   * A product that no longer resolves leaves the selection exactly as it was:
+   * whatever was prefilled stays, and nothing is written back to the form.
+   */
   initializeFromFactoryProductId(
     factoryProductId: string,
     projectId: string
   ): void {
     this.factoryProductApiService
       .getFactoryProductById(projectId, factoryProductId)
+      .pipe(
+        catchError(() => EMPTY),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe((factoryProduct) => {
         this.prefillFromFactoryProduct(factoryProduct);
       });
@@ -217,16 +235,23 @@ export class FactoryProductSelectionStateService {
     }
   }
 
+  /**
+   * Values already prefilled win: a repush carries the exact build the previous
+   * run used, and re-deriving it from the product would silently land on the
+   * first one instead.
+   */
   private prefillFromFactoryProduct(factoryProduct: FactoryProduct): void {
     const softwareProduct = factoryProduct.softwareProduct;
     if (!softwareProduct) {
       return;
     }
 
-    this.mxVersion.set({ version: softwareProduct.version });
+    if (!this.mxVersion()) {
+      this.mxVersion.set({ version: softwareProduct.version });
+    }
 
     const build = softwareProduct.builds?.[0];
-    if (build) {
+    if (build && !this.mxBuildId()) {
       this.mxBuildId.set({
         buildId: build.mxBuild.buildId,
         projectId: build.projectId,
@@ -241,12 +266,14 @@ export class FactoryProductSelectionStateService {
 
     if (nonPurgedConfigComponents.length > 0) {
       const firstConfigComponent = nonPurgedConfigComponents[0];
-      this.bipVersion.set({ version: firstConfigComponent.version });
+      if (!this.bipVersion()) {
+        this.bipVersion.set({ version: firstConfigComponent.version });
+      }
 
       const nonPurgedBuilds = (firstConfigComponent.builds ?? []).filter(
         (b: ConfigurationComponentBuildResponse) => !b.purged
       );
-      if (nonPurgedBuilds.length > 0) {
+      if (nonPurgedBuilds.length > 0 && !this.bipBuildId()) {
         this.bipBuildId.set({
           buildId: nonPurgedBuilds[0].mxBuild.buildId,
           factoryProductId: factoryProduct.id,

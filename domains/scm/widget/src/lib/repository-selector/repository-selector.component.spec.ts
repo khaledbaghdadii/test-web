@@ -1,6 +1,7 @@
 import { Component } from "@angular/core";
+import { of } from "rxjs";
 import { FormControl, ReactiveFormsModule } from "@angular/forms";
-import { render } from "@testing-library/angular";
+import { render, waitFor } from "@testing-library/angular";
 import { MockComponent, ngMocks } from "ng-mocks";
 import { MxevolveSingleSelectDropdownComponent } from "@mxflow/ui/mxevolve-dropdown";
 import { RepositoryService } from "@mxevolve/domains/scm/data-access";
@@ -22,9 +23,7 @@ class HostComponent {
 }
 
 const repositoryService = {
-  getTestRepositories: jest
-    .fn()
-    .mockReturnValue({ subscribe: () => undefined }),
+  getTestRepositories: jest.fn(),
 };
 
 const MOCK_IMPORTS = [MockComponent(MxevolveSingleSelectDropdownComponent)];
@@ -39,6 +38,13 @@ async function renderComponent() {
 }
 
 describe("RepositorySelectorComponent", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    repositoryService.getTestRepositories.mockReturnValue({
+      subscribe: () => undefined,
+    });
+  });
+
   it("renders the shared single-select dropdown scoped to the project", async () => {
     await renderComponent();
 
@@ -83,5 +89,42 @@ describe("RepositorySelectorComponent", () => {
       id: "repo-10",
     });
     expect(view.fixture.componentInstance.onChanged).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a prefilled repository id that is not in the list, and says nothing", async () => {
+    repositoryService.getTestRepositories.mockReturnValue(
+      of([
+        {
+          id: "repo-1",
+          name: "n",
+          url: "u",
+          label: "test",
+          defaultBranch: "main",
+        },
+      ])
+    );
+
+    const control = new FormControl<string | null>("repo-gone");
+    const view = await render(HostComponent, {
+      imports: [MOCK_IMPORTS],
+      componentProperties: { control },
+      componentProviders: [
+        { provide: RepositoryService, useValue: repositoryService },
+      ],
+    });
+    const failure = jest.fn();
+    ngMocks
+      .find(RepositorySelectorComponent)
+      .componentInstance.failureEvent.subscribe(failure);
+
+    // Legacy left an unresolvable prefill exactly where it was: the id stays in
+    // the control, the form stays submittable, and nothing is reported.
+    await waitFor(() =>
+      expect(
+        ngMocks.find(RepositorySelectorComponent).componentInstance.stateProvider.items()
+      ).toHaveLength(1)
+    );
+    expect(view.fixture.componentInstance.control.value).toBe("repo-gone");
+    expect(failure).not.toHaveBeenCalled();
   });
 });

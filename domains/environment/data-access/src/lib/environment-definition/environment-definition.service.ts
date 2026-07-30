@@ -25,7 +25,14 @@ export class EnvironmentDefinitionService {
       )
       .pipe(
         catchError((error) =>
-          throwError(() => new Error(error.error?.message ?? error.message))
+          throwError(
+            () =>
+              new Error(
+                error.error?.message ??
+                  error.message ??
+                  "Failed to fetch environment definitions"
+              )
+          )
         )
       );
   }
@@ -40,7 +47,14 @@ export class EnvironmentDefinitionService {
       )
       .pipe(
         catchError((error) =>
-          throwError(() => new Error(error.error?.message ?? error.message))
+          throwError(
+            () =>
+              new Error(
+                error.error?.message ??
+                  error.message ??
+                  "Failed to fetch environment definitions"
+              )
+          )
         )
       );
   }

@@ -5,3 +5,4 @@ export { QualityGateValidationBannerComponent } from "./lib/quality-gate-validat
 export { BusinessProcessContentContainerComponent } from "./lib/business-process-content-container/business-process-content-container.component";
 export { StageContainerComponent } from "./lib/stage-container/stage-container.component";
 export { DefinitionInputComponent } from "./lib/definition-input/definition-input.component";
+export { DefinitionInputGroupComponent } from "./lib/definition-input-group/definition-input-group.component";

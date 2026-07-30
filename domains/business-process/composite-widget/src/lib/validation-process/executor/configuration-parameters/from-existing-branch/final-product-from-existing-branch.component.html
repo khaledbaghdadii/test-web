@@ -1,6 +1,7 @@
-@if (inputVisibility.shows("archivalBranchName")) {
 <mxevolve-definition-input
   inputId="validation-archival-branch"
+  inputAccessMode="ACCESS_INVALID_INPUTS_ONLY"
+  [forceShow]="notProvided('archivalBranchName')"
   [control]="archivalBranchNameFormControl()"
   label="Archival Branch Name"
   description="Enter the name of the archival branch that you wish to use or create"
@@ -16,11 +17,11 @@
     (initialInvalid)="showArchivalBranchError()"
   />
 </mxevolve-definition-input>
-}
 
 @if (loading() || finalProductIdFormControl().enabled) {
 <mxevolve-definition-input
   inputId="validation-final-product-readonly"
+  inputAccessMode="ACCESS_ALL_INPUTS"
   [control]="finalProductIdFormControl()"
   label="Final Product (represented by a Commit ID)"
   description="Select the final product that you wish to use in your validation"
@@ -42,6 +43,7 @@
 
 <mxevolve-definition-input
   inputId="validation-rtp-commit"
+  inputAccessMode="ACCESS_ALL_INPUTS"
   [control]="rtpCommitIdFormControl()"
   label="RTP Commit ID"
   description="Select the RTP commit from which you want to take your branch"

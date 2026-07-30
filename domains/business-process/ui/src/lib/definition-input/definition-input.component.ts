@@ -1,6 +1,10 @@
-import { Component, input } from "@angular/core";
+import { Component, OnInit, input } from "@angular/core";
 import { AbstractControl, Validators } from "@angular/forms";
 import { TooltipModule } from "primeng/tooltip";
+import {
+  InputAccessMode,
+  shouldShowInForm,
+} from "@mxevolve/domains/business-process/util";
 
 /**
  * Known validation-error keys mapped to the message shown under the field.
@@ -26,30 +30,40 @@ const ERROR_MESSAGES: Record<string, string> = {
  * optional tooltip), projects the actual control, and shows either the field
  * description or the validation error underneath.
  *
- * New-architecture rebuild of the legacy `mxevolve-definition-input`
- * (`web/libs/features/business-process/src/lib/definition-input`). Unlike the
- * legacy component this one does **not** decide whether the field is shown -
- * that stays with the executor, which gates each field on `shouldShowInForm`.
- *
- * Uses default change detection on purpose: the bound control's validators,
- * status and dirty flag all change outside of signal-land (dynamic
- * `setValidators`, async branch validation), so the label marker and the
- * description/error swap must be re-evaluated on every check - exactly as the
- * legacy template did.
+ * `shouldShow` is decided once, on creation, from the control as it stands at
+ * that moment. It must never be re-evaluated: a field shown because its control
+ * was invalid has to stay on screen once the user fixes it. Projected content is
+ * instantiated either way, so a field the form hides still runs its own
+ * lookups.
  */
 @Component({
   selector: "mxevolve-definition-input",
   templateUrl: "./definition-input.component.html",
   standalone: true,
   imports: [TooltipModule],
+  styles: [":host { display: contents; }"],
 })
-export class DefinitionInputComponent {
+export class DefinitionInputComponent implements OnInit {
   readonly inputId = input.required<string>();
   readonly control = input.required<AbstractControl>();
+  readonly inputAccessMode = input.required<InputAccessMode>();
+  readonly forceShow = input(false);
   readonly label = input("");
   readonly description = input("");
   readonly tooltip = input("");
   readonly showValidationErrors = input(true);
+  /** Placement of the field within the grid its consumer lays out. */
+  readonly fieldClass = input("");
+
+  protected shouldShow = false;
+
+  ngOnInit(): void {
+    this.shouldShow = shouldShowInForm(
+      this.control(),
+      this.inputAccessMode(),
+      this.forceShow()
+    );
+  }
 
   protected isRequired(): boolean {
     return this.control().hasValidator(Validators.required);
